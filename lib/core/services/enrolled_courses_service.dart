@@ -1,0 +1,348 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:pgme/core/constants/api_constants.dart';
+import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/core/models/progress_model.dart';
+import 'package:pgme/core/models/library_model.dart';
+import 'package:pgme/core/services/api_service.dart';
+
+class EnrolledCoursesService {
+  final ApiService _apiService = ApiService();
+
+  // Cache for series (1 hour TTL)
+  DateTime? _lastSeriesFetch;
+  List<SeriesModel>? _cachedSeries;
+  String? _cachedSeriesPurchaseId;
+
+  /// Get all user purchases
+  /// Returns list of active and expired purchases
+  Future<List<PurchaseModel>> getPurchases() async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Getting purchases ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.purchases,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final purchasesData = response.data['data']['purchases'] as List;
+        final purchases = purchasesData
+            .map((json) => PurchaseModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Sort by purchase date (newest first)
+        purchases.sort((a, b) => b.purchasedAt.compareTo(a.purchasedAt));
+
+        debugPrint('✓ ${purchases.length} purchases retrieved');
+        return purchases;
+      }
+
+      throw Exception('Failed to load purchases');
+    } on DioException catch (e) {
+      debugPrint('✗ Get purchases error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get purchase details by ID
+  /// Includes complete package information and expiry details
+  Future<PurchaseModel> getPurchaseDetails(String purchaseId) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Getting purchase details ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.purchaseDetails(purchaseId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final purchaseData = response.data['data']['purchase'];
+        final purchase = PurchaseModel.fromJson(purchaseData as Map<String, dynamic>);
+
+        debugPrint('✓ Purchase details retrieved: ${purchase.package.name}');
+        return purchase;
+      }
+
+      throw Exception('Failed to load purchase details');
+    } on DioException catch (e) {
+      debugPrint('✗ Get purchase details error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get series for a purchase
+  /// Returns both theory and practical series
+  /// Use forceRefresh to bypass cache
+  Future<List<SeriesModel>> getSeries({
+    required String purchaseId,
+    String? type,
+    bool forceRefresh = false,
+  }) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Getting series ===');
+
+      // Check cache validity (1 hour TTL)
+      if (!forceRefresh &&
+          _cachedSeries != null &&
+          _lastSeriesFetch != null &&
+          _cachedSeriesPurchaseId == purchaseId &&
+          DateTime.now().difference(_lastSeriesFetch!) < const Duration(hours: 1)) {
+        debugPrint('✓ Returning cached series (${_cachedSeries!.length} items)');
+
+        // Filter by type if specified
+        if (type != null) {
+          return _cachedSeries!.where((s) => s.type == type).toList();
+        }
+        return _cachedSeries!;
+      }
+
+      final queryParams = <String, dynamic>{
+        'purchase_id': purchaseId,
+      };
+      if (type != null) {
+        queryParams['type'] = type;
+      }
+
+      final response = await _apiService.dio.get(
+        ApiConstants.series,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final seriesData = response.data['data']['series'] as List;
+        final series = seriesData
+            .map((json) => SeriesModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Sort by sequence number
+        series.sort((a, b) => a.sequenceNumber.compareTo(b.sequenceNumber));
+
+        // Update cache
+        _cachedSeries = series;
+        _lastSeriesFetch = DateTime.now();
+        _cachedSeriesPurchaseId = purchaseId;
+
+        debugPrint('✓ ${series.length} series retrieved and cached');
+        return series;
+      }
+
+      throw Exception('Failed to load series');
+    } on DioException catch (e) {
+      debugPrint('✗ Get series error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get user's progress for a purchase
+  /// Returns all watched lectures with progress info
+  /// purchaseId is optional - if not provided, returns progress across all purchases
+  Future<List<ProgressModel>> getProgress({
+    String? purchaseId,
+    String? seriesId,
+    bool? isCompleted,
+    int? limit,
+  }) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Getting progress ===');
+
+      final queryParams = <String, dynamic>{};
+      if (purchaseId != null) {
+        queryParams['purchase_id'] = purchaseId;
+      }
+      if (seriesId != null) {
+        queryParams['series_id'] = seriesId;
+      }
+      if (isCompleted != null) {
+        queryParams['is_completed'] = isCompleted.toString();
+      }
+      if (limit != null) {
+        queryParams['limit'] = limit;
+      }
+
+      final response = await _apiService.dio.get(
+        ApiConstants.progress,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final progressData = response.data['data']['progress'] as List;
+        final progress = progressData
+            .map((json) => ProgressModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Sort by last watched (most recent first)
+        progress.sort((a, b) => b.lastWatchedAt.compareTo(a.lastWatchedAt));
+
+        debugPrint('✓ ${progress.length} progress items retrieved');
+        return progress;
+      }
+
+      throw Exception('Failed to load progress');
+    } on DioException catch (e) {
+      debugPrint('✗ Get progress error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Update or create progress for a lecture
+  /// Call this when user watches a video
+  Future<ProgressModel> updateProgress({
+    required String lectureId,
+    required int lastWatchedPositionSeconds,
+    required int watchTimeSeconds,
+    required bool isCompleted,
+    required int completionPercentage,
+  }) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Updating progress ===');
+
+      final response = await _apiService.dio.post(
+        ApiConstants.updateProgress,
+        data: {
+          'lecture_id': lectureId,
+          'last_watched_position_seconds': lastWatchedPositionSeconds,
+          'watch_time_seconds': watchTimeSeconds,
+          'is_completed': isCompleted,
+          'completion_percentage': completionPercentage,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final progressData = response.data['data']['progress'];
+        final progress = ProgressModel.fromJson(progressData as Map<String, dynamic>);
+
+        debugPrint('✓ Progress updated for lecture: $lectureId');
+        return progress;
+      }
+
+      throw Exception('Failed to update progress');
+    } on DioException catch (e) {
+      debugPrint('✗ Update progress error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get user's library (saved documents)
+  /// Returns PDFs, notes, and handouts saved by user
+  Future<List<LibraryModel>> getLibrary({String? purchaseId}) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Getting library ===');
+
+      final queryParams = <String, dynamic>{};
+      if (purchaseId != null) {
+        queryParams['purchase_id'] = purchaseId;
+      }
+
+      final response = await _apiService.dio.get(
+        ApiConstants.library,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final libraryData = response.data['data']['library'] as List;
+        final library = libraryData
+            .map((json) => LibraryModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Sort by added date (most recent first)
+        library.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+
+        debugPrint('✓ ${library.length} library items retrieved');
+        return library;
+      }
+
+      throw Exception('Failed to load library');
+    } on DioException catch (e) {
+      debugPrint('✗ Get library error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Add a document to user's library
+  /// Returns the created library item
+  Future<LibraryModel> addToLibrary({required String documentId}) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Adding to library ===');
+
+      final response = await _apiService.dio.post(
+        ApiConstants.addToLibrary,
+        data: {
+          'document_id': documentId,
+        },
+      );
+
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final libraryData = response.data['data']['library'];
+        final library = LibraryModel.fromJson(libraryData as Map<String, dynamic>);
+
+        debugPrint('✓ Document added to library: $documentId');
+        return library;
+      }
+
+      throw Exception('Failed to add to library');
+    } on DioException catch (e) {
+      debugPrint('✗ Add to library error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Remove a document from user's library
+  /// Returns true if successfully removed
+  Future<bool> removeFromLibrary({required String libraryId}) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Removing from library ===');
+
+      final response = await _apiService.dio.delete(
+        ApiConstants.removeFromLibrary(libraryId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        debugPrint('✓ Document removed from library: $libraryId');
+        return true;
+      }
+
+      throw Exception('Failed to remove from library');
+    } on DioException catch (e) {
+      debugPrint('✗ Remove from library error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Clear series cache
+  void clearSeriesCache() {
+    debugPrint('=== EnrolledCoursesService: Clearing series cache ===');
+    _cachedSeries = null;
+    _lastSeriesFetch = null;
+    _cachedSeriesPurchaseId = null;
+  }
+
+  /// Clear all caches
+  void clearCache() {
+    debugPrint('=== EnrolledCoursesService: Clearing all caches ===');
+    clearSeriesCache();
+  }
+}

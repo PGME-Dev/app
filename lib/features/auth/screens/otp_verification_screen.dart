@@ -6,12 +6,7 @@ import 'package:pgme/core/widgets/otp_input.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
-  final String phoneNumber;
-
-  const OTPVerificationScreen({
-    super.key,
-    required this.phoneNumber,
-  });
+  const OTPVerificationScreen({super.key});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -39,20 +34,20 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final success = await provider.verifyOTP(_otp);
 
       if (success && mounted) {
-        context.go('/data-collection');
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid OTP. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        // Route based on onboarding status
+        if (provider.onboardingCompleted) {
+          // User has completed onboarding, go to home
+          context.go('/home');
+        } else {
+          // User needs to complete onboarding
+          context.go('/data-collection');
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verification failed. Please try again.'),
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: AppColors.error,
           ),
         );
@@ -141,10 +136,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             right: 24,
             child: Opacity(
               opacity: 0.6,
-              child: Text(
-                'Please enter the 4-digit OTP Send to\n${widget.phoneNumber}',
+              child: const Text(
+                'Please enter the 4-digit OTP sent to\nyour mobile number',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 20,
                   fontWeight: FontWeight.w400,

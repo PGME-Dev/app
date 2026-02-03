@@ -3,18 +3,76 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/core/models/module_model.dart';
+import 'package:pgme/core/models/series_document_model.dart';
 
-class CourseDetailScreen extends StatelessWidget {
-  final String courseId;
+class CourseDetailScreen extends StatefulWidget {
+  final String seriesId;
 
   const CourseDetailScreen({
     super.key,
-    required this.courseId,
+    required this.seriesId,
   });
 
   @override
+  State<CourseDetailScreen> createState() => _CourseDetailScreenState();
+}
+
+class _CourseDetailScreenState extends State<CourseDetailScreen> {
+  final DashboardService _dashboardService = DashboardService();
+
+  SeriesModel? _series;
+  List<ModuleModel> _modules = [];
+  List<SeriesDocumentModel> _documents = [];
+
+  bool _isLoading = true;
+  String? _error;
+
+  // Track which modules are expanded
+  Set<String> _expandedModules = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeriesData();
+  }
+
+  Future<void> _loadSeriesData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Fetch all data in parallel
+      final results = await Future.wait([
+        _dashboardService.getSeriesDetails(widget.seriesId),
+        _dashboardService.getSeriesModules(widget.seriesId),
+        _dashboardService.getSeriesDocuments(widget.seriesId),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _series = results[0] as SeriesModel;
+          _modules = results[1] as List<ModuleModel>;
+          _documents = results[2] as List<SeriesDocumentModel>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -22,337 +80,485 @@ class CourseDetailScreen extends StatelessWidget {
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF718BA9);
+    final cardColor = isDark ? AppColors.darkSurface : const Color(0xFFF5F9FF);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Stack(
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          _series?.title ?? 'Anatomy Course',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: textColor,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_horiz, color: textColor),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: iconColor))
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load course',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadSeriesData,
+                        style: ElevatedButton.styleFrom(backgroundColor: iconColor),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Video Banner
+                      _buildVideoBanner(iconColor),
+
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Video Title - Show first video or series title
+                            Text(
+                              _getFirstVideoTitle() ?? _series?.title ?? 'Video Title',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Description
+                            Text(
+                              _series?.description ?? 'No description available',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                height: 1.5,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Notes section
+                            if (_documents.isNotEmpty) ...[
+                              Text(
+                                'Notes for this chapter',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ..._documents.map((doc) => _buildDocumentCard(
+                                    doc,
+                                    cardColor,
+                                    textColor,
+                                    secondaryTextColor,
+                                    iconColor,
+                                  )),
+                              const SizedBox(height: 24),
+                            ],
+
+                            // Modules section
+                            ..._modules.map((module) => _buildModuleCard(
+                                  module,
+                                  cardColor,
+                                  textColor,
+                                  secondaryTextColor,
+                                  iconColor,
+                                )),
+
+                            // Enroll button
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  // Handle enroll action
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: iconColor,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Enroll Now',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  // Helper method to get first video title
+  String? _getFirstVideoTitle() {
+    if (_modules.isEmpty) return null;
+    for (var module in _modules) {
+      if (module.videos.isNotEmpty) {
+        return module.videos.first.title;
+      }
+    }
+    return null;
+  }
+
+  // Helper method to get first video
+  ModuleVideoModel? _getFirstVideo() {
+    if (_modules.isEmpty) return null;
+    for (var module in _modules) {
+      if (module.videos.isNotEmpty) {
+        return module.videos.first;
+      }
+    }
+    return null;
+  }
+
+  Widget _buildVideoBanner(Color iconColor) {
+    final firstVideo = _getFirstVideo();
+
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            iconColor.withOpacity(0.3),
+            iconColor.withOpacity(0.1),
+          ],
+        ),
+      ),
+      child: Stack(
         children: [
-          // Back Arrow - goes back to previous screen
-          Positioned(
-            top: topPadding + 16,
-            left: 16,
-            child: GestureDetector(
-              onTap: () {
-                context.pop();
-              },
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: Icon(
-                  Icons.arrow_back,
-                  size: 24,
-                  color: textColor,
-                ),
-              ),
+          // Placeholder for video thumbnail
+          Center(
+            child: Icon(
+              Icons.play_circle_filled,
+              size: 64,
+              color: Colors.white,
             ),
           ),
-
-          // Title "TECOM REVISION SERIES I"
+          // Video info overlay
           Positioned(
-            top: topPadding + 16,
-            left: 80,
-            child: SizedBox(
-              width: 234,
-              height: 20,
-              child: Text(
-                _getSeriesTitle(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  height: 1.0,
-                  letterSpacing: -0.5,
-                  color: textColor,
-                ),
-              ),
-            ),
-          ),
-
-          // Search icon
-          Positioned(
-            top: topPadding + 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: () {
-                // Search functionality
-              },
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: Icon(
-                  Icons.search,
-                  size: 24,
-                  color: textColor,
-                ),
-              ),
-            ),
-          ),
-
-          // Two Gradient Boxes Row
-          Positioned(
-            top: topPadding + 60,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Watch Lectures Video Box
-                _buildWatchLecturesBox(context, isDark),
-                const SizedBox(width: 12),
-                // View Notes Box
-                _buildViewNotesBox(context, isDark),
-              ],
-            ),
-          ),
-
-          // Subject Title Section
-          Positioned(
-            top: topPadding + 290,
+            bottom: 16,
             left: 16,
             right: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Subject Title',
+                  firstVideo?.title ?? _series?.title ?? 'Video Title',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                    height: 1.0,
-                    letterSpacing: -0.5,
-                    color: textColor,
+                    fontSize: 18,
+                    color: Colors.white,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 Text(
-                  'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu',
+                  firstVideo?.facultyName ?? 'Faculty',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
                     fontSize: 14,
-                    height: 1.5,
-                    letterSpacing: 0,
-                    color: secondaryTextColor,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Details',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                    height: 1.0,
-                    letterSpacing: -0.5,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildDetailItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
-                const SizedBox(height: 12),
-                _buildDetailItem('Mute your microphone upon entry to avoid echo in the OR.', textColor, iconColor),
-                const SizedBox(height: 12),
-                _buildDetailItem('Q&A session will follow the primary procedure.', textColor, iconColor),
-                const SizedBox(height: 12),
-                _buildDetailItem('Recording will be available 24 hours after the session', textColor, iconColor),
               ],
             ),
           ),
-
         ],
       ),
     );
   }
 
-  String _getSeriesTitle() {
-    // Handle practical session courses
-    if (courseId.startsWith('practical-')) {
-      final number = courseId.replaceFirst('practical-', '');
-      switch (number) {
-        case '1':
-          return 'PRACTICAL SESSION I';
-        case '2':
-          return 'PRACTICAL SESSION II';
-        case '3':
-          return 'PRACTICAL SESSION III';
-        case '4':
-          return 'PRACTICAL SESSION IV';
-        default:
-          return 'PRACTICAL SESSION $number';
-      }
-    }
-
-    // Handle TECOM revision series
-    switch (courseId) {
-      case '1':
-        return 'TECOM REVISION SERIES I';
-      case '2':
-        return 'TECOM REVISION SERIES II';
-      case '3':
-        return 'TECOM REVISION SERIES III';
-      case '4':
-        return 'TECOM REVISION SERIES IV';
-      default:
-        return 'TECOM REVISION SERIES $courseId';
-    }
+  Widget _buildDocumentCard(
+    SeriesDocumentModel doc,
+    Color cardColor,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          // PDF icon placeholder
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.description, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  doc.title,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  doc.description ?? '',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    color: secondaryTextColor,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildWatchLecturesBox(BuildContext context, bool isDark) {
+  Widget _buildModuleCard(
+    ModuleModel module,
+    Color cardColor,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+  ) {
+    final isExpanded = _expandedModules.contains(module.moduleId);
+
     return Container(
-      width: 175,
-      height: 211,
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: const Alignment(-0.7, 0.7),
-          end: const Alignment(0.7, -0.7),
-          colors: isDark
-              ? [const Color(0xFF1A3A5C), const Color(0xFF2D5A9E)]
-              : [const Color(0xFFEBF3FC), const Color(0xFF8EC6FF)],
-          stops: const [0.1752, 0.8495],
-        ),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
         children: [
-          // Title text
-          Positioned(
-            top: 20,
-            left: 16,
-            child: Text(
-              'Watch Lectures\nVideo',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                height: 1.3,
-                letterSpacing: -0.5,
-                color: isDark ? Colors.white : const Color(0xFF000000),
+          // Module header
+          InkWell(
+            onTap: () {
+              setState(() {
+                if (isExpanded) {
+                  _expandedModules.remove(module.moduleId);
+                } else {
+                  _expandedModules.add(module.moduleId);
+                }
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Lock icon
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.lock, color: iconColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          module.name,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${module.lessonCount} lessons  •  ${module.completedLessons}/${module.lessonCount} complete',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 12,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: textColor,
+                  ),
+                ],
               ),
             ),
           ),
-          // 3.png Image (placed before button so button is on top)
-          Positioned(
-            bottom: -65,
-            left: 0,
-            child: IgnorePointer(
-              child: Image.asset(
-                'assets/illustrations/3.png',
-                width: 250,
-                height: 250,
-                fit: BoxFit.contain,
+
+          // Module videos
+          if (isExpanded) ...[
+            const Divider(height: 1),
+            ...module.videos.map((video) => _buildVideoItem(
+                  video,
+                  textColor,
+                  secondaryTextColor,
+                  iconColor,
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoItem(
+    ModuleVideoModel video,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+  ) {
+    return InkWell(
+      onTap: video.isLocked
+          ? null
+          : () {
+              // Navigate to video player
+              context.push('/video/${video.videoId}');
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Completion/Lock status icon
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: video.isCompleted
+                    ? Colors.green.withOpacity(0.1)
+                    : video.isLocked
+                        ? secondaryTextColor.withOpacity(0.1)
+                        : iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                video.isCompleted
+                    ? Icons.check
+                    : video.isLocked
+                        ? Icons.lock
+                        : Icons.play_arrow,
+                color: video.isCompleted
+                    ? Colors.green
+                    : video.isLocked
+                        ? secondaryTextColor
+                        : iconColor,
+                size: 18,
               ),
             ),
-          ),
-          // Watch Button (last so it's on top)
-          Positioned(
-            top: 84,
-            left: 10,
-            child: GestureDetector(
-              onTap: () {
-                context.push('/lecture/$courseId');
-              },
-              child: Container(
-                width: 92,
-                height: 27,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(10.87),
-                ),
-                child: Center(
-                  child: Text(
-                    'Watch',
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video.title,
                     style: TextStyle(
-                      fontFamily: 'SF Pro Display',
+                      fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      height: 16.73 / 14,
-                      letterSpacing: -0.42,
-                      color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
+                      color: video.isLocked ? secondaryTextColor : textColor,
                     ),
                   ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildViewNotesBox(BuildContext context, bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        context.push('/available-notes/$courseId');
-      },
-      child: Container(
-        width: 175,
-        height: 211,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: const Alignment(-0.7, 0.7),
-            end: const Alignment(0.7, -0.7),
-            colors: isDark
-                ? [const Color(0xFF1A3A5C), const Color(0xFF2D5A9E)]
-                : [const Color(0xFFEBF3FC), const Color(0xFF8EC6FF)],
-            stops: const [0.1752, 0.8495],
-          ),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // 4.png Image (flipped horizontally) - placed first so title is on top
-            Positioned(
-              top: -35,
-              right: -145,
-              child: IgnorePointer(
-                child: Transform.flip(
-                  flipX: true,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.asset(
-                      'assets/illustrations/4.png',
-                      width: 400,
-                      height: 400,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 163,
-                          height: 114,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 12, color: secondaryTextColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        video.formattedDuration,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.person, size: 12, color: secondaryTextColor),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          video.facultyName,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 12,
+                            color: secondaryTextColor,
                           ),
-                          child: Icon(
-                            Icons.folder_outlined,
-                            size: 40,
-                            color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
-                          ),
-                        );
-                      },
-                    ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ),
-            // Title text
-            Positioned(
-              top: 20,
-              left: 16,
-              child: Text(
-                'View Notes',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  height: 1.3,
-                  letterSpacing: -0.5,
-                  color: isDark ? Colors.white : const Color(0xFF000000),
-                ),
+                ],
               ),
             ),
           ],
@@ -360,37 +566,4 @@ class CourseDetailScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildDetailItem(String text, Color textColor, Color iconColor) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          margin: const EdgeInsets.only(top: 2),
-          child: Icon(
-            Icons.link,
-            size: 18,
-            color: iconColor,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w400,
-              fontSize: 14,
-              height: 1.4,
-              letterSpacing: 0,
-              color: textColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
 }

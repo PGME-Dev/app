@@ -13,10 +13,10 @@ class OTPInput extends StatefulWidget {
   });
 
   @override
-  State<OTPInput> createState() => _OTPInputState();
+  State<OTPInput> createState() => OTPInputState();
 }
 
-class _OTPInputState extends State<OTPInput> {
+class OTPInputState extends State<OTPInput> {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
 
@@ -25,6 +25,16 @@ class _OTPInputState extends State<OTPInput> {
     super.initState();
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
+  }
+
+  /// Clear all OTP input fields
+  void clear() {
+    for (var controller in _controllers) {
+      controller.clear();
+    }
+    if (_focusNodes.isNotEmpty) {
+      _focusNodes[0].requestFocus();
+    }
   }
 
   @override

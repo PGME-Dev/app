@@ -3,17 +3,68 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/series_model.dart';
+import 'package:intl/intl.dart';
 
-class PracticalPackageScreen extends StatefulWidget {
+class PracticalSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
+  final String? packageId;
 
-  const PracticalPackageScreen({super.key, this.isSubscribed = false});
+  const PracticalSeriesScreen({
+    super.key,
+    this.isSubscribed = false,
+    this.packageId,
+  });
 
   @override
-  State<PracticalPackageScreen> createState() => _PracticalPackageScreenState();
+  State<PracticalSeriesScreen> createState() => _PracticalSeriesScreenState();
 }
 
-class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
+class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
+  final DashboardService _dashboardService = DashboardService();
+  List<SeriesModel> _series = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeries();
+  }
+
+  Future<void> _loadSeries() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      String packageId = widget.packageId ?? '';
+
+      // If no packageId provided, fetch the first practical package
+      if (packageId.isEmpty) {
+        final packages = await _dashboardService.getPackages(packageType: 'Practical');
+        if (packages.isEmpty) {
+          throw Exception('No practical packages found');
+        }
+        packageId = packages.first.packageId;
+      }
+
+      final series = await _dashboardService.getPackageSeries(packageId);
+
+      setState(() {
+        _series = series;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
   void _showEnrollmentPopup() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
@@ -33,9 +84,9 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
-    final cardBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFF5F5F5);
+    final boxBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFF5F5F5);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
-    final buttonBgColor = isDark ? const Color(0xFF1A1A4D) : const Color(0xFF0000D1);
+    final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -112,7 +163,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Unlock all practical series and get access to comprehensive study materials.',
+                  'Unlock all practical series and get access to hands-on training materials.',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
@@ -133,25 +184,25 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: cardBgColor,
+                    color: boxBgColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildFeatureItem('4 Complete Practical Series', textColor, iconColor),
+                      _buildFeatureItem('${_series.length} Complete Practical Series', isDark, textColor, iconColor),
                       const SizedBox(height: 8),
-                      _buildFeatureItem('Hands-on Video Tutorials', textColor, iconColor),
+                      _buildFeatureItem('Hands-on Video Demonstrations', isDark, textColor, iconColor),
                       const SizedBox(height: 8),
-                      _buildFeatureItem('Expert Faculty Guidance', textColor, iconColor),
+                      _buildFeatureItem('Expert Faculty Guidance', isDark, textColor, iconColor),
                       const SizedBox(height: 8),
-                      _buildFeatureItem('3 Months Access', textColor, iconColor),
+                      _buildFeatureItem('3 Months Access', isDark, textColor, iconColor),
                       const SizedBox(height: 16),
                       // Price
                       Row(
                         children: [
                           Text(
-                            '₹5,999',
+                            '₹6,999',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w700,
@@ -181,7 +232,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                             Navigator.of(dialogContext).pop(true);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: buttonBgColor,
+                            backgroundColor: buttonColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(22),
                             ),
@@ -212,7 +263,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                           },
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                              color: buttonBgColor,
+                              color: buttonColor,
                               width: 1,
                             ),
                             shape: RoundedRectangleBorder(
@@ -228,7 +279,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                               fontWeight: FontWeight.w500,
                               fontSize: 16,
                               letterSpacing: -0.18,
-                              color: buttonBgColor,
+                              color: buttonColor,
                             ),
                           ),
                         ),
@@ -246,7 +297,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
     );
   }
 
-  Widget _buildFeatureItem(String text, Color textColor, Color iconColor) {
+  Widget _buildFeatureItem(String text, bool isDark, Color textColor, Color iconColor) {
     return Row(
       children: [
         Icon(
@@ -281,23 +332,21 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
     final cardBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? AppColors.darkDivider : const Color(0xFF000000);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
-    final searchBarColor = isDark ? AppColors.darkSurface : Colors.white;
-    final searchBarBorderColor = isDark ? AppColors.darkDivider : const Color(0xFF000000);
-    final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFF000000);
 
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Stack(
         children: [
-          // Header
-          // Back Arrow - navigates to home
+          // Back Arrow
           Positioned(
             top: topPadding + 16,
             left: 16,
             child: GestureDetector(
               onTap: () {
-                context.go('/home?subscribed=${widget.isSubscribed}');
+                context.pop();
               },
               child: SizedBox(
                 width: 24,
@@ -311,14 +360,14 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
             ),
           ),
 
-          // Title "Practical Packages"
+          // Title
           Positioned(
             top: topPadding + 16,
             left: 0,
             right: 0,
             child: Center(
               child: Text(
-                'Practical Packages',
+                'Practical Series',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
@@ -361,10 +410,10 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
               width: double.infinity,
               height: 48,
               decoration: BoxDecoration(
-                color: searchBarColor,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: searchBarBorderColor,
+                  color: borderColor,
                   width: 1,
                 ),
               ),
@@ -382,7 +431,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                       opacity: 0.4,
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: 'Search through practical courses...',
+                          hintText: 'Search through practical series...',
                           hintStyle: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 12,
@@ -410,51 +459,124 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
             ),
           ),
 
-          // Package Cards List
+          // Series Cards List
           Positioned(
             top: topPadding + 116,
             left: 0,
             right: 0,
-            bottom: 100,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                // If subscribed, all items are unlocked. Otherwise only first item is unlocked
-                final isLocked = widget.isSubscribed ? false : index > 0;
+            bottom: 0,
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: iconColor,
+                    ),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: textColor.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Failed to load series',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _error!.replaceAll('Exception: ', ''),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  color: secondaryTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadSeries,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: iconColor,
+                                ),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _series.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No practical series available',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadSeries,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 15),
+                              itemCount: _series.length,
+                              itemBuilder: (context, index) {
+                                final series = _series[index];
+                                final isLocked = widget.isSubscribed ? false : index > 0;
 
-                return GestureDetector(
-                  onTap: () {
-                    if (isLocked) {
-                      _showEnrollmentPopup();
-                    } else {
-                      // Navigate to course detail screen
-                      context.push('/course/practical-${index + 1}');
-                    }
-                  },
-                  child: _buildPackageCard(
-                    context,
-                    'Practical Series ${_romanNumeral(index + 1)}',
-                    'Hands-on practical training with step-by-step video demonstrations and expert guidance.',
-                    '12 Videos',
-                    '21 Jan 2026',
-                    isLocked: isLocked,
-                    isDark: isDark,
-                    textColor: textColor,
-                    cardBgColor: cardBgColor,
-                    iconColor: iconColor,
-                    dividerColor: dividerColor,
-                  ),
-                );
-              },
-            ),
+                                return GestureDetector(
+                                  onTap: () {
+                                    if (isLocked) {
+                                      _showEnrollmentPopup();
+                                    } else {
+                                      // Navigate to available notes screen with seriesId
+                                      if (series.seriesId.isNotEmpty) {
+                                        debugPrint('Navigating to: /available-notes?seriesId=${series.seriesId}');
+                                        context.goNamed(
+                                          'available-notes',
+                                          queryParameters: {'seriesId': series.seriesId},
+                                        );
+                                      } else {
+                                        debugPrint('Error: Series ID is empty');
+                                      }
+                                    }
+                                  },
+                                  child: _buildSeriesCard(
+                                    context,
+                                    series.title,
+                                    series.description ?? 'Hands-on practical training with step-by-step demonstrations.',
+                                    '${series.totalLectures ?? 0} Videos',
+                                    series.createdAt != null
+                                        ? _formatDate(series.createdAt!)
+                                        : 'N/A',
+                                    isLocked: isLocked,
+                                    isDark: isDark,
+                                    textColor: textColor,
+                                    cardBgColor: cardBgColor,
+                                    iconColor: iconColor,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPackageCard(
+  Widget _buildSeriesCard(
     BuildContext context,
     String title,
     String description,
@@ -465,7 +587,6 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
     required Color textColor,
     required Color cardBgColor,
     required Color iconColor,
-    required Color dividerColor,
   }) {
     return Container(
       width: double.infinity,
@@ -544,7 +665,7 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
                   child: Container(
                     width: double.infinity,
                     height: 1,
-                    color: dividerColor,
+                    color: textColor,
                   ),
                 ),
 
@@ -596,18 +717,12 @@ class _PracticalPackageScreenState extends State<PracticalPackageScreen> {
     );
   }
 
-  String _romanNumeral(int number) {
-    switch (number) {
-      case 1:
-        return 'I';
-      case 2:
-        return 'II';
-      case 3:
-        return 'III';
-      case 4:
-        return 'IV';
-      default:
-        return '$number';
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return isoDate;
     }
   }
 }

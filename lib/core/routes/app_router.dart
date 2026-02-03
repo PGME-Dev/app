@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pgme/features/splash/screens/splash_screen.dart';
 import 'package:pgme/features/onboarding/screens/onboarding_screen.dart';
+import 'package:pgme/features/onboarding/screens/subject_selection_screen.dart';
+import 'package:pgme/features/onboarding/screens/congratulations_screen.dart' as onboarding;
 import 'package:pgme/features/auth/screens/login_screen.dart';
 import 'package:pgme/features/auth/screens/otp_verification_screen.dart';
 import 'package:pgme/features/auth/screens/data_collection_screen.dart';
@@ -20,7 +22,7 @@ import 'package:pgme/features/purchase/screens/congratulations_screen.dart';
 import 'package:pgme/features/purchase/screens/all_packages_screen.dart';
 import 'package:pgme/features/sessions/screens/session_details_screen.dart';
 import 'package:pgme/features/notes/screens/order_physical_books_screen.dart';
-import 'package:pgme/features/courses/screens/practical_package_screen.dart';
+import 'package:pgme/features/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features/courses/screens/revision_series_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
@@ -31,7 +33,8 @@ class AppRouter {
       return int.tryParse(uri.queryParameters['tab'] ?? '0') ?? 0;
     }
     if (location.startsWith('/notes') || location.startsWith('/available-notes')) return 2;
-    if (location.startsWith('/practical-packages')) return 1;
+    if (location.startsWith('/practical-series') ||
+        location.startsWith('/revision-series')) return 1;
     if (location.startsWith('/settings')) return 3;
     return 0;
   }
@@ -89,10 +92,9 @@ class AppRouter {
         path: '/otp-verification',
         name: 'otp-verification',
         pageBuilder: (context, state) {
-          final phoneNumber = state.extra as String? ?? '';
           return CustomTransitionPage(
             key: state.pageKey,
-            child: OTPVerificationScreen(phoneNumber: phoneNumber),
+            child: const OTPVerificationScreen(),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
@@ -120,6 +122,36 @@ class AppRouter {
               ).animate(animation),
               child: child,
             );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/subject-selection',
+        name: 'subject-selection',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SubjectSelectionScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/onboarding-complete',
+        name: 'onboarding-complete',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const onboarding.CongratulationsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
           },
         ),
       ),
@@ -265,10 +297,10 @@ class AppRouter {
             path: '/course/:id',
             name: 'course-detail',
             pageBuilder: (context, state) {
-              final courseId = state.pathParameters['id']!;
+              final seriesId = state.pathParameters['id']!;
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: CourseDetailScreen(courseId: courseId),
+                child: CourseDetailScreen(seriesId: seriesId),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -329,13 +361,13 @@ class AppRouter {
 
           // Available Notes
           GoRoute(
-            path: '/available-notes/:id',
+            path: '/available-notes',
             name: 'available-notes',
             pageBuilder: (context, state) {
-              final courseId = state.pathParameters['id']!;
+              final seriesId = state.uri.queryParameters['seriesId'] ?? '';
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: AvailableNotesScreen(courseId: courseId),
+                child: AvailableNotesScreen(seriesId: seriesId),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -425,15 +457,19 @@ class AppRouter {
             ),
           ),
 
-          // Practical Package
+          // Practical Series
           GoRoute(
-            path: '/practical-packages',
-            name: 'practical-packages',
+            path: '/practical-series',
+            name: 'practical-series',
             pageBuilder: (context, state) {
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: PracticalPackageScreen(isSubscribed: isSubscribed),
+                child: PracticalSeriesScreen(
+                  isSubscribed: isSubscribed,
+                  packageId: packageId,
+                ),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -453,9 +489,13 @@ class AppRouter {
             name: 'revision-series',
             pageBuilder: (context, state) {
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: RevisionSeriesScreen(isSubscribed: isSubscribed),
+                child: RevisionSeriesScreen(
+                  isSubscribed: isSubscribed,
+                  packageId: packageId,
+                ),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(

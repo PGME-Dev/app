@@ -1,9 +1,40 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
+
+// Custom date formatter for yyyy-mm-dd
+class DateInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+
+    // Remove all non-digit characters
+    final digitsOnly = text.replaceAll(RegExp(r'[^\d]'), '');
+
+    // Build formatted string
+    final buffer = StringBuffer();
+    for (int i = 0; i < digitsOnly.length && i < 8; i++) {
+      if (i == 4 || i == 6) {
+        buffer.write('-');
+      }
+      buffer.write(digitsOnly[i]);
+    }
+
+    final formatted = buffer.toString();
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class DataCollectionScreen extends StatefulWidget {
   const DataCollectionScreen({super.key});
@@ -17,38 +48,20 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _pgCollegeController = TextEditingController();
-  final TextEditingController _ugCollegeController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   bool _isLoading = false;
-  String? _selectedSpecialization;
-  String? _selectedYear;
+  String? _selectedGender;
+  DateTime? _selectedDate;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  final List<String> _specializations = [
-    'General Medicine',
-    'General Surgery',
-    'Pediatrics',
-    'Obstetrics & Gynecology',
-    'Orthopedics',
-    'Radiology',
-    'Pathology',
-    'Anesthesiology',
-    'Dermatology',
-    'Psychiatry',
-    'ENT',
-    'Ophthalmology',
+  final List<String> _genders = [
+    'Male',
+    'Female',
     'Other',
-  ];
-
-  final List<String> _years = [
-    '1st Year PG',
-    '2nd Year PG',
-    '3rd Year PG',
-    'Completed PG',
   ];
 
   @override
@@ -75,9 +88,8 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
     _animationController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _pgCollegeController.dispose();
-    _ugCollegeController.dispose();
-    _cityController.dispose();
+    _dobController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -86,20 +98,10 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
       return;
     }
 
-    if (_selectedSpecialization == null) {
+    if (_selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select your specialization'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedYear == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your year of study'),
+          content: Text('Please select your gender'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -110,20 +112,24 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
 
     try {
       final provider = context.read<AuthProvider>();
-      final success = await provider.submitUserData(
+
+      // Call backend API to update profile and complete onboarding
+      await provider.updateProfile(
         name: _nameController.text,
-        pgCollege: _pgCollegeController.text,
-        ugCollege: _ugCollegeController.text,
+        email: _emailController.text,
+        dateOfBirth: _dobController.text,
+        gender: _selectedGender!,
+        address: _addressController.text,
       );
 
-      if (success && mounted) {
-        context.go('/multiple-logins');
+      if (mounted) {
+        context.go('/subject-selection');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to submit data. Please try again.'),
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: AppColors.error,
           ),
         );
@@ -142,6 +148,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
     required IconData icon,
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,6 +196,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
                 controller: controller,
                 validator: validator,
                 keyboardType: keyboardType,
+                inputFormatters: inputFormatters,
                 cursorColor: Colors.black,
                 style: const TextStyle(
                   fontFamily: 'Poppins',
@@ -379,7 +387,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
                           // Skip button
                           GestureDetector(
                             onTap: () {
-                              context.go('/home');
+                              context.go('/subject-selection');
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -543,40 +551,25 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
 
                       const SizedBox(height: 16),
 
-                      _buildGlassDropdown(
-                        label: 'Specialization',
-                        hint: 'Select your specialization',
-                        items: _specializations,
-                        value: _selectedSpecialization,
-                        icon: Icons.medical_services_outlined,
-                        onChanged: (value) {
-                          setState(() => _selectedSpecialization = value);
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildGlassDropdown(
-                        label: 'Year of Study',
-                        hint: 'Select your current year',
-                        items: _years,
-                        value: _selectedYear,
-                        icon: Icons.school_outlined,
-                        onChanged: (value) {
-                          setState(() => _selectedYear = value);
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
                       _buildGlassTextField(
-                        label: 'PG College',
-                        hint: 'Enter your PG college name',
-                        controller: _pgCollegeController,
-                        icon: Icons.account_balance_outlined,
+                        label: 'Date of Birth',
+                        hint: 'YYYY-MM-DD (e.g., 1995-05-15)',
+                        controller: _dobController,
+                        icon: Icons.calendar_today_outlined,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          DateInputFormatter(),
+                          LengthLimitingTextInputFormatter(10), // yyyy-mm-dd = 10 chars
+                        ],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your PG college';
+                            return 'Please enter your date of birth';
+                          }
+                          // Basic date format validation
+                          final dateRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+                          if (!dateRegex.hasMatch(value)) {
+                            return 'Please use format: YYYY-MM-DD';
                           }
                           return null;
                         },
@@ -584,29 +577,27 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
 
                       const SizedBox(height: 16),
 
-                      _buildGlassTextField(
-                        label: 'UG College',
-                        hint: 'Enter your UG college name',
-                        controller: _ugCollegeController,
-                        icon: Icons.school_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your UG college';
-                          }
-                          return null;
+                      _buildGlassDropdown(
+                        label: 'Gender',
+                        hint: 'Select your gender',
+                        items: _genders,
+                        value: _selectedGender,
+                        icon: Icons.person_outline_rounded,
+                        onChanged: (value) {
+                          setState(() => _selectedGender = value);
                         },
                       ),
 
                       const SizedBox(height: 16),
 
                       _buildGlassTextField(
-                        label: 'City',
-                        hint: 'Enter your city',
-                        controller: _cityController,
-                        icon: Icons.location_city_outlined,
+                        label: 'Address',
+                        hint: 'Enter your address',
+                        controller: _addressController,
+                        icon: Icons.location_on_outlined,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your city';
+                            return 'Please enter your address';
                           }
                           return null;
                         },

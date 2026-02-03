@@ -3,9 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/core/models/module_model.dart';
+import 'package:pgme/core/models/series_document_model.dart';
 
 class LectureVideoScreen extends StatefulWidget {
-  final String courseId;
+  final String courseId; // This is actually seriesId from route
   final bool isSubscribed;
 
   const LectureVideoScreen({
@@ -19,9 +23,58 @@ class LectureVideoScreen extends StatefulWidget {
 }
 
 class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProviderStateMixin {
-  bool _module1Expanded = true;
-  bool _module2Expanded = false;
-  bool _module3Expanded = false;
+  final DashboardService _dashboardService = DashboardService();
+
+  SeriesModel? _series;
+  List<ModuleModel> _modules = [];
+  List<SeriesDocumentModel> _documents = [];
+  bool _isLoading = true;
+  String? _error;
+
+  Map<String, bool> _expandedModules = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Fetch series details, modules, and documents in parallel
+      final results = await Future.wait([
+        _dashboardService.getSeriesDetails(widget.courseId),
+        _dashboardService.getSeriesModules(widget.courseId),
+        _dashboardService.getSeriesDocuments(widget.courseId),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _series = results[0] as SeriesModel;
+          _modules = results[1] as List<ModuleModel>;
+          _documents = results[2] as List<SeriesDocumentModel>;
+          _isLoading = false;
+
+          // Initialize expanded state - expand first module by default
+          if (_modules.isNotEmpty) {
+            _expandedModules[_modules[0].moduleId] = true;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +121,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                           ),
                         ),
                         const SizedBox(width: 87),
-                        SizedBox(
-                          width: 139,
-                          height: 20,
+                        Expanded(
                           child: Text(
-                            'Anatomy Course',
+                            _series?.title ?? 'Course',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
@@ -82,6 +133,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                               letterSpacing: -0.5,
                               color: textColor,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const Spacer(),
@@ -135,20 +188,16 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                   // Video Title
                   Padding(
-                    padding: const EdgeInsets.only(left: 17),
-                    child: SizedBox(
-                      width: 90,
-                      height: 20,
-                      child: Text(
-                        'Video Title',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18,
-                          height: 1.0,
-                          letterSpacing: -0.5,
-                          color: textColor,
-                        ),
+                    padding: const EdgeInsets.only(left: 17, right: 17),
+                    child: Text(
+                      _getFirstVideoTitle() ?? _series?.title ?? 'Video Title',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        height: 1.0,
+                        letterSpacing: -0.5,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -157,20 +206,19 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                   // Description
                   Padding(
-                    padding: const EdgeInsets.only(left: 17),
-                    child: SizedBox(
-                      width: 360,
-                      child: Text(
-                        'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                          height: 1.43,
-                          letterSpacing: -0.5,
-                          color: secondaryTextColor,
-                        ),
+                    padding: const EdgeInsets.only(left: 17, right: 17),
+                    child: Text(
+                      _series?.description ?? 'Course description',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        height: 1.43,
+                        letterSpacing: -0.5,
+                        color: secondaryTextColor,
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
 
@@ -198,265 +246,140 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                   const SizedBox(height: 5),
 
-                  // Blue Notes Box
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Container(
-                      width: 359,
-                      height: 87,
-                      decoration: BoxDecoration(
-                        color: notesBoxColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 14),
-                          // White inner box
-                          Container(
-                            width: 62,
-                            height: 51,
-                            decoration: BoxDecoration(
-                              color: surfaceColor,
-                              borderRadius: BorderRadius.circular(9),
-                            ),
+                  // Notes Box - Only show if documents available
+                  if (_documents.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 16),
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to available notes
+                          context.push('/available-notes/${widget.courseId}');
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: notesBoxColor,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 16),
-                          // Note content
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Row(
                             children: [
-                              Text(
-                                'Human Heart',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  height: 1.0,
-                                  color: isDark ? Colors.white : const Color(0xFF000000),
+                              // Icon
+                              Container(
+                                width: 62,
+                                height: 51,
+                                decoration: BoxDecoration(
+                                  color: surfaceColor,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: Icon(
+                                  Icons.description_outlined,
+                                  color: iconColor,
+                                  size: 28,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              SizedBox(
-                                width: 250,
-                                child: Text(
-                                  'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 12,
-                                    height: 1.3,
-                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF000000).withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 11),
-
-                  // Module 1 Container (Expanded)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Container(
-                      width: 361,
-                      decoration: BoxDecoration(
-                        color: cardBgColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: isDark
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : const [
-                                BoxShadow(
-                                  color: Color(0x4D000000),
-                                  blurRadius: 3,
-                                  offset: Offset(0, 1),
-                                ),
-                                BoxShadow(
-                                  color: Color(0x26000000),
-                                  blurRadius: 8,
-                                  spreadRadius: 3,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                      ),
-                      child: AnimatedSize(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        child: Column(
-                          children: [
-                            // Module Header
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _module1Expanded = !_module1Expanded;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                child: Row(
+                              const SizedBox(width: 16),
+                              // Note content
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'MODULE 1: FOUNDATIONAL ANATOMY',
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              height: 1.0,
-                                              letterSpacing: -0.3,
-                                              color: textColor,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            '3 lessons  •  1/3 complete',
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontWeight: FontWeight.w400,
-                                              fontSize: 11,
-                                              height: 1.0,
-                                              color: textColor.withValues(alpha: 0.5),
-                                            ),
-                                          ),
-                                        ],
+                                    Text(
+                                      _getFirstDocument()?.title ?? 'Notes',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        height: 1.0,
+                                        color: isDark ? Colors.white : const Color(0xFF000000),
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    AnimatedRotation(
-                                      turns: _module1Expanded ? 0.5 : 0,
-                                      duration: const Duration(milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                      child: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        size: 24,
-                                        color: secondaryTextColor,
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _getFirstDocument()?.description ?? 'View course notes',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                        height: 1.3,
+                                        color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF000000).withValues(alpha: 0.6),
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
-                            // Lesson items (expanded)
-                            AnimatedCrossFade(
-                              firstChild: Column(
-                                children: [
-                                  // Lesson 1 - Always accessible (sample/completed)
-                                  _buildLessonItem(
-                                    isAccessible: true,
-                                    title: 'Introduction to Valvular Structures',
-                                    duration: '5:20',
-                                    instructor: 'Dr. Aviraj',
-                                    isDark: isDark,
-                                    textColor: textColor,
-                                    iconColor: iconColor,
-                                    lessonAccessibleBg: lessonAccessibleBg,
-                                    lessonLockedBg: lessonLockedBg,
-                                    onTap: () {
-                                      context.push('/video/1');
-                                    },
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // Lesson 2 - Unlocked for subscribed, locked for guests
-                                  _buildLessonItem(
-                                    isAccessible: widget.isSubscribed,
-                                    title: 'Introduction to Valvular Structures',
-                                    duration: '12:45',
-                                    instructor: 'Dr. Aviraj',
-                                    isDark: isDark,
-                                    textColor: textColor,
-                                    iconColor: iconColor,
-                                    lessonAccessibleBg: lessonAccessibleBg,
-                                    lessonLockedBg: lessonLockedBg,
-                                    onTap: widget.isSubscribed ? () => context.push('/video/2') : null,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // Lesson 3 - Unlocked for subscribed, locked for guests
-                                  _buildLessonItem(
-                                    isAccessible: widget.isSubscribed,
-                                    title: 'Introduction to Valvular Structures',
-                                    duration: '12:45',
-                                    instructor: 'Dr. Aviraj',
-                                    isDark: isDark,
-                                    textColor: textColor,
-                                    iconColor: iconColor,
-                                    lessonAccessibleBg: lessonAccessibleBg,
-                                    lessonLockedBg: lessonLockedBg,
-                                    onTap: widget.isSubscribed ? () => context.push('/video/3') : null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
-                              secondChild: const SizedBox.shrink(),
-                              crossFadeState: _module1Expanded
-                                  ? CrossFadeState.showFirst
-                                  : CrossFadeState.showSecond,
-                              duration: const Duration(milliseconds: 300),
-                              sizeCurve: Curves.easeInOut,
+                  const SizedBox(height: 11),
+
+                  // Dynamic Modules List
+                  if (_isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (_error != null)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                            const SizedBox(height: 16),
+                            Text('Failed to load modules', style: TextStyle(color: textColor)),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadData,
+                              child: const Text('Retry'),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
+                    )
+                  else if (_modules.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Text('No modules available', style: TextStyle(color: secondaryTextColor)),
+                      ),
+                    )
+                  else
+                    ..._modules.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final module = entry.value;
+                      final isExpanded = _expandedModules[module.moduleId] ?? false;
 
-                  const SizedBox(height: 7),
-
-                  // Module 2 - Locked for unsubscribed, unlocked for subscribed
-                  _buildModule(
-                    title: 'MODULE 2: PATHOLOGICAL SOMETHING',
-                    lessons: '3 lessons',
-                    progress: '1/3 complete',
-                    isExpanded: _module2Expanded,
-                    isLocked: !widget.isSubscribed,
-                    isDark: isDark,
-                    textColor: textColor,
-                    cardBgColor: cardBgColor,
-                    iconColor: iconColor,
-                    secondaryTextColor: secondaryTextColor,
-                    lessonAccessibleBg: lessonAccessibleBg,
-                    lessonLockedBg: lessonLockedBg,
-                    onTap: () {
-                      setState(() {
-                        _module2Expanded = !_module2Expanded;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 7),
-
-                  // Module 3 - Locked for unsubscribed, unlocked for subscribed
-                  _buildModule(
-                    title: 'MODULE 3: PATHOLOGICAL SOMETHING',
-                    lessons: '3 lessons',
-                    progress: '1/3 complete',
-                    isExpanded: _module3Expanded,
-                    isLocked: !widget.isSubscribed,
-                    isDark: isDark,
-                    textColor: textColor,
-                    cardBgColor: cardBgColor,
-                    iconColor: iconColor,
-                    secondaryTextColor: secondaryTextColor,
-                    lessonAccessibleBg: lessonAccessibleBg,
-                    lessonLockedBg: lessonLockedBg,
-                    onTap: () {
-                      setState(() {
-                        _module3Expanded = !_module3Expanded;
-                      });
-                    },
-                  ),
+                      return Padding(
+                        padding: EdgeInsets.only(left: 16, right: 16, bottom: index < _modules.length - 1 ? 7 : 0),
+                        child: _buildModuleCard(
+                          module: module,
+                          isExpanded: isExpanded,
+                          isDark: isDark,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          cardBgColor: cardBgColor,
+                          iconColor: iconColor,
+                          lessonAccessibleBg: lessonAccessibleBg,
+                          lessonLockedBg: lessonLockedBg,
+                          onTap: () {
+                            setState(() {
+                              _expandedModules[module.moduleId] = !isExpanded;
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
 
                   const SizedBox(height: 24),
 
@@ -639,6 +562,149 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     );
   }
 
+  Widget _buildModuleCard({
+    required ModuleModel module,
+    required bool isExpanded,
+    required VoidCallback onTap,
+    required bool isDark,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color cardBgColor,
+    required Color iconColor,
+    required Color lessonAccessibleBg,
+    required Color lessonLockedBg,
+  }) {
+    final videoCount = module.videos.length;
+    final completedCount = module.completedLessons;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x4D000000),
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color(0x26000000),
+                  blurRadius: 8,
+                  spreadRadius: 3,
+                  offset: Offset(0, 4),
+                ),
+              ],
+      ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: Column(
+          children: [
+            // Module Header
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            module.name.toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              height: 1.0,
+                              letterSpacing: -0.3,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '$videoCount ${videoCount == 1 ? 'lesson' : 'lessons'}  •  $completedCount/$videoCount complete',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: 11,
+                              height: 1.0,
+                              color: textColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 24,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Videos list
+            AnimatedCrossFade(
+              firstChild: Column(
+                children: [
+                  ...module.videos.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final video = entry.value;
+                    // First video is always accessible, others require subscription
+                    final isAccessible = index == 0 || widget.isSubscribed;
+
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        left: 14,
+                        right: 14,
+                        bottom: index < module.videos.length - 1 ? 8 : 16,
+                      ),
+                      child: _buildLessonItem(
+                        isAccessible: isAccessible,
+                        title: video.title,
+                        duration: video.formattedDuration,
+                        instructor: video.facultyName,
+                        isDark: isDark,
+                        textColor: textColor,
+                        iconColor: iconColor,
+                        lessonAccessibleBg: lessonAccessibleBg,
+                        lessonLockedBg: lessonLockedBg,
+                        onTap: isAccessible ? () => context.push('/video/${video.videoId}') : null,
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              duration: const Duration(milliseconds: 300),
+              sizeCurve: Curves.easeInOut,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildModule({
     required String title,
     required String lessons,
@@ -814,5 +880,21 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         ),
       ),
     );
+  }
+
+  // Helper method to get first video title
+  String? _getFirstVideoTitle() {
+    if (_modules.isEmpty) return null;
+    for (var module in _modules) {
+      if (module.videos.isNotEmpty) {
+        return module.videos.first.title;
+      }
+    }
+    return null;
+  }
+
+  // Helper method to get first document for notes section
+  SeriesDocumentModel? _getFirstDocument() {
+    return _documents.isNotEmpty ? _documents.first : null;
   }
 }

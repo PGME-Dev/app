@@ -3,13 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/series_document_model.dart';
+import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/core/models/package_model.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
-  final String courseId;
+  final String seriesId;
 
   const AvailableNotesScreen({
     super.key,
-    required this.courseId,
+    required this.seriesId,
   });
 
   @override
@@ -17,7 +21,71 @@ class AvailableNotesScreen extends StatefulWidget {
 }
 
 class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
+  final DashboardService _dashboardService = DashboardService();
+
+  List<SeriesDocumentModel> _documents = [];
+  SeriesModel? _series;
+  PackageModel? _package;
+  bool _isLoading = true;
+  String? _error;
+
   int? _expandedIndex = 0; // First card expanded by default
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Fetch series details and documents in parallel
+      final results = await Future.wait([
+        _dashboardService.getSeriesDetails(widget.seriesId),
+        _dashboardService.getSeriesDocuments(widget.seriesId),
+      ]);
+
+      final series = results[0] as SeriesModel;
+      final documents = results[1] as List<SeriesDocumentModel>;
+
+      // Fetch packages for the series subject if available
+      PackageModel? package;
+      if (series.subject?.subjectId != null) {
+        try {
+          final packages = await _dashboardService.getPackages(
+            subjectId: series.subject!.subjectId,
+            packageType: 'Theory',
+          );
+          if (packages.isNotEmpty) {
+            package = packages.first;
+          }
+        } catch (e) {
+          debugPrint('Failed to load package: $e');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _series = series;
+          _documents = documents;
+          _package = package;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _showEnrollmentPopup() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -103,7 +171,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
             // Title
             Text(
-              'Get the Theory\nPackage',
+              _package != null ? 'Get the\n${_package!.name}' : 'Get the Theory\nPackage',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
@@ -121,7 +189,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Access theory modules, recorded lectures, and expert study resources',
+                _package?.description ?? 'Access theory modules, recorded lectures, and expert study resources',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
@@ -152,7 +220,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Theory Package',
+                    _package?.name ?? 'Theory Package',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -161,12 +229,20 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildFeatureItem('Full access to theory content', isDark, textColor, iconColor, featureBgColor),
+                  ...(_package?.features?.isNotEmpty == true
+                      ? _package!.features!.take(3).map((feature) =>
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _buildFeatureItem(feature, isDark, textColor, iconColor, featureBgColor),
+                          ))
+                      : [
+                          _buildFeatureItem('Full access to theory content', isDark, textColor, iconColor, featureBgColor),
+                          const SizedBox(height: 8),
+                          _buildFeatureItem('Downloadable study materials', isDark, textColor, iconColor, featureBgColor),
+                          const SizedBox(height: 8),
+                          _buildFeatureItem('MCQ practice sets', isDark, textColor, iconColor, featureBgColor),
+                        ]),
                   const SizedBox(height: 8),
-                  _buildFeatureItem('Full access to theory content', isDark, textColor, iconColor, featureBgColor),
-                  const SizedBox(height: 8),
-                  _buildFeatureItem('Full access to theory content', isDark, textColor, iconColor, featureBgColor),
-                  const SizedBox(height: 16),
                   Divider(height: 1, color: borderColor),
                   const SizedBox(height: 16),
                   // Price
@@ -174,8 +250,21 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
+                      if (_package?.isOnSale == true && _package!.salePrice != null) ...[
+                        Text(
+                          '₹${_package!.originalPrice?.toStringAsFixed(0) ?? _package!.price.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                            decoration: TextDecoration.lineThrough,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Text(
-                        '₹4,999',
+                        '₹${_package?.salePrice?.toStringAsFixed(0) ?? _package?.price.toStringAsFixed(0) ?? '4,999'}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
@@ -187,7 +276,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '/ 3 months',
+                        '/ ${_package?.durationDays != null ? '${(_package!.durationDays! / 30).round()} months' : '3 months'}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
@@ -198,15 +287,16 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    'Limited Time Offer',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      color: secondaryTextColor,
+                  if (_package?.isOnSale == true)
+                    Text(
+                      'Limited Time Offer',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        color: secondaryTextColor,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 16),
                   // Enroll Now button
                   SizedBox(
@@ -409,28 +499,73 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
           // Notes List
           Expanded(
-            child: ClipRect(
-              clipBehavior: Clip.none,
-              child: ListView.builder(
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 120),
-                clipBehavior: Clip.none,
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  // First note is unlocked, rest are locked
-                  final isLocked = index > 0;
-                  return _buildNoteCard(
-                    context,
-                    index: index,
-                    isExpanded: _expandedIndex == index,
-                    isLocked: isLocked,
-                    isDark: isDark,
-                    textColor: textColor,
-                    cardBgColor: cardBgColor,
-                    iconColor: iconColor,
-                  );
-                },
-              ),
-            ),
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: iconColor),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load notes',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadData,
+                              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _documents.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.description_outlined, size: 48, color: secondaryTextColor),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No notes available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ClipRect(
+                            clipBehavior: Clip.none,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 120),
+                              clipBehavior: Clip.none,
+                              itemCount: _documents.length,
+                              itemBuilder: (context, index) {
+                                final document = _documents[index];
+                                return _buildNoteCard(
+                                  context,
+                                  document: document,
+                                  index: index,
+                                  isExpanded: _expandedIndex == index,
+                                  isDark: isDark,
+                                  textColor: textColor,
+                                  cardBgColor: cardBgColor,
+                                  iconColor: iconColor,
+                                );
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -439,14 +574,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
   Widget _buildNoteCard(
     BuildContext context, {
+    required SeriesDocumentModel document,
     required int index,
     required bool isExpanded,
-    required bool isLocked,
     required bool isDark,
     required Color textColor,
     required Color cardBgColor,
     required Color iconColor,
   }) {
+    final isLocked = !document.isFree;
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE8E8E8);
     final lockBadgeBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
@@ -546,7 +682,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Human Heart',
+                                document.title,
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,
@@ -588,7 +724,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu',
+                          document.description ?? 'No description available',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
@@ -596,6 +732,8 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             height: 1.4,
                             color: textColor.withValues(alpha: 0.5),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

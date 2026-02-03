@@ -3,17 +3,62 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/series_model.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
+  final String? packageId;
 
-  const RevisionSeriesScreen({super.key, this.isSubscribed = false});
+  const RevisionSeriesScreen({
+    super.key,
+    this.isSubscribed = false,
+    this.packageId,
+  });
 
   @override
   State<RevisionSeriesScreen> createState() => _RevisionSeriesScreenState();
 }
 
 class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
+  final DashboardService _dashboardService = DashboardService();
+  List<SeriesModel> _series = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.packageId != null) {
+      _loadSeries();
+    } else {
+      // Use hardcoded data if no packageId provided
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadSeries() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final series = await _dashboardService.getPackageSeries(widget.packageId!);
+
+      setState(() {
+        _series = series;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
   void _showEnrollmentPopup() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
@@ -314,10 +359,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
           // Title "Theory Packages"
           Positioned(
             top: topPadding + 16,
-            left: 114,
-            child: SizedBox(
-              width: 166,
-              height: 20,
+            left: 0,
+            right: 0,
+            child: Center(
               child: Text(
                 'Theory Packages',
                 textAlign: TextAlign.center,
@@ -416,36 +460,138 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             left: 0,
             right: 0,
             bottom: 100,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                // If subscribed, all items are unlocked. Otherwise only first item is unlocked
-                final isLocked = widget.isSubscribed ? false : index > 0;
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: iconColor,
+                    ),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: textColor.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Failed to load series',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _error!.replaceAll('Exception: ', ''),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  color: secondaryTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadSeries,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: iconColor,
+                                ),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : widget.packageId != null && _series.isNotEmpty
+                        ? ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            itemCount: _series.length,
+                            itemBuilder: (context, index) {
+                              final series = _series[index];
+                              // If subscribed, all items are unlocked. Otherwise only first item is unlocked
+                              final isLocked = widget.isSubscribed ? false : index > 0;
 
-                return GestureDetector(
-                  onTap: () {
-                    if (isLocked) {
-                      _showEnrollmentPopup();
-                    } else {
-                      context.push('/home?tab=2&subscribed=${widget.isSubscribed}');
-                    }
-                  },
-                  child: _buildPackageCard(
-                    context,
-                    'TECOM Revision Series ${_romanNumeral(index + 1)}',
-                    'dolore non sit quis laboris deserunt non duis occaecat anim aute occaecat minim sit esse do exercitation velit',
-                    '8 Pages',
-                    '21 Jan 2026',
-                    isLocked: isLocked,
-                    isDark: isDark,
-                    textColor: textColor,
-                    cardBgColor: cardBgColor,
-                    iconColor: iconColor,
-                  ),
-                );
-              },
-            ),
+                              return GestureDetector(
+                                onTap: () {
+                                  if (isLocked) {
+                                    _showEnrollmentPopup();
+                                  } else {
+                                    // Navigate to available notes screen with seriesId
+                                    final seriesId = widget.packageId != null && _series.isNotEmpty
+                                        ? series.seriesId
+                                        : '';
+                                    if (seriesId.isNotEmpty) {
+                                      debugPrint('Navigating to: /available-notes?seriesId=$seriesId');
+                                      context.goNamed(
+                                        'available-notes',
+                                        queryParameters: {'seriesId': seriesId},
+                                      );
+                                    } else {
+                                      debugPrint('Error: Series ID is empty');
+                                    }
+                                  }
+                                },
+                                child: _buildPackageCard(
+                                  context,
+                                  series.title,
+                                  series.description ?? 'No description available',
+                                  '${series.totalLectures} Lectures',
+                                  series.createdAt != null
+                                      ? _formatDate(series.createdAt!)
+                                      : 'N/A',
+                                  isLocked: isLocked,
+                                  isDark: isDark,
+                                  textColor: textColor,
+                                  cardBgColor: cardBgColor,
+                                  iconColor: iconColor,
+                                ),
+                              );
+                            },
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            itemCount: 4,
+                            itemBuilder: (context, index) {
+                              // Fallback to hardcoded data if no packageId
+                              final isLocked = widget.isSubscribed ? false : index > 0;
+
+                              return GestureDetector(
+                                onTap: () {
+                                  if (isLocked) {
+                                    _showEnrollmentPopup();
+                                  } else {
+                                    // Hardcoded data - cannot navigate without real series ID
+                                    debugPrint('Error: Cannot navigate - no real series data available');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please provide a package ID to load real series data'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: _buildPackageCard(
+                                  context,
+                                  'TECOM Revision Series ${_romanNumeral(index + 1)}',
+                                  'dolore non sit quis laboris deserunt non duis occaecat anim aute occaecat minim sit esse do exercitation velit',
+                                  '8 Pages',
+                                  '21 Jan 2026',
+                                  isLocked: isLocked,
+                                  isDark: isDark,
+                                  textColor: textColor,
+                                  cardBgColor: cardBgColor,
+                                  iconColor: iconColor,
+                                ),
+                              );
+                            },
+                          ),
           ),
         ],
       ),
@@ -605,6 +751,29 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         return 'IV';
       default:
         return '$number';
+    }
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return isoDate;
     }
   }
 }

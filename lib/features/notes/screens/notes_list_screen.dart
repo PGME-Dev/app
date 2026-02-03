@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/models/subject_selection_model.dart';
+import 'package:pgme/core/models/package_model.dart';
 
 class NotesListScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -17,6 +20,51 @@ class NotesListScreen extends StatefulWidget {
 }
 
 class _NotesListScreenState extends State<NotesListScreen> {
+  final DashboardService _dashboardService = DashboardService();
+  SubjectSelectionModel? _primarySubject;
+  List<PackageModel> _packages = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Fetch subject selections and packages in parallel
+      final results = await Future.wait([
+        _dashboardService.getSubjectSelections(isPrimary: true),
+        _dashboardService.getPackages(),
+      ]);
+
+      if (mounted) {
+        final subjectSelections = results[0] as List<SubjectSelectionModel>;
+        final packages = results[1] as List<PackageModel>;
+
+        setState(() {
+          _primarySubject = subjectSelections.isNotEmpty ? subjectSelections.first : null;
+          _packages = packages;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -322,11 +370,12 @@ class _NotesListScreenState extends State<NotesListScreen> {
               left: 10,
               child: GestureDetector(
                 onTap: () {
-                  // Navigate to lecture video for subscribed, sample lecture for guests
+                  // Navigate to lecture video
+                  // Using Anatomy - Fundamentals series as default
                   if (isSubscribed) {
-                    context.push('/lecture/1?subscribed=true');
+                    context.push('/lecture/6981eb434c02eb97b950ecdb?subscribed=true');
                   } else {
-                    context.push('/lecture/sample');
+                    context.push('/lecture/6981eb434c02eb97b950ecdb');
                   }
                 },
                 child: Container(
@@ -365,12 +414,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          // Navigate to available notes for both subscribed and guests
-          if (isSubscribed) {
-            context.push('/available-notes/1');
-          } else {
-            context.push('/available-notes/sample');
-          }
+          // Navigate to available notes with valid series ID
+          // Using Anatomy - Fundamentals series as default
+          context.push('/available-notes/6981eb434c02eb97b950ecdb');
         },
         child: Container(
           height: 211,

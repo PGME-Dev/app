@@ -48,8 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onSkip() {
-    context.read<OnboardingProvider>().completeOnboarding();
-    context.go('/login');
+    // Skip carousel and go to subject selection
+    context.go('/subject-selection');
   }
 
   void _onNext() {
@@ -60,8 +60,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      provider.completeOnboarding();
-      context.go('/login');
+      // Last screen - navigate to subject selection
+      context.go('/subject-selection');
     }
   }
 
@@ -161,13 +161,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Next',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                child: Consumer<OnboardingProvider>(
+                  builder: (context, provider, _) {
+                    final isLastPage = provider.currentPage == _pages.length - 1;
+                    return Text(
+                      isLastPage ? 'Get Started' : 'Next',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
