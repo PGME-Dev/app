@@ -158,27 +158,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         backgroundColor: backgroundColor,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load profile',
-                style: TextStyle(fontSize: 16, color: textColor),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: TextStyle(fontSize: 14, color: secondaryTextColor),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadData,
-                child: const Text('Retry'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                const SizedBox(height: 16),
+                Text(
+                  'Failed to load profile',
+                  style: TextStyle(fontSize: 16, color: textColor),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: TextStyle(fontSize: 14, color: secondaryTextColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                    const SizedBox(width: 16),
+                    OutlinedButton(
+                      onPressed: _handleLogout,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Log Out'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );

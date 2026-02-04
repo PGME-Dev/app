@@ -50,7 +50,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final success = await provider.verifyOTP(_otp);
 
       if (success && mounted) {
-        if (provider.onboardingCompleted) {
+        // Check if there are multiple active sessions
+        if (provider.hasMultipleSessions) {
+          context.go('/multiple-logins');
+        } else if (provider.onboardingCompleted) {
           context.go('/home');
         } else {
           context.go('/data-collection');

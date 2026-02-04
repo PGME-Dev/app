@@ -16,12 +16,18 @@ class AuthProvider with ChangeNotifier {
   bool _onboardingCompleted = false;
   bool _isInitialized = false;
   String? _msg91ReqId; // Store MSG91 request ID for OTP verification
+  List<Map<String, dynamic>> _activeSessions = [];
+  bool _hasMultipleSessions = false;
+  String? _currentSessionId;
 
   UserModel? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
   bool get onboardingCompleted => _onboardingCompleted;
   bool get isInitialized => _isInitialized;
   String? get msg91ReqId => _msg91ReqId;
+  List<Map<String, dynamic>> get activeSessions => _activeSessions;
+  bool get hasMultipleSessions => _hasMultipleSessions;
+  String? get currentSessionId => _currentSessionId;
 
   AuthProvider() {
     _initializeMSG91();
@@ -144,6 +150,22 @@ class AuthProvider with ChangeNotifier {
       _user = authResponse.user;
       _isAuthenticated = true;
       _onboardingCompleted = authResponse.user.onboardingCompleted;
+      _currentSessionId = authResponse.sessionId;
+
+      // Step 5: Check for other active sessions
+      try {
+        _activeSessions = await _authService.getActiveSessions();
+        // Filter out current session - only count OTHER devices
+        final otherSessions = _activeSessions.where(
+          (s) => s['session_id'] != _currentSessionId,
+        ).toList();
+        _hasMultipleSessions = otherSessions.isNotEmpty;
+        debugPrint('Active sessions: ${_activeSessions.length}, Other devices: ${otherSessions.length}');
+      } catch (e) {
+        debugPrint('Failed to check active sessions: $e');
+        _hasMultipleSessions = false;
+      }
+
       notifyListeners();
 
       return true;
@@ -197,6 +219,9 @@ class AuthProvider with ChangeNotifier {
       _isAuthenticated = false;
       _onboardingCompleted = false;
       _msg91ReqId = null;
+      _activeSessions = [];
+      _hasMultipleSessions = false;
+      _currentSessionId = null;
       notifyListeners();
     }
   }
@@ -238,9 +263,52 @@ class AuthProvider with ChangeNotifier {
   Future<void> logoutDeviceSession(String sessionId) async {
     try {
       await _authService.logoutDeviceSession(sessionId);
+      // Remove from local list
+      _activeSessions.removeWhere((s) => s['session_id'] == sessionId);
+      // Recheck if multiple sessions still exist
+      final otherSessions = _activeSessions.where(
+        (s) => s['session_id'] != _currentSessionId,
+      ).toList();
+      _hasMultipleSessions = otherSessions.isNotEmpty;
+      notifyListeners();
     } catch (e) {
       debugPrint('Logout device error: $e');
       throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  /// Refresh active sessions list
+  Future<void> refreshActiveSessions() async {
+    try {
+      _activeSessions = await _authService.getActiveSessions();
+      final otherSessions = _activeSessions.where(
+        (s) => s['session_id'] != _currentSessionId,
+      ).toList();
+      _hasMultipleSessions = otherSessions.isNotEmpty;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Refresh sessions error: $e');
+    }
+  }
+
+  /// Clear multiple sessions flag (after user acknowledges)
+  void clearMultipleSessionsFlag() {
+    _hasMultipleSessions = false;
+    notifyListeners();
+  }
+
+  /// Check if current session is still valid
+  /// Returns true if valid, false if session was invalidated
+  Future<bool> checkSessionValidity() async {
+    try {
+      // Try to fetch user profile - if session is invalid, this will fail with 401
+      await _userService.getProfile();
+      return true;
+    } catch (e) {
+      debugPrint('Session validity check failed: $e');
+      // If we get here, session might be invalid
+      // The API interceptor will handle 401 and clear tokens
+      return false;
     }
   }
 }

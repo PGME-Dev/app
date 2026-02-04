@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
@@ -8,6 +9,7 @@ import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/notes/screens/notes_list_screen.dart';
 import 'package:pgme/features/notes/screens/your_notes_screen.dart';
 import 'package:pgme/features/settings/screens/profile_screen.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -23,13 +25,42 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Check session validity when app comes to foreground
+    if (state == AppLifecycleState.resumed) {
+      _checkSessionValidity();
+    }
+  }
+
+  Future<void> _checkSessionValidity() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final isValid = await authProvider.checkSessionValidity();
+      if (!isValid && mounted) {
+        // Session is invalid, redirect to login
+        context.go('/login');
+      }
+    } catch (e) {
+      debugPrint('Session check error: $e');
+    }
   }
 
   @override
