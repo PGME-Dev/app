@@ -44,6 +44,9 @@ class SeriesModel {
   @JsonKey(name: 'is_free', defaultValue: false)
   final bool? isFree;
 
+  @JsonKey(name: 'is_locked', defaultValue: false)
+  final bool isLocked;
+
   SeriesModel({
     required this.seriesId,
     required this.title,
@@ -59,6 +62,7 @@ class SeriesModel {
     this.thumbnailUrl,
     this.totalDurationMinutes,
     this.isFree,
+    this.isLocked = false,
   });
 
   factory SeriesModel.fromJson(Map<String, dynamic> json) =>
@@ -77,6 +81,7 @@ class SeriesModel {
     int? totalDurationMinutes,
     int? sequenceNumber,
     bool? isFree,
+    bool? isLocked,
     String? createdAt,
   }) {
     return SeriesModel(
@@ -90,6 +95,7 @@ class SeriesModel {
       totalDurationMinutes: totalDurationMinutes ?? this.totalDurationMinutes,
       sequenceNumber: sequenceNumber ?? this.sequenceNumber,
       isFree: isFree ?? this.isFree,
+      isLocked: isLocked ?? this.isLocked,
       createdAt: createdAt ?? this.createdAt,
     );
   }

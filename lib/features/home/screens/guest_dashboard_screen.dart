@@ -40,7 +40,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    const phoneNumber = '+919630000080';
+    const phoneNumber = '+918074220727';
     const message = 'Hi, I need help with PGME app';
     final whatsappUrl = 'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}';
 
@@ -148,54 +148,62 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             ],
                           ),
                         ),
-                        // Notification and WhatsApp Icons
+                        // Get Help Button and Notification
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Notification Icon
                             GestureDetector(
-                              onTap: () {
-                                // Open notifications
-                              },
+                              onTap: _openWhatsApp,
                               child: Container(
-                                width: 40,
-                                height: 40,
+                                width: 103,
+                                height: 31,
                                 decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkCardBackground : const Color(0xFFF5F5F5),
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: const Color(0xFF138808),
+                                    width: 2,
+                                  ),
                                 ),
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  size: 24,
-                                  color: textColor,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Get Help',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                        height: 20 / 14,
+                                        letterSpacing: -0.5,
+                                        color: Color(0xFF138808),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Image.asset(
+                                      'assets/icons/whatsapp_logo.png',
+                                      width: 20,
+                                      height: 20,
+                                      color: const Color(0xFF138808),
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.chat,
+                                          size: 18,
+                                          color: Color(0xFF138808),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
-                            // WhatsApp Icon
+                            // Notification Icon
                             GestureDetector(
-                              onTap: _openWhatsApp,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF25D366),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Center(
-                                  child: Image.asset(
-                                    'assets/icons/whatsapp_logo.png',
-                                    width: 24,
-                                    height: 24,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.chat,
-                                        size: 20,
-                                        color: Colors.white,
-                                      );
-                                    },
-                                  ),
-                                ),
+                              onTap: () => context.push('/notifications'),
+                              child: Icon(
+                                Icons.notifications_outlined,
+                                size: 24,
+                                color: textColor,
                               ),
                             ),
                           ],

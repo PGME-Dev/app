@@ -9,6 +9,7 @@ import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/features/settings/providers/subscription_provider.dart';
+import 'package:pgme/features/notifications/providers/notification_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => BookProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

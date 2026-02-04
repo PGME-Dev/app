@@ -141,7 +141,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   );
                 }
 
-                final primaryPlan = provider.primarySubscription;
                 final activePurchases = provider.activePurchases;
                 final expiredPurchases = provider.expiredPurchases;
 
@@ -149,139 +148,179 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   onRefresh: provider.refresh,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(top: 20, left: 16, right: 16, bottom: bottomPadding + 20),
+                    padding: EdgeInsets.only(top: 20, bottom: bottomPadding + 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Current Plan Card
-                        if (primaryPlan != null)
-                          _buildCurrentPlanCard(primaryPlan, isDark, primaryColor)
-                        else
-                          _buildNoPlanCard(isDark, cardBgColor, textColor, secondaryTextColor, primaryColor),
-
-                        const SizedBox(height: 24),
-
-                        // Plan Details Section (only if has active plan)
-                        if (primaryPlan != null) ...[
-                          Text(
-                            'Plan Details',
+                        // Active Plans Section
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Active Plans',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          _buildPlanDetailsCard(primaryPlan, isDark, cardBgColor, textColor, primaryColor),
-                          const SizedBox(height: 24),
-                        ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Active Plan Cards - Horizontally Scrollable
+                        if (activePurchases.isNotEmpty)
+                          SizedBox(
+                            height: 145,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: activePurchases.length,
+                              itemBuilder: (context, index) {
+                                final purchase = activePurchases[index];
+                                final isLast = index == activePurchases.length - 1;
+                                return Padding(
+                                  padding: EdgeInsets.only(right: isLast ? 0 : 12),
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: _buildActivePlanCard(purchase, isDark, primaryColor),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildNoPlanCard(isDark, cardBgColor, textColor, secondaryTextColor, primaryColor),
+                          ),
+
+                        const SizedBox(height: 20),
 
                         // Subscription History Section
-                        Text(
-                          'Subscription History',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Subscription History',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
 
-                        if (activePurchases.isEmpty && expiredPurchases.isEmpty)
-                          _buildEmptyHistory(secondaryTextColor)
-                        else ...[
-                          // Active subscriptions
-                          ...activePurchases.map((purchase) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildHistoryItem(
-                                  purchase: purchase,
-                                  isActive: true,
-                                  isDark: isDark,
-                                  cardBgColor: cardBgColor,
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                  primaryColor: primaryColor,
-                                  dividerColor: dividerColor,
-                                ),
-                              )),
-                          // Expired subscriptions
-                          ...expiredPurchases.map((purchase) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildHistoryItem(
-                                  purchase: purchase,
-                                  isActive: false,
-                                  isDark: isDark,
-                                  cardBgColor: cardBgColor,
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                  primaryColor: primaryColor,
-                                  dividerColor: dividerColor,
-                                ),
-                              )),
-                        ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              if (activePurchases.isEmpty && expiredPurchases.isEmpty)
+                                _buildEmptyHistory(secondaryTextColor)
+                              else ...[
+                                // Active subscriptions
+                                ...activePurchases.map((purchase) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _buildHistoryItem(
+                                        purchase: purchase,
+                                        isActive: true,
+                                        isDark: isDark,
+                                        cardBgColor: cardBgColor,
+                                        textColor: textColor,
+                                        secondaryTextColor: secondaryTextColor,
+                                        primaryColor: primaryColor,
+                                        dividerColor: dividerColor,
+                                      ),
+                                    )),
+                                // Expired subscriptions
+                                ...expiredPurchases.map((purchase) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _buildHistoryItem(
+                                        purchase: purchase,
+                                        isActive: false,
+                                        isDark: isDark,
+                                        cardBgColor: cardBgColor,
+                                        textColor: textColor,
+                                        secondaryTextColor: secondaryTextColor,
+                                        primaryColor: primaryColor,
+                                        dividerColor: dividerColor,
+                                      ),
+                                    )),
+                              ],
+                            ],
+                          ),
+                        ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // Actions Section
-                        Text(
-                          'Actions',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Actions',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
 
                         // Action Buttons
-                        _buildActionItem(
-                          icon: Icons.upgrade_outlined,
-                          title: provider.hasActiveSubscription ? 'Upgrade Plan' : 'Get a Plan',
-                          subtitle: provider.hasActiveSubscription
-                              ? 'Get access to more features'
-                              : 'Subscribe to unlock premium content',
-                          onTap: () {
-                            context.push('/all-packages');
-                          },
-                          isDark: isDark,
-                          cardBgColor: cardBgColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          primaryColor: primaryColor,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              _buildActionItem(
+                                icon: Icons.upgrade_outlined,
+                                title: provider.hasActiveSubscription ? 'Upgrade Plan' : 'Get a Plan',
+                                subtitle: provider.hasActiveSubscription
+                                    ? 'Get access to more features'
+                                    : 'Subscribe to unlock premium content',
+                                onTap: () {
+                                  context.push('/all-packages');
+                                },
+                                isDark: isDark,
+                                cardBgColor: cardBgColor,
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                                primaryColor: primaryColor,
+                              ),
+                              if (provider.hasActiveSubscription) ...[
+                                const SizedBox(height: 12),
+                                _buildActionItem(
+                                  icon: Icons.autorenew,
+                                  title: 'Renew Subscription',
+                                  subtitle: 'Extend your current plan',
+                                  onTap: () {
+                                    context.push('/all-packages');
+                                  },
+                                  isDark: isDark,
+                                  cardBgColor: cardBgColor,
+                                  textColor: textColor,
+                                  secondaryTextColor: secondaryTextColor,
+                                  primaryColor: primaryColor,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildActionItem(
+                                  icon: Icons.receipt_long_outlined,
+                                  title: 'View Invoices',
+                                  subtitle: 'Download payment receipts',
+                                  onTap: () {
+                                    _showInvoicesBottomSheet(provider.purchases);
+                                  },
+                                  isDark: isDark,
+                                  cardBgColor: cardBgColor,
+                                  textColor: textColor,
+                                  secondaryTextColor: secondaryTextColor,
+                                  primaryColor: primaryColor,
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                        if (provider.hasActiveSubscription) ...[
-                          const SizedBox(height: 12),
-                          _buildActionItem(
-                            icon: Icons.autorenew,
-                            title: 'Renew Subscription',
-                            subtitle: 'Extend your current plan',
-                            onTap: () {
-                              context.push('/all-packages');
-                            },
-                            isDark: isDark,
-                            cardBgColor: cardBgColor,
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            primaryColor: primaryColor,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildActionItem(
-                            icon: Icons.receipt_long_outlined,
-                            title: 'View Invoices',
-                            subtitle: 'Download payment receipts',
-                            onTap: () {
-                              _showInvoicesBottomSheet(provider.purchases);
-                            },
-                            isDark: isDark,
-                            cardBgColor: cardBgColor,
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            primaryColor: primaryColor,
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -294,162 +333,171 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildCurrentPlanCard(PurchaseModel plan, bool isDark, Color primaryColor) {
+  Widget _buildActivePlanCard(PurchaseModel plan, bool isDark, Color primaryColor) {
     final packageName = plan.package.name;
+    final packageType = plan.package.type ?? '';
     final price = _formatCurrency(plan.amountPaid);
-    final durationText = '${plan.package.durationDays} days';
     final expiryDate = _formatDate(plan.expiresAt);
     final daysLeft = plan.daysRemaining;
 
+    // Use different colors for Theory vs Practical
+    final isTheory = packageType.toLowerCase().contains('theory');
+    final gradientColors = isDark
+        ? (isTheory
+            ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
+            : [const Color(0xFF0D4D4D), const Color(0xFF2D9E9E)])
+        : (isTheory
+            ? [const Color(0xFF0000D1), const Color(0xFF4B4BFF)]
+            : [const Color(0xFF00897B), const Color(0xFF4DB6AC)]);
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      width: 250,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
-              : [const Color(0xFF0000D1), const Color(0xFF4B4BFF)],
+          colors: gradientColors,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: gradientColors[0].withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'CURRENT PLAN',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-                color: Colors.white,
+          // Badge row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'ACTIVE',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 8,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 6),
+              if (packageType.isNotEmpty)
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      packageType,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+            ],
           ),
-
-          const SizedBox(height: 16),
-
+          const SizedBox(height: 8),
           // Plan Name
           Text(
             packageName,
             style: const TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 24,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
               color: Colors.white,
+              height: 1.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          // Price
+          Text(
+            price,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              height: 1.2,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // Price
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                price,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '/ $durationText',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
           // Divider
           Container(
             height: 1,
             color: Colors.white.withValues(alpha: 0.2),
           ),
-
-          const SizedBox(height: 20),
-
+          const SizedBox(height: 8),
           // Expiry Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'EXPIRES ON',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1,
-                      color: Colors.white.withValues(alpha: 0.6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'EXPIRES',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                        color: Colors.white.withValues(alpha: 0.6),
+                        height: 1.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    expiryDate,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                    Text(
+                      expiryDate,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'DAYS LEFT',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '$daysLeft days',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: gradientColors[0],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$daysLeft Days',
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -461,56 +509,57 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
   Widget _buildNoPlanCard(bool isDark, Color cardBgColor, Color textColor, Color secondaryTextColor, Color primaryColor) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
           width: 1,
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.workspace_premium_outlined,
-            size: 48,
+            size: 44,
             color: secondaryTextColor,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'No Active Subscription',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Subscribe to a plan to unlock premium content',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 14,
+              fontSize: 13,
               color: secondaryTextColor,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: () => context.push('/all-packages'),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: const Text(
                 'Explore Plans',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -522,105 +571,24 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildPlanDetailsCard(PurchaseModel plan, bool isDark, Color cardBgColor, Color textColor, Color primaryColor) {
-    final features = plan.package.features;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (features != null && features.isNotEmpty)
-            ...features.map((feature) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildFeatureRow(Icons.check_circle_outline, feature, true, isDark, textColor, primaryColor),
-                ))
-          else ...[
-            _buildFeatureRow(Icons.play_circle_outline, 'Video Lectures', true, isDark, textColor, primaryColor),
-            const SizedBox(height: 16),
-            _buildFeatureRow(Icons.menu_book_outlined, 'Comprehensive Notes', true, isDark, textColor, primaryColor),
-            const SizedBox(height: 16),
-            _buildFeatureRow(Icons.live_tv_outlined, 'Live Doubt Sessions', true, isDark, textColor, primaryColor),
-            const SizedBox(height: 16),
-            _buildFeatureRow(Icons.support_agent_outlined, 'Support', true, isDark, textColor, primaryColor),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureRow(IconData icon, String text, bool included, bool isDark, Color textColor, Color primaryColor) {
-    final disabledColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF999999);
-    final disabledBgColor = isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0);
-
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: included
-                ? primaryColor.withValues(alpha: 0.1)
-                : disabledBgColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Icon(
-              icon,
-              size: 20,
-              color: included ? primaryColor : disabledColor,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: included ? textColor : disabledColor,
-            ),
-          ),
-        ),
-        Icon(
-          included ? Icons.check_circle : Icons.cancel,
-          size: 20,
-          color: included ? const Color(0xFF4CAF50) : disabledBgColor,
-        ),
-      ],
-    );
-  }
-
   Widget _buildEmptyHistory(Color secondaryTextColor) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.history,
-              size: 48,
+              size: 40,
               color: secondaryTextColor,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               'No subscription history',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: 13,
                 color: secondaryTextColor,
               ),
             ),
@@ -689,17 +657,19 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   title,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   isActive ? 'Expires: $date' : 'Purchased: $date',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w400,
                     color: secondaryTextColor,
                   ),
@@ -707,15 +677,17 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           // Amount and Status
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 amount,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: textColor,
                 ),
@@ -804,28 +776,33 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                     title,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDestructive ? const Color(0xFFFF5252) : textColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w400,
                       color: secondaryTextColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             // Arrow
             Icon(
               Icons.arrow_forward_ios,
-              size: 16,
+              size: 14,
               color: isDestructive
                   ? const Color(0xFFFF5252).withValues(alpha: 0.5)
                   : textColor.withValues(alpha: 0.3),
@@ -924,7 +901,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
 
   Widget _buildInvoiceItem(String title, String date, String amount, bool isDark, Color textColor, Color secondaryTextColor, Color itemBgColor, Color primaryColor) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: itemBgColor,
         borderRadius: BorderRadius.circular(12),
@@ -939,17 +916,19 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   title,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   date,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w400,
                     color: secondaryTextColor,
                   ),
@@ -957,19 +936,20 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             amount,
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -977,7 +957,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
             child: Center(
               child: Icon(
                 Icons.receipt_outlined,
-                size: 18,
+                size: 16,
                 color: primaryColor,
               ),
             ),

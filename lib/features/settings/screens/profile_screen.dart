@@ -25,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   UserModel? _user;
   Map<String, dynamic>? _subscriptionStatus;
+  Map<String, dynamic>? _selectedSubject;
   bool _isLoading = true;
   String? _error;
 
@@ -41,15 +42,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Load user profile and subscription status in parallel
+      // Load user profile, subscription status, and selected subject in parallel
       final results = await Future.wait([
         _userService.getProfile(),
         _loadSubscriptionStatus(),
+        _loadSelectedSubject(),
       ]);
 
       setState(() {
         _user = results[0] as UserModel;
         _subscriptionStatus = results[1] as Map<String, dynamic>?;
+        _selectedSubject = results[2] as Map<String, dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
@@ -72,6 +75,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return null;
     } catch (e) {
       debugPrint('Error loading subscription status: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _loadSelectedSubject() async {
+    try {
+      final response = await _apiService.dio.get(
+        ApiConstants.subjectSelection,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final selections = response.data['data'] as List?;
+        if (selections != null && selections.isNotEmpty) {
+          // Return the primary subject or the first one
+          final primary = selections.firstWhere(
+            (s) => s['is_primary'] == true,
+            orElse: () => selections.first,
+          );
+          return primary as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error loading selected subject: $e');
       return null;
     }
   }
@@ -157,19 +184,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    // Get active package info
-    final theoryPackages = _subscriptionStatus?['theory_packages'] as List? ?? [];
-    final practicalPackages = _subscriptionStatus?['practical_packages'] as List? ?? [];
-    final hasTheory = _subscriptionStatus?['has_theory'] == true;
-    final hasPractical = _subscriptionStatus?['has_practical'] == true;
+    // Get active package info - combine all packages with their type
+    final theoryPackages = (_subscriptionStatus?['theory_packages'] as List? ?? [])
+        .map((p) => {...(p as Map<String, dynamic>), 'type': 'Theory'})
+        .toList();
+    final practicalPackages = (_subscriptionStatus?['practical_packages'] as List? ?? [])
+        .map((p) => {...(p as Map<String, dynamic>), 'type': 'Practical'})
+        .toList();
 
-    // Get the first active package for display
-    Map<String, dynamic>? activePackage;
-    if (theoryPackages.isNotEmpty) {
-      activePackage = theoryPackages.first as Map<String, dynamic>;
-    } else if (practicalPackages.isNotEmpty) {
-      activePackage = practicalPackages.first as Map<String, dynamic>;
-    }
+    // Combine all active packages
+    final allActivePackages = [...theoryPackages, ...practicalPackages];
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -183,77 +207,146 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Top curved box with profile info
               Container(
                 width: double.infinity,
-                height: 276,
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(80),
-                    bottomRight: Radius.circular(80),
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 71),
-                    // Profile picture circle
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: secondaryTextColor,
-                          width: 3,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Profile picture on the left
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
+                              width: 2,
+                            ),
+                            color: Colors.transparent,
+                            image: _user?.photoUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(_user!.photoUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: _user?.photoUrl == null
+                              ? Center(
+                                  child: Icon(
+                                    Icons.person_outline,
+                                    size: 36,
+                                    color: secondaryTextColor,
+                                  ),
+                                )
+                              : null,
                         ),
-                        color: Colors.transparent,
-                        image: _user?.photoUrl != null
-                            ? DecorationImage(
-                                image: NetworkImage(_user!.photoUrl!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: _user?.photoUrl == null
-                          ? Center(
-                              child: Icon(
-                                Icons.person_outline,
-                                size: 40,
-                                color: secondaryTextColor,
+                        const SizedBox(width: 16),
+                        // User details on the right
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Name
+                              Text(
+                                _user?.name ?? 'User',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  color: textColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: 31),
-                    // Name
-                    Text(
-                      _user?.name ?? 'User',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                        height: 20 / 18,
-                        letterSpacing: -0.5,
-                        color: textColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    // Phone number as subtitle
-                    Opacity(
-                      opacity: 0.5,
-                      child: Text(
-                        _user?.phoneNumber ?? '',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                          height: 20 / 14,
-                          letterSpacing: -0.5,
-                          color: textColor,
+                              const SizedBox(height: 4),
+                              // Phone number
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.phone_outlined,
+                                    size: 14,
+                                    color: secondaryTextColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _user?.phoneNumber ?? '',
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 13,
+                                      color: secondaryTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              // Subject selection - tappable
+                              GestureDetector(
+                                onTap: () {
+                                  context.push('/subject-selection');
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1A1A4D)
+                                        : const Color(0xFF0000D1).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? const Color(0xFF3D3D8C)
+                                          : const Color(0xFF0000D1).withValues(alpha: 0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.menu_book_outlined,
+                                        size: 14,
+                                        color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          _selectedSubject?['subject_name'] ?? 'Select Subject',
+                                          style: TextStyle(
+                                            fontFamily: 'SF Pro Display',
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 12,
+                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        size: 16,
+                                        color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
 
@@ -278,22 +371,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // Navigate to packages
+                        context.push('/manage-plans');
                       },
-                      child: Opacity(
-                        opacity: 0.4,
-                        child: Text(
-                          'Browse',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            height: 20 / 12,
-                            letterSpacing: -0.5,
-                            color: textColor,
-                          ),
-                          textAlign: TextAlign.right,
+                      child: Text(
+                        'Manage',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          height: 20 / 12,
+                          letterSpacing: -0.5,
+                          color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
                         ),
+                        textAlign: TextAlign.right,
                       ),
                     ),
                   ],
@@ -302,166 +392,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 17),
 
-              // Active Package Box
-              if (activePackage != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    height: 182,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A1A4D) : const Color(0xFF0000D1),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 9),
-                        // Current Plan Badge
-                        Padding(
-                          padding: const EdgeInsets.only(left: 15),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(9),
-                            ),
-                            child: const Text(
-                              'CURRENT PLAN',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10,
-                                height: 20 / 10,
-                                color: Colors.white,
-                              ),
-                            ),
+              // Active Package Cards - Horizontally Scrollable
+              if (allActivePackages.isNotEmpty)
+                SizedBox(
+                  height: 115,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: allActivePackages.length,
+                    itemBuilder: (context, index) {
+                      final package = allActivePackages[index];
+                      final isLast = index == allActivePackages.length - 1;
+                      return Padding(
+                        padding: EdgeInsets.only(right: isLast ? 0 : 12),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: _buildActivePackageCard(
+                            package: package,
+                            isDark: isDark,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        // Plan Name
-                        Padding(
-                          padding: const EdgeInsets.only(left: 17),
-                          child: Text(
-                            activePackage['package_name'] ?? 'Active Package',
-                            style: const TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              height: 20 / 14,
-                              letterSpacing: 0.07,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        // Show both subscriptions if applicable
-                        if (hasTheory && hasPractical)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 17, top: 4),
-                            child: Row(
-                              children: [
-                                _buildSubscriptionBadge('Theory', true),
-                                const SizedBox(width: 8),
-                                _buildSubscriptionBadge('Practical', true),
-                              ],
-                            ),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.only(left: 17, top: 4),
-                            child: Row(
-                              children: [
-                                if (hasTheory) _buildSubscriptionBadge('Theory', true),
-                                if (hasPractical) _buildSubscriptionBadge('Practical', true),
-                              ],
-                            ),
-                          ),
-                        const Spacer(),
-                        // Divider
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Opacity(
-                            opacity: 0.4,
-                            child: Container(
-                              height: 1,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 13),
-                        // Expires and Manage Row
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16, right: 26, bottom: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Expires info
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Opacity(
-                                    opacity: 0.5,
-                                    child: Text(
-                                      'EXPIRES ON',
-                                      style: TextStyle(
-                                        fontFamily: 'SF Pro Display',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 10,
-                                        height: 20 / 10,
-                                        letterSpacing: 0.05,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    _formatExpiryDate(activePackage['expires_at']),
-                                    style: const TextStyle(
-                                      fontFamily: 'SF Pro Display',
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 10,
-                                      height: 20 / 10,
-                                      letterSpacing: 0.05,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Manage Button
-                              GestureDetector(
-                                onTap: () {
-                                  context.push('/manage-plans');
-                                },
-                                child: Container(
-                                  width: 97,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Manage',
-                                      style: TextStyle(
-                                        fontFamily: 'SF Pro Display',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 14,
-                                        height: 20 / 14,
-                                        letterSpacing: 0.07,
-                                        color: isDark ? const Color(0xFF1A1A4D) : const Color(0xFF0000D1),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 )
               else
@@ -787,9 +739,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.help_outline,
                         label: 'Help',
                         subtitle: 'Get support',
-                        onTap: () {
-                          // Navigate to help
-                        },
+                        onTap: () => context.push('/help'),
                         cardColor: cardColor,
                         iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
                         iconColor: Colors.orange,
@@ -804,9 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.info_outline,
                         label: 'About',
                         subtitle: 'App info',
-                        onTap: () {
-                          // Navigate to about
-                        },
+                        onTap: () => context.push('/about'),
                         cardColor: cardColor,
                         iconBgColor: isDark ? const Color(0xFF4D1A4D) : const Color(0xFFF3E5F5),
                         iconColor: isDark ? const Color(0xFFCE93D8) : const Color(0xFF7B1FA2),
@@ -868,24 +816,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSubscriptionBadge(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: isActive ? Colors.white : Colors.grey,
-        ),
-      ),
-    );
-  }
-
   String _formatExpiryDate(String? dateString) {
     if (dateString == null) return 'N/A';
     try {
@@ -894,6 +824,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       return dateString;
     }
+  }
+
+  Widget _buildActivePackageCard({
+    required Map<String, dynamic> package,
+    required bool isDark,
+  }) {
+    final packageName = package['package_name'] ?? 'Package';
+    final packageType = package['type'] ?? '';
+    final expiresAt = package['expires_at'];
+    final daysRemaining = package['days_remaining'] ?? 0;
+
+    // Use different colors for Theory vs Practical
+    final isTheory = packageType == 'Theory';
+    final cardColor = isDark
+        ? (isTheory ? const Color(0xFF1A1A4D) : const Color(0xFF1A4D4D))
+        : (isTheory ? const Color(0xFF0000D1) : const Color(0xFF00897B));
+
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Top row with ACTIVE badge and package type
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'ACTIVE',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 8,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (packageType.isNotEmpty)
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      packageType,
+                      style: const TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Plan Name
+          Text(
+            packageName,
+            style: const TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.white,
+              height: 1.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          // Divider
+          Opacity(
+            opacity: 0.3,
+            child: Container(
+              height: 1,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Expires and Days Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Opacity(
+                      opacity: 0.6,
+                      child: Text(
+                        'EXPIRES',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 8,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _formatExpiryDate(expiresAt),
+                      style: const TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '$daysRemaining days',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 9,
+                    color: cardColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildInfoRow({

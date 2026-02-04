@@ -114,9 +114,15 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   void _enrollPackage(PackageModel package) {
-    context.pop();
-    // Navigate to payment with selected package
-    context.push('/purchase?packageId=${package.packageId}');
+    if (package.isPurchased) {
+      // Already purchased - go to content
+      context.pop();
+      context.go('/home');
+    } else {
+      context.pop();
+      // Navigate to payment with selected package
+      context.push('/purchase?packageId=${package.packageId}');
+    }
   }
 
   @override
@@ -297,27 +303,33 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 ],
               ),
             ),
-            // Enroll Button
+            // Enroll/Access Button
             GestureDetector(
               onTap: () => _enrollPackage(_packages[_selectedIndex]),
               child: Container(
                 width: 160,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: buttonColor,
+                  color: _packages[_selectedIndex].isPurchased
+                      ? const Color(0xFF4CAF50)
+                      : buttonColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: buttonColor.withValues(alpha: 0.3),
+                      color: (_packages[_selectedIndex].isPurchased
+                          ? const Color(0xFF4CAF50)
+                          : buttonColor).withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'Enroll Now',
-                    style: TextStyle(
+                    _packages[_selectedIndex].isPurchased
+                        ? 'Go to Content'
+                        : 'Enroll Now',
+                    style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -428,7 +440,32 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                   ),
                   // Badges
-                  if (index == 0)
+                  if (package.isPurchased)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white, size: 12),
+                          SizedBox(width: 4),
+                          Text(
+                            'PURCHASED',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (index == 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(

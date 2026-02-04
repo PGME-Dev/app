@@ -85,6 +85,11 @@ class ApiConstants {
   static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
   static String cancelBookOrder(String orderId) => '/book-orders/$orderId/cancel';
 
+  // Notification Endpoints
+  static const String notifications = '/users/notifications';
+  static String markNotificationRead(String notificationId) => '/notifications/$notificationId/read';
+  static String deleteNotification(String notificationId) => '/notifications/$notificationId';
+
   // Storage Keys
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';

@@ -23,6 +23,7 @@ SeriesModel _$SeriesModelFromJson(Map<String, dynamic> json) => SeriesModel(
       thumbnailUrl: json['thumbnail_url'] as String?,
       totalDurationMinutes: (json['total_duration_minutes'] as num?)?.toInt(),
       isFree: json['is_free'] as bool? ?? false,
+      isLocked: json['is_locked'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$SeriesModelToJson(SeriesModel instance) =>
@@ -41,4 +42,5 @@ Map<String, dynamic> _$SeriesModelToJson(SeriesModel instance) =>
       'thumbnail_url': instance.thumbnailUrl,
       'total_duration_minutes': instance.totalDurationMinutes,
       'is_free': instance.isFree,
+      'is_locked': instance.isLocked,
     };

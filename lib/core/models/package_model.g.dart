@@ -18,10 +18,10 @@ PackageModel _$PackageModelFromJson(Map<String, dynamic> json) => PackageModel(
       saleEndDate: json['sale_end_date'] as String?,
       durationDays: (json['duration_days'] as num?)?.toInt(),
       thumbnailUrl: json['thumbnail_url'] as String?,
-      features: (json['features'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      features: _featuresFromJson(json['features']),
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      isPurchased: json['is_purchased'] as bool? ?? false,
+      expiresAt: json['expires_at'] as String?,
     );
 
 Map<String, dynamic> _$PackageModelToJson(PackageModel instance) =>
@@ -39,4 +39,6 @@ Map<String, dynamic> _$PackageModelToJson(PackageModel instance) =>
       'thumbnail_url': instance.thumbnailUrl,
       'features': instance.features,
       'display_order': instance.displayOrder,
+      'is_purchased': instance.isPurchased,
+      'expires_at': instance.expiresAt,
     };

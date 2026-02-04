@@ -30,6 +30,9 @@ import 'package:pgme/features/books/screens/book_orders_screen.dart';
 import 'package:pgme/features/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features/courses/screens/revision_series_screen.dart';
 import 'package:pgme/features/courses/screens/enrolled_course_detail_screen.dart';
+import 'package:pgme/features/notifications/screens/notifications_screen.dart';
+import 'package:pgme/features/settings/screens/help_screen.dart';
+import 'package:pgme/features/settings/screens/about_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -38,9 +41,9 @@ class AppRouter {
       final uri = Uri.parse(location);
       return int.tryParse(uri.queryParameters['tab'] ?? '0') ?? 0;
     }
-    if (location.startsWith('/notes') || location.startsWith('/available-notes')) return 2;
+    if (location.startsWith('/notes') || location.startsWith('/available-notes')) return 1;
     if (location.startsWith('/practical-series') ||
-        location.startsWith('/revision-series')) return 1;
+        location.startsWith('/revision-series')) return 2;
     if (location.startsWith('/settings')) return 3;
     return 0;
   }
@@ -221,6 +224,63 @@ class AppRouter {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const AllPackagesScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Notifications
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Help & Support
+      GoRoute(
+        path: '/help',
+        name: 'help',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const HelpScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // About
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AboutScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return SlideTransition(
               position: Tween<Offset>(

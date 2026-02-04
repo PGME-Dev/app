@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -30,7 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    const phoneNumber = '+919630000080';
+    const phoneNumber = '+918074220727';
     const message = 'Hi, I need help with PGME app';
     final whatsappUrl = 'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}';
 
@@ -184,9 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(width: 12),
                             // Notification Icon
                             GestureDetector(
-                              onTap: () {
-                                // Open notifications
-                              },
+                              onTap: () => context.push('/notifications'),
                               child: Icon(
                                 Icons.notifications_outlined,
                                 size: 24,

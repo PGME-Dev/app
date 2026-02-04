@@ -559,7 +559,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                               itemCount: _series.length,
                               itemBuilder: (context, index) {
                                 final series = _series[index];
-                                final isItemLocked = isSubscribed ? false : index > 0;
+                                // Use the isLocked property from backend - it checks actual purchase status
+                                final isItemLocked = series.isLocked;
 
                                 return GestureDetector(
                                   onTap: () {

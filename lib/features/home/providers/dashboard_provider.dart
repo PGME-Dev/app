@@ -227,6 +227,24 @@ class DashboardProvider with ChangeNotifier {
       // Load package-specific subscriptions
       await _loadSubscriptionsByType();
 
+      // Always load packages for the current subject (they now include is_purchased flag)
+      try {
+        debugPrint('Loading packages...');
+        _packages = await _dashboardService.getPackages(
+          subjectId: _primarySubject?.subjectId,
+        );
+        debugPrint('✓ ${_packages.length} packages loaded');
+
+        // Update subscription flags based on packages' isPurchased status
+        _hasTheorySubscription = _packages.any((p) => p.isPurchased && p.type?.toLowerCase() == 'theory');
+        _hasPracticalSubscription = _packages.any((p) => p.isPurchased && p.type?.toLowerCase() == 'practical');
+        debugPrint('  Theory subscription: $_hasTheorySubscription');
+        debugPrint('  Practical subscription: $_hasPracticalSubscription');
+      } catch (e) {
+        _contentError = e.toString().replaceAll('Exception: ', '');
+        debugPrint('✗ Error loading packages: $_contentError');
+      }
+
       if (_hasActivePurchase == true) {
         // User has active purchase - try to get last watched video
         try {
@@ -239,18 +257,8 @@ class DashboardProvider with ChangeNotifier {
           debugPrint('⚠ Error getting watch history: $e');
         }
       } else {
-        // No active purchase - load packages for What We Offer section
+        // No active purchase
         _lastWatchedVideo = null;
-        try {
-          debugPrint('Loading packages for What We Offer section...');
-          _packages = await _dashboardService.getPackages(
-            subjectId: _primarySubject?.subjectId,
-          );
-          debugPrint('✓ ${_packages.length} packages loaded');
-        } catch (e) {
-          _contentError = e.toString().replaceAll('Exception: ', '');
-          debugPrint('✗ Error loading packages: $_contentError');
-        }
       }
     } catch (e) {
       _contentError = e.toString().replaceAll('Exception: ', '');
