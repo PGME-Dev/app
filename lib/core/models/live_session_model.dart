@@ -17,6 +17,12 @@ class LiveSessionModel {
   @JsonKey(name: 'subject_name')
   final String? subjectName;
 
+  @JsonKey(name: 'series_id')
+  final String? seriesId;
+
+  @JsonKey(name: 'series_name')
+  final String? seriesName;
+
   @JsonKey(name: 'faculty_id')
   final String? facultyId;
 
@@ -51,6 +57,11 @@ class LiveSessionModel {
   @JsonKey(name: 'thumbnail_url')
   final String? thumbnailUrl;
 
+  final int price;
+
+  @JsonKey(name: 'is_free')
+  final bool isFree;
+
   @JsonKey(name: 'createdAt')
   final String? createdAt;
 
@@ -63,6 +74,8 @@ class LiveSessionModel {
     this.description,
     this.subjectId,
     this.subjectName,
+    this.seriesId,
+    this.seriesName,
     this.facultyId,
     this.facultyName,
     this.facultyPhotoUrl,
@@ -75,6 +88,8 @@ class LiveSessionModel {
     required this.status,
     this.maxAttendees,
     this.thumbnailUrl,
+    this.price = 0,
+    this.isFree = true,
     this.createdAt,
     this.updatedAt,
   });
@@ -90,6 +105,8 @@ class LiveSessionModel {
     String? description,
     String? subjectId,
     String? subjectName,
+    String? seriesId,
+    String? seriesName,
     String? facultyId,
     String? facultyName,
     String? facultyPhotoUrl,
@@ -102,6 +119,8 @@ class LiveSessionModel {
     String? status,
     int? maxAttendees,
     String? thumbnailUrl,
+    int? price,
+    bool? isFree,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -111,6 +130,8 @@ class LiveSessionModel {
       description: description ?? this.description,
       subjectId: subjectId ?? this.subjectId,
       subjectName: subjectName ?? this.subjectName,
+      seriesId: seriesId ?? this.seriesId,
+      seriesName: seriesName ?? this.seriesName,
       facultyId: facultyId ?? this.facultyId,
       facultyName: facultyName ?? this.facultyName,
       facultyPhotoUrl: facultyPhotoUrl ?? this.facultyPhotoUrl,
@@ -123,6 +144,8 @@ class LiveSessionModel {
       status: status ?? this.status,
       maxAttendees: maxAttendees ?? this.maxAttendees,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      price: price ?? this.price,
+      isFree: isFree ?? this.isFree,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

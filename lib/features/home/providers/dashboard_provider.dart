@@ -1,15 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/models/faculty_model.dart';
+import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/models/subject_selection_model.dart';
+import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
+import 'package:pgme/core/services/user_service.dart';
 
 class DashboardProvider with ChangeNotifier {
   final DashboardService _dashboardService = DashboardService();
   final StorageService _storageService = StorageService();
+  final UserService _userService = UserService();
+  final ApiService _apiService = ApiService();
 
   // State
   String? _userName;
@@ -18,13 +25,17 @@ class DashboardProvider with ChangeNotifier {
   List<PackageModel> _packages = [];
   VideoModel? _lastWatchedVideo;
   List<FacultyModel> _facultyList = [];
+  List<SubjectModel> _allSubjects = [];
 
   // Loading states (per section)
+  bool _isInitialLoading = true; // Initial dashboard load
   bool _isLoadingSession = false;
   bool _isLoadingSubjects = false;
   bool _isLoadingContent = false;
   bool _isLoadingFaculty = false;
   bool _isRefreshing = false;
+  bool _isLoadingAllSubjects = false;
+  bool _isChangingSubject = false;
 
   // Error states (per section)
   String? _sessionError;
@@ -35,6 +46,11 @@ class DashboardProvider with ChangeNotifier {
   // Purchase status (determines For You vs What We Offer)
   bool? _hasActivePurchase;
 
+  // Package-specific subscription status
+  bool _hasTheorySubscription = false;
+  bool _hasPracticalSubscription = false;
+  List<PurchaseModel> _activePurchases = [];
+
   // Getters
   String? get userName => _userName;
   SubjectSelectionModel? get primarySubject => _primarySubject;
@@ -43,11 +59,15 @@ class DashboardProvider with ChangeNotifier {
   VideoModel? get lastWatchedVideo => _lastWatchedVideo;
   List<FacultyModel> get facultyList => _facultyList;
 
+  bool get isInitialLoading => _isInitialLoading;
   bool get isLoadingSession => _isLoadingSession;
   bool get isLoadingSubjects => _isLoadingSubjects;
   bool get isLoadingContent => _isLoadingContent;
   bool get isLoadingFaculty => _isLoadingFaculty;
   bool get isRefreshing => _isRefreshing;
+  bool get isLoadingAllSubjects => _isLoadingAllSubjects;
+  bool get isChangingSubject => _isChangingSubject;
+  List<SubjectModel> get allSubjects => _allSubjects;
 
   String? get sessionError => _sessionError;
   String? get subjectError => _subjectError;
@@ -55,23 +75,30 @@ class DashboardProvider with ChangeNotifier {
   String? get facultyError => _facultyError;
 
   bool? get hasActivePurchase => _hasActivePurchase;
+  bool get hasTheorySubscription => _hasTheorySubscription;
+  bool get hasPracticalSubscription => _hasPracticalSubscription;
+  List<PurchaseModel> get activePurchases => _activePurchases;
 
   /// Main dashboard load method
-  /// Loads all sections in parallel
+  /// Loads primary subject first, then other sections in parallel
   Future<void> loadDashboard() async {
     debugPrint('=== DashboardProvider: Loading dashboard ===');
 
     // Get user name from storage
     _userName = await _getUserName();
 
-    // Load all sections in parallel (don't stop on first error)
+    // Load primary subject first (other sections depend on it for filtering)
+    await _loadPrimarySubject();
+
+    // Load all other sections in parallel (don't stop on first error)
     await Future.wait([
-      _loadPrimarySubject(),
       _loadUpcomingSession(),
       _loadFacultyList(),
       _loadContentSection(),
     ], eagerError: false);
 
+    // Mark initial loading as complete
+    _isInitialLoading = false;
     notifyListeners();
     debugPrint('✓ Dashboard loaded');
   }
@@ -160,7 +187,7 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  /// Load faculty list
+  /// Load faculty list filtered by primary subject
   Future<void> _loadFacultyList() async {
     _isLoadingFaculty = true;
     _facultyError = null;
@@ -168,9 +195,14 @@ class DashboardProvider with ChangeNotifier {
     try {
       debugPrint('Loading faculty list...');
 
-      _facultyList = await _dashboardService.getFaculty(limit: 10);
+      // Filter faculty by primary subject's name (specialization)
+      _facultyList = await _dashboardService.getFaculty(
+        limit: 10,
+        specialization: _primarySubject?.subjectName,
+      );
 
-      debugPrint('✓ Faculty list loaded: ${_facultyList.length} members');
+      debugPrint('✓ Faculty list loaded: ${_facultyList.length} members'
+          '${_primarySubject != null ? ' (filtered by ${_primarySubject!.subjectName})' : ''}');
     } catch (e) {
       _facultyError = e.toString().replaceAll('Exception: ', '');
       debugPrint('✗ Error loading faculty: $_facultyError');
@@ -188,34 +220,29 @@ class DashboardProvider with ChangeNotifier {
     try {
       debugPrint('Loading content section...');
 
-      // Try to get last watched videos to determine purchase status
-      try {
-        final videos = await _dashboardService.getLastWatchedVideos(limit: 1);
+      // Check if user has any active package purchases
+      _hasActivePurchase = await _dashboardService.hasActivePurchases();
+      debugPrint('✓ Active purchase status: $_hasActivePurchase');
 
-        if (videos.isNotEmpty) {
-          // User has watch history = has active purchase
-          _hasActivePurchase = true;
-          _lastWatchedVideo = videos.first;
-          debugPrint('✓ User has active purchase - showing For You section');
-          debugPrint('  Last watched: ${_lastWatchedVideo!.title}');
-        } else {
-          // No watch history = no active purchase
-          _hasActivePurchase = false;
-          _lastWatchedVideo = null;
-          debugPrint('⚠ No watch history - user likely has no purchase');
+      // Load package-specific subscriptions
+      await _loadSubscriptionsByType();
+
+      if (_hasActivePurchase == true) {
+        // User has active purchase - try to get last watched video
+        try {
+          final videos = await _dashboardService.getLastWatchedVideos(limit: 1);
+          if (videos.isNotEmpty) {
+            _lastWatchedVideo = videos.first;
+            debugPrint('  Last watched: ${_lastWatchedVideo!.title}');
+          }
+        } catch (e) {
+          debugPrint('⚠ Error getting watch history: $e');
         }
-      } catch (e) {
-        // Error getting watch history - assume no purchase
-        _hasActivePurchase = false;
+      } else {
+        // No active purchase - load packages for What We Offer section
         _lastWatchedVideo = null;
-        debugPrint('⚠ Error getting watch history (assuming no purchase): $e');
-      }
-
-      // If no active purchase, load packages for What We Offer section
-      if (_hasActivePurchase == false) {
         try {
           debugPrint('Loading packages for What We Offer section...');
-          // Load packages with or without subject filter
           _packages = await _dashboardService.getPackages(
             subjectId: _primarySubject?.subjectId,
           );
@@ -230,6 +257,54 @@ class DashboardProvider with ChangeNotifier {
       debugPrint('✗ Error loading content section: $_contentError');
     } finally {
       _isLoadingContent = false;
+    }
+  }
+
+  /// Load user's subscription status from dedicated API
+  Future<void> _loadSubscriptionsByType() async {
+    try {
+      debugPrint('Loading subscription status from API...');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.subscriptionStatus,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+
+        _hasTheorySubscription = data['has_theory'] == true;
+        _hasPracticalSubscription = data['has_practical'] == true;
+
+        debugPrint('✓ Subscription status loaded from API:');
+        debugPrint('  Theory: $_hasTheorySubscription');
+        debugPrint('  Practical: $_hasPracticalSubscription');
+        debugPrint('  Has Both: ${data['has_both']}');
+        debugPrint('  Total Active: ${data['total_active_subscriptions']}');
+
+        // Log package details if available
+        final theoryPackages = data['theory_packages'] as List?;
+        final practicalPackages = data['practical_packages'] as List?;
+
+        if (theoryPackages != null && theoryPackages.isNotEmpty) {
+          for (final pkg in theoryPackages) {
+            debugPrint('  Theory Package: ${pkg['package_name']} (expires: ${pkg['expires_at']})');
+          }
+        }
+
+        if (practicalPackages != null && practicalPackages.isNotEmpty) {
+          for (final pkg in practicalPackages) {
+            debugPrint('  Practical Package: ${pkg['package_name']} (expires: ${pkg['expires_at']})');
+          }
+        }
+      } else {
+        throw Exception('Failed to load subscription status');
+      }
+    } catch (e) {
+      debugPrint('⚠ Error loading subscription status: $e');
+      // On error, default to no subscriptions - don't grant access incorrectly
+      _hasTheorySubscription = false;
+      _hasPracticalSubscription = false;
+      _activePurchases = [];
     }
   }
 
@@ -261,6 +336,80 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetch all available subjects for subject picker
+  Future<void> fetchAllSubjects() async {
+    if (_allSubjects.isNotEmpty) {
+      // Already loaded
+      return;
+    }
+
+    _isLoadingAllSubjects = true;
+    notifyListeners();
+
+    try {
+      debugPrint('Fetching all subjects...');
+      final subjectsData = await _userService.getSubjects();
+      _allSubjects = subjectsData
+          .map((json) => SubjectModel.fromJson(json))
+          .where((s) => s.isActive)
+          .toList();
+      debugPrint('✓ ${_allSubjects.length} subjects loaded');
+    } catch (e) {
+      debugPrint('✗ Error fetching subjects: $e');
+    } finally {
+      _isLoadingAllSubjects = false;
+      notifyListeners();
+    }
+  }
+
+  /// Change primary subject
+  Future<bool> changePrimarySubject(SubjectModel subject) async {
+    _isChangingSubject = true;
+    notifyListeners();
+
+    try {
+      debugPrint('Changing primary subject to: ${subject.name}');
+
+      // Update on backend
+      await _userService.updateSubjectSelection(
+        subjectId: subject.subjectId,
+        isPrimary: true,
+      );
+
+      // Update local state
+      _primarySubject = SubjectSelectionModel(
+        selectionId: 'local_${subject.subjectId}',
+        subjectId: subject.subjectId,
+        subjectName: subject.name,
+        subjectDescription: subject.description,
+        subjectIconUrl: subject.iconUrl,
+        isPrimary: true,
+        selectedAt: DateTime.now().toIso8601String(),
+      );
+
+      debugPrint('✓ Primary subject changed to: ${subject.name}');
+
+      // Clear cache and reload dashboard content
+      _dashboardService.clearCache();
+
+      // Reload sessions, content, and faculty with new subject
+      await Future.wait([
+        _loadUpcomingSession(),
+        _loadContentSection(),
+        _loadFacultyList(),
+      ]);
+
+      _isChangingSubject = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('✗ Error changing subject: $e');
+      _isChangingSubject = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Clear all dashboard data
   void clearDashboard() {
     debugPrint('=== DashboardProvider: Clearing dashboard ===');
@@ -272,6 +421,7 @@ class DashboardProvider with ChangeNotifier {
     _lastWatchedVideo = null;
     _facultyList = [];
 
+    _isInitialLoading = true; // Reset for next login
     _isLoadingSession = false;
     _isLoadingSubjects = false;
     _isLoadingContent = false;
@@ -284,6 +434,9 @@ class DashboardProvider with ChangeNotifier {
     _facultyError = null;
 
     _hasActivePurchase = null;
+    _hasTheorySubscription = false;
+    _hasPracticalSubscription = false;
+    _activePurchases = [];
 
     _dashboardService.clearCache();
 

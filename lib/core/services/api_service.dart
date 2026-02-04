@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/storage_service.dart';
@@ -64,7 +65,7 @@ class ApiService {
 
           // Handle 403 Forbidden (onboarding incomplete)
           if (error.response?.statusCode == 403) {
-            final message = error.response?.data?['message'] as String?;
+            final message = _getMessageFromResponse(error.response?.data);
             if (message?.contains('onboarding') ?? false) {
               // Navigation will be handled by the UI layer
             }
@@ -106,8 +107,9 @@ class ApiService {
         ),
       );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final data = response.data['data'];
+      final responseData = _parseResponseData(response.data);
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final data = responseData['data'] as Map<String, dynamic>;
         await _storageService.saveAccessToken(data['access_token']);
         await _storageService.saveRefreshToken(data['refresh_token']);
         return true;
@@ -129,7 +131,7 @@ class ApiService {
           return 'Connection timeout. Please check your internet connection.';
         case DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
-          final message = error.response?.data?['message'] as String?;
+          final message = _getMessageFromResponse(error.response?.data);
 
           if (statusCode == 400) {
             return message ?? 'Invalid request. Please check your input.';
@@ -152,5 +154,34 @@ class ApiService {
       }
     }
     return 'An error occurred. Please try again.';
+  }
+
+  /// Helper to parse response data that might be String or Map
+  Map<String, dynamic> _parseResponseData(dynamic data) {
+    if (data is String) {
+      return jsonDecode(data) as Map<String, dynamic>;
+    } else if (data is Map<String, dynamic>) {
+      return data;
+    } else if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    } else {
+      return {};
+    }
+  }
+
+  /// Helper to safely extract message from response data
+  String? _getMessageFromResponse(dynamic data) {
+    if (data == null) return null;
+    if (data is String) {
+      try {
+        final parsed = jsonDecode(data) as Map<String, dynamic>;
+        return parsed['message'] as String?;
+      } catch (_) {
+        return null;
+      }
+    } else if (data is Map) {
+      return data['message'] as String?;
+    }
+    return null;
   }
 }

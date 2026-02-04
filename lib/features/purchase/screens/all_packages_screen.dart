@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   const AllPackagesScreen({super.key});
@@ -13,83 +16,96 @@ class AllPackagesScreen extends StatefulWidget {
 
 class _AllPackagesScreenState extends State<AllPackagesScreen> {
   int _selectedIndex = 0;
+  bool _isLoading = true;
+  List<PackageModel> _packages = [];
+  String? _error;
+  final DashboardService _dashboardService = DashboardService();
 
-  final List<PackageData> _packages = [
-    PackageData(
-      title: 'Theory Package',
-      subtitle: 'Master the fundamentals',
-      price: '₹4,999',
-      originalPrice: '₹9,999',
-      duration: '3 months',
-      discount: '50% OFF',
-      features: [
-        '150+ Video Lectures',
-        'Comprehensive Notes',
-        'Live Doubt Sessions',
-        'Practice MCQs',
-      ],
-      gradientColors: [const Color(0xFF1847A2), const Color(0xFF5B9BD5)],
-      darkGradientColors: [const Color(0xFF0D2A5C), const Color(0xFF1A5A9E)],
-      icon: Icons.menu_book_outlined,
-      isPopular: true,
-    ),
-    PackageData(
-      title: 'Practical Package',
-      subtitle: 'Hands-on learning',
-      price: '₹3,999',
-      originalPrice: '₹7,999',
-      duration: '3 months',
-      discount: '50% OFF',
-      features: [
-        'Clinical Case Studies',
-        'Practical Demonstrations',
-        'Lab Techniques',
-        'Skill Assessments',
-      ],
-      gradientColors: [const Color(0xFF6B4EAF), const Color(0xFF9D7FD9)],
-      darkGradientColors: [const Color(0xFF3D2A6B), const Color(0xFF6B4EAF)],
-      icon: Icons.science_outlined,
-      isPopular: false,
-    ),
-    PackageData(
-      title: 'Complete Bundle',
-      subtitle: 'Theory + Practical',
-      price: '₹7,499',
-      originalPrice: '₹17,998',
-      duration: '6 months',
-      discount: '58% OFF',
-      features: [
-        'All Theory Content',
-        'All Practical Content',
-        'Priority Support',
-        'Certificate of Completion',
-        'Lifetime Access to Notes',
-      ],
-      gradientColors: [const Color(0xFFE85D04), const Color(0xFFFFAA5B)],
-      darkGradientColors: [const Color(0xFF8B3800), const Color(0xFFE85D04)],
-      icon: Icons.workspace_premium_outlined,
-      isPopular: false,
-      isBestValue: true,
-    ),
-    PackageData(
-      title: 'Revision Series',
-      subtitle: 'Quick exam prep',
-      price: '₹1,999',
-      originalPrice: '₹3,999',
-      duration: '1 month',
-      discount: '50% OFF',
-      features: [
-        'Rapid Revision Videos',
-        'Important Topics Only',
-        'Last-minute Tips',
-        'Mock Tests',
-      ],
-      gradientColors: [const Color(0xFF059669), const Color(0xFF34D399)],
-      darkGradientColors: [const Color(0xFF03543F), const Color(0xFF059669)],
-      icon: Icons.speed_outlined,
-      isPopular: false,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadPackages();
+  }
+
+  Future<void> _loadPackages() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Get the user's selected subject from provider
+      final dashboardProvider = context.read<DashboardProvider>();
+      final subjectId = dashboardProvider.primarySubject?.subjectId;
+
+      // Load packages for the selected subject
+      final allPackages = await _dashboardService.getPackages(
+        subjectId: subjectId,
+        forceRefresh: true,
+      );
+
+      // Filter to only show Theory and Practical packages
+      final filteredPackages = allPackages.where((pkg) {
+        final type = pkg.type?.toLowerCase();
+        return type == 'theory' || type == 'practical';
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _packages = filteredPackages;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _formatPrice(int price) {
+    return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+  }
+
+  String _formatDuration(int? days) {
+    if (days == null) return '';
+    if (days >= 365) {
+      final years = days ~/ 365;
+      return '$years ${years == 1 ? 'year' : 'years'}';
+    } else if (days >= 30) {
+      final months = days ~/ 30;
+      return '$months ${months == 1 ? 'month' : 'months'}';
+    } else {
+      return '$days ${days == 1 ? 'day' : 'days'}';
+    }
+  }
+
+  int _calculateDiscount(int price, int? originalPrice) {
+    if (originalPrice == null || originalPrice <= price) return 0;
+    return ((originalPrice - price) * 100 / originalPrice).round();
+  }
+
+  List<Color> _getGradientColors(String? type, bool isDark) {
+    if (type == 'Practical') {
+      return isDark
+          ? [const Color(0xFF3D2A6B), const Color(0xFF6B4EAF)]
+          : [const Color(0xFF6B4EAF), const Color(0xFF9D7FD9)];
+    }
+    // Theory or default
+    return isDark
+        ? [const Color(0xFF0D2A5C), const Color(0xFF1A5A9E)]
+        : [const Color(0xFF1847A2), const Color(0xFF5B9BD5)];
+  }
+
+  IconData _getPackageIcon(String? type) {
+    if (type == 'Practical') {
+      return Icons.science_outlined;
+    }
+    return Icons.menu_book_outlined;
+  }
 
   void _selectPackage(int index) {
     setState(() {
@@ -97,10 +113,10 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     });
   }
 
-  void _enrollPackage(PackageData package) {
+  void _enrollPackage(PackageModel package) {
     context.pop();
     // Navigate to payment with selected package
-    context.push('/purchase');
+    context.push('/purchase?packageId=${package.packageId}');
   }
 
   @override
@@ -119,6 +135,44 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     final borderColor = isDark ? AppColors.darkDivider : Colors.transparent;
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     final priceColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: priceColor),
+        ),
+      );
+    }
+
+    if (_error != null || _packages.isEmpty) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+              const SizedBox(height: 16),
+              Text(
+                _error != null ? 'Failed to load packages' : 'No packages available',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadPackages,
+                style: ElevatedButton.styleFrom(backgroundColor: priceColor),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -218,17 +272,21 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _packages[_selectedIndex].title,
+                    _packages[_selectedIndex].name,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: secondaryTextColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _packages[_selectedIndex].price,
+                    _formatPrice(_packages[_selectedIndex].isOnSale && _packages[_selectedIndex].salePrice != null
+                        ? _packages[_selectedIndex].salePrice!
+                        : _packages[_selectedIndex].price),
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 24,
@@ -275,10 +333,13 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     );
   }
 
-  Widget _buildPackageCard(PackageData package, int index, bool isSelected, bool isDark, Color textColor, Color secondaryTextColor, Color cardBgColor, Color borderColor) {
+  Widget _buildPackageCard(PackageModel package, int index, bool isSelected, bool isDark, Color textColor, Color secondaryTextColor, Color cardBgColor, Color borderColor) {
     final selectedBorderColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
     final featureTextColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF333333);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFEEEEEE);
+    final gradientColors = _getGradientColors(package.type, isDark);
+    final displayPrice = package.isOnSale && package.salePrice != null ? package.salePrice! : package.price;
+    final discount = _calculateDiscount(displayPrice, package.originalPrice);
 
     return GestureDetector(
       onTap: () => _selectPackage(index),
@@ -311,7 +372,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: isDark ? package.darkGradientColors : package.gradientColors,
+                  colors: gradientColors,
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(18),
@@ -330,7 +391,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                     child: Center(
                       child: Icon(
-                        package.icon,
+                        _getPackageIcon(package.type),
                         size: 26,
                         color: Colors.white,
                       ),
@@ -343,17 +404,19 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          package.title,
+                          package.name,
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          package.subtitle,
+                          package.type ?? 'Package',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 13,
@@ -365,7 +428,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                   ),
                   // Badges
-                  if (package.isPopular)
+                  if (index == 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -378,25 +441,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                           fontFamily: 'Poppins',
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: package.gradientColors[0],
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  if (package.isBestValue)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'BEST VALUE',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: package.gradientColors[0],
+                          color: gradientColors[0],
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -412,38 +457,76 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Features
-                  ...package.features.map((feature) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: (isDark ? package.darkGradientColors[0] : package.gradientColors[0]).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.check,
-                              size: 12,
-                              color: isDark ? package.darkGradientColors[1] : package.gradientColors[0],
+                  if (package.features != null && package.features!.isNotEmpty)
+                    ...package.features!.take(4).map((feature) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: gradientColors[0].withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.check,
+                                size: 12,
+                                color: isDark ? gradientColors[1] : gradientColors[0],
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          feature,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: featureTextColor,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              feature,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: featureTextColor,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )),
+                        ],
+                      ),
+                    ))
+                  else
+                    ..._getDefaultFeatures(package.type).map((feature) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: gradientColors[0].withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.check,
+                                size: 12,
+                                color: isDark ? gradientColors[1] : gradientColors[0],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              feature,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: featureTextColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
 
                   const SizedBox(height: 10),
                   Divider(color: dividerColor, height: 1),
@@ -454,55 +537,60 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        package.price,
+                        _formatPrice(displayPrice),
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 28,
                           fontWeight: FontWeight.w400,
-                          color: isDark ? package.darkGradientColors[1] : package.gradientColors[0],
+                          color: isDark ? gradientColors[1] : gradientColors[0],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          package.originalPrice,
+                      if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            _formatPrice(package.originalPrice!),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: textColor.withValues(alpha: 0.4),
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (discount > 0) ...[
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '$discount% OFF',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF4CAF50),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (package.durationDays != null)
+                        Text(
+                          '/ ${_formatDuration(package.durationDays)}',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
-                            color: textColor.withValues(alpha: 0.4),
-                            decoration: TextDecoration.lineThrough,
+                            color: textColor.withValues(alpha: 0.5),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          package.discount,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF4CAF50),
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '/ ${package.duration}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: textColor.withValues(alpha: 0.5),
-                        ),
-                      ),
                     ],
                   ),
 
@@ -545,34 +633,21 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       ),
     );
   }
-}
 
-class PackageData {
-  final String title;
-  final String subtitle;
-  final String price;
-  final String originalPrice;
-  final String duration;
-  final String discount;
-  final List<String> features;
-  final List<Color> gradientColors;
-  final List<Color> darkGradientColors;
-  final IconData icon;
-  final bool isPopular;
-  final bool isBestValue;
-
-  PackageData({
-    required this.title,
-    required this.subtitle,
-    required this.price,
-    required this.originalPrice,
-    required this.duration,
-    required this.discount,
-    required this.features,
-    required this.gradientColors,
-    required this.darkGradientColors,
-    required this.icon,
-    this.isPopular = false,
-    this.isBestValue = false,
-  });
+  List<String> _getDefaultFeatures(String? type) {
+    if (type == 'Practical') {
+      return [
+        'Practical Demonstrations',
+        'Live Sessions',
+        'Lab Techniques',
+        'Expert Support',
+      ];
+    }
+    return [
+      'Video Lectures',
+      'Comprehensive Notes',
+      'Live Doubt Sessions',
+      'Practice MCQs',
+    ];
+  }
 }

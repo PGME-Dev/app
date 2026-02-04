@@ -9,6 +9,7 @@ import 'package:pgme/core/models/subject_selection_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/models/series_document_model.dart';
+import 'package:pgme/core/models/library_item_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 
 class DashboardService {
@@ -106,6 +107,41 @@ class DashboardService {
     }
   }
 
+  /// Get live sessions by series ID (for practical packages)
+  Future<List<LiveSessionModel>> getLiveSessionsBySeries(String seriesId) async {
+    try {
+      debugPrint('=== DashboardService: Getting live sessions for series $seriesId ===');
+
+      final queryParams = <String, dynamic>{
+        'series_id': seriesId,
+        'limit': 50,
+      };
+
+      final response = await _apiService.dio.get(
+        ApiConstants.liveSessions,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final sessionsData = response.data['data']['sessions'] as List;
+        final sessions = sessionsData
+            .map((json) => LiveSessionModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        debugPrint('✓ ${sessions.length} live sessions retrieved for series');
+        return sessions;
+      }
+
+      throw Exception('Failed to load live sessions for series');
+    } on DioException catch (e) {
+      debugPrint('✗ Get live sessions by series error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
   /// Get live session details by ID
   Future<LiveSessionModel> getSessionDetails(String sessionId) async {
     try {
@@ -116,10 +152,38 @@ class DashboardService {
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final sessionData = response.data['data']['session'];
-        final session = LiveSessionModel.fromJson(sessionData as Map<String, dynamic>);
+        final sessionData = response.data['data']['session'] as Map<String, dynamic>;
+
+        // Flatten nested faculty and subject objects to match LiveSessionModel
+        final flattenedData = <String, dynamic>{
+          ...sessionData,
+        };
+
+        // Flatten faculty object
+        if (sessionData['faculty'] != null) {
+          final faculty = sessionData['faculty'] as Map<String, dynamic>;
+          flattenedData['faculty_id'] = faculty['faculty_id'];
+          flattenedData['faculty_name'] = faculty['name'];
+          flattenedData['faculty_photo_url'] = faculty['photo_url'];
+          flattenedData['faculty_specialization'] = faculty['specialization'];
+        }
+
+        // Flatten subject object
+        if (sessionData['subject'] != null) {
+          final subject = sessionData['subject'] as Map<String, dynamic>;
+          flattenedData['subject_id'] = subject['subject_id'];
+          flattenedData['subject_name'] = subject['name'];
+        }
+
+        // Debug: Log raw API data for pricing
+        debugPrint('=== Raw API Response ===');
+        debugPrint('is_free from API: ${flattenedData['is_free']}');
+        debugPrint('price from API: ${flattenedData['price']}');
+
+        final session = LiveSessionModel.fromJson(flattenedData);
 
         debugPrint('✓ Session details retrieved: ${session.title}');
+        debugPrint('Parsed isFree: ${session.isFree}, price: ${session.price}');
         return session;
       }
 
@@ -472,6 +536,129 @@ class DashboardService {
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Purchase a package (test purchase - bypasses payment gateway)
+  Future<Map<String, dynamic>> purchasePackage(String packageId) async {
+    try {
+      debugPrint('=== DashboardService: Purchasing package ===');
+      debugPrint('Package ID: $packageId');
+
+      final response = await _apiService.dio.post(
+        ApiConstants.packageTestPurchase(packageId),
+      );
+
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        debugPrint('✓ Package purchased successfully');
+        return data;
+      }
+
+      throw Exception(response.data['message'] ?? 'Failed to purchase package');
+    } on DioException catch (e) {
+      debugPrint('✗ Purchase package error: $e');
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get user's library (notes/documents)
+  Future<List<LibraryItemModel>> getUserLibrary({bool? isBookmarked}) async {
+    try {
+      debugPrint('=== DashboardService: Getting user library ===');
+
+      final queryParams = <String, dynamic>{};
+      if (isBookmarked != null) {
+        queryParams['is_bookmarked'] = isBookmarked.toString();
+      }
+
+      final response = await _apiService.dio.get(
+        ApiConstants.userLibrary,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final libraryData = response.data['data']['library'] as List;
+        final library = libraryData
+            .map((json) => LibraryItemModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        debugPrint('✓ ${library.length} library items retrieved');
+        return library;
+      }
+
+      throw Exception('Failed to load library');
+    } on DioException catch (e) {
+      debugPrint('✗ Get library error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Add document to user's library
+  Future<Map<String, dynamic>> addToLibrary(String documentId) async {
+    try {
+      debugPrint('=== DashboardService: Adding to library ===');
+
+      final response = await _apiService.dio.post(
+        ApiConstants.userLibrary,
+        data: {'document_id': documentId},
+      );
+
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        debugPrint('✓ Document added to library');
+        return response.data['data'] as Map<String, dynamic>;
+      }
+
+      throw Exception(response.data['message'] ?? 'Failed to add to library');
+    } on DioException catch (e) {
+      debugPrint('✗ Add to library error: $e');
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Check if user has any active package purchases
+  Future<bool> hasActivePurchases() async {
+    try {
+      debugPrint('=== DashboardService: Checking active purchases ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.userPurchases,
+        queryParameters: {
+          'is_active': 'true',
+          'payment_status': 'completed',
+          'limit': 1,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final purchases = response.data['data']['purchases'] as List;
+        final hasActive = purchases.isNotEmpty;
+        debugPrint('✓ Active purchases check: $hasActive (${purchases.length} found)');
+        return hasActive;
+      }
+
+      return false;
+    } on DioException catch (e) {
+      debugPrint('✗ Check active purchases error: $e');
+      return false;
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      return false;
     }
   }
 

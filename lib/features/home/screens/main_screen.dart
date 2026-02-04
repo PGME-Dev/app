@@ -4,6 +4,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/home/screens/dashboard_screen.dart';
 import 'package:pgme/features/home/screens/guest_dashboard_screen.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/notes/screens/notes_list_screen.dart';
 import 'package:pgme/features/notes/screens/your_notes_screen.dart';
 import 'package:pgme/features/settings/screens/profile_screen.dart';
@@ -41,25 +42,29 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  List<Widget> get _screens => [
-    // Show GuestDashboardScreen for new users, DashboardScreen for subscribed users
-    widget.isSubscribed ? const DashboardScreen() : const GuestDashboardScreen(),
-    // Show YourNotesScreen for both subscribed and unsubscribed users
-    const YourNotesScreen(),
-    // Show NotesListScreen for both - with different content based on subscription
-    NotesListScreen(isSubscribed: widget.isSubscribed),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
 
+    // Check subscription status from both widget parameter and provider
+    final dashboardProvider = Provider.of<DashboardProvider>(context);
+    final isSubscribed = widget.isSubscribed || (dashboardProvider.hasActivePurchase ?? false);
+
+    final screens = [
+      // Show GuestDashboardScreen for new users, DashboardScreen for subscribed users
+      isSubscribed ? const DashboardScreen() : const GuestDashboardScreen(),
+      // Show YourNotesScreen for both subscribed and unsubscribed users
+      const YourNotesScreen(),
+      // Show NotesListScreen for both - with different content based on subscription
+      NotesListScreen(isSubscribed: isSubscribed),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
     );
   }
 }

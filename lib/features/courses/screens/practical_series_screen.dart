@@ -5,6 +5,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:intl/intl.dart';
 
 class PracticalSeriesScreen extends StatefulWidget {
@@ -42,13 +43,30 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
       String packageId = widget.packageId ?? '';
 
-      // If no packageId provided, fetch the first practical package
+      // If no packageId provided, fetch the Practical package for user's subject
       if (packageId.isEmpty) {
-        final packages = await _dashboardService.getPackages(packageType: 'Practical');
+        // Get user's primary subject from provider
+        final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+        final primarySubjectId = dashboardProvider.primarySubject?.subjectId;
+
+        // Fetch packages filtered by subject and type
+        final packages = await _dashboardService.getPackages(
+          subjectId: primarySubjectId,
+          packageType: 'Practical',
+        );
+
         if (packages.isEmpty) {
-          throw Exception('No practical packages found');
+          throw Exception('No practical packages found for your subject');
         }
-        packageId = packages.first.packageId;
+
+        // Find the Practical package
+        final practicalPackage = packages.firstWhere(
+          (pkg) => pkg.name.toLowerCase().contains('practical'),
+          orElse: () => packages.first,
+        );
+
+        packageId = practicalPackage.packageId;
+        debugPrint('Found Practical package: ${practicalPackage.name} ($packageId)');
       }
 
       final series = await _dashboardService.getPackageSeries(packageId);
@@ -327,6 +345,14 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
+    // Get actual subscription status from DashboardProvider
+    final dashboardProvider = Provider.of<DashboardProvider>(context);
+    final hasPracticalSubscription = dashboardProvider.hasPracticalSubscription;
+    // Use DashboardProvider subscription status, fallback to URL param if provider hasn't loaded yet
+    final isSubscribed = hasPracticalSubscription || widget.isSubscribed;
+
+    debugPrint('PracticalSeriesScreen: hasPracticalSubscription=$hasPracticalSubscription, widget.isSubscribed=${widget.isSubscribed}, effective isSubscribed=$isSubscribed');
+
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -533,20 +559,17 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                               itemCount: _series.length,
                               itemBuilder: (context, index) {
                                 final series = _series[index];
-                                final isLocked = widget.isSubscribed ? false : index > 0;
+                                final isItemLocked = isSubscribed ? false : index > 0;
 
                                 return GestureDetector(
                                   onTap: () {
-                                    if (isLocked) {
+                                    if (isItemLocked) {
                                       _showEnrollmentPopup();
                                     } else {
-                                      // Navigate to available notes screen with seriesId
+                                      // Navigate to series detail screen with seriesId and packageType
                                       if (series.seriesId.isNotEmpty) {
-                                        debugPrint('Navigating to: /available-notes?seriesId=${series.seriesId}');
-                                        context.goNamed(
-                                          'available-notes',
-                                          queryParameters: {'seriesId': series.seriesId},
-                                        );
+                                        debugPrint('Navigating to: /series-detail/${series.seriesId}?packageType=Practical');
+                                        context.push('/series-detail/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical');
                                       } else {
                                         debugPrint('Error: Series ID is empty');
                                       }
@@ -560,7 +583,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                                     series.createdAt != null
                                         ? _formatDate(series.createdAt!)
                                         : 'N/A',
-                                    isLocked: isLocked,
+                                    isLocked: isItemLocked,
                                     isDark: isDark,
                                     textColor: textColor,
                                     cardBgColor: cardBgColor,

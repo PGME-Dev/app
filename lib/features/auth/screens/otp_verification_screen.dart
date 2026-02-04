@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/widgets/otp_input.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
@@ -15,6 +16,21 @@ class OTPVerificationScreen extends StatefulWidget {
 class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   String _otp = '';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSmsListener();
+  }
+
+  Future<void> _initSmsListener() async {
+    try {
+      final signature = await SmsAutoFill().getAppSignature;
+      debugPrint('App Signature for SMS: $signature');
+    } catch (e) {
+      debugPrint('Error getting app signature: $e');
+    }
+  }
 
   Future<void> _verifyOTP() async {
     if (_otp.length != 4) {
@@ -34,12 +50,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final success = await provider.verifyOTP(_otp);
 
       if (success && mounted) {
-        // Route based on onboarding status
         if (provider.onboardingCompleted) {
-          // User has completed onboarding, go to home
           context.go('/home');
         } else {
-          // User needs to complete onboarding
           context.go('/data-collection');
         }
       }
@@ -59,149 +72,177 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
+  void _onOTPCompleted(String otp) {
+    setState(() => _otp = otp);
+    if (otp.length == 4) {
+      _verifyOTP();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final double bottomPadding = keyboardHeight > 0 ? keyboardHeight + 16 : 50.0;
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // Back button
-          Positioned(
-            top: 64,
-            left: 24,
-            child: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.divider, width: 1),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 20,
-                    color: AppColors.textPrimary,
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              // Back button
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.divider, width: 1),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 18,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Logo at top
-          Positioned(
-            top: 118,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/illustrations/logo2.png',
-                width: 240,
-                height: 63,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox(width: 240, height: 63);
-                },
-              ),
-            ),
-          ),
-
-          // Title
-          Positioned(
-            top: 229,
-            left: 0,
-            right: 0,
-            child: const Text(
-              'Verify OTP',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 36,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-                color: Color(0xFF000000),
-              ),
-            ),
-          ),
-
-          // Subtitle
-          Positioned(
-            top: 286,
-            left: 24,
-            right: 24,
-            child: Opacity(
-              opacity: 0.6,
-              child: const Text(
-                'Please enter the 4-digit OTP sent to\nyour mobile number',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w400,
-                  height: 1.2,
-                  color: Color(0xFF000000),
-                ),
-              ),
-            ),
-          ),
-
-          // OTP Input
-          Positioned(
-            top: 368,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: OTPInput(
-                length: 4,
-                onCompleted: (otp) {
-                  setState(() => _otp = otp);
-                },
-              ),
-            ),
-          ),
-
-          // Verify Button
-          Positioned(
-            bottom: bottomPadding,
-            left: 44,
-            right: 44,
-            child: SizedBox(
-              height: 54,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _verifyOTP,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(22),
+              // Top flexible section - only logo
+              Expanded(
+                child: Center(
+                  child: Image.asset(
+                    'assets/illustrations/logo2.png',
+                    height: isKeyboardOpen ? 36 : 50,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return SizedBox(height: isKeyboardOpen ? 36 : 50);
+                    },
                   ),
-                  elevation: 0,
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Verify',
+              ),
+
+              // Bottom section - all form content
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    'Verify OTP',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isKeyboardOpen ? 24 : 28,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF000000),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  Text(
+                    'Enter the 4-digit OTP sent to your mobile',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isKeyboardOpen ? 13 : 15,
+                      color: const Color(0x99000000),
+                    ),
+                  ),
+
+                  SizedBox(height: isKeyboardOpen ? 20 : 28),
+
+                  // OTP Input
+                  OTPInput(
+                    length: 4,
+                    onCompleted: _onOTPCompleted,
+                  ),
+
+                  SizedBox(height: isKeyboardOpen ? 16 : 20),
+
+                  // Resend OTP
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Didn't receive? ",
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                          fontSize: isKeyboardOpen ? 12 : 13,
+                          color: const Color(0x99000000),
                         ),
                       ),
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('OTP resent successfully'),
+                              backgroundColor: AppColors.primaryBlue,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Resend',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isKeyboardOpen ? 12 : 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: isKeyboardOpen ? 20 : 28),
+
+                  // Verify Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _verifyOTP,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Verify',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  SizedBox(height: isKeyboardOpen ? 12 : 24),
+                ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -7,6 +7,8 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/features/settings/providers/subscription_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => BookProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

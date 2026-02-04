@@ -21,9 +21,15 @@ import 'package:pgme/features/purchase/screens/purchase_screen.dart';
 import 'package:pgme/features/purchase/screens/congratulations_screen.dart';
 import 'package:pgme/features/purchase/screens/all_packages_screen.dart';
 import 'package:pgme/features/sessions/screens/session_details_screen.dart';
+import 'package:pgme/features/sessions/screens/series_sessions_screen.dart';
 import 'package:pgme/features/notes/screens/order_physical_books_screen.dart';
+import 'package:pgme/features/books/screens/book_cart_screen.dart';
+import 'package:pgme/features/books/screens/book_checkout_screen.dart';
+import 'package:pgme/features/books/screens/book_order_confirmation_screen.dart';
+import 'package:pgme/features/books/screens/book_orders_screen.dart';
 import 'package:pgme/features/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features/courses/screens/revision_series_screen.dart';
+import 'package:pgme/features/courses/screens/enrolled_course_detail_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -178,19 +184,23 @@ class AppRouter {
       GoRoute(
         path: '/purchase',
         name: 'purchase',
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const PurchaseScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            );
-          },
-        ),
+        pageBuilder: (context, state) {
+          final packageId = state.uri.queryParameters['packageId'];
+          final packageType = state.uri.queryParameters['packageType'];
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: PurchaseScreen(packageId: packageId, packageType: packageType),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              );
+            },
+          );
+        },
       ),
 
       GoRoute(
@@ -314,6 +324,34 @@ class AppRouter {
             },
           ),
 
+          // Series Detail (for unpurchased users - shows demo video and sample PDF/live session options)
+          GoRoute(
+            path: '/series-detail/:id',
+            name: 'series-detail',
+            pageBuilder: (context, state) {
+              final seriesId = state.pathParameters['id']!;
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EnrolledCourseDetailScreen(
+                  seriesId: seriesId,
+                  isSubscribed: isSubscribed,
+                  packageType: packageType,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
           // Lecture Video Screen
           GoRoute(
             path: '/lecture/:id',
@@ -321,9 +359,10 @@ class AppRouter {
             pageBuilder: (context, state) {
               final courseId = state.pathParameters['id']!;
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: LectureVideoScreen(courseId: courseId, isSubscribed: isSubscribed),
+                child: LectureVideoScreen(courseId: courseId, isSubscribed: isSubscribed, packageType: packageType),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -365,9 +404,10 @@ class AppRouter {
             name: 'available-notes',
             pageBuilder: (context, state) {
               final seriesId = state.uri.queryParameters['seriesId'] ?? '';
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: AvailableNotesScreen(seriesId: seriesId),
+                child: AvailableNotesScreen(seriesId: seriesId, isSubscribed: isSubscribed),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -421,11 +461,59 @@ class AppRouter {
 
           // Session Details
           GoRoute(
-            path: '/session-details',
+            path: '/session/:id',
             name: 'session-details',
+            pageBuilder: (context, state) {
+              final sessionId = state.pathParameters['id']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: SessionDetailsScreen(sessionId: sessionId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Series Live Sessions (for practical packages)
+          GoRoute(
+            path: '/series-sessions/:id',
+            name: 'series-sessions',
+            pageBuilder: (context, state) {
+              final seriesId = state.pathParameters['id']!;
+              final seriesName = state.uri.queryParameters['seriesName'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: SeriesSessionsScreen(
+                  seriesId: seriesId,
+                  seriesName: seriesName,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Order Physical Books
+          GoRoute(
+            path: '/order-physical-books',
+            name: 'order-physical-books',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const SessionDetailsScreen(),
+              child: const OrderPhysicalBooksScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
@@ -438,13 +526,73 @@ class AppRouter {
             ),
           ),
 
-          // Order Physical Books
+          // Book Cart
           GoRoute(
-            path: '/order-physical-books',
-            name: 'order-physical-books',
+            path: '/book-cart',
+            name: 'book-cart',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const OrderPhysicalBooksScreen(),
+              child: const BookCartScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Book Checkout
+          GoRoute(
+            path: '/book-checkout',
+            name: 'book-checkout',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const BookCheckoutScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Book Order Confirmation
+          GoRoute(
+            path: '/book-order-confirmation/:orderId',
+            name: 'book-order-confirmation',
+            pageBuilder: (context, state) {
+              final orderId = state.pathParameters['orderId']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: BookOrderConfirmationScreen(orderId: orderId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Book Orders List
+          GoRoute(
+            path: '/book-orders',
+            name: 'book-orders',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const BookOrdersScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(

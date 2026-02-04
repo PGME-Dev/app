@@ -1,0 +1,484 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:pgme/core/providers/theme_provider.dart';
+import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/models/live_session_model.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
+
+class SeriesSessionsScreen extends StatefulWidget {
+  final String seriesId;
+  final String? seriesName;
+
+  const SeriesSessionsScreen({
+    super.key,
+    required this.seriesId,
+    this.seriesName,
+  });
+
+  @override
+  State<SeriesSessionsScreen> createState() => _SeriesSessionsScreenState();
+}
+
+class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
+  final DashboardService _dashboardService = DashboardService();
+  List<LiveSessionModel> _sessions = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final sessions = await _dashboardService.getLiveSessionsBySeries(widget.seriesId);
+
+      if (mounted) {
+        setState(() {
+          _sessions = sessions;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _formatDateTime(String isoString) {
+    try {
+      final dateTime = DateTime.parse(isoString);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
+      final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+      return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}, ${hour == 0 ? 12 : hour}:${dateTime.minute.toString().padLeft(2, '0')} $period';
+    } catch (e) {
+      return isoString;
+    }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status) {
+      case 'scheduled':
+        return 'Upcoming';
+      case 'live':
+        return 'Live Now';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status, bool isDark) {
+    switch (status) {
+      case 'scheduled':
+        return isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
+      case 'live':
+        return Colors.green;
+      case 'completed':
+        return isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
+    final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: Column(
+        children: [
+          // Header
+          Padding(
+            padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Icon(
+                    Icons.arrow_back,
+                    size: 24,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Live Sessions',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 20,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Series name subtitle
+          if (widget.seriesName != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  widget.seriesName!,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Content
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: iconColor),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load sessions',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _error!.replaceAll('Exception: ', ''),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                color: secondaryTextColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadSessions,
+                              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _sessions.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.videocam_off_outlined, size: 48, color: secondaryTextColor),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No live sessions available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Check back later for upcoming sessions',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadSessions,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _sessions.length,
+                              itemBuilder: (context, index) {
+                                final session = _sessions[index];
+                                return _buildSessionCard(
+                                  session,
+                                  isDark: isDark,
+                                  textColor: textColor,
+                                  secondaryTextColor: secondaryTextColor,
+                                  cardBgColor: cardBgColor,
+                                  iconColor: iconColor,
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionCard(
+    LiveSessionModel session, {
+    required bool isDark,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color cardBgColor,
+    required Color iconColor,
+  }) {
+    final statusColor = _getStatusColor(session.status, isDark);
+
+    return GestureDetector(
+      onTap: () {
+        // Navigate to session details
+        context.push('/session/${session.sessionId}');
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: cardBgColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  const BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Stack(
+                children: [
+                  session.thumbnailUrl != null
+                      ? Image.network(
+                          session.thumbnailUrl!,
+                          width: double.infinity,
+                          height: 140,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: 140,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                              child: Icon(
+                                Icons.videocam_outlined,
+                                size: 48,
+                                color: secondaryTextColor,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: 140,
+                          color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                          child: Icon(
+                            Icons.videocam_outlined,
+                            size: 48,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                  // Status badge
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _getStatusLabel(session.status),
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Live indicator
+                  if (session.status == 'live')
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    session.title,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Date and time
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: iconColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDateTime(session.scheduledStartTime),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // Duration
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: iconColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${session.durationMinutes} mins',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (session.facultyName != null) ...[
+                    const SizedBox(height: 12),
+                    // Faculty info
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                          backgroundImage: session.facultyPhotoUrl != null
+                              ? NetworkImage(session.facultyPhotoUrl!)
+                              : null,
+                          child: session.facultyPhotoUrl == null
+                              ? Icon(
+                                  Icons.person,
+                                  size: 14,
+                                  color: secondaryTextColor,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            session.facultyName!,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

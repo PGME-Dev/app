@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
@@ -25,6 +26,17 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         context.read<DashboardProvider>().loadDashboard();
       }
     });
+  }
+
+  /// Get display name (first name only) from AuthProvider
+  String _getDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.user?.name;
+    if (fullName == null || fullName.isEmpty) {
+      return 'User';
+    }
+    // Return first name only
+    final firstName = fullName.split(' ').first;
+    return firstName.isNotEmpty ? firstName : 'User';
   }
 
   Future<void> _openWhatsApp() async {
@@ -51,6 +63,27 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     }
   }
 
+  Future<void> _showSubjectPicker() async {
+    final provider = context.read<DashboardProvider>();
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDark = themeProvider.isDarkMode;
+
+    // Fetch subjects if not already loaded
+    await provider.fetchAllSubjects();
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _SubjectPickerSheet(
+        isDark: isDark,
+        provider: provider,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -63,8 +96,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Consumer<DashboardProvider>(
-        builder: (context, provider, _) {
+      body: Consumer2<AuthProvider, DashboardProvider>(
+        builder: (context, authProvider, provider, _) {
+          final userName = _getDisplayName(authProvider);
+
           return RefreshIndicator(
             onRefresh: provider.refresh,
             child: SingleChildScrollView(
@@ -85,7 +120,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hello, ${provider.userName ?? 'User'}!',
+                                'Hello, $userName!',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w500,
@@ -195,13 +230,16 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                                   color: textColor,
                                 ),
                               ),
-                              Text(
-                                'Browse All',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              GestureDetector(
+                                onTap: _showSubjectPicker,
+                                child: Text(
+                                  'Browse All',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 14,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -378,8 +416,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // Enroll Now Button
           GestureDetector(
             onTap: () {
-              // Navigate to purchase screen
-              context.push('/purchase');
+              // Navigate to purchase screen with package data
+              context.push('/purchase?packageId=${package.packageId}');
             },
             child: Container(
               width: double.infinity,
@@ -432,6 +470,277 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubjectPickerSheet extends StatefulWidget {
+  final bool isDark;
+  final DashboardProvider provider;
+
+  const _SubjectPickerSheet({
+    required this.isDark,
+    required this.provider,
+  });
+
+  @override
+  State<_SubjectPickerSheet> createState() => _SubjectPickerSheetState();
+}
+
+class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
+  String? _selectedSubjectId;
+
+  Future<void> _onSubjectTap(subject) async {
+    final isCurrentlySelected = widget.provider.primarySubject?.subjectId == subject.subjectId;
+    if (isCurrentlySelected) return;
+
+    setState(() {
+      _selectedSubjectId = subject.subjectId;
+    });
+
+    final success = await widget.provider.changePrimarySubject(subject);
+
+    if (mounted) {
+      Navigator.pop(context);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Subject changed to ${subject.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to change subject'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final provider = widget.provider;
+    final backgroundColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: secondaryTextColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Select Subject',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    color: textColor,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _selectedSubjectId != null ? null : () => Navigator.pop(context),
+                  child: Icon(
+                    Icons.close,
+                    color: _selectedSubjectId != null
+                        ? secondaryTextColor.withValues(alpha: 0.3)
+                        : secondaryTextColor,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Divider
+          Divider(
+            height: 1,
+            color: secondaryTextColor.withValues(alpha: 0.2),
+          ),
+
+          // Content
+          Flexible(
+            child: ListenableBuilder(
+              listenable: provider,
+              builder: (context, _) {
+                if (provider.isLoadingAllSubjects) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (provider.allSubjects.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.school_outlined,
+                            size: 48,
+                            color: secondaryTextColor,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No subjects available',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: provider.allSubjects.length,
+                  itemBuilder: (context, index) {
+                    final subject = provider.allSubjects[index];
+                    final isCurrentlySelected = provider.primarySubject?.subjectId == subject.subjectId;
+                    final isBeingSelected = _selectedSubjectId == subject.subjectId;
+                    final isDisabled = _selectedSubjectId != null && !isBeingSelected;
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: (_selectedSubjectId != null || isCurrentlySelected)
+                            ? null
+                            : () => _onSubjectTap(subject),
+                        splashColor: AppColors.primaryBlue.withValues(alpha: 0.1),
+                        highlightColor: AppColors.primaryBlue.withValues(alpha: 0.05),
+                        child: Opacity(
+                          opacity: isDisabled ? 0.4 : 1.0,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            child: Row(
+                              children: [
+                                // Icon container
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: isCurrentlySelected || isBeingSelected
+                                        ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                                        : (isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5)),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: isBeingSelected
+                                        ? Border.all(color: AppColors.primaryBlue, width: 2)
+                                        : null,
+                                  ),
+                                  child: subject.iconUrl != null && subject.iconUrl!.isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Image.network(
+                                            subject.iconUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.school_outlined,
+                                              color: isCurrentlySelected || isBeingSelected
+                                                  ? AppColors.primaryBlue
+                                                  : secondaryTextColor,
+                                            ),
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.school_outlined,
+                                          color: isCurrentlySelected || isBeingSelected
+                                              ? AppColors.primaryBlue
+                                              : secondaryTextColor,
+                                        ),
+                                ),
+                                const SizedBox(width: 16),
+
+                                // Subject name
+                                Expanded(
+                                  child: Text(
+                                    subject.name,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: isCurrentlySelected || isBeingSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      fontSize: 16,
+                                      color: isCurrentlySelected || isBeingSelected
+                                          ? AppColors.primaryBlue
+                                          : textColor,
+                                    ),
+                                  ),
+                                ),
+
+                                // Trailing indicator
+                                if (isBeingSelected)
+                                  const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                    ),
+                                  )
+                                else if (isCurrentlySelected)
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.primaryBlue,
+                                    size: 24,
+                                  )
+                                else
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: secondaryTextColor.withValues(alpha: 0.5),
+                                    size: 16,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
+          // Bottom safe area
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
         ],
       ),
     );

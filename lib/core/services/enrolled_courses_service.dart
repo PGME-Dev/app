@@ -27,6 +27,20 @@ class EnrolledCoursesService {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final purchasesData = response.data['data']['purchases'] as List;
+
+        // Debug: Log raw API response for each purchase
+        debugPrint('=== RAW API RESPONSE ===');
+        for (var i = 0; i < purchasesData.length; i++) {
+          final raw = purchasesData[i] as Map<String, dynamic>;
+          final pkg = raw['package'] as Map<String, dynamic>?;
+          debugPrint('Purchase $i:');
+          debugPrint('  package_name: ${pkg?['name']}');
+          debugPrint('  package_type: ${pkg?['package_type']}');
+          debugPrint('  is_active: ${raw['is_active']}');
+          debugPrint('  payment_status: ${raw['payment_status']}');
+        }
+        debugPrint('=== END RAW API RESPONSE ===');
+
         final purchases = purchasesData
             .map((json) => PurchaseModel.fromJson(json as Map<String, dynamic>))
             .toList();

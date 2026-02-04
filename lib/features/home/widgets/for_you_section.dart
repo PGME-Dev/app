@@ -10,6 +10,8 @@ class ForYouSection extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final VoidCallback? onRetry;
+  final bool hasTheorySubscription;
+  final bool hasPracticalSubscription;
 
   const ForYouSection({
     super.key,
@@ -17,6 +19,8 @@ class ForYouSection extends StatelessWidget {
     this.isLoading = false,
     this.error,
     this.onRetry,
+    this.hasTheorySubscription = false,
+    this.hasPracticalSubscription = false,
   });
 
   @override
@@ -58,34 +62,47 @@ class ForYouSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Content
+        // Content - Responsive layout
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Resume Card (Left - Tall)
-              _buildResumeCard(isDark, textColor, lastWatched),
-              const SizedBox(width: 9),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.maxWidth;
+              const gap = 9.0;
+              // Left card takes ~49% of available width, right column takes ~51%
+              final resumeCardWidth = (availableWidth - gap) * 0.49;
+              final rightColumnWidth = (availableWidth - gap) * 0.51;
 
-              // Right Column - Theory and Practical
-              Column(
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildTheoryCard(context, isDark, textColor),
-                  const SizedBox(height: 9),
-                  _buildPracticalCard(context, isDark, textColor),
+                  // Resume Card (Left - Tall)
+                  _buildResumeCard(isDark, textColor, lastWatched, resumeCardWidth),
+                  const SizedBox(width: gap),
+
+                  // Right Column - Theory and Practical
+                  SizedBox(
+                    width: rightColumnWidth,
+                    child: Column(
+                      children: [
+                        _buildTheoryCard(context, isDark, textColor, rightColumnWidth),
+                        const SizedBox(height: 9),
+                        _buildPracticalCard(context, isDark, textColor, rightColumnWidth),
+                      ],
+                    ),
+                  ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video) {
+  Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video, double cardWidth) {
     return Container(
-      width: 176,
+      width: cardWidth,
       height: 281,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
@@ -165,14 +182,16 @@ class ForYouSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTheoryCard(BuildContext context, bool isDark, Color textColor) {
+  Widget _buildTheoryCard(BuildContext context, bool isDark, Color textColor, double cardWidth) {
+    final isLocked = !hasTheorySubscription;
+
     return GestureDetector(
       onTap: () {
-        // Navigate to theory/revision series
-        context.push('/revision-series?subscribed=true');
+        // Navigate to theory/revision series with actual subscription status
+        context.push('/revision-series?subscribed=$hasTheorySubscription');
       },
       child: Container(
-        width: 173,
+        width: cardWidth,
         height: 137,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -236,11 +255,11 @@ class ForYouSection extends StatelessWidget {
                 ],
               ),
             ),
-            // Play button
+            // Play button or lock button based on subscription
             Positioned(
               bottom: 12,
               right: 12,
-              child: _buildPlayButton(isDark),
+              child: isLocked ? _buildLockButton(isDark) : _buildPlayButton(isDark),
             ),
           ],
         ),
@@ -248,14 +267,16 @@ class ForYouSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPracticalCard(BuildContext context, bool isDark, Color textColor) {
+  Widget _buildPracticalCard(BuildContext context, bool isDark, Color textColor, double cardWidth) {
+    final isLocked = !hasPracticalSubscription;
+
     return GestureDetector(
       onTap: () {
-        // Navigate to practical series (will auto-fetch first practical package)
-        context.push('/practical-series?subscribed=true');
+        // Navigate to practical series with actual subscription status
+        context.push('/practical-series?subscribed=$hasPracticalSubscription');
       },
       child: Container(
-        width: 173,
+        width: cardWidth,
         height: 135,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -319,11 +340,11 @@ class ForYouSection extends StatelessWidget {
                 ],
               ),
             ),
-            // Play button
+            // Play button or lock button based on subscription
             Positioned(
               bottom: 12,
               right: 12,
-              child: _buildPlayButton(isDark),
+              child: isLocked ? _buildLockButton(isDark) : _buildPlayButton(isDark),
             ),
           ],
         ),
@@ -348,6 +369,29 @@ class ForYouSection extends StatelessWidget {
           Icons.play_arrow,
           size: 18,
           color: isDark ? Colors.white : const Color(0xFF000000),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockButton(bool isDark) {
+    final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? AppColors.darkTextSecondary : const Color(0xFF000000),
+          width: 1.5,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.lock,
+          size: 16,
+          color: iconColor,
         ),
       ),
     );

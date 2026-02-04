@@ -69,6 +69,21 @@ class StorageService {
     return value == 'true';
   }
 
+  // Intro screens seen status (informational onboarding carousel)
+  Future<void> saveIntroSeen(bool seen) async {
+    await _secureStorage.write(
+      key: ApiConstants.introSeenKey,
+      value: seen.toString(),
+    );
+  }
+
+  Future<bool> getIntroSeen() async {
+    final value = await _secureStorage.read(
+      key: ApiConstants.introSeenKey,
+    );
+    return value == 'true';
+  }
+
   // Save all tokens at once
   Future<void> saveAuthTokens({
     required String accessToken,

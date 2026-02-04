@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget child;
@@ -20,6 +21,22 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+
+    // Get subscription status from DashboardProvider
+    final dashboardProvider = Provider.of<DashboardProvider>(context);
+    final hasTheorySubscription = dashboardProvider.hasTheorySubscription;
+    final hasPracticalSubscription = dashboardProvider.hasPracticalSubscription;
+    final hasAnySubscription = hasTheorySubscription || hasPracticalSubscription;
+
+    // Determine video icon route based on subscription
+    String videoRoute;
+    if (hasTheorySubscription) {
+      videoRoute = '/revision-series?subscribed=true';
+    } else if (hasPracticalSubscription) {
+      videoRoute = '/practical-series?subscribed=true';
+    } else {
+      videoRoute = '/home?tab=2';
+    }
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -72,7 +89,7 @@ class AppScaffold extends StatelessWidget {
                     index: 0,
                     icon: Icons.home_outlined,
                     activeIcon: Icons.home,
-                    route: '/home${isSubscribed ? '?subscribed=true' : ''}',
+                    route: '/home${hasAnySubscription ? '?subscribed=true' : ''}',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
@@ -81,7 +98,7 @@ class AppScaffold extends StatelessWidget {
                     index: 1,
                     icon: Icons.description_outlined,
                     activeIcon: Icons.description,
-                    route: '/home?tab=1${isSubscribed ? '&subscribed=true' : ''}',
+                    route: '/home?tab=1${hasAnySubscription ? '&subscribed=true' : ''}',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
@@ -90,7 +107,7 @@ class AppScaffold extends StatelessWidget {
                     index: 2,
                     icon: Icons.videocam_outlined,
                     activeIcon: Icons.videocam,
-                    route: '/home?tab=2${isSubscribed ? '&subscribed=true' : ''}',
+                    route: videoRoute,
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
@@ -99,7 +116,7 @@ class AppScaffold extends StatelessWidget {
                     index: 3,
                     icon: Icons.person_outline,
                     activeIcon: Icons.person,
-                    route: '/home?tab=3${isSubscribed ? '&subscribed=true' : ''}',
+                    route: '/home?tab=3${hasAnySubscription ? '&subscribed=true' : ''}',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),

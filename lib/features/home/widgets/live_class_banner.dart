@@ -138,8 +138,8 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
   }
 
   void _viewDetails() {
-    // Navigate to session details screen
-    context.push('/session-details');
+    // Navigate to session details screen with session ID
+    context.push('/session/${widget.session.sessionId}');
   }
 
   @override
@@ -189,37 +189,32 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
 
               // Content
               Padding(
-                padding: const EdgeInsets.only(left: 13, top: 8, right: 13, bottom: 8),
+                padding: const EdgeInsets.only(left: 13, top: 10, right: 13, bottom: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                 children: [
                   // Status Badge
                   Container(
-                    width: 76,
-                    height: 19,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: widget.session.status == 'live'
                           ? Colors.red.withValues(alpha: 0.9)
                           : Colors.white.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(7.15),
                     ),
-                    child: Center(
-                      child: Text(
-                        widget.session.status == 'live'
-                            ? 'LIVE NOW'
-                            : 'LIVE CLASS',
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 11.62,
-                          height: 1.0,
-                          color: Colors.white,
-                        ),
+                    child: Text(
+                      widget.session.status == 'live'
+                          ? 'LIVE NOW'
+                          : 'LIVE CLASS',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 11,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
 
                   // Title
                   SizedBox(
@@ -247,12 +242,11 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,
                       fontSize: 12,
-                      height: 1.0,
                       color: Colors.white,
                     ),
                   ),
 
-                  const SizedBox(height: 4),
+                  const Spacer(),
 
                   // Buttons
                   Row(
@@ -261,8 +255,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                       GestureDetector(
                         onTap: _canJoin ? _joinSession : null,
                         child: Container(
-                          width: 84,
-                          height: 26,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
                             color: _canJoin
                                 ? (widget.session.status == 'live'
@@ -271,44 +264,37 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                                 : Colors.grey,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Center(
-                            child: Text(
-                              widget.session.status == 'live'
-                                  ? 'Join Now'
-                                  : 'Join Live',
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                fontSize: 13,
-                                height: 1.0,
-                                color: Colors.white,
-                              ),
+                          child: Text(
+                            widget.session.status == 'live'
+                                ? 'Join Now'
+                                : 'Join Live',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 9),
+                      const SizedBox(width: 8),
 
                       // View Details Button
                       GestureDetector(
                         onTap: _viewDetails,
                         child: Container(
-                          width: 98,
-                          height: 25,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Center(
-                            child: Text(
-                              'View Details',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                fontSize: 13,
-                                height: 1.0,
-                                color: AppColors.primaryBlue,
-                              ),
+                          child: const Text(
+                            'View Details',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              color: AppColors.primaryBlue,
                             ),
                           ),
                         ),

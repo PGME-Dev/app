@@ -5,6 +5,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -25,28 +26,75 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   List<SeriesModel> _series = [];
   bool _isLoading = true;
   String? _error;
+  String? _activePackageId;
 
   @override
   void initState() {
     super.initState();
+    _initializeAndLoadSeries();
+  }
+
+  Future<void> _initializeAndLoadSeries() async {
     if (widget.packageId != null) {
-      _loadSeries();
+      _activePackageId = widget.packageId;
+      await _loadSeries();
     } else {
-      // Use hardcoded data if no packageId provided
-      setState(() {
-        _isLoading = false;
-      });
+      // No packageId provided - find user's Theory package
+      await _findAndLoadTheoryPackage();
     }
   }
 
-  Future<void> _loadSeries() async {
+  Future<void> _findAndLoadTheoryPackage() async {
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
 
-      final series = await _dashboardService.getPackageSeries(widget.packageId!);
+      // Get user's primary subject from provider
+      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+      final primarySubjectId = dashboardProvider.primarySubject?.subjectId;
+
+      // Fetch packages filtered by subject
+      final packages = await _dashboardService.getPackages(
+        subjectId: primarySubjectId,
+      );
+
+      // Find the Theory package
+      final theoryPackage = packages.firstWhere(
+        (pkg) => pkg.name.toLowerCase().contains('theory'),
+        orElse: () => packages.isNotEmpty ? packages.first : throw Exception('No Theory package found'),
+      );
+
+      _activePackageId = theoryPackage.packageId;
+      debugPrint('Found Theory package: ${theoryPackage.name} (${_activePackageId})');
+
+      // Now load the series for this package
+      await _loadSeries();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadSeries() async {
+    if (_activePackageId == null) {
+      setState(() {
+        _error = 'No package ID available';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final series = await _dashboardService.getPackageSeries(_activePackageId!);
 
       setState(() {
         _series = series;
@@ -322,6 +370,14 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
+    // Get actual subscription status from DashboardProvider
+    final dashboardProvider = Provider.of<DashboardProvider>(context);
+    final hasTheorySubscription = dashboardProvider.hasTheorySubscription;
+    // Use DashboardProvider subscription status, fallback to URL param if provider hasn't loaded yet
+    final isSubscribed = hasTheorySubscription || widget.isSubscribed;
+
+    debugPrint('RevisionSeriesScreen: hasTheorySubscription=$hasTheorySubscription, widget.isSubscribed=${widget.isSubscribed}, effective isSubscribed=$isSubscribed');
+
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -342,7 +398,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             left: 16,
             child: GestureDetector(
               onTap: () {
-                context.go('/home?subscribed=${widget.isSubscribed}');
+                context.go('/home?subscribed=$isSubscribed');
               },
               child: SizedBox(
                 width: 24,
@@ -510,30 +566,25 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                           ),
                         ),
                       )
-                    : widget.packageId != null && _series.isNotEmpty
+                    : _series.isNotEmpty
                         ? ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 15),
                             itemCount: _series.length,
                             itemBuilder: (context, index) {
                               final series = _series[index];
                               // If subscribed, all items are unlocked. Otherwise only first item is unlocked
-                              final isLocked = widget.isSubscribed ? false : index > 0;
+                              final isItemLocked = isSubscribed ? false : index > 0;
 
                               return GestureDetector(
                                 onTap: () {
-                                  if (isLocked) {
+                                  if (isItemLocked) {
                                     _showEnrollmentPopup();
                                   } else {
-                                    // Navigate to available notes screen with seriesId
-                                    final seriesId = widget.packageId != null && _series.isNotEmpty
-                                        ? series.seriesId
-                                        : '';
+                                    // Navigate to series detail screen with seriesId
+                                    final seriesId = series.seriesId;
                                     if (seriesId.isNotEmpty) {
-                                      debugPrint('Navigating to: /available-notes?seriesId=$seriesId');
-                                      context.goNamed(
-                                        'available-notes',
-                                        queryParameters: {'seriesId': seriesId},
-                                      );
+                                      debugPrint('Navigating to: /series-detail/$seriesId');
+                                      context.push('/series-detail/$seriesId?subscribed=$isSubscribed&packageType=Theory');
                                     } else {
                                       debugPrint('Error: Series ID is empty');
                                     }
@@ -547,7 +598,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                                   series.createdAt != null
                                       ? _formatDate(series.createdAt!)
                                       : 'N/A',
-                                  isLocked: isLocked,
+                                  isLocked: isItemLocked,
                                   isDark: isDark,
                                   textColor: textColor,
                                   cardBgColor: cardBgColor,
@@ -556,41 +607,40 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                               );
                             },
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            itemCount: 4,
-                            itemBuilder: (context, index) {
-                              // Fallback to hardcoded data if no packageId
-                              final isLocked = widget.isSubscribed ? false : index > 0;
-
-                              return GestureDetector(
-                                onTap: () {
-                                  if (isLocked) {
-                                    _showEnrollmentPopup();
-                                  } else {
-                                    // Hardcoded data - cannot navigate without real series ID
-                                    debugPrint('Error: Cannot navigate - no real series data available');
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Please provide a package ID to load real series data'),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: _buildPackageCard(
-                                  context,
-                                  'TECOM Revision Series ${_romanNumeral(index + 1)}',
-                                  'dolore non sit quis laboris deserunt non duis occaecat anim aute occaecat minim sit esse do exercitation velit',
-                                  '8 Pages',
-                                  '21 Jan 2026',
-                                  isLocked: isLocked,
-                                  isDark: isDark,
-                                  textColor: textColor,
-                                  cardBgColor: cardBgColor,
-                                  iconColor: iconColor,
-                                ),
-                              );
-                            },
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.folder_open_outlined,
+                                    size: 48,
+                                    color: textColor.withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No series available',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'This package does not have any series yet.',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 14,
+                                      color: secondaryTextColor,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
           ),
         ],
@@ -737,21 +787,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         ],
       ),
     );
-  }
-
-  String _romanNumeral(int number) {
-    switch (number) {
-      case 1:
-        return 'I';
-      case 2:
-        return 'II';
-      case 3:
-        return 'III';
-      case 4:
-        return 'IV';
-      default:
-        return '$number';
-    }
   }
 
   String _formatDate(String isoDate) {

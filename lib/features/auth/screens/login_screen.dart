@@ -86,104 +86,87 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
-                children: [
-                  // Skip button
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => context.go('/home'),
-                      child: const Text(
-                        'Skip',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+          child: Column(
+            children: [
+              // Flexible top section - expands to fill available space
+              Expanded(
+                flex: isKeyboardOpen ? 1 : 2,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo
+                    Image.asset(
+                      'assets/illustrations/logo2.png',
+                      height: isKeyboardOpen ? 40 : 53,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return SizedBox(height: isKeyboardOpen ? 40 : 53);
+                      },
+                    ),
+
+                    // Illustration - only when keyboard is closed
+                    if (!isKeyboardOpen) ...[
+                      const SizedBox(height: 16),
+                      Flexible(
+                        child: Image.asset(
+                          'assets/illustrations/login.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.phone_android_rounded,
+                              size: 80,
+                              color: AppColors.textTertiary,
+                            );
+                          },
                         ),
                       ),
-                    ),
-                  ),
+                    ],
+                  ],
+                ),
+              ),
 
-                  const Spacer(),
-
-                  // Logo
-                  Image.asset(
-                    'assets/illustrations/logo2.png',
-                    width: 200,
-                    height: 53,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox(width: 200, height: 53);
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Login Illustration
-                  Image.asset(
-                    'assets/illustrations/login.png',
-                    width: 260,
-                    height: 260,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 200,
-                        height: 200,
-                        color: AppColors.cardBackground,
-                        child: const Center(
-                          child: Icon(
-                            Icons.phone_android_rounded,
-                            size: 80,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const Spacer(),
-
+              // Bottom section - fixed content
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   // Title
-                  const Text(
+                  Text(
                     'Login',
-                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 36,
+                      fontSize: isKeyboardOpen ? 24 : 32,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF000000),
+                      color: const Color(0xFF000000),
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
 
                   // Subtitle
-                  const Text(
-                    'Enter your mobile number to receive\nan OTP',
+                  Text(
+                    'Enter your mobile number to receive an OTP',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 18,
+                      fontSize: isKeyboardOpen ? 14 : 16,
                       fontWeight: FontWeight.w400,
-                      height: 1.2,
-                      color: Color(0xFF000000),
+                      color: const Color(0xFF000000),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Mobile Number Input
                   Container(
-                    height: 64,
+                    height: 56,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -191,17 +174,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        // Country Code
                         const SizedBox(width: 16),
                         Image.asset(
                           'assets/images/flag_india.png',
                           width: 24,
                           height: 24,
                           errorBuilder: (context, error, stackTrace) {
-                            return const Text(
-                              '🇮🇳',
-                              style: TextStyle(fontSize: 20),
-                            );
+                            return const Text('🇮🇳', style: TextStyle(fontSize: 20));
                           },
                         ),
                         const SizedBox(width: 8),
@@ -214,15 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Vertical divider line
-                        Container(
-                          width: 1,
-                          height: 37,
-                          color: AppColors.divider,
-                        ),
+                        Container(width: 1, height: 32, color: AppColors.divider),
                         const SizedBox(width: 12),
-
-                        // Phone Number Input
                         Expanded(
                           child: TextField(
                             controller: _phoneController,
@@ -230,7 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.phone,
                             maxLength: 10,
                             textInputAction: TextInputAction.done,
-                            enableInteractiveSelection: true,
                             autofocus: false,
                             style: const TextStyle(
                               fontSize: 16,
@@ -246,12 +217,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              focusedErrorBorder: InputBorder.none,
-                              filled: false,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                               counterText: '',
+                              contentPadding: EdgeInsets.symmetric(vertical: 14),
                             ),
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
@@ -263,20 +230,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Terms and Privacy
                   RichText(
                     textAlign: TextAlign.center,
-                    text: const TextSpan(
+                    text: TextSpan(
                       style: TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF000000),
-                        height: 1.0,
+                        fontSize: isKeyboardOpen ? 11 : 13,
+                        color: const Color(0xFF000000),
                       ),
-                      children: [
+                      children: const [
                         TextSpan(text: 'By continuing you agree to our '),
                         TextSpan(
                           text: 'Terms of Service',
@@ -298,12 +263,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const Spacer(),
+                  const SizedBox(height: 20),
 
                   // Send OTP Button
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _sendOTP,
                       style: ElevatedButton.styleFrom(
@@ -333,10 +298,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: isKeyboardOpen ? 12 : 24),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),

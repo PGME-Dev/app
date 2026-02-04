@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/for_you_section.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
+import 'package:pgme/features/home/widgets/dashboard_skeleton.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -51,6 +53,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  /// Get display name (first name only)
+  String _getDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.user?.name;
+    if (fullName == null || fullName.isEmpty) {
+      return 'User';
+    }
+    // Return first name only
+    final firstName = fullName.split(' ').first;
+    return firstName.isNotEmpty ? firstName : 'User';
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -63,10 +76,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Consumer<DashboardProvider>(
-        builder: (context, provider, _) {
+      body: Consumer2<AuthProvider, DashboardProvider>(
+        builder: (context, authProvider, dashboardProvider, _) {
+          // Show skeleton loader during initial load
+          if (dashboardProvider.isInitialLoading) {
+            return const DashboardSkeleton();
+          }
+
+          final userName = _getDisplayName(authProvider);
+
           return RefreshIndicator(
-            onRefresh: provider.refresh,
+            onRefresh: dashboardProvider.refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
@@ -85,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hello, ${provider.userName ?? 'User'}!',
+                                'Hello, $userName!',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w500,
@@ -182,13 +202,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 25),
 
                   // Live Class Carousel (auto-sliding with multiple sessions)
-                  if (provider.upcomingSessions.isNotEmpty)
-                    LiveClassCarousel(sessions: provider.upcomingSessions),
+                  if (dashboardProvider.upcomingSessions.isNotEmpty)
+                    LiveClassCarousel(sessions: dashboardProvider.upcomingSessions),
 
-                  if (provider.upcomingSessions.isNotEmpty) const SizedBox(height: 24),
+                  if (dashboardProvider.upcomingSessions.isNotEmpty) const SizedBox(height: 24),
 
                   // Subject Section (if available)
-                  if (provider.primarySubject != null)
+                  if (dashboardProvider.primarySubject != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Container(
@@ -200,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          provider.primarySubject!.subjectName,
+                          dashboardProvider.primarySubject!.subjectName,
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w500,
@@ -211,25 +231,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
 
-                  if (provider.primarySubject != null) const SizedBox(height: 24),
+                  if (dashboardProvider.primarySubject != null) const SizedBox(height: 24),
 
                   // For You Section (enrolled users)
-                  if (provider.hasActivePurchase == true)
+                  if (dashboardProvider.hasActivePurchase == true)
                     ForYouSection(
-                      lastWatched: provider.lastWatchedVideo,
-                      isLoading: provider.isLoadingContent,
-                      error: provider.contentError,
-                      onRetry: provider.retryContent,
+                      lastWatched: dashboardProvider.lastWatchedVideo,
+                      isLoading: dashboardProvider.isLoadingContent,
+                      error: dashboardProvider.contentError,
+                      onRetry: dashboardProvider.retryContent,
+                      hasTheorySubscription: dashboardProvider.hasTheorySubscription,
+                      hasPracticalSubscription: dashboardProvider.hasPracticalSubscription,
                     ),
 
-                  if (provider.hasActivePurchase == true) const SizedBox(height: 24),
+                  if (dashboardProvider.hasActivePurchase == true) const SizedBox(height: 24),
 
                   // Faculty List
                   FacultyList(
-                    faculty: provider.facultyList,
-                    isLoading: provider.isLoadingFaculty,
-                    error: provider.facultyError,
-                    onRetry: provider.retryFaculty,
+                    faculty: dashboardProvider.facultyList,
+                    isLoading: dashboardProvider.isLoadingFaculty,
+                    error: dashboardProvider.facultyError,
+                    onRetry: dashboardProvider.retryFaculty,
                   ),
 
                   const SizedBox(height: 100), // Space for bottom nav

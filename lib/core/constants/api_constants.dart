@@ -35,12 +35,55 @@ class ApiConstants {
   static const String nextUpcomingSession = '/live-sessions/next-upcoming';
   static const String liveSessions = '/live-sessions';
   static String liveSessionDetails(String sessionId) => '/live-sessions/$sessionId';
+  static String sessionAccessStatus(String sessionId) => '/live-sessions/$sessionId/access-status';
+  static String sessionCreateOrder(String sessionId) => '/live-sessions/$sessionId/create-order';
+  static String sessionVerifyPayment(String sessionId) => '/live-sessions/$sessionId/verify-payment';
+  static String sessionTestPurchase(String sessionId) => '/live-sessions/$sessionId/test-purchase';
+  static String sessionJoin(String sessionId) => '/live-sessions/$sessionId/join';
+  static const String userSessionPurchases = '/users/session-purchases';
   static const String subjectSelections = '/users/subject-selections';
   static const String packages = '/packages';
   static String packageSeries(String packageId) => '/packages/$packageId/series';
+  static String packageTestPurchase(String packageId) => '/packages/$packageId/test-purchase';
   static const String lastWatched = '/users/progress/last-watched';
   static const String faculty = '/faculty';
   static String facultyDetails(String facultyId) => '/faculty/$facultyId';
+
+  // Library Endpoints
+  static const String userLibrary = '/users/library';
+  static String libraryItem(String libraryId) => '/users/library/$libraryId';
+  static String libraryBookmark(String libraryId) => '/users/library/$libraryId/bookmark';
+
+  // Purchase Endpoints
+  static const String userPurchases = '/users/purchases';
+  static const String purchases = '/users/purchases';
+  static const String subscriptionStatus = '/users/purchases/subscription-status';
+  static String purchaseDetails(String purchaseId) => '/users/purchases/$purchaseId';
+
+  // Series & Progress Endpoints
+  static const String series = '/series';
+  static const String progress = '/users/progress';
+  static const String updateProgress = '/users/progress';
+
+  // Library Endpoints (additional)
+  static const String library = '/users/library';
+  static const String addToLibrary = '/users/library';
+  static String removeFromLibrary(String libraryId) => '/users/library/$libraryId';
+
+  // Book Endpoints
+  static const String books = '/books';
+  static const String bookCategories = '/books/categories';
+  static const String searchBooks = '/books/search';
+  static String bookDetails(String bookId) => '/books/$bookId';
+  static String bookStock(String bookId) => '/books/$bookId/stock';
+
+  // Book Order Endpoints
+  static const String bookOrders = '/book-orders';
+  static const String createBookOrder = '/book-orders/create-order';
+  static const String verifyBookPayment = '/book-orders/verify-payment';
+  static const String testBookOrder = '/book-orders/test-order';
+  static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
+  static String cancelBookOrder(String orderId) => '/book-orders/$orderId/cancel';
 
   // Storage Keys
   static const String accessTokenKey = 'access_token';
@@ -48,4 +91,5 @@ class ApiConstants {
   static const String sessionIdKey = 'session_id';
   static const String userIdKey = 'user_id';
   static const String onboardingCompletedKey = 'onboarding_completed';
+  static const String introSeenKey = 'intro_seen';
 }

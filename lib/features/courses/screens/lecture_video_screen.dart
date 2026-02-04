@@ -6,16 +6,17 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
-import 'package:pgme/core/models/series_document_model.dart';
 
 class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
   final bool isSubscribed;
+  final String packageType; // 'Theory' or 'Practical'
 
   const LectureVideoScreen({
     super.key,
     required this.courseId,
     this.isSubscribed = false,
+    this.packageType = 'Theory',
   });
 
   @override
@@ -27,7 +28,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
   SeriesModel? _series;
   List<ModuleModel> _modules = [];
-  List<SeriesDocumentModel> _documents = [];
   bool _isLoading = true;
   String? _error;
 
@@ -46,18 +46,16 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     });
 
     try {
-      // Fetch series details, modules, and documents in parallel
+      // Fetch series details and modules in parallel
       final results = await Future.wait([
         _dashboardService.getSeriesDetails(widget.courseId),
         _dashboardService.getSeriesModules(widget.courseId),
-        _dashboardService.getSeriesDocuments(widget.courseId),
       ]);
 
       if (mounted) {
         setState(() {
           _series = results[0] as SeriesModel;
           _modules = results[1] as List<ModuleModel>;
-          _documents = results[2] as List<SeriesDocumentModel>;
           _isLoading = false;
 
           // Initialize expanded state - expand first module by default
@@ -87,10 +85,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF718BA9);
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
-    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
-    final notesBoxColor = isDark ? const Color(0xFF1A5A9E) : const Color(0xFF8EC6FF);
     final lessonAccessibleBg = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFE4F4FF);
     final lessonLockedBg = isDark ? AppColors.darkCardBackground : const Color(0xFFEFEFF8);
 
@@ -222,104 +218,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     ),
                   ),
 
-                  const SizedBox(height: 13),
-
-                  // Notes for this chapter
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: SizedBox(
-                      width: 163,
-                      height: 20,
-                      child: Text(
-                        'Notes for this chapter',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          height: 1.0,
-                          letterSpacing: -0.5,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  // Notes Box - Only show if documents available
-                  if (_documents.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: GestureDetector(
-                        onTap: () {
-                          // Navigate to available notes
-                          context.push('/available-notes/${widget.courseId}');
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: notesBoxColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              // Icon
-                              Container(
-                                width: 62,
-                                height: 51,
-                                decoration: BoxDecoration(
-                                  color: surfaceColor,
-                                  borderRadius: BorderRadius.circular(9),
-                                ),
-                                child: Icon(
-                                  Icons.description_outlined,
-                                  color: iconColor,
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Note content
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      _getFirstDocument()?.title ?? 'Notes',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        height: 1.0,
-                                        color: isDark ? Colors.white : const Color(0xFF000000),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      _getFirstDocument()?.description ?? 'View course notes',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 12,
-                                        height: 1.3,
-                                        color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF000000).withValues(alpha: 0.6),
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 11),
+                  const SizedBox(height: 16),
 
                   // Dynamic Modules List
                   if (_isLoading)
@@ -392,7 +291,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         height: 54,
                         child: ElevatedButton(
                           onPressed: () {
-                            context.push('/purchase');
+                            context.push('/purchase?packageType=${widget.packageType}');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,
@@ -891,10 +790,5 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
       }
     }
     return null;
-  }
-
-  // Helper method to get first document for notes section
-  SeriesDocumentModel? _getFirstDocument() {
-    return _documents.isNotEmpty ? _documents.first : null;
   }
 }

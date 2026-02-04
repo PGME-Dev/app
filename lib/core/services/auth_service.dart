@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
@@ -38,9 +39,13 @@ class AuthService {
 
       debugPrint('Backend Response Status: ${response.statusCode}');
       debugPrint('Backend Response: ${response.data}');
+      debugPrint('Backend Response Type: ${response.data.runtimeType}');
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final authData = AuthResponseModel.fromJson(response.data['data']);
+      // Handle case where response.data might be a String instead of Map
+      final responseData = _parseResponseData(response.data);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final authData = AuthResponseModel.fromJson(responseData['data'] as Map<String, dynamic>);
 
         // Store tokens in secure storage
         await _storageService.saveAuthTokens(
@@ -53,11 +58,19 @@ class AuthService {
 
         return authData;
       } else {
-        throw Exception(response.data['message'] ?? 'Authentication failed');
+        throw Exception(responseData['message'] ?? 'Authentication failed');
       }
     } on DioException catch (e) {
+      debugPrint('=== DioException in verifyMSG91Token ===');
+      debugPrint('Type: ${e.type}');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Response status: ${e.response?.statusCode}');
+      debugPrint('Response data: ${e.response?.data}');
       throw Exception(_apiService.getErrorMessage(e));
     } catch (e) {
+      debugPrint('=== General exception in verifyMSG91Token ===');
+      debugPrint('Error: $e');
+      debugPrint('Error type: ${e.runtimeType}');
       throw Exception('Authentication failed: ${e.toString()}');
     }
   }
@@ -75,8 +88,11 @@ class AuthService {
         data: {'refresh_token': refreshToken},
       );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final data = response.data['data'];
+      // Handle case where response.data might be a String instead of Map
+      final responseData = _parseResponseData(response.data);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final data = responseData['data'] as Map<String, dynamic>;
         await _storageService.saveAccessToken(data['access_token']);
         await _storageService.saveRefreshToken(data['refresh_token']);
         return true;
@@ -111,8 +127,12 @@ class AuthService {
         ApiConstants.activeSessions,
       );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final sessions = response.data['data']['sessions'] as List;
+      // Handle case where response.data might be a String instead of Map
+      final responseData = _parseResponseData(response.data);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final data = responseData['data'] as Map<String, dynamic>;
+        final sessions = data['sessions'] as List;
         return sessions.cast<Map<String, dynamic>>();
       }
 
@@ -165,5 +185,18 @@ class AuthService {
       'device_name': deviceName,
       'device_type': deviceType,
     };
+  }
+
+  /// Helper to parse response data that might be String or Map
+  Map<String, dynamic> _parseResponseData(dynamic data) {
+    if (data is String) {
+      return jsonDecode(data) as Map<String, dynamic>;
+    } else if (data is Map<String, dynamic>) {
+      return data;
+    } else if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    } else {
+      throw Exception('Unexpected response format: ${data.runtimeType}');
+    }
   }
 }

@@ -4,14 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/series_model.dart';
-import 'package:pgme/core/services/series_service.dart';
+import 'package:pgme/core/services/dashboard_service.dart';
 
 class EnrolledCourseDetailScreen extends StatefulWidget {
   final String seriesId;
+  final bool isSubscribed;
+  final String packageType; // 'Theory' or 'Practical'
 
   const EnrolledCourseDetailScreen({
     super.key,
     required this.seriesId,
+    this.isSubscribed = false,
+    this.packageType = 'Theory',
   });
 
   @override
@@ -21,6 +25,7 @@ class EnrolledCourseDetailScreen extends StatefulWidget {
 
 class _EnrolledCourseDetailScreenState
     extends State<EnrolledCourseDetailScreen> {
+  final DashboardService _dashboardService = DashboardService();
   SeriesModel? _series;
   bool _isLoading = true;
   String? _error;
@@ -38,12 +43,11 @@ class _EnrolledCourseDetailScreenState
     });
 
     try {
-      // TODO: Implement API call to get series details
-      // For now, using mock data
-      await Future.delayed(const Duration(seconds: 1));
+      final series = await _dashboardService.getSeriesDetails(widget.seriesId);
 
       if (mounted) {
         setState(() {
+          _series = series;
           _isLoading = false;
         });
       }
@@ -82,13 +86,15 @@ class _EnrolledCourseDetailScreenState
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'My Enrolled Courses',
+          _series?.title ?? 'Series Details',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w500,
             fontSize: 20,
             color: textColor,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
         actions: [
@@ -149,49 +155,71 @@ class _EnrolledCourseDetailScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Quick Access Cards
+                        // Quick Access Cards - Different content based on purchase status
                         Row(
                           children: [
-                            // Watch Demo Video Card
+                            // Video Card - Shows "Watch Lectures" if subscribed, "Watch Demo Video" if not
                             Expanded(
                               child: _buildQuickAccessCard(
                                 context,
-                                'Watch Demo\nVideo',
-                                'Check Out',
+                                widget.isSubscribed
+                                    ? 'Watch\nLectures'
+                                    : 'Watch Demo\nVideo',
+                                widget.isSubscribed ? 'Start' : 'Check Out',
                                 'assets/illustrations/1.png',
                                 isDark,
                                 cardGradientStart,
                                 cardGradientEnd,
                                 onTap: () {
-                                  // Navigate to demo video
+                                  // Navigate to lecture/modules screen
+                                  context.push('/lecture/${widget.seriesId}?subscribed=${widget.isSubscribed}&packageType=${widget.packageType}');
                                 },
                               ),
                             ),
                             const SizedBox(width: 16),
-                            // Free PDF Card
+                            // Second Card - Different based on package type and subscription status
                             Expanded(
-                              child: _buildQuickAccessCard(
-                                context,
-                                'Free PDF',
-                                '',
-                                'assets/illustrations/2.png',
-                                isDark,
-                                cardGradientStart,
-                                cardGradientEnd,
-                                showButton: false,
-                                onTap: () {
-                                  // Navigate to PDF viewer
-                                },
-                              ),
+                              child: widget.packageType == 'Practical'
+                                  ? _buildQuickAccessCard(
+                                      context,
+                                      widget.isSubscribed
+                                          ? 'Join Live\nSessions'
+                                          : 'View Live\nSession',
+                                      'Join',
+                                      'assets/illustrations/2.png',
+                                      isDark,
+                                      cardGradientStart,
+                                      cardGradientEnd,
+                                      onTap: () {
+                                        // Navigate to series live sessions screen
+                                        final seriesName = Uri.encodeComponent(_series?.title ?? '');
+                                        context.push('/series-sessions/${widget.seriesId}?seriesName=$seriesName');
+                                      },
+                                    )
+                                  : _buildQuickAccessCard(
+                                      context,
+                                      widget.isSubscribed
+                                          ? 'Read\nDocuments'
+                                          : 'Free Sample\nPDF',
+                                      widget.isSubscribed ? 'Open' : 'View',
+                                      'assets/illustrations/2.png',
+                                      isDark,
+                                      cardGradientStart,
+                                      cardGradientEnd,
+                                      onTap: () {
+                                        // Navigate to available notes/documents screen
+                                        context.push('/available-notes?seriesId=${widget.seriesId}&subscribed=${widget.isSubscribed}');
+                                      },
+                                    ),
                             ),
                           ],
                         ),
 
                         const SizedBox(height: 24),
 
-                        // Subject Title
+                        // Series Title
                         Text(
-                          'Subject Title',
+                          _series?.title ?? 'Series Title',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
@@ -204,7 +232,7 @@ class _EnrolledCourseDetailScreenState
 
                         // Description
                         Text(
-                          'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu',
+                          _series?.description ?? 'No description available',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
@@ -216,9 +244,9 @@ class _EnrolledCourseDetailScreenState
 
                         const SizedBox(height: 24),
 
-                        // Inclusions Section
+                        // Series Info Section
                         Text(
-                          'Inclusions',
+                          'What\'s Included',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
@@ -229,26 +257,34 @@ class _EnrolledCourseDetailScreenState
 
                         const SizedBox(height: 16),
 
-                        // Inclusion Items
-                        _buildInclusionItem(
-                          'Ensure your Student ID is visible in your profile name.',
-                          secondaryTextColor,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInclusionItem(
-                          'Mute your microphone upon entry to avoid echo in the OR.',
-                          secondaryTextColor,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInclusionItem(
-                          'Q&A session will follow the primary procedure.',
-                          secondaryTextColor,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInclusionItem(
-                          'Recording will be available 24 hours after the session',
-                          secondaryTextColor,
-                        ),
+                        // Info Items
+                        if (_series?.moduleCount != null)
+                          _buildInclusionItem(
+                            '${_series!.moduleCount} Modules',
+                            secondaryTextColor,
+                            icon: Icons.folder_outlined,
+                          ),
+                        if (_series?.moduleCount != null) const SizedBox(height: 12),
+                        if (_series?.totalLectures != null)
+                          _buildInclusionItem(
+                            '${_series!.totalLectures} Video Lectures',
+                            secondaryTextColor,
+                            icon: Icons.play_circle_outline,
+                          ),
+                        if (_series?.totalLectures != null) const SizedBox(height: 12),
+                        if (_series?.totalDocuments != null)
+                          _buildInclusionItem(
+                            '${_series!.totalDocuments} Study Documents',
+                            secondaryTextColor,
+                            icon: Icons.description_outlined,
+                          ),
+                        if (_series?.totalDocuments != null) const SizedBox(height: 12),
+                        if (_series?.totalDurationMinutes != null)
+                          _buildInclusionItem(
+                            _series!.formattedDuration,
+                            secondaryTextColor,
+                            icon: Icons.access_time,
+                          ),
 
                         const SizedBox(height: 100),
                       ],
@@ -338,13 +374,13 @@ class _EnrolledCourseDetailScreenState
                 ),
                 child: Image.asset(
                   imagePath,
-                  width: title.contains('PDF') ? 123 : 101,
-                  height: title.contains('PDF') ? 85 : 78,
+                  width: (title.contains('PDF') || title.contains('Documents')) ? 123 : 101,
+                  height: (title.contains('PDF') || title.contains('Documents')) ? 85 : 78,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: title.contains('PDF') ? 123 : 101,
-                      height: title.contains('PDF') ? 85 : 78,
+                      width: (title.contains('PDF') || title.contains('Documents')) ? 123 : 101,
+                      height: (title.contains('PDF') || title.contains('Documents')) ? 85 : 78,
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.darkCardBackground
@@ -354,9 +390,11 @@ class _EnrolledCourseDetailScreenState
                         ),
                       ),
                       child: Icon(
-                        title.contains('PDF')
+                        (title.contains('PDF') || title.contains('Documents'))
                             ? Icons.picture_as_pdf
-                            : Icons.play_circle_outline,
+                            : title.contains('Live')
+                                ? Icons.live_tv
+                                : Icons.play_circle_outline,
                         size: 40,
                         color: isDark
                             ? const Color(0xFF00BEFA)
@@ -373,14 +411,14 @@ class _EnrolledCourseDetailScreenState
     );
   }
 
-  Widget _buildInclusionItem(String text, Color textColor) {
+  Widget _buildInclusionItem(String text, Color textColor, {IconData icon = Icons.check_circle_outline}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Icon(
-            Icons.link,
+            icon,
             size: 20,
             color: textColor,
           ),

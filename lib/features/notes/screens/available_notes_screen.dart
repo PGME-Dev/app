@@ -10,10 +10,12 @@ import 'package:pgme/core/models/package_model.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
+  final bool isSubscribed;
 
   const AvailableNotesScreen({
     super.key,
     required this.seriesId,
+    this.isSubscribed = false,
   });
 
   @override
@@ -28,6 +30,8 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
   PackageModel? _package;
   bool _isLoading = true;
   String? _error;
+  Set<String> _addedToLibrary = {}; // Track which documents have been added
+  bool _isAddingToLibrary = false;
 
   int? _expandedIndex = 0; // First card expanded by default
 
@@ -443,10 +447,10 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 const Spacer(),
                 // Title
                 SizedBox(
-                  width: 149,
+                  width: 180,
                   height: 20,
                   child: Text(
-                    'Available notes',
+                    widget.isSubscribed ? 'Series Documents' : 'Available notes',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
@@ -572,6 +576,49 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     );
   }
 
+  Future<void> _addToLibrary(SeriesDocumentModel document) async {
+    if (_isAddingToLibrary || _addedToLibrary.contains(document.documentId)) {
+      return;
+    }
+
+    setState(() {
+      _isAddingToLibrary = true;
+    });
+
+    try {
+      await _dashboardService.addToLibrary(document.documentId);
+
+      if (mounted) {
+        setState(() {
+          _addedToLibrary.add(document.documentId);
+          _isAddingToLibrary = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${document.title} added to Your Notes'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAddingToLibrary = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildNoteCard(
     BuildContext context, {
     required SeriesDocumentModel document,
@@ -582,10 +629,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     required Color cardBgColor,
     required Color iconColor,
   }) {
-    final isLocked = !document.isFree;
+    // If subscribed, nothing is locked; otherwise check if document is free
+    final isLocked = widget.isSubscribed ? false : !document.isFree;
+    final isAlreadyAdded = _addedToLibrary.contains(document.documentId);
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE8E8E8);
     final lockBadgeBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
+    final successColor = isDark ? const Color(0xFF00C853) : const Color(0xFF00C853);
 
     return GestureDetector(
       onTap: () {
@@ -642,6 +692,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         decoration: BoxDecoration(
                           color: placeholderColor,
                           borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.picture_as_pdf,
+                            size: 32,
+                            color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
+                          ),
                         ),
                       ),
                       if (isLocked)
@@ -740,7 +797,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                   ),
                 ],
               ),
-              // Animated buttons section
+              // Animated buttons section - Different for subscribed vs non-subscribed
               AnimatedSize(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
@@ -749,78 +806,132 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     ? Column(
                         children: [
                           const SizedBox(height: 16),
-                          // Two buttons row
-                          Row(
-                            children: [
-                              // View sample pdf button
-                              Expanded(
-                                child: SizedBox(
-                                  height: 40,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // View sample pdf action
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: buttonColor,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
+                          // Show different buttons based on subscription status
+                          if (widget.isSubscribed)
+                            // Subscribed: Show "Add to Your Notes" button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 44,
+                              child: ElevatedButton(
+                                onPressed: isAlreadyAdded || _isAddingToLibrary
+                                    ? null
+                                    : () => _addToLibrary(document),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isAlreadyAdded ? successColor : buttonColor,
+                                  disabledBackgroundColor: successColor,
+                                  foregroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_isAddingToLibrary)
+                                      const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        isAlreadyAdded ? Icons.check : Icons.add,
+                                        size: 20,
+                                        color: Colors.white,
                                       ),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    ),
-                                    child: const FittedBox(
-                                      fit: BoxFit.scaleDown,
+                                    const SizedBox(width: 8),
+                                    Flexible(
                                       child: Text(
-                                        'View sample pdf',
-                                        style: TextStyle(
+                                        isAlreadyAdded ? 'Added to Notes' : 'Add to Notes',
+                                        style: const TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: 11,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w500,
                                           color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            // Not subscribed: Show sample/full book buttons
+                            Row(
+                              children: [
+                                // View sample pdf button
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        // View sample pdf action
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: buttonColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      ),
+                                      child: const FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          'View sample pdf',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              // View full book button
-                              Expanded(
-                                child: SizedBox(
-                                  height: 40,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      if (isLocked) {
+                                const SizedBox(width: 8),
+                                // View full book button
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: ElevatedButton(
+                                      onPressed: () {
                                         _showEnrollmentPopup();
-                                      } else {
-                                        _showEnrollmentPopup(); // Show popup even for unlocked to upsell
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: buttonColor,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: buttonColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
                                       ),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    ),
-                                    child: const FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        'View full book',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
+                                      child: const FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          'View full book',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                         ],
                       )
                     : const SizedBox.shrink(),
