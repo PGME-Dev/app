@@ -2,10 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/book_order_model.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/api_service.dart';
+import 'package:pgme/core/services/zoho_payment_service.dart';
 
 class BookOrderService {
   final ApiService _apiService = ApiService();
+  final ZohoPaymentService _zohoPaymentService = ZohoPaymentService();
 
   /// Create Razorpay order for book purchase
   Future<BookOrderResponse> createOrder({
@@ -207,5 +210,41 @@ class BookOrderService {
       debugPrint('Error cancelling order: $e');
       rethrow;
     }
+  }
+
+  // ============================================================================
+  // ZOHO PAYMENTS METHODS
+  // ============================================================================
+
+  /// Create Zoho payment session for book order
+  Future<ZohoPaymentSession> createPaymentSession({
+    required List<Map<String, dynamic>> items,
+    required String recipientName,
+    required String shippingPhone,
+    required String shippingAddress,
+  }) async {
+    return await _zohoPaymentService.createPaymentSession(
+      endpoint: ApiConstants.createBookOrder,
+      data: {
+        'items': items,
+        'recipient_name': recipientName,
+        'shipping_phone': shippingPhone,
+        'shipping_address': shippingAddress,
+      },
+    );
+  }
+
+  /// Verify Zoho payment for book order
+  Future<ZohoVerificationResponse> verifyZohoPayment({
+    required String paymentSessionId,
+    required String paymentId,
+    String? signature,
+  }) async {
+    return await _zohoPaymentService.verifyPayment(
+      endpoint: ApiConstants.verifyBookPayment,
+      paymentSessionId: paymentSessionId,
+      paymentId: paymentId,
+      signature: signature,
+    );
   }
 }

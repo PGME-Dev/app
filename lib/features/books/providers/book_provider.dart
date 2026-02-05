@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/models/book_model.dart';
 import 'package:pgme/core/models/book_order_model.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/book_service.dart';
 import 'package:pgme/core/services/book_order_service.dart';
 
@@ -248,6 +249,45 @@ class BookProvider extends ChangeNotifier {
     }
 
     return response;
+  }
+
+  // ============================================================================
+  // ZOHO PAYMENTS METHODS
+  // ============================================================================
+
+  /// Create Zoho payment session for book order
+  Future<ZohoPaymentSession> createPaymentSession({
+    required String recipientName,
+    required String shippingPhone,
+    required String shippingAddress,
+  }) async {
+    final items = getCartAsOrderItems();
+    return await _bookOrderService.createPaymentSession(
+      items: items,
+      recipientName: recipientName,
+      shippingPhone: shippingPhone,
+      shippingAddress: shippingAddress,
+    );
+  }
+
+  /// Verify Zoho payment for book order
+  Future<ZohoVerificationResponse> verifyZohoPayment({
+    required String paymentSessionId,
+    required String paymentId,
+    String? signature,
+  }) async {
+    final result = await _bookOrderService.verifyZohoPayment(
+      paymentSessionId: paymentSessionId,
+      paymentId: paymentId,
+      signature: signature,
+    );
+
+    // Clear cart on successful payment
+    if (result.success) {
+      clearCart();
+    }
+
+    return result;
   }
 
   /// Load user's orders

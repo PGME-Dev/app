@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstants {
   // Base URL - Use deployed backend on Render
   static const String baseUrl = 'https://pgme-backend.onrender.com/api/v1';
@@ -84,6 +86,17 @@ class ApiConstants {
   static const String testBookOrder = '/book-orders/test-order';
   static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
   static String cancelBookOrder(String orderId) => '/book-orders/$orderId/cancel';
+
+  // Payment Endpoints (Zoho)
+  static const String createPaymentOrder = '/payments/create-order'; // For packages
+  static const String verifyPayment = '/payments/verify'; // For packages
+
+  // Zoho Payments Configuration
+  static const String zohoScriptUrl = 'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
+
+  // Get Zoho credentials from environment
+  static String get zohoAccountId => dotenv.env['ZOHO_PAYMENTS_ACCOUNT_ID'] ?? '';
+  static String get zohoApiKey => dotenv.env['ZOHO_PAYMENTS_API_KEY'] ?? '';
 
   // Notification Endpoints
   static const String notifications = '/users/notifications';

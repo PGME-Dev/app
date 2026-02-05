@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 
 class BookCheckoutScreen extends StatefulWidget {
@@ -64,30 +66,82 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Using test order for now (bypasses Razorpay)
-      final result = await provider.createTestOrder(
+      // Step 1: Create Zoho payment session
+      final paymentSession = await provider.createPaymentSession(
         recipientName: _recipientNameController.text.trim(),
         shippingPhone: _phoneController.text.trim(),
         shippingAddress: _addressController.text.trim(),
       );
 
-      if (mounted && result['success'] == true) {
-        context.go('/book-order-confirmation/${result['order_id']}');
+      if (!mounted) return;
+
+      // Step 2: Show Zoho payment widget
+      final result = await Navigator.push<ZohoPaymentResponse>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ZohoPaymentWidget(
+            paymentSession: paymentSession,
+            onPaymentComplete: (response) {
+              Navigator.pop(context, response);
+            },
+          ),
+          fullscreenDialog: true,
+        ),
+      );
+
+      // Step 3: Handle payment response
+      if (result != null && mounted) {
+        if (result.isSuccess) {
+          // Verify payment with backend
+          final verification = await provider.verifyZohoPayment(
+            paymentSessionId: result.paymentSessionId!,
+            paymentId: result.paymentId!,
+            signature: result.signature,
+          );
+
+          if (verification.success && mounted) {
+            context.go('/book-order-confirmation/${verification.purchaseId}');
+          } else if (mounted) {
+            _showError('Payment verification failed. Please contact support.');
+          }
+        } else if (result.isFailed) {
+          _showError('Payment failed: ${result.errorMessage ?? "Unknown error"}');
+        } else if (result.isCancelled) {
+          _showInfo('Payment cancelled');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showError('Error processing order: $e');
       }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message.replaceAll('Exception: ', '')),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showInfo(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/routes/app_router.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -11,8 +12,11 @@ import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/features/settings/providers/subscription_provider.dart';
 import 'package:pgme/features/notifications/providers/notification_provider.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: '.env');
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/session_purchase_model.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/session_purchase_service.dart';
+import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
@@ -33,26 +34,10 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   bool _isPurchasing = false;
   String? _error;
 
-  late Razorpay _razorpay;
-
   @override
   void initState() {
     super.initState();
-    _initRazorpay();
     _loadSessionDetails();
-  }
-
-  void _initRazorpay() {
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-  }
-
-  @override
-  void dispose() {
-    _razorpay.clear();
-    super.dispose();
   }
 
   Future<void> _loadSessionDetails() async {
@@ -136,108 +121,150 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Future<void> _initiatePayment() async {
     if (_session == null) return;
 
+    debugPrint('');
+    debugPrint('═══════════════════════════════════════════════════════════');
+    debugPrint('💳 SessionDetailsScreen: Initiating payment');
+    debugPrint('═══════════════════════════════════════════════════════════');
+    debugPrint('Session ID: ${widget.sessionId}');
+    debugPrint('Session Title: ${_session!.title}');
+    debugPrint('Price: ${_session!.price}');
+
     setState(() {
       _isPurchasing = true;
     });
 
     try {
-      // Call test purchase endpoint (bypasses Razorpay, creates real DB record)
-      final result = await _purchaseService.createTestPurchase(widget.sessionId);
+      // Step 1: Create Zoho payment session
+      debugPrint('📝 Step 1: Creating payment session...');
+      final paymentSession = await _purchaseService.createPaymentSession(
+        widget.sessionId,
+      );
+      debugPrint('✅ Payment session created');
 
-      if (mounted) {
-        setState(() {
-          _isPurchasing = false;
-          // Grant access based on backend response
-          _accessStatus = SessionAccessStatus(
-            hasAccess: true,
-            isFree: false,
-            price: _session!.price,
-            purchaseId: result['purchase_id'] as String?,
-            purchasedAt: DateTime.now().toIso8601String(),
-          );
-        });
-
-        final message = result['already_purchased'] == true
-            ? 'You already have access to this session.'
-            : 'Payment successful! You now have access to this session.';
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (!mounted) {
+        debugPrint('⚠️ Widget unmounted, aborting');
+        return;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isPurchasing = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Purchase failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    try {
-      await _purchaseService.verifyPayment(
-        sessionId: widget.sessionId,
-        razorpayOrderId: response.orderId ?? '',
-        razorpayPaymentId: response.paymentId ?? '',
-        razorpaySignature: response.signature ?? '',
+      // Step 2: Show Zoho payment widget
+      debugPrint('📝 Step 2: Showing payment widget...');
+      final result = await Navigator.push<ZohoPaymentResponse>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ZohoPaymentWidget(
+            paymentSession: paymentSession,
+            onPaymentComplete: (response) {
+              debugPrint('🔙 Payment widget returning with response');
+              Navigator.pop(context, response);
+            },
+            onCancel: () {
+              debugPrint('❌ Payment widget cancelled by user');
+              Navigator.pop(context);
+            },
+          ),
+          fullscreenDialog: true,
+        ),
       );
 
-      if (mounted) {
-        setState(() {
-          _isPurchasing = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment successful! You now have access to this session.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Refresh access status
-        _checkAccessStatus();
+      // Step 3: Handle payment response
+      debugPrint('📝 Step 3: Handling payment response...');
+      if (result != null && mounted) {
+        debugPrint('Payment result status: ${result.status}');
+        if (result.isSuccess) {
+          debugPrint('✅ Payment successful, verifying...');
+          await _handlePaymentSuccess(result);
+        } else if (result.isFailed) {
+          debugPrint('❌ Payment failed: ${result.errorMessage}');
+          _showError('Payment failed: ${result.errorMessage ?? "Unknown error"}');
+        } else if (result.isCancelled) {
+          debugPrint('⚠️ Payment cancelled by user');
+          _showInfo('Payment cancelled');
+        }
+      } else {
+        debugPrint('⚠️ No result or widget unmounted');
       }
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('');
     } catch (e) {
+      debugPrint('❌ Error in payment flow: $e');
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('');
+      if (mounted) {
+        _showError('Error initiating payment: $e');
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isPurchasing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payment verification failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
       }
     }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    setState(() {
-      _isPurchasing = false;
-    });
+  Future<void> _handlePaymentSuccess(ZohoPaymentResponse response) async {
+    try {
+      debugPrint('');
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('✅ SessionDetailsScreen: Handling payment success');
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('Payment ID: ${response.paymentId}');
+      debugPrint('Session ID: ${response.paymentSessionId}');
+
+      // Verify payment with backend
+      debugPrint('🔐 Verifying payment with backend...');
+      final verification = await _purchaseService.verifyZohoPayment(
+        sessionId: widget.sessionId,
+        paymentSessionId: response.paymentSessionId!,
+        paymentId: response.paymentId!,
+        signature: response.signature,
+      );
+
+      debugPrint('Verification success: ${verification.success}');
+      debugPrint('Purchase ID: ${verification.purchaseId}');
+
+      if (mounted) {
+        if (verification.success) {
+          debugPrint('✅ Payment verified successfully');
+          // Refresh access status
+          debugPrint('🔄 Refreshing access status...');
+          await _checkAccessStatus();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment successful! You can now join the session.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          _showError('Payment verification failed. Please contact support.');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Error verifying payment: $e');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Payment failed: ${response.message ?? 'Unknown error'}'),
+        content: Text(message.replaceAll('Exception: ', '')),
         backgroundColor: AppColors.error,
+        duration: const Duration(seconds: 4),
       ),
     );
   }
 
-  void _handleExternalWallet(ExternalWalletResponse response) {
+  void _showInfo(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('External wallet selected: ${response.walletName}'),
+        content: Text(message),
+        duration: const Duration(seconds: 3),
       ),
     );
   }

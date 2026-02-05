@@ -10,10 +10,13 @@ import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/library_item_model.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/api_service.dart';
+import 'package:pgme/core/services/zoho_payment_service.dart';
 
 class DashboardService {
   final ApiService _apiService = ApiService();
+  final ZohoPaymentService _zohoPaymentService = ZohoPaymentService();
 
   // Cache for faculty (1 hour TTL)
   DateTime? _lastFacultyFetch;
@@ -660,6 +663,32 @@ class DashboardService {
       debugPrint('✗ Unexpected error: $e');
       return false;
     }
+  }
+
+  // ============================================================================
+  // ZOHO PAYMENTS METHODS (Package Purchases)
+  // ============================================================================
+
+  /// Create Zoho payment session for package purchase
+  Future<ZohoPaymentSession> createPackagePaymentSession(String packageId) async {
+    return await _zohoPaymentService.createPaymentSession(
+      endpoint: ApiConstants.createPaymentOrder,
+      data: {'package_id': packageId},
+    );
+  }
+
+  /// Verify Zoho payment for package purchase
+  Future<ZohoVerificationResponse> verifyPackagePayment({
+    required String paymentSessionId,
+    required String paymentId,
+    String? signature,
+  }) async {
+    return await _zohoPaymentService.verifyPayment(
+      endpoint: ApiConstants.verifyPayment,
+      paymentSessionId: paymentSessionId,
+      paymentId: paymentId,
+      signature: signature,
+    );
   }
 
   /// Clear all caches

@@ -2,10 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/session_purchase_model.dart';
+import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/api_service.dart';
+import 'package:pgme/core/services/zoho_payment_service.dart';
 
 class SessionPurchaseService {
   final ApiService _apiService = ApiService();
+  final ZohoPaymentService _zohoPaymentService = ZohoPaymentService();
 
   /// Check if user has access to a session
   Future<SessionAccessStatus> checkSessionAccess(String sessionId) async {
@@ -184,5 +187,31 @@ class SessionPurchaseService {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
     }
+  }
+
+  // ============================================================================
+  // ZOHO PAYMENTS METHODS
+  // ============================================================================
+
+  /// Create Zoho payment session for session purchase
+  Future<ZohoPaymentSession> createPaymentSession(String sessionId) async {
+    return await _zohoPaymentService.createPaymentSession(
+      endpoint: ApiConstants.sessionCreateOrder(sessionId),
+    );
+  }
+
+  /// Verify Zoho payment for session purchase
+  Future<ZohoVerificationResponse> verifyZohoPayment({
+    required String sessionId,
+    required String paymentSessionId,
+    required String paymentId,
+    String? signature,
+  }) async {
+    return await _zohoPaymentService.verifyPayment(
+      endpoint: ApiConstants.sessionVerifyPayment(sessionId),
+      paymentSessionId: paymentSessionId,
+      paymentId: paymentId,
+      signature: signature,
+    );
   }
 }
