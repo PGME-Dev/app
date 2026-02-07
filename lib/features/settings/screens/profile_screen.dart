@@ -10,6 +10,7 @@ import 'package:pgme/core/services/auth_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
+import 'package:pgme/features/sessions/screens/live_session_test_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -831,6 +832,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
                             color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Test Screen Button (Development Only)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const LiveSessionTestScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2E7D32) : const Color(0xFF66BB6A),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.science_outlined,
+                          size: 20,
+                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Live Session Test (Dev)',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                           ),
                         ),
                       ],

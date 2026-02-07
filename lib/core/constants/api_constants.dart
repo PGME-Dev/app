@@ -2,6 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConstants {
   // Base URL - Use deployed backend on Render
+  // static const String baseUrl = 'http://192.168.29.105:5000/api/v1';
   static const String baseUrl = 'https://pgme-backend.onrender.com/api/v1';
 
   // Timeout
@@ -17,7 +18,8 @@ class ApiConstants {
   static const String refreshToken = '/auth/refresh-token';
   static const String logout = '/auth/logout';
   static const String activeSessions = '/auth/active-sessions';
-  static String deviceSession(String sessionId) => '/auth/device-session/$sessionId';
+  static String deviceSession(String sessionId) =>
+      '/auth/device-session/$sessionId';
 
   // User Endpoints (Onboarding accessible)
   static const String profile = '/users/profile';
@@ -36,17 +38,39 @@ class ApiConstants {
   // Dashboard Endpoints (Fixed to match backend routes)
   static const String nextUpcomingSession = '/live-sessions/next-upcoming';
   static const String liveSessions = '/live-sessions';
-  static String liveSessionDetails(String sessionId) => '/live-sessions/$sessionId';
-  static String sessionAccessStatus(String sessionId) => '/live-sessions/$sessionId/access-status';
-  static String sessionCreateOrder(String sessionId) => '/live-sessions/$sessionId/create-order';
-  static String sessionVerifyPayment(String sessionId) => '/live-sessions/$sessionId/verify-payment';
-  static String sessionTestPurchase(String sessionId) => '/live-sessions/$sessionId/test-purchase';
-  static String sessionJoin(String sessionId) => '/live-sessions/$sessionId/join';
+  static String liveSessionDetails(String sessionId) =>
+      '/live-sessions/$sessionId';
+  static String sessionAccessStatus(String sessionId) =>
+      '/live-sessions/$sessionId/access-status';
+  static String sessionCreateOrder(String sessionId) =>
+      '/live-sessions/$sessionId/create-order';
+  static String sessionVerifyPayment(String sessionId) =>
+      '/live-sessions/$sessionId/verify-payment';
+  static String sessionTestPurchase(String sessionId) =>
+      '/live-sessions/$sessionId/test-purchase';
+  static String sessionJoin(String sessionId) =>
+      '/live-sessions/$sessionId/join';
+  static String sessionZoomSignature(String sessionId) =>
+      '/live-sessions/$sessionId/zoom-signature';
   static const String userSessionPurchases = '/users/session-purchases';
+
+  // Enrollment Endpoints
+  static String sessionEnrollmentStatus(String sessionId) =>
+      '/live-sessions/$sessionId/enrollment-status';
+  static String sessionEnroll(String sessionId) =>
+      '/live-sessions/$sessionId/enroll';
+  static String sessionCapacity(String sessionId) =>
+      '/live-sessions/$sessionId/capacity';
+  static const String userEnrollments = '/users/me/enrollments';
+  static const String sessionPurchases = '/session-purchases';
+  static String sessionPurchaseStatus(String sessionId) =>
+      '/session-purchases/$sessionId/status';
   static const String subjectSelections = '/users/subject-selections';
   static const String packages = '/packages';
-  static String packageSeries(String packageId) => '/packages/$packageId/series';
-  static String packageTestPurchase(String packageId) => '/packages/$packageId/test-purchase';
+  static String packageSeries(String packageId) =>
+      '/packages/$packageId/series';
+  static String packageTestPurchase(String packageId) =>
+      '/packages/$packageId/test-purchase';
   static const String lastWatched = '/users/progress/last-watched';
   static const String faculty = '/faculty';
   static String facultyDetails(String facultyId) => '/faculty/$facultyId';
@@ -54,13 +78,16 @@ class ApiConstants {
   // Library Endpoints
   static const String userLibrary = '/users/library';
   static String libraryItem(String libraryId) => '/users/library/$libraryId';
-  static String libraryBookmark(String libraryId) => '/users/library/$libraryId/bookmark';
+  static String libraryBookmark(String libraryId) =>
+      '/users/library/$libraryId/bookmark';
 
   // Purchase Endpoints
   static const String userPurchases = '/users/purchases';
   static const String purchases = '/users/purchases';
-  static const String subscriptionStatus = '/users/purchases/subscription-status';
-  static String purchaseDetails(String purchaseId) => '/users/purchases/$purchaseId';
+  static const String subscriptionStatus =
+      '/users/purchases/subscription-status';
+  static String purchaseDetails(String purchaseId) =>
+      '/users/purchases/$purchaseId';
 
   // Series & Progress Endpoints
   static const String series = '/series';
@@ -70,7 +97,8 @@ class ApiConstants {
   // Library Endpoints (additional)
   static const String library = '/users/library';
   static const String addToLibrary = '/users/library';
-  static String removeFromLibrary(String libraryId) => '/users/library/$libraryId';
+  static String removeFromLibrary(String libraryId) =>
+      '/users/library/$libraryId';
 
   // Book Endpoints
   static const String books = '/books';
@@ -85,23 +113,29 @@ class ApiConstants {
   static const String verifyBookPayment = '/book-orders/verify-payment';
   static const String testBookOrder = '/book-orders/test-order';
   static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
-  static String cancelBookOrder(String orderId) => '/book-orders/$orderId/cancel';
+  static String cancelBookOrder(String orderId) =>
+      '/book-orders/$orderId/cancel';
 
   // Payment Endpoints (Zoho)
-  static const String createPaymentOrder = '/payments/create-order'; // For packages
+  static const String createPaymentOrder =
+      '/payments/create-order'; // For packages
   static const String verifyPayment = '/payments/verify'; // For packages
 
   // Zoho Payments Configuration
-  static const String zohoScriptUrl = 'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
+  static const String zohoScriptUrl =
+      'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
 
   // Get Zoho credentials from environment
-  static String get zohoAccountId => dotenv.env['ZOHO_PAYMENTS_ACCOUNT_ID'] ?? '';
+  static String get zohoAccountId =>
+      dotenv.env['ZOHO_PAYMENTS_ACCOUNT_ID'] ?? '';
   static String get zohoApiKey => dotenv.env['ZOHO_PAYMENTS_API_KEY'] ?? '';
 
   // Notification Endpoints
   static const String notifications = '/users/notifications';
-  static String markNotificationRead(String notificationId) => '/notifications/$notificationId/read';
-  static String deleteNotification(String notificationId) => '/notifications/$notificationId';
+  static String markNotificationRead(String notificationId) =>
+      '/notifications/$notificationId/read';
+  static String deleteNotification(String notificationId) =>
+      '/notifications/$notificationId';
 
   // Storage Keys
   static const String accessTokenKey = 'access_token';

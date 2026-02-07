@@ -7,6 +7,8 @@ class ZohoPaymentSession {
   final String currency;
   final String referenceNumber;
   final Map<String, dynamic>? metadata; // package/session/order details
+  final bool isExisting; // Flag indicating if this is an existing pending payment
+  final String? createdAt; // When the payment session was created
 
   ZohoPaymentSession({
     required this.paymentSessionId,
@@ -14,6 +16,8 @@ class ZohoPaymentSession {
     required this.currency,
     required this.referenceNumber,
     this.metadata,
+    this.isExisting = false,
+    this.createdAt,
   });
 
   factory ZohoPaymentSession.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class ZohoPaymentSession {
       currency: json['currency'] as String,
       referenceNumber: json['reference_number'] as String,
       metadata: json['package'] ?? json['session'] ?? json['order_summary'],
+      isExisting: json['is_existing'] as bool? ?? false,
+      createdAt: json['created_at'] as String?,
     );
   }
 
@@ -33,6 +39,8 @@ class ZohoPaymentSession {
       'currency': currency,
       'reference_number': referenceNumber,
       if (metadata != null) 'metadata': metadata,
+      'is_existing': isExisting,
+      if (createdAt != null) 'created_at': createdAt,
     };
   }
 }

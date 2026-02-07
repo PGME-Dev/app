@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(flutter emulators:*)",
-      "WebFetch(domain:www.zoho.com)"
+      "WebFetch(domain:www.zoho.com)",
+      "WebFetch(domain:pub.dev)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter pub cache:*)",
+      "Bash(npm ls:*)"
     ]
   }
 }

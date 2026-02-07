@@ -10,6 +10,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/session_purchase_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/zoom_service.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
   final String sessionId;
@@ -26,12 +27,14 @@ class SessionDetailsScreen extends StatefulWidget {
 class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   final DashboardService _dashboardService = DashboardService();
   final SessionPurchaseService _purchaseService = SessionPurchaseService();
+  final ZoomMeetingService _zoomService = ZoomMeetingService();
 
   LiveSessionModel? _session;
   SessionAccessStatus? _accessStatus;
   bool _isLoading = true;
   bool _isCheckingAccess = false;
   bool _isPurchasing = false;
+  bool _isJoiningZoom = false;
   String? _error;
 
   @override
@@ -270,15 +273,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   }
 
   Future<void> _launchMeeting() async {
-    if (_session?.meetingLink == null || _session!.meetingLink!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Meeting link not available'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
+    if (_session == null) return;
 
     // Check if user has access before launching
     if (_accessStatus?.hasAccess != true) {
@@ -292,14 +287,14 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
 
     try {
-      // Call join session API
+      // Call join session API (creates attendance record)
       await _purchaseService.joinSession(widget.sessionId);
 
-      final uri = Uri.parse(_session!.meetingLink!);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Branch by platform: Zoom SDK in-app vs external URL
+      if (_session!.platform.toLowerCase() == 'zoom' && _session!.zoomMeetingId != null) {
+        await _joinZoomInApp();
       } else {
-        throw Exception('Could not launch meeting');
+        await _launchExternalMeeting();
       }
     } catch (e) {
       if (mounted) {
@@ -310,6 +305,65 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// Join Zoom meeting in-app using the Zoom SDK
+  Future<void> _joinZoomInApp() async {
+    if (_isJoiningZoom) return;
+
+    setState(() {
+      _isJoiningZoom = true;
+    });
+
+    try {
+      debugPrint('Joining Zoom meeting in-app for session: ${widget.sessionId}');
+
+      final userName = _session?.facultyName != null
+          ? 'PGME Student'
+          : 'PGME Student';
+
+      await _zoomService.joinMeeting(
+        sessionId: widget.sessionId,
+        displayName: userName,
+      );
+    } catch (e) {
+      if (mounted) {
+        // Fallback: if SDK fails, try opening external link
+        debugPrint('Zoom SDK join failed, falling back to external: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('In-app join failed. Opening in Zoom app...'),
+          ),
+        );
+        await _launchExternalMeeting();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isJoiningZoom = false;
+        });
+      }
+    }
+  }
+
+  /// Launch meeting in external browser/app (for non-Zoom platforms or fallback)
+  Future<void> _launchExternalMeeting() async {
+    if (_session?.meetingLink == null || _session!.meetingLink!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Meeting link not available'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(_session!.meetingLink!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw Exception('Could not launch meeting');
     }
   }
 
@@ -862,22 +916,22 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     // Action Button (Launch Meeting or Buy Now)
                     Center(
                       child: GestureDetector(
-                        onTap: _isCheckingAccess || _isPurchasing
+                        onTap: _isCheckingAccess || _isPurchasing || _isJoiningZoom
                             ? null
                             : (hasAccess ? _launchMeeting : _initiatePayment),
                         child: Container(
                           width: double.infinity,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: _isCheckingAccess || _isPurchasing
+                            color: _isCheckingAccess || _isPurchasing || _isJoiningZoom
                                 ? Colors.grey
                                 : (hasAccess
-                                    ? (_session?.meetingLink != null ? buttonColor : Colors.grey)
+                                    ? (_session?.meetingLink != null || _session?.zoomMeetingId != null ? buttonColor : Colors.grey)
                                     : Colors.orange),
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: Center(
-                            child: _isCheckingAccess || _isPurchasing
+                            child: _isCheckingAccess || _isPurchasing || _isJoiningZoom
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,
@@ -895,7 +949,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                                       ],
                                       Text(
                                         hasAccess
-                                            ? 'LAUNCH MEETING'
+                                            ? (_session?.platform.toLowerCase() == 'zoom'
+                                                ? 'JOIN IN ZOOM'
+                                                : 'LAUNCH MEETING')
                                             : 'BUY NOW - ${_formatPrice(price)}',
                                         style: const TextStyle(
                                           fontFamily: 'Poppins',

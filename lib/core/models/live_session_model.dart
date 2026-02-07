@@ -47,6 +47,9 @@ class LiveSessionModel {
   @JsonKey(name: 'meeting_link')
   final String? meetingLink;
 
+  @JsonKey(name: 'zoom_meeting_id')
+  final String? zoomMeetingId;
+
   final String platform;
 
   final String status; // "scheduled", "live", "completed", "cancelled"
@@ -61,6 +64,25 @@ class LiveSessionModel {
 
   @JsonKey(name: 'is_free')
   final bool isFree;
+
+  // Enrollment system fields
+  @JsonKey(name: 'enrollment_mode')
+  final String? enrollmentMode; // 'open', 'enrollment_required', 'disabled'
+
+  @JsonKey(name: 'capacity_mode')
+  final String? capacityMode; // 'limited', 'unlimited'
+
+  @JsonKey(name: 'current_attendees')
+  final int? currentAttendees;
+
+  @JsonKey(name: 'guaranteed_seats_for_paid')
+  final bool? guaranteedSeatsForPaid;
+
+  @JsonKey(name: 'auto_admit_users')
+  final bool? autoAdmitUsers;
+
+  @JsonKey(name: 'allow_join_before_host')
+  final bool? allowJoinBeforeHost;
 
   @JsonKey(name: 'createdAt')
   final String? createdAt;
@@ -84,12 +106,19 @@ class LiveSessionModel {
     required this.scheduledEndTime,
     required this.durationMinutes,
     this.meetingLink,
+    this.zoomMeetingId,
     required this.platform,
     required this.status,
     this.maxAttendees,
     this.thumbnailUrl,
     this.price = 0,
     this.isFree = true,
+    this.enrollmentMode,
+    this.capacityMode,
+    this.currentAttendees,
+    this.guaranteedSeatsForPaid,
+    this.autoAdmitUsers,
+    this.allowJoinBeforeHost,
     this.createdAt,
     this.updatedAt,
   });
@@ -115,12 +144,19 @@ class LiveSessionModel {
     String? scheduledEndTime,
     int? durationMinutes,
     String? meetingLink,
+    String? zoomMeetingId,
     String? platform,
     String? status,
     int? maxAttendees,
     String? thumbnailUrl,
     int? price,
     bool? isFree,
+    String? enrollmentMode,
+    String? capacityMode,
+    int? currentAttendees,
+    bool? guaranteedSeatsForPaid,
+    bool? autoAdmitUsers,
+    bool? allowJoinBeforeHost,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -140,12 +176,19 @@ class LiveSessionModel {
       scheduledEndTime: scheduledEndTime ?? this.scheduledEndTime,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       meetingLink: meetingLink ?? this.meetingLink,
+      zoomMeetingId: zoomMeetingId ?? this.zoomMeetingId,
       platform: platform ?? this.platform,
       status: status ?? this.status,
       maxAttendees: maxAttendees ?? this.maxAttendees,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       price: price ?? this.price,
       isFree: isFree ?? this.isFree,
+      enrollmentMode: enrollmentMode ?? this.enrollmentMode,
+      capacityMode: capacityMode ?? this.capacityMode,
+      currentAttendees: currentAttendees ?? this.currentAttendees,
+      guaranteedSeatsForPaid: guaranteedSeatsForPaid ?? this.guaranteedSeatsForPaid,
+      autoAdmitUsers: autoAdmitUsers ?? this.autoAdmitUsers,
+      allowJoinBeforeHost: allowJoinBeforeHost ?? this.allowJoinBeforeHost,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
