@@ -318,7 +318,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                   child: LinearProgressIndicator(
                     value: progress.completionPercentage / 100,
                     backgroundColor: Colors.grey.withOpacity(0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondaryBlue),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.secondaryBlue),
                     minHeight: 4,
                   ),
                 ),
@@ -355,7 +355,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                       ),
                       Text(
                         progress.formattedTimeRemaining,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

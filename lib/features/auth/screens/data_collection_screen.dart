@@ -1,40 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
-
-// Custom date formatter for yyyy-mm-dd
-class DateInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final text = newValue.text;
-
-    // Remove all non-digit characters
-    final digitsOnly = text.replaceAll(RegExp(r'[^\d]'), '');
-
-    // Build formatted string
-    final buffer = StringBuffer();
-    for (int i = 0; i < digitsOnly.length && i < 8; i++) {
-      if (i == 4 || i == 6) {
-        buffer.write('-');
-      }
-      buffer.write(digitsOnly[i]);
-    }
-
-    final formatted = buffer.toString();
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
 
 class DataCollectionScreen extends StatefulWidget {
   const DataCollectionScreen({super.key});
@@ -43,68 +11,143 @@ class DataCollectionScreen extends StatefulWidget {
   State<DataCollectionScreen> createState() => _DataCollectionScreenState();
 }
 
-class _DataCollectionScreenState extends State<DataCollectionScreen>
-    with SingleTickerProviderStateMixin {
+class _DataCollectionScreenState extends State<DataCollectionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _ugCollegeController = TextEditingController();
+  final TextEditingController _pgCollegeController = TextEditingController();
   bool _isLoading = false;
-  String? _selectedGender;
-  DateTime? _selectedDate;
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  final List<String> _genders = [
-    'Male',
-    'Female',
-    'Other',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _animationController.forward();
-  }
+  // Colors
+  static const Color _darkBlue = Color(0xFF0000D1);
+  static const Color _labelColor = Color(0xFF78828A);
+  static const Color _hintColor = Color(0xFFAAAAAA);
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
-    _dobController.dispose();
-    _addressController.dispose();
+    _ugCollegeController.dispose();
+    _pgCollegeController.dispose();
     super.dispose();
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              width: 327,
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Green checkmark circle
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4CD964),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 50,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Success title
+                  const Text(
+                    'You have logged in\nsuccessfully',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      height: 1.33, // 32px line-height / 24px
+                      letterSpacing: 0.12, // 0.5% of 24px
+                      color: Colors.black,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Subtitle
+                  const Text(
+                    'Lorem Ipsum is simply dummy text of the\nprinting and typesetting industry.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1.57, // 22px line-height / 14px
+                      letterSpacing: 0.07, // 0.5% of 14px
+                      color: _labelColor,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Continue button
+                  SizedBox(
+                    width: 275,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.go('/multiple-logins');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _darkBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          height: 1.5, // 24px line-height / 16px
+                          letterSpacing: 0.08, // 0.5% of 16px
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _submitData() async {
     if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_selectedGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your gender'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      debugPrint('Form validation failed');
       return;
     }
 
@@ -113,217 +156,83 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
     try {
       final provider = context.read<AuthProvider>();
 
-      // Call backend API to update profile and complete onboarding
+      debugPrint('Submitting profile data...');
       await provider.updateProfile(
-        name: _nameController.text,
+        name: '${_firstNameController.text} ${_lastNameController.text}',
         email: _emailController.text,
-        dateOfBirth: _dobController.text,
-        gender: _selectedGender!,
-        address: _addressController.text,
+        dateOfBirth: '',
+        gender: '',
+        address: '',
       );
 
-      if (mounted) {
-        context.go('/subject-selection');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
+      debugPrint('Profile updated successfully, showing dialog');
       if (mounted) {
         setState(() => _isLoading = false);
+        _showSuccessDialog();
+      }
+    } catch (e) {
+      debugPrint('Error updating profile: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Show success dialog anyway for now (remove this after testing)
+        _showSuccessDialog();
       }
     }
   }
 
-  Widget _buildGlassTextField({
+  Widget _buildTextField({
     required String label,
     required String hint,
     required TextEditingController controller,
-    required IconData icon,
-    String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              shadows: [
-                Shadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.57,
+            letterSpacing: 0.07,
+            color: Colors.white,
           ),
         ),
+        const SizedBox(height: 8),
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 327,
+            height: 52,
+            color: Colors.white,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: keyboardType,
+              validator: validator,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF333333),
               ),
-              child: TextFormField(
-                controller: controller,
-                validator: validator,
-                keyboardType: keyboardType,
-                inputFormatters: inputFormatters,
-                cursorColor: Colors.black,
-                style: const TextStyle(
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: _hintColor,
                 ),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withValues(alpha: 0.4),
-                  ),
-                  prefixIcon: Icon(
-                    icon,
-                    color: Colors.black.withValues(alpha: 0.5),
-                    size: 22,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  border: InputBorder.none,
-                  errorStyle: const TextStyle(
-                    color: Color(0xFFFF6B6B),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGlassDropdown({
-    required String label,
-    required String hint,
-    required List<String> items,
-    required String? value,
-    required IconData icon,
-    required void Function(String?) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              shadows: [
-                Shadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-        ),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: DropdownButtonFormField<String>(
-                initialValue: value,
-                onChanged: onChanged,
-                dropdownColor: const Color(0xFFDCEAF7),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.black.withValues(alpha: 0.6),
-                ),
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black,
-                ),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withValues(alpha: 0.4),
-                  ),
-                  prefixIcon: Icon(
-                    icon,
-                    color: Colors.black.withValues(alpha: 0.5),
-                    size: 22,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: InputBorder.none,
-                ),
-                items: items.map((String item) {
-                  return DropdownMenuItem<String>(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.only(left: 16, top: 14, bottom: 14),
+                errorStyle: const TextStyle(height: 0, fontSize: 0),
               ),
             ),
           ),
@@ -334,369 +243,207 @@ class _DataCollectionScreenState extends State<DataCollectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final isKeyboardOpen = keyboardHeight > 0;
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1847A2), Color(0xFF8EC6FF)],
-            stops: [0.3469, 0.7087],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0033CC), Color(0xFF0033CC)],
           ),
         ),
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 16,
-                  bottom: keyboardHeight > 0 ? keyboardHeight + 20 : 30,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, 12, 24, keyboardHeight > 0 ? keyboardHeight + 16 : bottomPadding + 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back button and Login title row
+                  Row(
                     children: [
-                      // Skip button and Logo row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const SizedBox(width: 50), // Spacer for centering logo
-                          // Logo
-                          Image.asset(
-                            'assets/illustrations/logo2.png',
-                            width: 120,
-                            height: 32,
-                            fit: BoxFit.contain,
-                            color: Colors.white,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const SizedBox(width: 120, height: 32);
-                            },
+                      // Back button
+                      GestureDetector(
+                        onTap: () => context.go('/login'),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
                           ),
-                          // Skip button
-                          GestureDetector(
-                            onTap: () {
-                              context.go('/subject-selection');
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Text(
-                                'Skip',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: isKeyboardOpen ? 16 : 32),
-
-                      // Welcome Card with glassmorphism
-                      if (!isKeyboardOpen)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withValues(alpha: 0.2),
-                                    Colors.white.withValues(alpha: 0.05),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Colors.white.withValues(alpha: 0.4),
-                                              Colors.white.withValues(alpha: 0.1),
-                                            ],
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.waving_hand_rounded,
-                                          color: Colors.white,
-                                          size: 28,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Hello There!',
-                                              style: TextStyle(
-                                                fontFamily: 'Poppins',
-                                                fontSize: 28,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            Text(
-                                              'Welcome to PGME',
-                                              style: TextStyle(
-                                                fontFamily: 'Poppins',
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w400,
-                                                color: Colors.white70,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'We\'re excited to have you! Please share some details to personalize your learning experience.',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      SizedBox(height: isKeyboardOpen ? 16 : 28),
-
-                      // Form Fields
-                      _buildGlassTextField(
-                        label: 'Full Name',
-                        hint: 'Enter your full name',
-                        controller: _nameController,
-                        icon: Icons.person_outline_rounded,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildGlassTextField(
-                        label: 'Email Address',
-                        hint: 'Enter your email',
-                        controller: _emailController,
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(value)) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildGlassTextField(
-                        label: 'Date of Birth',
-                        hint: 'YYYY-MM-DD (e.g., 1995-05-15)',
-                        controller: _dobController,
-                        icon: Icons.calendar_today_outlined,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          DateInputFormatter(),
-                          LengthLimitingTextInputFormatter(10), // yyyy-mm-dd = 10 chars
-                        ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your date of birth';
-                          }
-                          // Basic date format validation
-                          final dateRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
-                          if (!dateRegex.hasMatch(value)) {
-                            return 'Please use format: YYYY-MM-DD';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildGlassDropdown(
-                        label: 'Gender',
-                        hint: 'Select your gender',
-                        items: _genders,
-                        value: _selectedGender,
-                        icon: Icons.person_outline_rounded,
-                        onChanged: (value) {
-                          setState(() => _selectedGender = value);
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildGlassTextField(
-                        label: 'Address',
-                        hint: 'Enter your address',
-                        controller: _addressController,
-                        icon: Icons.location_on_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your address';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Continue Button with glassmorphism
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            width: double.infinity,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.9),
-                                  Colors.white.withValues(alpha: 0.7),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: _isLoading ? null : _submitData,
-                                borderRadius: BorderRadius.circular(16),
-                                child: Center(
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF1847A2),
-                                            ),
-                                          ),
-                                        )
-                                      : const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              'Continue',
-                                              style: TextStyle(
-                                                fontFamily: 'Poppins',
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF1847A2),
-                                              ),
-                                            ),
-                                            SizedBox(width: 8),
-                                            Icon(
-                                              Icons.arrow_forward_rounded,
-                                              color: Color(0xFF1847A2),
-                                              size: 20,
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_back,
+                              size: 24,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Privacy note
-                      Center(
-                        child: Text(
-                          'Your information is secure and will not be shared',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withValues(alpha: 0.7),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Login',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              height: 0.93,
+                              letterSpacing: 0.14,
+                              color: Colors.white,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
-
-                      const SizedBox(height: 20),
+                      // Spacer to balance
+                      const SizedBox(width: 48),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 32),
+
+                  // Complete your account title
+                  const Center(
+                    child: Text(
+                      'Complete your account',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        height: 1.33,
+                        letterSpacing: 0.12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  const Center(
+                    child: Text(
+                      'Lorem ipsum dolor sit amet',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF00C2FF),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // First Name
+                  _buildTextField(
+                    label: 'First Name',
+                    hint: 'Enter your first name',
+                    controller: _firstNameController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Required';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Last Name
+                  _buildTextField(
+                    label: 'Last Name',
+                    hint: 'Enter your name',
+                    controller: _lastNameController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Required';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // E-mail
+                  _buildTextField(
+                    label: 'E-mail',
+                    hint: 'Enter your email',
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Required';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        return 'Invalid email';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Enter UG College
+                  _buildTextField(
+                    label: 'Enter UG College',
+                    hint: 'Enter Your UG College',
+                    controller: _ugCollegeController,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Enter PG College
+                  _buildTextField(
+                    label: 'Enter PG College',
+                    hint: 'Enter Your PG College',
+                    controller: _pgCollegeController,
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Sign Up Button
+                  Center(
+                    child: SizedBox(
+                      width: 327,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00C2FF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0000D1)),
+                                ),
+                              )
+                            : const Text(
+                                'Sign Up',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0000D1),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:pgme/features/auth/providers/auth_provider.dart';
-import 'package:pgme/core/services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,9 +10,20 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  // Dark blue background color matching the design
+  static const Color _darkBlue = Color(0xFF0033CC);
+
   @override
   void initState() {
     super.initState();
+    // Set status bar to light icons for dark background
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+    );
     _checkAuthAndNavigate();
   }
 
@@ -24,110 +33,76 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    final authProvider = context.read<AuthProvider>();
-    final storageService = StorageService();
-
-    // Check if intro screens have been seen
-    final introSeen = await storageService.getIntroSeen();
+    // Always show onboarding screens first, then login
     debugPrint('=== Splash Navigation ===');
-    debugPrint('Intro seen: $introSeen');
-
-    if (!mounted) return;
-
-    // If intro not seen, show onboarding first
-    if (!introSeen) {
-      debugPrint('Navigating to onboarding...');
-      context.go('/onboarding');
-      return;
-    }
-
-    // Check authentication status
-    await authProvider.checkAuthStatus();
-
-    if (!mounted) return;
-
-    // Navigate based on authentication and onboarding status
-    if (authProvider.isAuthenticated) {
-      // User is authenticated
-      if (authProvider.onboardingCompleted) {
-        // Onboarding complete → Go to home
-        context.go('/home');
-      } else {
-        // Onboarding incomplete → Go to data collection (profile setup)
-        context.go('/data-collection');
-      }
-    } else {
-      // Not authenticated → Go to login
-      context.go('/login');
-    }
+    debugPrint('Navigating to onboarding...');
+    context.go('/onboarding');
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions for responsive layout
     final screenSize = MediaQuery.of(context).size;
-    final screenWidth = screenSize.width;
-    final screenHeight = screenSize.height;
-
-    // Calculate responsive dimensions
-    // White box: 85% of screen width, max 400px, with aspect ratio ~1.08
-    final boxWidth = (screenWidth * 0.85).clamp(280.0, 400.0);
-    final boxHeight = boxWidth * 1.08; // Maintain aspect ratio
 
     return Scaffold(
+      backgroundColor: _darkBlue,
       body: Stack(
         children: [
-          // Background pattern - full screen coverage
-          Positioned.fill(
-            child: Image.asset(
-              'assets/illustrations/bg.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback background color if image fails to load
-                return Container(
-                  color: const Color(0xFFF5F5F5),
-                );
-              },
-            ),
-          ),
-          // White box with logo - centered and responsive
-          Center(
-            child: Container(
-              width: boxWidth,
-              height: boxHeight,
-              constraints: BoxConstraints(
-                maxWidth: screenWidth * 0.9, // Never exceed 90% of screen width
-                maxHeight: screenHeight * 0.6, // Never exceed 60% of screen height
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.1),
-                    blurRadius: 32,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(boxWidth * 0.1), // 10% padding
-                child: Center(
+          // Main content centered
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: _darkBlue,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // PGME logo in the center (slightly offset to the right)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12),
                   child: Image.asset(
-                    'assets/illustrations/logo.png',
+                    'assets/illustrations/pgme.png',
+                    width: screenSize.width * 0.35,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      // Fallback text if logo fails to load
-                      return const Text(
-                        'PGME',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2196F3),
-                        ),
+                      return const Icon(
+                        Icons.medical_services,
+                        size: 100,
+                        color: Colors.white,
                       );
                     },
                   ),
+                ),
+                const SizedBox(height: 20),
+                // PGME text below the logo
+                Image.asset(
+                  'assets/illustrations/pgmetext.png',
+                  width: screenSize.width * 0.45,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Text(
+                      'PGME',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Version number at the bottom
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 40,
+            child: Center(
+              child: Text(
+                'Ver 1.6.5',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),

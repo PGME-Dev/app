@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sms_autofill/sms_autofill.dart';
-import 'package:pgme/core/theme/app_theme.dart';
 
 class OTPInput extends StatefulWidget {
   final int length;
+  final void Function(String)? onChanged;
   final void Function(String) onCompleted;
 
   const OTPInput({
     super.key,
     this.length = 4,
+    this.onChanged,
     required this.onCompleted,
   });
 
@@ -21,6 +22,11 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
 
+  // Colors
+  static const Color _filledBorderColor = Color(0xFF0000D1);
+  static const Color _emptyBorderColor = Color(0xFF00C2FF);
+  static const Color _backgroundColor = Color(0xFFF6F8FE);
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +35,13 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
 
     // Listen for SMS auto-fill
     listenForCode();
+
+    // Add listeners for focus changes to trigger rebuild
+    for (var node in _focusNodes) {
+      node.addListener(() {
+        setState(() {});
+      });
+    }
   }
 
   /// Clear all OTP input fields
@@ -72,58 +85,78 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
     }
 
     String otp = _controllers.map((c) => c.text).join();
+    widget.onChanged?.call(otp);
+
     if (otp.length == widget.length) {
       widget.onCompleted(otp);
     }
   }
 
+  void _onKeyDown(RawKeyEvent event, int index) {
+    if (event is RawKeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace &&
+        _controllers[index].text.isEmpty &&
+        index > 0) {
+      _focusNodes[index - 1].requestFocus();
+      _controllers[index - 1].clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate responsive box size
-        // Available width divided by number of boxes, minus spacing
-        final totalSpacing = (widget.length - 1) * 10.0;
-        final maxBoxWidth = (constraints.maxWidth - totalSpacing) / widget.length;
-        final boxWidth = maxBoxWidth.clamp(50.0, 65.0);
-        final boxHeight = boxWidth * 0.85;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        widget.length,
+        (index) {
+          final hasValue = _controllers[index].text.isNotEmpty;
+          final isFocused = _focusNodes[index].hasFocus;
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            widget.length,
-            (index) => Container(
-              margin: EdgeInsets.only(right: index < widget.length - 1 ? 10 : 0),
-              child: SizedBox(
-                width: boxWidth,
-                height: boxHeight,
+          return Container(
+            margin: EdgeInsets.only(right: index < widget.length - 1 ? 16 : 0),
+            child: SizedBox(
+              width: 56,
+              height: 56,
+              child: RawKeyboardListener(
+                focusNode: FocusNode(),
+                onKey: (event) => _onKeyDown(event, index),
                 child: TextFormField(
                   controller: _controllers[index],
                   focusNode: _focusNodes[index],
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   maxLength: 1,
-                  style: TextStyle(
-                    fontSize: boxWidth * 0.35,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 24,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF0D0D26),
                   ),
                   decoration: InputDecoration(
                     counterText: '',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: _backgroundColor,
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF828282), width: 1.2),
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(
+                        color: hasValue ? _filledBorderColor : _emptyBorderColor,
+                        width: 1,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF828282), width: 1.2),
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(
+                        color: hasValue ? _filledBorderColor : _emptyBorderColor,
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.2),
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(
+                        color: isFocused ? _emptyBorderColor : (hasValue ? _filledBorderColor : _emptyBorderColor),
+                        width: 1,
+                      ),
                     ),
                   ),
                   inputFormatters: [
@@ -136,9 +169,9 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

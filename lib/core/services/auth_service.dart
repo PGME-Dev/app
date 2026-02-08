@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
-import 'package:pgme/core/models/api_response.dart';
 import 'package:pgme/core/models/auth_response_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/storage_service.dart';

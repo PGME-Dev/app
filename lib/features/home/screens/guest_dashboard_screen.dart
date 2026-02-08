@@ -265,7 +265,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             child: Center(
                               child: Text(
                                 provider.primarySubject!.subjectName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w500,
                                   fontSize: 16,

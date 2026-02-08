@@ -356,7 +356,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                   // Specialization
                   Text(
                     faculty.specialization,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
                       fontSize: 14,

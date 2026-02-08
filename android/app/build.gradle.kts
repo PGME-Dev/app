@@ -71,4 +71,14 @@ dependencies {
 
     // ViewBinding (required by Zoom SDK for screen sharing)
     implementation("androidx.databinding:viewbinding:8.7.3")
+
+    // ExoPlayer (required by Zoom SDK for media playback)
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+
+    // Lottie (required by Zoom SDK for animations)
+    implementation("com.airbnb.android:lottie:6.3.0")
+
+    // ConstraintLayout (required by Zoom SDK)
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }

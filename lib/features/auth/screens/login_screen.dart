@@ -17,10 +17,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final FocusNode _phoneFocusNode = FocusNode();
   bool _isLoading = false;
 
+  // Dark blue background color
+  static const Color _darkBlue = Color(0xFF0000CC);
+
   @override
   void initState() {
     super.initState();
-    // Prevent automatic focus on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _phoneFocusNode.unfocus();
     });
@@ -48,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final provider = context.read<AuthProvider>();
-      // MSG91 expects format: 91XXXXXXXXXX (no + or spaces)
       final phoneNumber = '91${_phoneController.text}';
 
       debugPrint('Sending OTP to: $phoneNumber');
@@ -56,7 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success && mounted) {
         debugPrint('OTP sent successfully, navigating to verification screen');
-        // Navigate to OTP screen
         context.push('/otp-verification');
       } else if (mounted) {
         debugPrint('OTP sending failed: success = false');
@@ -86,224 +86,174 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardOpen = keyboardHeight > 0;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              // Flexible top section - expands to fill available space
-              Expanded(
-                flex: isKeyboardOpen ? 1 : 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Image.asset(
-                      'assets/illustrations/logo2.png',
-                      height: isKeyboardOpen ? 40 : 53,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return SizedBox(height: isKeyboardOpen ? 40 : 53);
-                      },
-                    ),
-
-                    // Illustration - only when keyboard is closed
-                    if (!isKeyboardOpen) ...[
-                      const SizedBox(height: 16),
-                      Flexible(
-                        child: Image.asset(
-                          'assets/illustrations/login.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.phone_android_rounded,
-                              size: 80,
-                              color: AppColors.textTertiary,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              // Bottom section - fixed content
-              Column(
-                mainAxisSize: MainAxisSize.min,
+      backgroundColor: _darkBlue,
+      resizeToAvoidBottomInset: false,
+      body: Column(
+        children: [
+          // Blue header section with title
+          SafeArea(
+            bottom: false,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: isKeyboardOpen ? 120 : 198,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Title
                   Text(
                     'Login',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: isKeyboardOpen ? 24 : 32,
+                      fontSize: isKeyboardOpen ? 24 : 28,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF000000),
+                      height: 1.14,
+                      letterSpacing: 0.14,
+                      color: Colors.white,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // Subtitle
                   Text(
-                    'Enter your mobile number to receive an OTP',
+                    'Enter your mobile number to\nreceive an OTP',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: isKeyboardOpen ? 14 : 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF000000),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Mobile Number Input
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
+                      letterSpacing: 0.08,
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.divider, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 16),
-                        Image.asset(
-                          'assets/images/flag_india.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Text('🇮🇳', style: TextStyle(fontSize: 20));
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          '+91',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(width: 1, height: 32, color: AppColors.divider),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneController,
-                            focusNode: _phoneFocusNode,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            textInputAction: TextInputAction.done,
-                            autofocus: false,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Mobile Number',
-                              hintStyle: TextStyle(
-                                color: AppColors.textTertiary,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              counterText: '',
-                              contentPadding: EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onSubmitted: (_) => _sendOTP(),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Terms and Privacy
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: isKeyboardOpen ? 11 : 13,
-                        color: const Color(0xFF000000),
-                      ),
-                      children: const [
-                        TextSpan(text: 'By continuing you agree to our '),
-                        TextSpan(
-                          text: 'Terms of Service',
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(text: ' and '),
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(text: '.'),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Send OTP Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _sendOTP,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Send OTP',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  SizedBox(height: isKeyboardOpen ? 12 : 24),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+
+          // White bottom container with rounded top corners
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEFEFE),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mobile Number label
+                    const Text(
+                      'Mobile Number',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF78828A),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Mobile Number Input
+                    Container(
+                      width: 327,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF6F8FE),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: TextField(
+                        controller: _phoneController,
+                        focusNode: _phoneFocusNode,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        textInputAction: TextInputAction.done,
+                        autofocus: false,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF333333),
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Enter your mobile number',
+                          hintStyle: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFFAAAAAA),
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          counterText: '',
+                          contentPadding: EdgeInsets.only(left: 16, top: 14, bottom: 14),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onSubmitted: (_) => _sendOTP(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Continue with Mobile Number Button
+                    Center(
+                      child: SizedBox(
+                        width: 327,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _sendOTP,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _darkBlue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'Continue with Mobile Number',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.5,
+                                    letterSpacing: 0.08,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Bottom padding to account for keyboard
+                    SizedBox(height: keyboardHeight > 0 ? keyboardHeight + 16 : bottomPadding + 24),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

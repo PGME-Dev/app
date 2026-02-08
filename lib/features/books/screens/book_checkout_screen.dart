@@ -46,7 +46,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
       if (mounted) {
         setState(() {
           _recipientNameController.text = user.name ?? '';
-          _phoneController.text = user.phoneNumber?.replaceAll('+91', '') ?? '';
+          _phoneController.text = user.phoneNumber.replaceAll('+91', '') ?? '';
           _addressController.text = user.address ?? '';
           _isLoadingUser = false;
         });

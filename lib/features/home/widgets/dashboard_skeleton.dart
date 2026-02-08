@@ -46,7 +46,7 @@ class DashboardSkeleton extends StatelessWidget {
   Widget _buildHeaderSkeleton(double topPadding) {
     return Padding(
       padding: EdgeInsets.only(top: topPadding + 16, left: 23, right: 16),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -55,13 +55,13 @@ class DashboardSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerSkeleton(
+                ShimmerSkeleton(
                   width: 180,
                   height: 24,
                   borderRadius: 6,
                 ),
-                const SizedBox(height: 8),
-                const ShimmerSkeleton(
+                SizedBox(height: 8),
+                ShimmerSkeleton(
                   width: 220,
                   height: 16,
                   borderRadius: 4,
@@ -72,13 +72,13 @@ class DashboardSkeleton extends StatelessWidget {
           // Get Help Button and Notification
           Row(
             children: [
-              const ShimmerSkeleton(
+              ShimmerSkeleton(
                 width: 103,
                 height: 31,
                 borderRadius: 30,
               ),
-              const SizedBox(width: 12),
-              const ShimmerSkeleton.circle(size: 24),
+              SizedBox(width: 12),
+              ShimmerSkeleton.circle(size: 24),
             ],
           ),
         ],
@@ -89,9 +89,9 @@ class DashboardSkeleton extends StatelessWidget {
   Widget _buildLiveClassSkeleton() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const ShimmerSkeleton(
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: ShimmerSkeleton(
             width: double.infinity,
             height: 140,
             borderRadius: 16,
@@ -118,9 +118,9 @@ class DashboardSkeleton extends StatelessWidget {
   }
 
   Widget _buildSubjectBadgeSkeleton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: const ShimmerSkeleton(
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: ShimmerSkeleton(
         width: 120,
         height: 36,
         borderRadius: 20,
@@ -132,17 +132,17 @@ class DashboardSkeleton extends StatelessWidget {
     return Column(
       children: [
         // Section Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ShimmerSkeleton(
+              ShimmerSkeleton(
                 width: 80,
                 height: 24,
                 borderRadius: 6,
               ),
-              const ShimmerSkeleton(
+              ShimmerSkeleton(
                 width: 70,
                 height: 16,
                 borderRadius: 4,
@@ -205,17 +205,17 @@ class DashboardSkeleton extends StatelessWidget {
     return Column(
       children: [
         // Section Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ShimmerSkeleton(
+              ShimmerSkeleton(
                 width: 120,
                 height: 24,
                 borderRadius: 6,
               ),
-              const ShimmerSkeleton(
+              ShimmerSkeleton(
                 width: 70,
                 height: 16,
                 borderRadius: 4,
@@ -232,23 +232,23 @@ class DashboardSkeleton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: List.generate(4, (index) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
+              return const Padding(
+                padding: EdgeInsets.only(right: 12),
                 child: Column(
                   children: [
-                    const ShimmerSkeleton(
+                    ShimmerSkeleton(
                       width: 100,
                       height: 100,
                       borderRadius: 12,
                     ),
-                    const SizedBox(height: 8),
-                    const ShimmerSkeleton(
+                    SizedBox(height: 8),
+                    ShimmerSkeleton(
                       width: 80,
                       height: 14,
                       borderRadius: 4,
                     ),
-                    const SizedBox(height: 4),
-                    const ShimmerSkeleton(
+                    SizedBox(height: 4),
+                    ShimmerSkeleton(
                       width: 60,
                       height: 12,
                       borderRadius: 4,

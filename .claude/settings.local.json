@@ -6,7 +6,8 @@
       "WebFetch(domain:pub.dev)",
       "Bash(flutter pub get:*)",
       "Bash(flutter pub cache:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(flutter clean:*)"
     ]
   }
 }

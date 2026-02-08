@@ -278,7 +278,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       child: Stack(
         children: [
           // Placeholder for video thumbnail
-          Center(
+          const Center(
             child: Icon(
               Icons.play_circle_filled,
               size: 64,
@@ -295,7 +295,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               children: [
                 Text(
                   firstVideo?.title ?? _series?.title ?? 'Video Title',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
                     fontSize: 18,
