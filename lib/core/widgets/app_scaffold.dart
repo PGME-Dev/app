@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
-import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget child;
@@ -21,22 +20,6 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
-
-    // Get subscription status from DashboardProvider
-    final dashboardProvider = Provider.of<DashboardProvider>(context);
-    final hasTheorySubscription = dashboardProvider.hasTheorySubscription;
-    final hasPracticalSubscription = dashboardProvider.hasPracticalSubscription;
-    final hasAnySubscription = hasTheorySubscription || hasPracticalSubscription;
-
-    // Determine video icon route based on subscription
-    String videoRoute;
-    if (hasTheorySubscription) {
-      videoRoute = '/revision-series?subscribed=true';
-    } else if (hasPracticalSubscription) {
-      videoRoute = '/practical-series?subscribed=true';
-    } else {
-      videoRoute = '/home?tab=2';
-    }
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -87,36 +70,40 @@ class AppScaffold extends StatelessWidget {
                   _buildNavItem(
                     context: context,
                     index: 0,
+                    label: 'Home',
                     icon: Icons.home_outlined,
                     activeIcon: Icons.home,
-                    route: '/home${hasAnySubscription ? '?subscribed=true' : ''}',
+                    route: '/home',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
                   _buildNavItem(
                     context: context,
                     index: 1,
-                    icon: Icons.description_outlined,
-                    activeIcon: Icons.description,
-                    route: '/home?tab=1${hasAnySubscription ? '&subscribed=true' : ''}',
+                    label: 'Theory',
+                    icon: Icons.menu_book_outlined,
+                    activeIcon: Icons.menu_book,
+                    route: '/revision-series',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
                   _buildNavItem(
                     context: context,
                     index: 2,
-                    icon: Icons.videocam_outlined,
-                    activeIcon: Icons.videocam,
-                    route: videoRoute,
+                    label: 'Practical',
+                    icon: Icons.science_outlined,
+                    activeIcon: Icons.science,
+                    route: '/practical-series',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
                   _buildNavItem(
                     context: context,
                     index: 3,
-                    icon: Icons.person_outline,
-                    activeIcon: Icons.person,
-                    route: '/home?tab=3${hasAnySubscription ? '&subscribed=true' : ''}',
+                    label: 'Notes',
+                    icon: Icons.description_outlined,
+                    activeIcon: Icons.description,
+                    route: '/your-notes',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
                   ),
@@ -132,6 +119,7 @@ class AppScaffold extends StatelessWidget {
   Widget _buildNavItem({
     required BuildContext context,
     required int index,
+    required String label,
     required IconData icon,
     required IconData activeIcon,
     required String route,
@@ -139,28 +127,41 @@ class AppScaffold extends StatelessWidget {
     required Color inactiveColor,
   }) {
     final isActive = currentIndex == index;
-    // Get current location to check if we're on a non-home route like /settings
     final currentLocation = GoRouterState.of(context).uri.toString();
-    final isOnNonHomeRoute = !currentLocation.startsWith('/home');
+    final isOnCurrentRoute = currentLocation.startsWith(route.split('?').first);
 
     return GestureDetector(
       onTap: () {
-        // Always navigate if we're on a non-home route (like /settings)
-        // or if this nav item is not currently active
-        if (isOnNonHomeRoute || !isActive) {
+        if (!isOnCurrentRoute) {
           context.go(route);
         }
       },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 44,
-        height: 44,
-        child: Center(
-          child: Icon(
-            isActive ? activeIcon : icon,
-            color: isActive ? activeColor : inactiveColor,
-            size: 24,
-          ),
+        width: 64,
+        height: 56,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? activeColor : inactiveColor,
+              size: 24,
+            ),
+            if (isActive) ...[
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: activeColor,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

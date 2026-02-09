@@ -16,6 +16,7 @@ import 'package:pgme/features/notes/screens/notes_list_screen.dart';
 import 'package:pgme/features/notes/screens/available_notes_screen.dart';
 import 'package:pgme/features/notes/screens/your_notes_screen.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
+import 'package:pgme/features/settings/screens/profile_screen.dart';
 import 'package:pgme/features/settings/screens/manage_plans_screen.dart';
 import 'package:pgme/features/purchase/screens/purchase_screen.dart';
 import 'package:pgme/features/purchase/screens/congratulations_screen.dart';
@@ -37,14 +38,21 @@ import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
   static int _getNavIndex(String location) {
-    if (location.startsWith('/home')) {
-      final uri = Uri.parse(location);
-      return int.tryParse(uri.queryParameters['tab'] ?? '0') ?? 0;
-    }
-    if (location.startsWith('/notes') || location.startsWith('/available-notes')) return 1;
-    if (location.startsWith('/practical-series') ||
-        location.startsWith('/revision-series')) return 2;
-    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/revision-series')) return 1;
+    if (location.startsWith('/practical-series')) return 2;
+    if (location.startsWith('/your-notes') ||
+        location.startsWith('/notes') ||
+        location.startsWith('/available-notes')) return 3;
+
+    // Series sessions are always practical
+    if (location.startsWith('/series-sessions')) return 2;
+
+    // Child routes (series-detail, lecture) use packageType to determine tab
+    final uri = Uri.parse(location);
+    final packageType = uri.queryParameters['packageType'];
+    if (packageType == 'Practical') return 2;
+    if (packageType == 'Theory') return 1;
+
     return 0;
   }
 
@@ -350,11 +358,10 @@ class AppRouter {
             path: '/home',
             name: 'home',
             pageBuilder: (context, state) {
-              final tabIndex = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: MainScreen(initialIndex: tabIndex, isSubscribed: isSubscribed),
+                child: MainScreen(isSubscribed: isSubscribed),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return FadeTransition(opacity: animation, child: child);
                 },
@@ -488,6 +495,25 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const YourNotesScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Profile
+          GoRoute(
+            path: '/profile',
+            name: 'profile',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const ProfileScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(

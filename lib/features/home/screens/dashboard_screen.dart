@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
@@ -95,12 +96,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Header Section
                   Padding(
-                    padding: EdgeInsets.only(top: topPadding + 16, left: 23, right: 16),
+                    padding: EdgeInsets.only(top: topPadding + 20, left: 20, right: 20),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Hello text and subtitle
+                        // Profile Avatar
+                        GestureDetector(
+                          onTap: () => context.push('/profile'),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                                width: 1.5,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: authProvider.user?.photoUrl != null && authProvider.user!.photoUrl!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: authProvider.user!.photoUrl!,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Icon(
+                                      Icons.person_rounded,
+                                      size: 24,
+                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                    ),
+                                    errorWidget: (context, url, error) => Icon(
+                                      Icons.person_rounded,
+                                      size: 24,
+                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.person_rounded,
+                                    size: 24,
+                                    color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        // Greeting
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,90 +146,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 'Hello, $userName!',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 22,
-                                  height: 20 / 22,
-                                  letterSpacing: -0.5,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  height: 1.2,
+                                  letterSpacing: -0.3,
                                   color: textColor,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 5),
-                              Opacity(
-                                opacity: 0.4,
-                                child: Text(
-                                  'What do you want to learn today?',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                    height: 1.05,
-                                    letterSpacing: -1,
-                                    color: textColor,
-                                  ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'What do you want to learn today?',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 13,
+                                  height: 1.3,
+                                  color: isDark ? AppColors.darkTextTertiary : const Color(0xFF999999),
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
-                        // Get Help Button and Notification
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: _openWhatsApp,
-                              child: Container(
-                                width: 103,
-                                height: 31,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  border: Border.all(
-                                    color: const Color(0xFF138808),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'Get Help',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 14,
-                                        height: 20 / 14,
-                                        letterSpacing: -0.5,
-                                        color: Color(0xFF138808),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Image.asset(
-                                      'assets/icons/whatsapp_logo.png',
-                                      width: 20,
-                                      height: 20,
-                                      color: const Color(0xFF138808),
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.chat,
-                                          size: 18,
-                                          color: Color(0xFF138808),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
+                        const SizedBox(width: 12),
+                        // Action buttons
+                        GestureDetector(
+                          onTap: _openWhatsApp,
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/icons/whatsapp_logo.png',
+                                width: 20,
+                                height: 20,
+                                color: const Color(0xFF25D366),
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.chat_rounded,
+                                    size: 20,
+                                    color: Color(0xFF25D366),
+                                  );
+                                },
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            // Notification Icon
-                            GestureDetector(
-                              onTap: () => context.push('/notifications'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => context.push('/notifications'),
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                            ),
+                            child: Center(
                               child: Icon(
                                 Icons.notifications_outlined,
-                                size: 24,
-                                color: textColor,
+                                size: 22,
+                                color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

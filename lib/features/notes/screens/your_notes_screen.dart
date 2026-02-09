@@ -97,22 +97,6 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
             padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
             child: Row(
               children: [
-                // Back Arrow
-                GestureDetector(
-                  onTap: () {
-                    context.go('/home?subscribed=true');
-                  },
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Icon(
-                      Icons.arrow_back,
-                      size: 24,
-                      color: textColor,
-                    ),
-                  ),
-                ),
-                const Spacer(),
                 // Title
                 Text(
                   'Your Notes',

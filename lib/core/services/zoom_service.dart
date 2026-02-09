@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_zoom_meeting_sdk/flutter_zoom_meeting_sdk.dart';
-import 'package:flutter_zoom_meeting_sdk/enums/status_zoom_error.dart';
-import 'package:flutter_zoom_meeting_sdk/models/zoom_meeting_sdk_request.dart';
+// flutter_zoom_meeting_sdk disabled due to broken build.gradle
+// import 'package:flutter_zoom_meeting_sdk/flutter_zoom_meeting_sdk.dart';
+// import 'package:flutter_zoom_meeting_sdk/enums/status_zoom_error.dart';
+// import 'package:flutter_zoom_meeting_sdk/models/zoom_meeting_sdk_request.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/api_service.dart';
 
@@ -33,23 +34,12 @@ class ZoomSignatureResponse {
 
 class ZoomMeetingService {
   final ApiService _apiService = ApiService();
-  final FlutterZoomMeetingSdk _zoomSdk = FlutterZoomMeetingSdk();
-  bool _isInitialized = false;
 
   /// Initialize the Zoom SDK (call once before first use)
   Future<bool> initZoomSDK() async {
-    if (_isInitialized) return true;
-
-    try {
-      debugPrint('=== ZoomMeetingService: Initializing Zoom SDK ===');
-      await _zoomSdk.initZoom();
-      _isInitialized = true;
-      debugPrint('Zoom SDK initialized successfully');
-      return true;
-    } catch (e) {
-      debugPrint('Failed to initialize Zoom SDK: $e');
-      return false;
-    }
+    // Zoom SDK disabled — always fails so callers fall back to external Zoom app
+    debugPrint('ZoomMeetingService: Zoom SDK is disabled (broken package)');
+    return false;
   }
 
   /// Fetch Zoom SDK signature (JWT) from backend
@@ -80,64 +70,7 @@ class ZoomMeetingService {
     required String sessionId,
     required String displayName,
   }) async {
-    debugPrint('=== ZoomMeetingService: Joining Zoom meeting ===');
-
-    // Step 1: Initialize SDK
-    final initialized = await initZoomSDK();
-    if (!initialized) {
-      throw Exception('Failed to initialize Zoom SDK');
-    }
-
-    // Step 2: Get SDK signature (JWT) from backend
-    final zoomSignature = await getZoomSignature(sessionId);
-
-    // Step 3: Authenticate with the JWT and wait for result via stream
-    debugPrint('Authenticating with Zoom SDK...');
-    final authCompleter = Completer<bool>();
-    StreamSubscription? authSubscription;
-
-    authSubscription = _zoomSdk.onAuthenticationReturn.listen((event) {
-      debugPrint('Zoom auth event: ${event.params?.statusEnum}');
-      if (event.params?.statusEnum == StatusZoomError.success) {
-        if (!authCompleter.isCompleted) {
-          authCompleter.complete(true);
-        }
-      } else {
-        if (!authCompleter.isCompleted) {
-          authCompleter.completeError(
-            Exception('Zoom authentication failed: ${event.params?.statusLabel}'),
-          );
-        }
-      }
-      authSubscription?.cancel();
-    });
-
-    await _zoomSdk.authZoom(jwtToken: zoomSignature.signature);
-
-    // Wait for auth result (timeout after 15 seconds)
-    final authSuccess = await authCompleter.future.timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        authSubscription?.cancel();
-        throw Exception('Zoom authentication timed out');
-      },
-    );
-
-    if (!authSuccess) {
-      throw Exception('Zoom authentication failed');
-    }
-
-    // Step 4: Join the meeting
-    debugPrint('Joining meeting: ${zoomSignature.meetingNumber}');
-    await _zoomSdk.joinMeeting(
-      ZoomMeetingSdkRequest(
-        meetingNumber: zoomSignature.meetingNumber,
-        password: zoomSignature.password,
-        displayName: displayName,
-      ),
-    );
-
-    debugPrint('Zoom joinMeeting called successfully');
-    return true;
+    // Zoom SDK disabled — throw so callers fall back to external Zoom app
+    throw Exception('Zoom SDK is currently unavailable. Opening in external Zoom app.');
   }
 }
