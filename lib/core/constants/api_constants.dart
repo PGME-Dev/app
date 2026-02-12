@@ -67,6 +67,7 @@ class ApiConstants {
       '/session-purchases/$sessionId/status';
   static const String subjectSelections = '/users/subject-selections';
   static const String packages = '/packages';
+  static const String packageTypes = '/package-types';
   static String packageSeries(String packageId) =>
       '/packages/$packageId/series';
   static String packageTestPurchase(String packageId) =>

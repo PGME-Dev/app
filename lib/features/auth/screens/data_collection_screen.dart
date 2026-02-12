@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
+import 'package:pgme/core/services/location_service.dart';
 
 class DataCollectionScreen extends StatefulWidget {
   const DataCollectionScreen({super.key});
@@ -24,6 +25,10 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   DateTime? _selectedDob;
   String? _selectedGender;
   bool _isLoading = false;
+  bool _isAddressFocused = false;
+  bool _isAutoFetchingAddress = false;
+  final LocationService _locationService = LocationService();
+  final FocusNode _addressFocusNode = FocusNode();
 
   // Colors
   static const Color _darkBlue = Color(0xFF0000D1);
@@ -31,6 +36,14 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   static const Color _hintColor = Color(0xFFAAAAAA);
 
   static const List<String> _genderOptions = ['Male', 'Female', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _addressFocusNode.addListener(() {
+      setState(() => _isAddressFocused = _addressFocusNode.hasFocus);
+    });
+  }
 
   @override
   void dispose() {
@@ -41,6 +54,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     _addressController.dispose();
     _ugCollegeController.dispose();
     _pgCollegeController.dispose();
+    _addressFocusNode.dispose();
     super.dispose();
   }
 
@@ -171,6 +185,49 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     }
   }
 
+  Future<void> _autoFetchAddress() async {
+    setState(() => _isAutoFetchingAddress = true);
+
+    try {
+      debugPrint('Auto-fetching address...');
+      final address = await _locationService.getAddressFromCurrentLocation();
+
+      if (address != null && address.isNotEmpty) {
+        setState(() {
+          _addressController.text = address;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Address fetched successfully'),
+              backgroundColor: Color(0xFF4CD964),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw Exception('Could not fetch address from location');
+      }
+    } catch (e) {
+      debugPrint('Error auto-fetching address: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceAll('Exception: ', ''),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAutoFetchingAddress = false);
+      }
+    }
+  }
+
   Future<void> _submitData() async {
     if (!_formKey.currentState!.validate()) {
       debugPrint('Form validation failed');
@@ -227,6 +284,8 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     int maxLines = 1,
+    Widget? trailingWidget,
+    FocusNode? focusNode,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,33 +311,41 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                 ? const BoxConstraints(minHeight: 52)
                 : null,
             color: Colors.white,
-            child: TextFormField(
-              controller: controller,
-              keyboardType: keyboardType,
-              validator: validator,
-              maxLines: maxLines,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF333333),
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: _hintColor,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: controller,
+                    keyboardType: keyboardType,
+                    validator: validator,
+                    maxLines: maxLines,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF333333),
+                    ),
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      hintStyle: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: _hintColor,
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.only(left: 16, top: 14, bottom: 14),
+                      errorStyle: const TextStyle(height: 0, fontSize: 0),
+                    ),
+                  ),
                 ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.only(left: 16, top: 14, bottom: 14),
-                errorStyle: const TextStyle(height: 0, fontSize: 0),
-              ),
+                if (trailingWidget != null) trailingWidget,
+              ],
             ),
           ),
         ),
@@ -571,6 +638,51 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                     label: 'Address',
                     hint: 'Enter your address',
                     controller: _addressController,
+                    focusNode: _addressFocusNode,
+                    trailingWidget: _isAddressFocused
+                        ? Container(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: SizedBox(
+                              height: 36,
+                              child: ElevatedButton(
+                                onPressed: _isAutoFetchingAddress
+                                    ? null
+                                    : _autoFetchAddress,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0000C8),
+                                  disabledBackgroundColor:
+                                      const Color(0xFF0000C8).withValues(alpha: 0.5),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 0),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isAutoFetchingAddress
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Auto Fetch',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
 
                   const SizedBox(height: 16),

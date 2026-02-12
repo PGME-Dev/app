@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/models/package_type_model.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/models/faculty_model.dart';
 import 'package:pgme/core/models/subject_selection_model.dart';
@@ -289,6 +290,35 @@ class DashboardService {
       throw Exception('Failed to load packages');
     } on DioException catch (e) {
       debugPrint('✗ Get packages error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get all package types
+  Future<List<PackageTypeModel>> getPackageTypes() async {
+    try {
+      debugPrint('=== DashboardService: Getting package types ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.packageTypes,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final packageTypesData = response.data['data']['packageTypes'] as List;
+        final packageTypes = packageTypesData
+            .map((json) => PackageTypeModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        debugPrint('✓ ${packageTypes.length} package types retrieved');
+        return packageTypes;
+      }
+
+      throw Exception('Failed to load package types');
+    } on DioException catch (e) {
+      debugPrint('✗ Get package types error: $e');
       throw Exception(_apiService.getErrorMessage(e));
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');

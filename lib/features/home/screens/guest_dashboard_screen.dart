@@ -303,10 +303,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   if (provider.primarySubject != null) const SizedBox(height: 24),
 
                   // What We Offer Section (guest users - no purchase)
-                  if (provider.hasActivePurchase == false && provider.packages.isNotEmpty)
+                  if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
                     _buildWhatWeOfferSection(context, provider, isDark, textColor),
 
-                  if (provider.hasActivePurchase == false && provider.packages.isNotEmpty)
+                  if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
                     const SizedBox(height: 24),
 
                   // Faculty List
@@ -367,18 +367,17 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Package Cards
+        // Package Type Cards
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            children: provider.packages
-                .take(2)
-                .map((package) => Padding(
+            children: provider.packageTypes
+                .map((packageType) => Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: SizedBox(
                         width: 180,
-                        child: _buildPackageCard(package, isDark, textColor),
+                        child: _buildPackageTypeCard(packageType, isDark, textColor),
                       ),
                     ))
                 .toList(),
@@ -388,7 +387,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     );
   }
 
-  Widget _buildPackageCard(package, bool isDark, Color textColor) {
+  Widget _buildPackageTypeCard(packageType, bool isDark, Color textColor) {
     return Container(
       height: 376,
       decoration: BoxDecoration(
@@ -401,37 +400,105 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Play Icon
-          Container(
-            width: 150,
-            height: 244,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.play_arrow,
-                  size: 36,
-                  color: Colors.black,
-                ),
+          // Trailer Video Thumbnail with Play Button
+          GestureDetector(
+            onTap: packageType.trailerVideoUrl != null
+                ? () {
+                    // Navigate to trailer video player
+                    context.push(
+                      '/trailer-video',
+                      extra: {
+                        'videoUrl': packageType.trailerVideoUrl,
+                        'videoTitle': '${packageType.name} - Trailer',
+                      },
+                    );
+                  }
+                : null,
+            child: Container(
+              width: 150,
+              height: 244,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: packageType.thumbnailUrl != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Video thumbnail
+                          CachedNetworkImage(
+                            imageUrl: packageType.thumbnailUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.black,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.primaryBlue),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.black,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white54,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Play button overlay (only if trailer URL exists)
+                          if (packageType.trailerVideoUrl != null)
+                            Center(
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.play_arrow,
+                                  size: 36,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    )
+                  : Center(
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          size: 36,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 8),
-          // Package Name
+          // Package Type Name
           Text(
-            '${package.type ?? 'Package'} Package',
+            packageType.name,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
@@ -446,8 +513,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // Enroll Now Button
           GestureDetector(
             onTap: () {
-              // Navigate to purchase screen with package data
-              context.push('/purchase?packageId=${package.packageId}');
+              // Navigate to packages list filtered by this type
+              context.push('/packages?type=${packageType.name}');
             },
             child: Container(
               width: double.infinity,
@@ -473,12 +540,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // View Package Button
           GestureDetector(
             onTap: () {
-              // Navigate to package details based on type
-              if (package.type == 'Theory') {
-                context.push('/revision-series?subscribed=false&packageId=${package.packageId}');
-              } else if (package.type == 'Practical') {
-                context.push('/practical-series?subscribed=false&packageId=${package.packageId}');
-              }
+              // Navigate to packages list filtered by this type
+              context.push('/packages?type=${packageType.name}');
             },
             child: Container(
               width: double.infinity,
@@ -489,7 +552,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               ),
               child: Center(
                 child: Text(
-                  'View Package',
+                  'View Packages',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,

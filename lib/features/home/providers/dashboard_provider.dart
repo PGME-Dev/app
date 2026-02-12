@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/models/package_type_model.dart';
 import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/models/faculty_model.dart';
@@ -23,6 +24,7 @@ class DashboardProvider with ChangeNotifier {
   SubjectSelectionModel? _primarySubject;
   List<LiveSessionModel> _upcomingSessions = [];
   List<PackageModel> _packages = [];
+  List<PackageTypeModel> _packageTypes = [];
   VideoModel? _lastWatchedVideo;
   List<FacultyModel> _facultyList = [];
   List<SubjectModel> _allSubjects = [];
@@ -56,6 +58,7 @@ class DashboardProvider with ChangeNotifier {
   SubjectSelectionModel? get primarySubject => _primarySubject;
   List<LiveSessionModel> get upcomingSessions => _upcomingSessions;
   List<PackageModel> get packages => _packages;
+  List<PackageTypeModel> get packageTypes => _packageTypes;
   VideoModel? get lastWatchedVideo => _lastWatchedVideo;
   List<FacultyModel> get facultyList => _facultyList;
 
@@ -257,8 +260,15 @@ class DashboardProvider with ChangeNotifier {
           debugPrint('⚠ Error getting watch history: $e');
         }
       } else {
-        // No active purchase
+        // No active purchase - load package types for "What We Offer" section
         _lastWatchedVideo = null;
+        try {
+          debugPrint('Loading package types for What We Offer section...');
+          _packageTypes = await _dashboardService.getPackageTypes();
+          debugPrint('✓ ${_packageTypes.length} package types loaded');
+        } catch (e) {
+          debugPrint('⚠ Error loading package types: $e');
+        }
       }
     } catch (e) {
       _contentError = e.toString().replaceAll('Exception: ', '');

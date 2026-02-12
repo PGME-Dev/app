@@ -52,6 +52,9 @@ class PackageModel {
   @JsonKey(name: 'thumbnail_url')
   final String? thumbnailUrl;
 
+  @JsonKey(name: 'trailer_video_url')
+  final String? trailerVideoUrl;
+
   @JsonKey(fromJson: _featuresFromJson)
   final List<String>? features;
 
@@ -76,6 +79,7 @@ class PackageModel {
     this.saleEndDate,
     this.durationDays,
     this.thumbnailUrl,
+    this.trailerVideoUrl,
     this.features,
     required this.displayOrder,
     required this.isPurchased,
@@ -99,6 +103,7 @@ class PackageModel {
     String? saleEndDate,
     int? durationDays,
     String? thumbnailUrl,
+    String? trailerVideoUrl,
     List<String>? features,
     int? displayOrder,
     bool? isPurchased,
@@ -116,6 +121,7 @@ class PackageModel {
       saleEndDate: saleEndDate ?? this.saleEndDate,
       durationDays: durationDays ?? this.durationDays,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      trailerVideoUrl: trailerVideoUrl ?? this.trailerVideoUrl,
       features: features ?? this.features,
       displayOrder: displayOrder ?? this.displayOrder,
       isPurchased: isPurchased ?? this.isPurchased,

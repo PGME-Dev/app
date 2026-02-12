@@ -12,6 +12,7 @@ import 'package:pgme/features/home/screens/main_screen.dart';
 import 'package:pgme/features/courses/screens/course_detail_screen.dart';
 import 'package:pgme/features/courses/screens/lecture_video_screen.dart';
 import 'package:pgme/features/courses/screens/video_player_screen.dart';
+import 'package:pgme/features/courses/screens/trailer_video_player_screen.dart';
 import 'package:pgme/features/notes/screens/notes_list_screen.dart';
 import 'package:pgme/features/notes/screens/available_notes_screen.dart';
 import 'package:pgme/features/notes/screens/your_notes_screen.dart';
@@ -330,6 +331,33 @@ class AppRouter {
           return CustomTransitionPage(
             key: state.pageKey,
             child: VideoPlayerScreen(videoId: videoId),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      // Trailer Video Player (for package type trailers)
+      GoRoute(
+        path: '/trailer-video',
+        name: 'trailer-video',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final videoUrl = extra['videoUrl'] as String;
+          final videoTitle = extra['videoTitle'] as String;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: TrailerVideoPlayerScreen(
+              videoUrl: videoUrl,
+              videoTitle: videoTitle,
+            ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
