@@ -340,6 +340,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 34),
 
+                  // Account Section Title
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Text(
+                      'Account',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        height: 1.25,
+                        letterSpacing: -0.5,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Account Box
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // My Purchases
+                          _buildLegalItem(
+                            icon: Icons.shopping_bag_outlined,
+                            title: 'My Purchases',
+                            onTap: () {
+                              context.push('/my-purchases');
+                            },
+                            textColor: textColor,
+                            iconColor: iconColor,
+                          ),
+                          // Divider
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 21),
+                            child: Container(
+                              height: 1,
+                              color: dividerColor,
+                            ),
+                          ),
+                          // Join PGME - Careers
+                          _buildLegalItem(
+                            icon: Icons.work_outline,
+                            title: 'Join PGME - Careers',
+                            onTap: () {
+                              context.push('/careers');
+                            },
+                            textColor: textColor,
+                            iconColor: iconColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 34),
+
                   // Legal Compliances Title
                   Padding(
                     padding: const EdgeInsets.only(left: 16),

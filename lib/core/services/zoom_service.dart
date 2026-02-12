@@ -39,12 +39,14 @@ class ZoomSignatureResponse {
   final String signature;
   final String meetingNumber;
   final String password;
+  final Map<String, dynamic> meetingOptions;
 
   ZoomSignatureResponse({
     required this.sdkKey,
     required this.signature,
     required this.meetingNumber,
     required this.password,
+    this.meetingOptions = const {},
   });
 
   factory ZoomSignatureResponse.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,9 @@ class ZoomSignatureResponse {
       signature: json['signature'] as String,
       meetingNumber: json['meetingNumber'] as String,
       password: json['password'] as String,
+      meetingOptions: json['meetingOptions'] != null
+          ? Map<String, dynamic>.from(json['meetingOptions'] as Map)
+          : {},
     );
   }
 }
@@ -131,11 +136,27 @@ class ZoomMeetingService {
 
       debugPrint('Zoom SDK authenticated successfully');
 
-      // Create meeting config
+      // Create meeting config with meeting options from backend
+      final opts = zoomSignature.meetingOptions;
       final meetingConfig = ZoomMeetingSdkRequest(
         meetingNumber: zoomSignature.meetingNumber,
         password: zoomSignature.password,
         displayName: displayName,
+        noShare: opts['noShare'] as bool? ?? false,
+        noVideo: opts['noVideo'] as bool? ?? false,
+        noAudio: opts['noAudio'] as bool? ?? false,
+        noInvite: opts['noInvite'] as bool? ?? false,
+        noChat: opts['noChat'] as bool? ?? false,
+        noDriveMode: opts['noDriveMode'] as bool? ?? false,
+        noDialIn: opts['noDialIn'] as bool? ?? false,
+        noDialOut: opts['noDialOut'] as bool? ?? false,
+        noDisconnectAudio: opts['noDisconnectAudio'] as bool? ?? false,
+        noRecord: opts['noRecord'] as bool? ?? false,
+        noReaction: opts['noReaction'] as bool? ?? false,
+        noParticipantList: opts['noParticipantList'] as bool? ?? false,
+        noMore: opts['noMore'] as bool? ?? false,
+        muteOnEntry: opts['muteOnEntry'] as bool? ?? false,
+        videoOffOnEntry: opts['videoOffOnEntry'] as bool? ?? false,
       );
 
       // Set up status listener with timeout

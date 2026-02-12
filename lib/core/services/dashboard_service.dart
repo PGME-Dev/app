@@ -691,6 +691,37 @@ class DashboardService {
     );
   }
 
+  /// Fetch video playback data (HLS URL, metadata) for a given video ID.
+  Future<Map<String, dynamic>> getVideoPlaybackData(String videoId) async {
+    try {
+      debugPrint('DashboardService: fetching playback data for video=$videoId');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.videoPlayback(videoId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final videoData = response.data['data']['video'] as Map<String, dynamic>;
+        debugPrint('DashboardService: playback data received for video=$videoId');
+        return videoData;
+      }
+
+      throw Exception('Failed to load video playback data');
+    } on DioException catch (e) {
+      debugPrint('DashboardService: playback fetch error - ${e.message}');
+      if (e.response?.statusCode == 403) {
+        throw Exception('You do not have access to this video');
+      }
+      if (e.response?.statusCode == 404) {
+        throw Exception('Video not found');
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    } catch (e) {
+      debugPrint('DashboardService: unexpected playback error - $e');
+      rethrow;
+    }
+  }
+
   /// Clear all caches
   void clearCache() {
     debugPrint('=== DashboardService: Clearing cache ===');

@@ -11,7 +11,7 @@ ModuleVideoModel _$ModuleVideoModelFromJson(Map<String, dynamic> json) =>
       videoId: json['video_id'] as String,
       title: json['title'] as String,
       durationSeconds: (json['duration_seconds'] as num).toInt(),
-      facultyName: json['faculty_name'] as String,
+      facultyName: json['faculty_name'] as String? ?? '',
       facultyId: json['faculty_id'] as String?,
       isCompleted: json['is_completed'] as bool? ?? false,
       isLocked: json['is_locked'] as bool? ?? false,

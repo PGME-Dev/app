@@ -13,7 +13,8 @@
       "WebFetch(domain:github.com)",
       "Bash(where /r \"C:\\\\Users\\\\Yatharth\\\\AppData\\\\Local\\\\Pub\\\\Cache\" \"build.gradle\")",
       "Bash(wmic process:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(flutter --version:*)"
     ]
   }
 }

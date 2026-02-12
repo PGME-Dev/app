@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
@@ -16,8 +17,10 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
   final TextEditingController _ugCollegeController = TextEditingController();
   final TextEditingController _pgCollegeController = TextEditingController();
+  DateTime? _selectedDob;
   bool _isLoading = false;
 
   // Colors
@@ -30,6 +33,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _dobController.dispose();
     _ugCollegeController.dispose();
     _pgCollegeController.dispose();
     super.dispose();
@@ -145,6 +149,23 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     );
   }
 
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDob ?? DateTime(now.year - 25),
+      firstDate: DateTime(1940),
+      lastDate: now,
+      helpText: 'Select Date of Birth',
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDob = picked;
+        _dobController.text = DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
+  }
+
   Future<void> _submitData() async {
     if (!_formKey.currentState!.validate()) {
       debugPrint('Form validation failed');
@@ -158,11 +179,11 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
       debugPrint('Submitting profile data...');
       await provider.updateProfile(
-        name: '${_firstNameController.text} ${_lastNameController.text}',
-        email: _emailController.text,
-        dateOfBirth: '',
-        gender: '',
-        address: '',
+        name: '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
+        email: _emailController.text.trim(),
+        dateOfBirth: _selectedDob != null
+            ? DateFormat('yyyy-MM-dd').format(_selectedDob!)
+            : null,
       );
 
       debugPrint('Profile updated successfully, showing dialog');
@@ -174,8 +195,12 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
       debugPrint('Error updating profile: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        // Show success dialog anyway for now (remove this after testing)
-        _showSuccessDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -386,6 +411,67 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                       }
                       return null;
                     },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Date of Birth
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Date of Birth',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.57,
+                          letterSpacing: 0.07,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickDateOfBirth,
+                        child: AbsorbPointer(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              width: 327,
+                              height: 52,
+                              color: Colors.white,
+                              child: TextFormField(
+                                controller: _dobController,
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF333333),
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'DD/MM/YYYY',
+                                  hintStyle: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: _hintColor,
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(left: 16, top: 14, bottom: 14),
+                                  suffixIcon: Icon(
+                                    Icons.calendar_today_outlined,
+                                    color: _hintColor,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 16),

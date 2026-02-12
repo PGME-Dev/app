@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sms_autofill/sms_autofill.dart';
+import 'package:smart_auth/smart_auth.dart';
 
 class OTPInput extends StatefulWidget {
   final int length;
@@ -18,9 +18,10 @@ class OTPInput extends StatefulWidget {
   State<OTPInput> createState() => OTPInputState();
 }
 
-class OTPInputState extends State<OTPInput> with CodeAutoFill {
+class OTPInputState extends State<OTPInput> {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
+  final _smartAuth = SmartAuth.instance;
 
   // Colors
   static const Color _filledBorderColor = Color(0xFF0000D1);
@@ -33,8 +34,8 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
 
-    // Listen for SMS auto-fill
-    listenForCode();
+    // Listen for SMS auto-fill via User Consent API
+    _startSmsListener();
 
     // Add listeners for focus changes to trigger rebuild
     for (var node in _focusNodes) {
@@ -42,6 +43,31 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
         setState(() {});
       });
     }
+  }
+
+  Future<void> _startSmsListener() async {
+    try {
+      final res = await _smartAuth.getSmsWithUserConsentApi();
+      if (res.hasData) {
+        final code = res.requireData.code;
+        if (code != null && code.length >= widget.length && mounted) {
+          _fillOtp(code.substring(0, widget.length));
+        }
+      }
+    } catch (e) {
+      debugPrint('SmartAuth SMS listener error: $e');
+    }
+  }
+
+  void _fillOtp(String code) {
+    for (int i = 0; i < widget.length && i < code.length; i++) {
+      _controllers[i].text = code[i];
+    }
+    for (var node in _focusNodes) {
+      node.unfocus();
+    }
+    widget.onChanged?.call(code);
+    widget.onCompleted(code);
   }
 
   /// Clear all OTP input fields
@@ -55,21 +81,8 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
   }
 
   @override
-  void codeUpdated() {
-    if (code != null && code!.length == widget.length) {
-      for (int i = 0; i < widget.length; i++) {
-        _controllers[i].text = code![i];
-      }
-      widget.onCompleted(code!);
-      for (var node in _focusNodes) {
-        node.unfocus();
-      }
-    }
-  }
-
-  @override
   void dispose() {
-    cancel();
+    _smartAuth.removeUserConsentApiListener();
     for (var controller in _controllers) {
       controller.dispose();
     }
@@ -92,8 +105,8 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
     }
   }
 
-  void _onKeyDown(RawKeyEvent event, int index) {
-    if (event is RawKeyDownEvent &&
+  void _onKeyDown(KeyEvent event, int index) {
+    if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace &&
         _controllers[index].text.isEmpty &&
         index > 0) {
@@ -117,9 +130,9 @@ class OTPInputState extends State<OTPInput> with CodeAutoFill {
             child: SizedBox(
               width: 56,
               height: 56,
-              child: RawKeyboardListener(
+              child: KeyboardListener(
                 focusNode: FocusNode(),
-                onKey: (event) => _onKeyDown(event, index),
+                onKeyEvent: (event) => _onKeyDown(event, index),
                 child: TextFormField(
                   controller: _controllers[index],
                   focusNode: _focusNodes[index],

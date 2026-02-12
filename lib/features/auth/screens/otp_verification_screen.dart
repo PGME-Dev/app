@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:sms_autofill/sms_autofill.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/widgets/otp_input.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
@@ -19,21 +18,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   // Colors
   static const Color _darkBlue = Color(0xFF0000C8);
-
-  @override
-  void initState() {
-    super.initState();
-    _initSmsListener();
-  }
-
-  Future<void> _initSmsListener() async {
-    try {
-      final signature = await SmsAutoFill().getAppSignature;
-      debugPrint('App Signature for SMS: $signature');
-    } catch (e) {
-      debugPrint('Error getting app signature: $e');
-    }
-  }
 
   Future<void> _verifyOTP() async {
     if (_otp.length != 4) {

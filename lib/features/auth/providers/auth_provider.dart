@@ -199,18 +199,27 @@ class AuthProvider with ChangeNotifier {
   Future<void> updateProfile({
     required String name,
     required String email,
-    required String dateOfBirth,
-    required String gender,
-    required String address,
+    String? dateOfBirth,
+    String? gender,
+    String? address,
   }) async {
     try {
-      final updatedUser = await _userService.updateProfile({
-        'name': name,
-        'email': email,
-        'date_of_birth': dateOfBirth,
-        'gender': gender.toLowerCase(),
-        'address': address,
-      });
+      // Only include fields that have actual values to avoid
+      // backend validation errors on empty strings
+      final data = <String, dynamic>{};
+      if (name.trim().isNotEmpty) data['name'] = name.trim();
+      if (email.trim().isNotEmpty) data['email'] = email.trim();
+      if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
+        data['date_of_birth'] = dateOfBirth;
+      }
+      if (gender != null && gender.isNotEmpty) {
+        data['gender'] = gender.toLowerCase();
+      }
+      if (address != null && address.isNotEmpty) {
+        data['address'] = address.trim();
+      }
+
+      final updatedUser = await _userService.updateProfile(data);
 
       // Complete onboarding after profile update
       await _userService.completeOnboarding();

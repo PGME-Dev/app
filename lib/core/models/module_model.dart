@@ -12,7 +12,7 @@ class ModuleVideoModel {
   @JsonKey(name: 'duration_seconds')
   final int durationSeconds;
 
-  @JsonKey(name: 'faculty_name')
+  @JsonKey(name: 'faculty_name', defaultValue: '')
   final String facultyName;
 
   @JsonKey(name: 'faculty_id')
@@ -34,7 +34,7 @@ class ModuleVideoModel {
     required this.videoId,
     required this.title,
     required this.durationSeconds,
-    required this.facultyName,
+    this.facultyName = '',
     this.facultyId,
     this.isCompleted = false,
     this.isLocked = false,

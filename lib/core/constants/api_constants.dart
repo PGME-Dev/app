@@ -84,6 +84,7 @@ class ApiConstants {
   // Purchase Endpoints
   static const String userPurchases = '/users/purchases';
   static const String purchases = '/users/purchases';
+  static const String allPurchases = '/users/purchases/all';
   static const String subscriptionStatus =
       '/users/purchases/subscription-status';
   static String purchaseDetails(String purchaseId) =>
@@ -93,6 +94,9 @@ class ApiConstants {
   static const String series = '/series';
   static const String progress = '/users/progress';
   static const String updateProgress = '/users/progress';
+
+  // Video Playback Endpoints
+  static String videoPlayback(String videoId) => '/videos/$videoId/playback';
 
   // Library Endpoints (additional)
   static const String library = '/users/library';

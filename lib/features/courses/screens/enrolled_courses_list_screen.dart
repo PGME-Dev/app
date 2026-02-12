@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -266,8 +267,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
   ) {
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to video player with lecture_id and resume position
-        // context.push('/video-player/${progress.lecture.lectureId}');
+        context.push('/video/${progress.lecture.lectureId}');
       },
       child: Container(
         width: 280,
