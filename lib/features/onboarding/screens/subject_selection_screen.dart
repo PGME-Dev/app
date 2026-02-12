@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/subject_model.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 
 class SubjectSelectionScreen extends StatefulWidget {
@@ -24,7 +25,22 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 
   Future<void> _fetchSubjects() async {
     try {
-      await context.read<OnboardingProvider>().fetchSubjects();
+      final onboardingProvider = context.read<OnboardingProvider>();
+      await onboardingProvider.fetchSubjects();
+
+      // Pre-select the user's current primary subject if available
+      if (onboardingProvider.selectedSubject == null && mounted) {
+        final primarySubject = context.read<DashboardProvider>().primarySubject;
+        if (primarySubject != null) {
+          final match = onboardingProvider.subjects.cast<SubjectModel?>().firstWhere(
+            (s) => s!.subjectId == primarySubject.subjectId,
+            orElse: () => null,
+          );
+          if (match != null) {
+            onboardingProvider.selectSubject(match);
+          }
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

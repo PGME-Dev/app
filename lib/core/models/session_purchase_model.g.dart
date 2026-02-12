@@ -47,6 +47,7 @@ SessionAccessStatus _$SessionAccessStatusFromJson(Map<String, dynamic> json) =>
       hasAccess: json['has_access'] as bool,
       isFree: json['is_free'] as bool,
       price: (json['price'] as num).toInt(),
+      compareAtPrice: (json['compare_at_price'] as num?)?.toInt(),
       purchaseId: json['purchase_id'] as String?,
       purchasedAt: json['purchased_at'] as String?,
     );
@@ -57,6 +58,7 @@ Map<String, dynamic> _$SessionAccessStatusToJson(
       'has_access': instance.hasAccess,
       'is_free': instance.isFree,
       'price': instance.price,
+      'compare_at_price': instance.compareAtPrice,
       'purchase_id': instance.purchaseId,
       'purchased_at': instance.purchasedAt,
     };

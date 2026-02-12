@@ -148,4 +148,30 @@ class BookService {
       return [];
     }
   }
+
+  /// Get shipping cost from backend
+  Future<int> getShippingCost() async {
+    try {
+      debugPrint('=== BookService: Getting shipping cost ===');
+
+      final response = await _apiService.dio.get(
+        '/books/config/shipping-cost',
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data']['shipping_cost'] as int;
+      }
+
+      throw Exception('Failed to load shipping cost');
+    } on DioException catch (e) {
+      debugPrint('DioException getting shipping cost: ${e.message}');
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Error getting shipping cost: $e');
+      rethrow;
+    }
+  }
 }

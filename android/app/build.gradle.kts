@@ -37,6 +37,40 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Enable ProGuard for release builds
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        debug {
+            // Also apply ProGuard rules in debug mode for testing
+            // But don't minify to make debugging easier
+            proguardFiles("proguard-rules.pro")
+        }
+    }
+
+    // Packaging options to handle conflicts and exclude problematic files
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/*.kotlin_module"
+            )
+        }
+
+        // Handle native library conflicts (libc++_shared.so)
+        jniLibs {
+            pickFirsts += setOf("lib/*/libc++_shared.so")
         }
     }
 

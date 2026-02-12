@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
+import 'package:pgme/core/services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,10 +36,53 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // Always show onboarding screens first, then login
     debugPrint('=== Splash Navigation ===');
-    debugPrint('Navigating to onboarding...');
-    context.go('/onboarding');
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final storageService = StorageService();
+
+      // Check if user is authenticated
+      await authProvider.checkAuthStatus();
+
+      if (!mounted) return;
+
+      if (authProvider.isAuthenticated) {
+        // User is authenticated
+        debugPrint('User is authenticated');
+
+        // Check for multiple sessions
+        if (authProvider.hasMultipleSessions) {
+          debugPrint('Multiple sessions detected, navigating to multiple-logins');
+          context.go('/multiple-logins');
+        } else if (authProvider.onboardingCompleted) {
+          // Onboarding completed - go to home
+          debugPrint('Onboarding completed, navigating to home');
+          context.go('/home');
+        } else {
+          // Onboarding not completed - go to subject selection
+          debugPrint('Onboarding not completed, navigating to subject-selection');
+          context.go('/subject-selection');
+        }
+      } else {
+        // User is not authenticated - check if intro was seen
+        final introSeen = await storageService.getIntroSeen();
+        if (introSeen) {
+          // Intro already seen - go directly to login
+          debugPrint('Intro seen, navigating to login');
+          context.go('/login');
+        } else {
+          // First time user - show onboarding
+          debugPrint('First time user, navigating to onboarding');
+          context.go('/onboarding');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking auth status: $e');
+      if (!mounted) return;
+      // On error, go to login
+      context.go('/login');
+    }
   }
 
   @override

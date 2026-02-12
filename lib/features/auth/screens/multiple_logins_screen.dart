@@ -146,9 +146,10 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
   Widget _buildMainCard() {
     return Consumer<AuthProvider>(
       builder: (context, provider, _) {
-        // Get other sessions (exclude current session)
+        // Get other ACTIVE sessions (exclude current session)
         final otherSessions = provider.activeSessions.where(
-          (s) => s['session_id'] != provider.currentSessionId,
+          (s) => s['session_id'] != provider.currentSessionId &&
+                 s['is_active'] == true,
         ).toList();
 
         return Container(

@@ -76,8 +76,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
       if (!mounted) return;
 
       // Step 2: Show Zoho payment widget
-      final result = await Navigator.push<ZohoPaymentResponse>(
-        context,
+      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
         MaterialPageRoute(
           builder: (context) => ZohoPaymentWidget(
             paymentSession: paymentSession,
@@ -435,7 +434,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
 
           // Place Order Button
           Container(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 80),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 16),
             decoration: BoxDecoration(
               color: cardBgColor,
               border: Border(

@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/session_purchase_model.dart';
 import 'package:pgme/core/models/zoho_payment_models.dart';
@@ -37,11 +37,51 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   bool _isJoiningZoom = false;
   String? _error;
 
+  // Enrollment state
+  Map<String, dynamic>? _enrollmentStatus;
+  bool _isEnrolling = false;
+
+  // Upcoming sessions
+  List<LiveSessionModel> _upcomingSessions = [];
+
+  // Countdown timer for join button
+  Timer? _countdownTimer;
+  bool _canJoinNow = false;
+
   @override
   void initState() {
     super.initState();
     _loadSessionDetails();
   }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    _updateCanJoin();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) _updateCanJoin();
+    });
+  }
+
+  void _updateCanJoin() {
+    if (_session == null) return;
+    final now = DateTime.now();
+    try {
+      final startTime = DateTime.parse(_session!.scheduledStartTime).toLocal();
+      final diff = startTime.difference(now);
+      setState(() {
+        _canJoinNow = _session!.status == 'live' ||
+            (diff.inMinutes <= 10 && !diff.isNegative);
+      });
+    } catch (_) {}
+  }
+
+  bool get _isEnrolled => _enrollmentStatus?['is_enrolled'] == true;
+  bool get _hasAccess => _accessStatus?.hasAccess ?? _session?.isFree ?? true;
 
   Future<void> _loadSessionDetails() async {
     try {
@@ -52,20 +92,18 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
       final session = await _dashboardService.getSessionDetails(widget.sessionId);
 
-      // Debug: Log session pricing info
-      debugPrint('=== Session Details Loaded ===');
-      debugPrint('Title: ${session.title}');
-      debugPrint('isFree: ${session.isFree}');
-      debugPrint('price: ${session.price}');
-
       if (mounted) {
         setState(() {
           _session = session;
           _isLoading = false;
         });
 
-        // Check access status after loading session
+        _startCountdown();
+
+        // Load additional data in parallel
         _checkAccessStatus();
+        _checkEnrollmentStatus();
+        _loadUpcomingSessions();
       }
     } catch (e) {
       if (mounted) {
@@ -80,12 +118,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Future<void> _checkAccessStatus() async {
     if (_session == null) return;
 
-    debugPrint('=== Checking Access Status ===');
-    debugPrint('Session isFree: ${_session!.isFree}');
-
-    // If session is free, no need to check access
     if (_session!.isFree) {
-      debugPrint('Session is FREE - granting access');
       setState(() {
         _accessStatus = SessionAccessStatus(
           hasAccess: true,
@@ -96,15 +129,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       return;
     }
 
-    debugPrint('Session is PAID - checking purchase status...');
-
     try {
-      setState(() {
-        _isCheckingAccess = true;
-      });
-
+      setState(() => _isCheckingAccess = true);
       final accessStatus = await _purchaseService.checkSessionAccess(widget.sessionId);
-
       if (mounted) {
         setState(() {
           _accessStatus = accessStatus;
@@ -112,56 +139,79 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         });
       }
     } catch (e) {
+      if (mounted) setState(() => _isCheckingAccess = false);
+    }
+  }
+
+  Future<void> _checkEnrollmentStatus() async {
+    if (_session == null) return;
+    try {
+      final status = await _purchaseService.checkEnrollmentStatus(widget.sessionId);
+      if (mounted) setState(() => _enrollmentStatus = status);
+    } catch (e) {
+      debugPrint('Error checking enrollment: $e');
+    }
+  }
+
+  Future<void> _loadUpcomingSessions() async {
+    if (_session?.subjectId == null) return;
+    try {
+      final sessions = await _dashboardService.getLiveSessions(
+        upcomingOnly: true,
+        subjectId: _session!.subjectId,
+        limit: 5,
+      );
+      final filtered = sessions.where((s) => s.sessionId != widget.sessionId).toList();
+      if (mounted) setState(() => _upcomingSessions = filtered);
+    } catch (e) {
+      debugPrint('Error loading upcoming sessions: $e');
+    }
+  }
+
+  Future<void> _enrollForFree() async {
+    if (_session == null) return;
+    setState(() => _isEnrolling = true);
+    try {
+      await _purchaseService.enrollInSession(widget.sessionId);
       if (mounted) {
-        setState(() {
-          _isCheckingAccess = false;
-        });
-        debugPrint('Error checking access: $e');
+        await Future.wait([
+          _checkEnrollmentStatus(),
+          _checkAccessStatus(),
+        ]);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Successfully enrolled!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
+    } catch (e) {
+      if (mounted) _showError('Failed to enroll: $e');
+    } finally {
+      if (mounted) setState(() => _isEnrolling = false);
     }
   }
 
   Future<void> _initiatePayment() async {
     if (_session == null) return;
 
-    debugPrint('');
-    debugPrint('═══════════════════════════════════════════════════════════');
-    debugPrint('💳 SessionDetailsScreen: Initiating payment');
-    debugPrint('═══════════════════════════════════════════════════════════');
-    debugPrint('Session ID: ${widget.sessionId}');
-    debugPrint('Session Title: ${_session!.title}');
-    debugPrint('Price: ${_session!.price}');
-
-    setState(() {
-      _isPurchasing = true;
-    });
+    setState(() => _isPurchasing = true);
 
     try {
-      // Step 1: Create Zoho payment session
-      debugPrint('📝 Step 1: Creating payment session...');
       final paymentSession = await _purchaseService.createPaymentSession(
         widget.sessionId,
       );
-      debugPrint('✅ Payment session created');
 
-      if (!mounted) {
-        debugPrint('⚠️ Widget unmounted, aborting');
-        return;
-      }
+      if (!mounted) return;
 
-      // Step 2: Show Zoho payment widget
-      debugPrint('📝 Step 2: Showing payment widget...');
-      final result = await Navigator.push<ZohoPaymentResponse>(
-        context,
+      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
         MaterialPageRoute(
           builder: (context) => ZohoPaymentWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
-              debugPrint('🔙 Payment widget returning with response');
               Navigator.pop(context, response);
             },
             onCancel: () {
-              debugPrint('❌ Payment widget cancelled by user');
               Navigator.pop(context);
             },
           ),
@@ -169,52 +219,24 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         ),
       );
 
-      // Step 3: Handle payment response
-      debugPrint('📝 Step 3: Handling payment response...');
       if (result != null && mounted) {
-        debugPrint('Payment result status: ${result.status}');
         if (result.isSuccess) {
-          debugPrint('✅ Payment successful, verifying...');
           await _handlePaymentSuccess(result);
         } else if (result.isFailed) {
-          debugPrint('❌ Payment failed: ${result.errorMessage}');
           _showError('Payment failed: ${result.errorMessage ?? "Unknown error"}');
         } else if (result.isCancelled) {
-          debugPrint('⚠️ Payment cancelled by user');
           _showInfo('Payment cancelled');
         }
-      } else {
-        debugPrint('⚠️ No result or widget unmounted');
       }
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('');
     } catch (e) {
-      debugPrint('❌ Error in payment flow: $e');
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('');
-      if (mounted) {
-        _showError('Error initiating payment: $e');
-      }
+      if (mounted) _showError('Error initiating payment: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isPurchasing = false;
-        });
-      }
+      if (mounted) setState(() => _isPurchasing = false);
     }
   }
 
   Future<void> _handlePaymentSuccess(ZohoPaymentResponse response) async {
     try {
-      debugPrint('');
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('✅ SessionDetailsScreen: Handling payment success');
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('Payment ID: ${response.paymentId}');
-      debugPrint('Session ID: ${response.paymentSessionId}');
-
-      // Verify payment with backend
-      debugPrint('🔐 Verifying payment with backend...');
       final verification = await _purchaseService.verifyZohoPayment(
         sessionId: widget.sessionId,
         paymentSessionId: response.paymentSessionId!,
@@ -222,16 +244,12 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         signature: response.signature,
       );
 
-      debugPrint('Verification success: ${verification.success}');
-      debugPrint('Purchase ID: ${verification.purchaseId}');
-
       if (mounted) {
         if (verification.success) {
-          debugPrint('✅ Payment verified successfully');
-          // Refresh access status
-          debugPrint('🔄 Refreshing access status...');
-          await _checkAccessStatus();
-
+          await Future.wait([
+            _checkAccessStatus(),
+            _checkEnrollmentStatus(),
+          ]);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Payment successful! You can now join the session.'),
@@ -243,15 +261,12 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         }
       }
     } catch (e) {
-      if (mounted) {
-        _showError('Error verifying payment: $e');
-      }
+      if (mounted) _showError('Error verifying payment: $e');
     }
   }
 
   void _showError(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message.replaceAll('Exception: ', '')),
@@ -263,23 +278,18 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
   void _showInfo(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
     );
   }
 
   Future<void> _launchMeeting() async {
     if (_session == null) return;
 
-    // Check if user has access before launching
-    if (_accessStatus?.hasAccess != true) {
+    if (!_hasAccess && !_isEnrolled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please purchase this session to join'),
+          content: Text('Please purchase or enroll in this session to join'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -287,84 +297,74 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
 
     try {
-      // Call join session API (creates attendance record)
       await _purchaseService.joinSession(widget.sessionId);
 
-      // Branch by platform: Zoom SDK in-app vs external URL
-      if (_session!.platform.toLowerCase() == 'zoom' && _session!.zoomMeetingId != null) {
+      if (_session!.platform.toLowerCase() == 'zoom') {
         await _joinZoomInApp();
       } else {
-        await _launchExternalMeeting();
+        if (mounted) {
+          _showZoomErrorModal(
+            ZoomJoinException(
+              type: ZoomErrorType.unknown,
+              message: 'Only Zoom meetings are supported in-app. Please contact support.',
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to join meeting: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: AppColors.error,
+        _showZoomErrorModal(
+          ZoomJoinException(
+            type: ZoomErrorType.unknown,
+            message: 'Failed to join meeting: ${e.toString().replaceAll('Exception: ', '')}',
           ),
         );
       }
     }
   }
 
-  /// Join Zoom meeting in-app using the Zoom SDK
   Future<void> _joinZoomInApp() async {
     if (_isJoiningZoom) return;
-
-    setState(() {
-      _isJoiningZoom = true;
-    });
-
+    setState(() => _isJoiningZoom = true);
     try {
-      debugPrint('Joining Zoom meeting in-app for session: ${widget.sessionId}');
-
-      final userName = _session?.facultyName != null
-          ? 'PGME Student'
-          : 'PGME Student';
-
       await _zoomService.joinMeeting(
         sessionId: widget.sessionId,
-        displayName: userName,
+        displayName: 'PGME Student',
       );
+    } on ZoomJoinException catch (e) {
+      if (mounted) {
+        _showZoomErrorModal(e);
+      }
     } catch (e) {
       if (mounted) {
-        // Fallback: if SDK fails, try opening external link
-        debugPrint('Zoom SDK join failed, falling back to external: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('In-app join failed. Opening in Zoom app...'),
+        _showZoomErrorModal(
+          ZoomJoinException(
+            type: ZoomErrorType.unknown,
+            message: 'An unexpected error occurred while joining the meeting.',
+            technicalDetails: e.toString(),
           ),
         );
-        await _launchExternalMeeting();
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isJoiningZoom = false;
-        });
-      }
+      if (mounted) setState(() => _isJoiningZoom = false);
     }
   }
 
-  /// Launch meeting in external browser/app (for non-Zoom platforms or fallback)
-  Future<void> _launchExternalMeeting() async {
-    if (_session?.meetingLink == null || _session!.meetingLink!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Meeting link not available'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    final uri = Uri.parse(_session!.meetingLink!);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      throw Exception('Could not launch meeting');
-    }
+  void _showZoomErrorModal(ZoomJoinException error) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => _ZoomErrorDialog(
+        error: error,
+        onRetry: () {
+          Navigator.of(context).pop();
+          _joinZoomInApp();
+        },
+        onCancel: () {
+          Navigator.of(context).pop();
+        },
+      ),
+    );
   }
 
   String _formatPlatformName(String platform) {
@@ -416,13 +416,36 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 
+  String _formatSessionDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final now = DateTime.now();
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        return 'Today at $hour:$minute $period';
+      }
+
+      final tomorrow = now.add(const Duration(days: 1));
+      if (dt.year == tomorrow.year && dt.month == tomorrow.month && dt.day == tomorrow.day) {
+        return 'Tomorrow at $hour:$minute $period';
+      }
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[dt.month - 1]} ${dt.day} at $hour:$minute $period';
+    } catch (e) {
+      return 'Upcoming';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
-    // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -438,15 +461,8 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           : _error != null
               ? _buildErrorState(textColor, iconColor)
               : _buildContent(
-                  topPadding,
-                  isDark,
-                  backgroundColor,
-                  textColor,
-                  secondaryTextColor,
-                  cardBgColor,
-                  surfaceColor,
-                  iconColor,
-                  buttonColor,
+                  topPadding, isDark, backgroundColor, textColor,
+                  secondaryTextColor, cardBgColor, surfaceColor, iconColor, buttonColor,
                 ),
     );
   }
@@ -464,27 +480,17 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadSessionDetails,
-            child: const Text('Retry'),
-          ),
+          ElevatedButton(onPressed: _loadSessionDetails, child: const Text('Retry')),
         ],
       ),
     );
   }
 
   Widget _buildContent(
-    double topPadding,
-    bool isDark,
-    Color backgroundColor,
-    Color textColor,
-    Color secondaryTextColor,
-    Color cardBgColor,
-    Color surfaceColor,
-    Color iconColor,
-    Color buttonColor,
+    double topPadding, bool isDark, Color backgroundColor, Color textColor,
+    Color secondaryTextColor, Color cardBgColor, Color surfaceColor,
+    Color iconColor, Color buttonColor,
   ) {
-    final hasAccess = _accessStatus?.hasAccess ?? _session?.isFree ?? true;
     final isFree = _session?.isFree ?? true;
     final price = _session?.price ?? 0;
 
@@ -498,34 +504,23 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             padding: const EdgeInsets.only(top: 16),
             child: Stack(
               children: [
-                // Back Arrow
                 Positioned(
                   left: 16,
                   child: GestureDetector(
                     onTap: () => context.pop(),
                     child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Icon(
-                        Icons.arrow_back,
-                        size: 24,
-                        color: textColor,
-                      ),
+                      width: 24, height: 24,
+                      child: Icon(Icons.arrow_back, size: 24, color: textColor),
                     ),
                   ),
                 ),
-                // Title
                 Center(
                   child: Text(
                     'Session Details',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 20,
-                      height: 1.0,
-                      letterSpacing: -0.5,
-                      color: textColor,
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                      fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
                     ),
                   ),
                 ),
@@ -548,65 +543,49 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Session Thumbnail
+                    // Thumbnail
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: _session?.thumbnailUrl != null
                           ? Image.network(
                               _session!.thumbnailUrl!,
-                              width: 203,
-                              height: 125,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildThumbnailPlaceholder(surfaceColor, iconColor);
-                              },
+                              width: 203, height: 125, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
                             )
                           : _buildThumbnailPlaceholder(surfaceColor, iconColor),
                     ),
                     const SizedBox(height: 8),
 
-                    // LIVE SESSION label
                     Opacity(
                       opacity: 0.5,
                       child: Text(
                         'LIVE SESSION',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          letterSpacing: 0.05,
-                          color: textColor,
+                          fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                          fontSize: 10, letterSpacing: 0.05, color: textColor,
                         ),
                       ),
                     ),
                     const SizedBox(height: 4),
 
-                    // Session Title
                     Text(
                       _session?.title ?? 'Loading...',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 20,
-                        height: 1.2,
-                        letterSpacing: -0.5,
-                        color: textColor,
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                        fontSize: 20, height: 1.2, letterSpacing: -0.5, color: textColor,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2, overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 9),
 
-                    // Faculty Info
+                    // Faculty
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Faculty Avatar
                         Container(
-                          width: 24,
-                          height: 24,
+                          width: 24, height: 24,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
@@ -616,131 +595,35 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                                 ? Image.network(
                                     _session!.facultyPhotoUrl!,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.person,
-                                        size: 16,
-                                        color: secondaryTextColor,
-                                      );
-                                    },
+                                    errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
                                   )
-                                : Icon(
-                                    Icons.person,
-                                    size: 16,
-                                    color: secondaryTextColor,
-                                  ),
+                                : Icon(Icons.person, size: 16, color: secondaryTextColor),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           _session?.facultyName ?? 'Faculty',
                           style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 14,
-                            color: textColor,
+                            fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                            fontSize: 14, color: textColor,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Badges Row
+                    // Badges
                     Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
+                      spacing: 12, runSpacing: 8,
                       alignment: WrapAlignment.center,
                       children: [
-                        // Status Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(isDark),
-                            borderRadius: BorderRadius.circular(41),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                _getStatusText(),
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Duration Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: iconColor,
-                            borderRadius: BorderRadius.circular(41),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${_session?.durationMinutes ?? 0} MINUTES',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Price Badge (only if not free)
+                        _buildBadge(_getStatusText(), _getStatusColor(isDark)),
+                        _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
                         if (!isFree)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: hasAccess ? Colors.green : Colors.orange,
-                              borderRadius: BorderRadius.circular(41),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  hasAccess ? Icons.check_circle : Icons.lock,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  hasAccess ? 'PURCHASED' : _formatPrice(price),
-                                  style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          _buildBadge(
+                            _hasAccess ? 'PURCHASED' : _formatPrice(price),
+                            _hasAccess ? Colors.green : Colors.orange,
+                            icon: _hasAccess ? Icons.check_circle : Icons.lock,
                           ),
                       ],
                     ),
@@ -752,243 +635,20 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
           const SizedBox(height: 24),
 
-          // Meeting Access Title
-          Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Text(
-              'Meeting Access',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-                fontSize: 20,
-                height: 1.0,
-                letterSpacing: -0.5,
-                color: textColor,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Meeting Access Box
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: surfaceColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: isDark
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : const [
-                        BoxShadow(
-                          color: Color(0x4D000000),
-                          blurRadius: 3,
-                          offset: Offset(0, 2),
-                        ),
-                        BoxShadow(
-                          color: Color(0x26000000),
-                          blurRadius: 10,
-                          spreadRadius: 4,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Platform
-                    Opacity(
-                      opacity: 0.5,
-                      child: Text(
-                        'PLATFORM',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatPlatformName(_session?.platform ?? ''),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Divider
-                    Opacity(
-                      opacity: 0.5,
-                      child: Container(
-                        width: double.infinity,
-                        height: 1,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Meeting Link or Purchase Required
-                    if (hasAccess) ...[
-                      Opacity(
-                        opacity: 0.5,
-                        child: Text(
-                          'MEETING LINK',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _session?.meetingLink ?? 'Link will be available before session',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                          color: iconColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ] else ...[
-                      // Purchase required message
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.lock_outline, color: Colors.orange, size: 24),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Purchase Required',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Get access to this session for ${_formatPrice(price)}',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12,
-                                      color: secondaryTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 24),
-
-                    // Action Button (Launch Meeting or Buy Now)
-                    Center(
-                      child: GestureDetector(
-                        onTap: _isCheckingAccess || _isPurchasing || _isJoiningZoom
-                            ? null
-                            : (hasAccess ? _launchMeeting : _initiatePayment),
-                        child: Container(
-                          width: double.infinity,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: _isCheckingAccess || _isPurchasing || _isJoiningZoom
-                                ? Colors.grey
-                                : (hasAccess
-                                    ? (_session?.meetingLink != null || _session?.zoomMeetingId != null ? buttonColor : Colors.grey)
-                                    : Colors.orange),
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: Center(
-                            child: _isCheckingAccess || _isPurchasing || _isJoiningZoom
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      if (!hasAccess) ...[
-                                        const Icon(Icons.shopping_cart, color: Colors.white, size: 20),
-                                        const SizedBox(width: 8),
-                                      ],
-                                      Text(
-                                        hasAccess
-                                            ? (_session?.platform.toLowerCase() == 'zoom'
-                                                ? 'JOIN IN ZOOM'
-                                                : 'LAUNCH MEETING')
-                                            : 'BUY NOW - ${_formatPrice(price)}',
-                                        style: const TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 16,
-                                          height: 1.11,
-                                          letterSpacing: 0.09,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Pricing / Action Section
+          _buildPricingSection(isDark, textColor, secondaryTextColor, surfaceColor, iconColor, buttonColor),
 
           const SizedBox(height: 24),
 
-          // Session Description (if available)
+          // Description
           if (_session?.description != null && _session!.description!.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(left: 16),
               child: Text(
                 'About This Session',
                 style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 20,
-                  height: 1.0,
-                  letterSpacing: -0.5,
-                  color: textColor,
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                  fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
                 ),
               ),
             ),
@@ -1006,11 +666,8 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                   child: Text(
                     _session!.description!,
                     style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                      height: 1.5,
-                      color: textColor,
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                      fontSize: 14, height: 1.5, color: textColor,
                     ),
                   ),
                 ),
@@ -1019,25 +676,18 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             const SizedBox(height: 24),
           ],
 
-          // Meeting Instructions Title
+          // Meeting Instructions
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Text(
               'Meeting Instructions',
               style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-                fontSize: 20,
-                height: 1.0,
-                letterSpacing: -0.5,
-                color: textColor,
+                fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
               ),
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // Meeting Instructions Box
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
@@ -1050,36 +700,592 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    _buildInstructionItem(
-                      'Ensure your Student ID is visible in your profile name.',
-                      textColor,
-                      iconColor,
-                    ),
+                    _buildInstructionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
                     const SizedBox(height: 16),
-                    _buildInstructionItem(
-                      'Mute your microphone upon entry to avoid echo.',
-                      textColor,
-                      iconColor,
-                    ),
+                    _buildInstructionItem('Mute your microphone upon entry to avoid echo.', textColor, iconColor),
                     const SizedBox(height: 16),
-                    _buildInstructionItem(
-                      'Q&A session will follow the primary content.',
-                      textColor,
-                      iconColor,
-                    ),
+                    _buildInstructionItem('Q&A session will follow the primary content.', textColor, iconColor),
                     const SizedBox(height: 16),
-                    _buildInstructionItem(
-                      'Recording will be available 24 hours after the session.',
-                      textColor,
-                      iconColor,
-                    ),
+                    _buildInstructionItem('Recording will be available 24 hours after the session.', textColor, iconColor),
                   ],
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 120), // Space for bottom nav
+          // Upcoming Sessions
+          if (_upcomingSessions.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Text(
+                'Upcoming Sessions',
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                  fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...(_upcomingSessions.map((session) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: _buildUpcomingSessionCard(session, isDark, textColor, secondaryTextColor, cardBgColor, iconColor),
+            ))),
+          ],
+
+          const SizedBox(height: 120),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // SESSION SCHEDULE SECTION
+  // ============================================================================
+
+  String _formatFullDateTime(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final now = DateTime.now();
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      String dayLabel;
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        dayLabel = 'Today';
+      } else {
+        final tomorrow = now.add(const Duration(days: 1));
+        if (dt.year == tomorrow.year && dt.month == tomorrow.month && dt.day == tomorrow.day) {
+          dayLabel = 'Tomorrow';
+        } else {
+          dayLabel = '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+        }
+      }
+      return '$dayLabel at $hour:$minute $period';
+    } catch (e) {
+      return 'TBD';
+    }
+  }
+
+  String _formatTimeOnly(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $period';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  Widget _buildScheduleInfo(Color iconColor, Color textColor, Color secondaryTextColor) {
+    if (_session == null) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        _buildScheduleRow(
+          Icons.calendar_today,
+          'Date & Time',
+          _formatFullDateTime(_session!.scheduledStartTime),
+          iconColor, textColor, secondaryTextColor,
+        ),
+        const SizedBox(height: 12),
+        _buildScheduleRow(
+          Icons.schedule,
+          'Duration',
+          '${_session!.durationMinutes} minutes (${_formatTimeOnly(_session!.scheduledStartTime)} - ${_formatTimeOnly(_session!.scheduledEndTime)})',
+          iconColor, textColor, secondaryTextColor,
+        ),
+        const SizedBox(height: 12),
+        _buildScheduleRow(
+          Icons.videocam,
+          'Platform',
+          _formatPlatformName(_session!.platform),
+          iconColor, textColor, secondaryTextColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScheduleRow(
+    IconData icon, String label, String value,
+    Color iconColor, Color textColor, Color secondaryTextColor,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: iconColor),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                  fontSize: 12, color: secondaryTextColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                  fontSize: 14, color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // PRICING SECTION
+  // ============================================================================
+
+  Widget _buildPricingSection(
+    bool isDark, Color textColor, Color secondaryTextColor,
+    Color surfaceColor, Color iconColor, Color buttonColor,
+  ) {
+    final isFree = _session?.isFree ?? true;
+    final isUserEnrolled = _isEnrolled;
+    final hasUserAccess = _hasAccess;
+
+    String sectionTitle;
+    if (isFree) {
+      sectionTitle = isUserEnrolled ? 'Session Access' : 'Enroll';
+    } else {
+      sectionTitle = hasUserAccess ? 'Session Access' : 'Get Access';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Text(
+            sectionTitle,
+            style: TextStyle(
+              fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+              fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: isDark
+                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 6))]
+                  : const [
+                      BoxShadow(color: Color(0x4D000000), blurRadius: 3, offset: Offset(0, 2)),
+                      BoxShadow(color: Color(0x26000000), blurRadius: 10, spreadRadius: 4, offset: Offset(0, 6)),
+                    ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: _buildPricingContent(isDark, textColor, secondaryTextColor, iconColor, buttonColor),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPricingContent(
+    bool isDark, Color textColor, Color secondaryTextColor,
+    Color iconColor, Color buttonColor,
+  ) {
+    final isFree = _session?.isFree ?? true;
+    final isUserEnrolled = _isEnrolled;
+    final hasUserAccess = _hasAccess;
+
+    // Case 1: Free + Enrolled OR Paid + Purchased
+    if ((isFree && isUserEnrolled) || (!isFree && hasUserAccess)) {
+      return _buildAccessGrantedContent(isDark, textColor, secondaryTextColor, iconColor, buttonColor);
+    }
+
+    // Case 2: Free + Not Enrolled
+    if (isFree && !isUserEnrolled) {
+      return _buildFreeEnrollContent(isDark, textColor, secondaryTextColor, iconColor);
+    }
+
+    // Case 3: Paid + Not Purchased
+    return _buildPaidContent(isDark, textColor, secondaryTextColor, iconColor);
+  }
+
+  Widget _buildAccessGrantedContent(
+    bool isDark, Color textColor, Color secondaryTextColor,
+    Color iconColor, Color buttonColor,
+  ) {
+    final bool isButtonEnabled = _canJoinNow;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _session?.isFree == true ? "You're Enrolled" : 'Access Granted',
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w600,
+                        fontSize: 14, color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _canJoinNow
+                          ? 'Session is ready to join!'
+                          : 'You can join when the session starts',
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                        fontSize: 12, color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        _buildScheduleInfo(iconColor, textColor, secondaryTextColor),
+        const SizedBox(height: 24),
+
+        GestureDetector(
+          onTap: (isButtonEnabled && !_isJoiningZoom) ? _launchMeeting : null,
+          child: Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _isJoiningZoom
+                  ? Colors.grey
+                  : (isButtonEnabled ? buttonColor : Colors.grey),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Center(
+              child: _isJoiningZoom
+                  ? const SizedBox(
+                      width: 24, height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    )
+                  : Text(
+                      _canJoinNow ? 'JOIN LIVE' : 'JOIN LIVE (Not Started Yet)',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                        fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFreeEnrollContent(
+    bool isDark, Color textColor, Color secondaryTextColor, Color iconColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: iconColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.card_giftcard, color: iconColor, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'This session is free!',
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w600,
+                        fontSize: 14, color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Enroll now to secure your spot',
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                        fontSize: 12, color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        _buildScheduleInfo(iconColor, textColor, secondaryTextColor),
+        const SizedBox(height: 24),
+
+        GestureDetector(
+          onTap: _isEnrolling ? null : _enrollForFree,
+          child: Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _isEnrolling ? Colors.grey : Colors.green,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Center(
+              child: _isEnrolling
+                  ? const SizedBox(
+                      width: 24, height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    )
+                  : const Text(
+                      'ENROLL FOR FREE',
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                        fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaidContent(
+    bool isDark, Color textColor, Color secondaryTextColor, Color iconColor,
+  ) {
+    final price = _session?.price ?? 0;
+    final compareAtPrice = _session?.compareAtPrice ?? _accessStatus?.compareAtPrice;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              _formatPrice(price),
+              style: TextStyle(
+                fontFamily: 'Poppins', fontWeight: FontWeight.w700,
+                fontSize: 28, color: textColor,
+              ),
+            ),
+            if (compareAtPrice != null && compareAtPrice > price) ...[
+              const SizedBox(width: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  _formatPrice(compareAtPrice),
+                  style: TextStyle(
+                    fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                    fontSize: 18, color: secondaryTextColor,
+                    decoration: TextDecoration.lineThrough,
+                    decorationColor: secondaryTextColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        Text(
+          'Get access to this live session',
+          style: TextStyle(
+            fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+            fontSize: 14, color: secondaryTextColor,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        _buildScheduleInfo(iconColor, textColor, secondaryTextColor),
+        const SizedBox(height: 24),
+
+        GestureDetector(
+          onTap: (_isPurchasing || _isCheckingAccess) ? null : _initiatePayment,
+          child: Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              color: (_isPurchasing || _isCheckingAccess) ? Colors.grey : Colors.orange,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Center(
+              child: (_isPurchasing || _isCheckingAccess)
+                  ? const SizedBox(
+                      width: 24, height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.shopping_cart, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'BUY NOW - ${_formatPrice(price)}',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                            fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // UPCOMING SESSIONS
+  // ============================================================================
+
+  Widget _buildUpcomingSessionCard(
+    LiveSessionModel session, bool isDark, Color textColor,
+    Color secondaryTextColor, Color cardBgColor, Color iconColor,
+  ) {
+    return GestureDetector(
+      onTap: () => context.push('/session/${session.sessionId}'),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cardBgColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: session.thumbnailUrl != null
+                  ? Image.network(
+                      session.thumbnailUrl!,
+                      width: 60, height: 60, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildSmallPlaceholder(iconColor),
+                    )
+                  : _buildSmallPlaceholder(iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.title,
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                      fontSize: 14, color: textColor,
+                    ),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    session.facultyName ?? 'Faculty',
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                      fontSize: 12, color: secondaryTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatSessionDate(session.scheduledStartTime),
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                      fontSize: 11, color: iconColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (session.isFree)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'FREE',
+                  style: TextStyle(
+                    fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                    fontSize: 10, color: Colors.green,
+                  ),
+                ),
+              )
+            else
+              Text(
+                _formatPrice(session.price),
+                style: TextStyle(
+                  fontFamily: 'Poppins', fontWeight: FontWeight.w600,
+                  fontSize: 13, color: textColor,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================================
+  // SHARED WIDGETS
+  // ============================================================================
+
+  Widget _buildBadge(String text, Color color, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(41),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null)
+            Icon(icon, size: 12, color: Colors.white)
+          else
+            Container(
+              width: 8, height: 8,
+              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+            ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+              fontSize: 10, color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
@@ -1087,17 +1293,23 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
   Widget _buildThumbnailPlaceholder(Color surfaceColor, Color iconColor) {
     return Container(
-      width: 203,
-      height: 125,
+      width: 203, height: 125,
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Icon(
-        Icons.play_circle_outline,
-        size: 50,
-        color: iconColor,
+      child: Icon(Icons.play_circle_outline, size: 50, color: iconColor),
+    );
+  }
+
+  Widget _buildSmallPlaceholder(Color iconColor) {
+    return Container(
+      width: 60, height: 60,
+      decoration: BoxDecoration(
+        color: iconColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
+      child: Icon(Icons.play_circle_outline, size: 28, color: iconColor),
     );
   }
 
@@ -1105,11 +1317,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.check_circle_outline,
-          size: 20,
-          color: iconColor,
-        ),
+        Icon(Icons.check_circle_outline, size: 20, color: iconColor),
         const SizedBox(width: 12),
         Expanded(
           child: Opacity(
@@ -1117,17 +1325,203 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             child: Text(
               text,
               style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                height: 1.43,
-                letterSpacing: -0.5,
-                color: textColor,
+                fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                fontSize: 14, height: 1.43, letterSpacing: -0.5, color: textColor,
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Custom error dialog for Zoom SDK failures
+class _ZoomErrorDialog extends StatelessWidget {
+  final ZoomJoinException error;
+  final VoidCallback onRetry;
+  final VoidCallback onCancel;
+
+  const _ZoomErrorDialog({
+    required this.error,
+    required this.onRetry,
+    required this.onCancel,
+  });
+
+  IconData _getErrorIcon() {
+    switch (error.type) {
+      case ZoomErrorType.hostNotJoined:
+        return Icons.hourglass_empty;
+      case ZoomErrorType.networkError:
+        return Icons.wifi_off;
+      case ZoomErrorType.timeout:
+        return Icons.access_time;
+      case ZoomErrorType.meetingEnded:
+        return Icons.event_busy;
+      default:
+        return Icons.error_outline;
+    }
+  }
+
+  Color _getErrorColor() {
+    switch (error.type) {
+      case ZoomErrorType.hostNotJoined:
+        return Colors.orange;
+      case ZoomErrorType.networkError:
+        return Colors.red;
+      case ZoomErrorType.timeout:
+        return Colors.amber;
+      case ZoomErrorType.meetingEnded:
+        return Colors.grey;
+      default:
+        return AppColors.error;
+    }
+  }
+
+  String _getErrorTitle() {
+    switch (error.type) {
+      case ZoomErrorType.hostNotJoined:
+        return 'Waiting for Host';
+      case ZoomErrorType.networkError:
+        return 'Connection Error';
+      case ZoomErrorType.timeout:
+        return 'Connection Timeout';
+      case ZoomErrorType.meetingEnded:
+        return 'Meeting Ended';
+      case ZoomErrorType.authenticationFailed:
+        return 'Authentication Failed';
+      case ZoomErrorType.joinFailed:
+        return 'Failed to Join';
+      default:
+        return 'Unable to Join Meeting';
+    }
+  }
+
+  bool _shouldShowRetry() {
+    // Don't show retry for meeting ended
+    return error.type != ZoomErrorType.meetingEnded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final errorColor = _getErrorColor();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Error Icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: errorColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getErrorIcon(),
+                size: 40,
+                color: errorColor,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Error Title
+            Text(
+              _getErrorTitle(),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.darkTextPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+
+            // Error Message
+            Text(
+              error.message,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // Action Buttons
+            Row(
+              children: [
+                // Cancel Button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: isDark ? Colors.white30 : Colors.black26,
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (_shouldShowRetry()) ...[
+                  const SizedBox(width: 12),
+
+                  // Retry Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: onRetry,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: errorColor,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Retry',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

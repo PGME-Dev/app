@@ -190,6 +190,46 @@ class SessionPurchaseService {
   }
 
   // ============================================================================
+  // ENROLLMENT METHODS
+  // ============================================================================
+
+  /// Check enrollment status for a session
+  Future<Map<String, dynamic>> checkEnrollmentStatus(String sessionId) async {
+    try {
+      final response = await _apiService.dio.get(
+        ApiConstants.sessionEnrollmentStatus(sessionId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+
+      throw Exception('Failed to check enrollment status');
+    } on DioException catch (e) {
+      debugPrint('✗ Check enrollment status error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
+  /// Enroll in a session (for free sessions)
+  Future<Map<String, dynamic>> enrollInSession(String sessionId) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.sessionEnroll(sessionId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+
+      throw Exception('Failed to enroll in session');
+    } on DioException catch (e) {
+      debugPrint('✗ Enroll in session error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
+  // ============================================================================
   // ZOHO PAYMENTS METHODS
   // ============================================================================
 

@@ -11,12 +11,14 @@ class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
   final bool isSubscribed;
   final String packageType; // 'Theory' or 'Practical'
+  final String? packageId;
 
   const LectureVideoScreen({
     super.key,
     required this.courseId,
     this.isSubscribed = false,
     this.packageType = 'Theory',
+    this.packageId,
   });
 
   @override
@@ -291,7 +293,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         height: 54,
                         child: ElevatedButton(
                           onPressed: () {
-                            context.push('/purchase?packageType=${widget.packageType}');
+                            final params = <String>['packageType=${widget.packageType}'];
+                            if (widget.packageId != null) params.add('packageId=${widget.packageId}');
+                            context.push('/purchase?${params.join('&')}');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,

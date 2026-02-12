@@ -63,12 +63,32 @@ class AuthProvider with ChangeNotifier {
         _user = await _userService.getProfile();
         _isAuthenticated = true;
         _onboardingCompleted = _user!.onboardingCompleted;
+
+        // Get current session ID from storage
+        _currentSessionId = await _storageService.getSessionId();
+
+        // Check for multiple active sessions
+        try {
+          _activeSessions = await _authService.getActiveSessions();
+          // Filter out current session and only count OTHER ACTIVE devices
+          final otherSessions = _activeSessions.where(
+            (s) => s['session_id'] != _currentSessionId &&
+                   s['is_active'] == true,
+          ).toList();
+          _hasMultipleSessions = otherSessions.isNotEmpty;
+          debugPrint('Auth check: Active sessions: ${_activeSessions.length}, Other active devices: ${otherSessions.length}');
+        } catch (e) {
+          debugPrint('Failed to check sessions during auth check: $e');
+          _hasMultipleSessions = false;
+        }
       }
     } catch (e) {
       // If profile fetch fails, clear tokens
+      debugPrint('Auth check failed: $e');
       await _storageService.clearAll();
       _isAuthenticated = false;
       _onboardingCompleted = false;
+      _hasMultipleSessions = false;
     } finally {
       _isInitialized = true;
       notifyListeners();
@@ -152,18 +172,18 @@ class AuthProvider with ChangeNotifier {
       _onboardingCompleted = authResponse.user.onboardingCompleted;
       _currentSessionId = authResponse.sessionId;
 
-      // Step 5: Check for other active sessions
-      try {
-        _activeSessions = await _authService.getActiveSessions();
-        // Filter out current session - only count OTHER devices
-        final otherSessions = _activeSessions.where(
-          (s) => s['session_id'] != _currentSessionId,
-        ).toList();
-        _hasMultipleSessions = otherSessions.isNotEmpty;
-        debugPrint('Active sessions: ${_activeSessions.length}, Other devices: ${otherSessions.length}');
-      } catch (e) {
-        debugPrint('Failed to check active sessions: $e');
-        _hasMultipleSessions = false;
+      // Step 5: Check for other active sessions (using backend flag)
+      _hasMultipleSessions = authResponse.hasOtherActiveSessions;
+
+      // If there are multiple sessions, fetch the list of sessions
+      if (_hasMultipleSessions) {
+        try {
+          _activeSessions = await _authService.getActiveSessions();
+          debugPrint('Multiple sessions detected: ${_activeSessions.length} total sessions');
+        } catch (e) {
+          debugPrint('Failed to fetch active sessions: $e');
+          _activeSessions = [];
+        }
       }
 
       notifyListeners();
@@ -265,9 +285,10 @@ class AuthProvider with ChangeNotifier {
       await _authService.logoutDeviceSession(sessionId);
       // Remove from local list
       _activeSessions.removeWhere((s) => s['session_id'] == sessionId);
-      // Recheck if multiple sessions still exist
+      // Recheck if multiple ACTIVE sessions still exist
       final otherSessions = _activeSessions.where(
-        (s) => s['session_id'] != _currentSessionId,
+        (s) => s['session_id'] != _currentSessionId &&
+               s['is_active'] == true,
       ).toList();
       _hasMultipleSessions = otherSessions.isNotEmpty;
       notifyListeners();
@@ -282,7 +303,8 @@ class AuthProvider with ChangeNotifier {
     try {
       _activeSessions = await _authService.getActiveSessions();
       final otherSessions = _activeSessions.where(
-        (s) => s['session_id'] != _currentSessionId,
+        (s) => s['session_id'] != _currentSessionId &&
+               s['is_active'] == true,
       ).toList();
       _hasMultipleSessions = otherSessions.isNotEmpty;
       notifyListeners();

@@ -327,8 +327,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
       // Step 2: Show Zoho payment widget
       debugPrint('[TEST] Step 2: Showing Zoho payment widget...');
-      final result = await Navigator.push<ZohoPaymentResponse>(
-        context,
+      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
         MaterialPageRoute(
           builder: (context) => ZohoPaymentWidget(
             paymentSession: paymentSession,
@@ -443,8 +442,8 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
   bool _canJoinSession(LiveSessionModel session) {
     final now = DateTime.now();
-    final startTime = DateTime.parse(session.scheduledStartTime);
-    final endTime = DateTime.parse(session.scheduledEndTime);
+    final startTime = DateTime.parse(session.scheduledStartTime).toLocal();
+    final endTime = DateTime.parse(session.scheduledEndTime).toLocal();
 
     // Can join 10 minutes before start time
     final joinTime = startTime.subtract(const Duration(minutes: 10));
@@ -576,7 +575,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
   String _formatDateTime(String dateTimeStr) {
     try {
-      final dateTime = DateTime.parse(dateTimeStr);
+      final dateTime = DateTime.parse(dateTimeStr).toLocal();
       return DateFormat('MMM dd, yyyy - hh:mm a').format(dateTime);
     } catch (e) {
       return dateTimeStr;
@@ -585,8 +584,8 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
   String _getSessionStatusText(LiveSessionModel session) {
     final now = DateTime.now();
-    final startTime = DateTime.parse(session.scheduledStartTime);
-    final endTime = DateTime.parse(session.scheduledEndTime);
+    final startTime = DateTime.parse(session.scheduledStartTime).toLocal();
+    final endTime = DateTime.parse(session.scheduledEndTime).toLocal();
     final joinTime = startTime.subtract(const Duration(minutes: 10));
 
     if (now.isBefore(joinTime)) {
@@ -609,8 +608,8 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
   Color _getStatusColor(LiveSessionModel session) {
     final now = DateTime.now();
-    final startTime = DateTime.parse(session.scheduledStartTime);
-    final endTime = DateTime.parse(session.scheduledEndTime);
+    final startTime = DateTime.parse(session.scheduledStartTime).toLocal();
+    final endTime = DateTime.parse(session.scheduledEndTime).toLocal();
 
     if (now.isAfter(endTime) || session.status == 'completed') {
       return Colors.grey;

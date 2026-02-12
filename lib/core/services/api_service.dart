@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/storage_service.dart';
 
@@ -12,6 +14,7 @@ class ApiService {
 
   late Dio _dio;
   final StorageService _storageService = StorageService();
+  String? _cachedDeviceId;
 
   Dio get dio => _dio;
 
@@ -28,7 +31,7 @@ class ApiService {
       ),
     );
 
-    // Add request interceptor to inject access token
+    // Add request interceptor to inject access token and device ID
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -36,6 +39,19 @@ class ApiService {
           final token = await _storageService.getAccessToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+          }
+
+          // Add device ID header for session validation
+          final sessionId = await _storageService.getSessionId();
+          if (sessionId != null && sessionId.isNotEmpty) {
+            // Extract device_id from storage or use a stored device identifier
+            // For now, we'll add the session tracking via a custom method
+            try {
+              final deviceInfo = await _getDeviceId();
+              options.headers['x-device-id'] = deviceInfo;
+            } catch (e) {
+              // Device ID not available, continue without it
+            }
           }
           return handler.next(options);
         },
@@ -183,5 +199,30 @@ class ApiService {
       return data['message'] as String?;
     }
     return null;
+  }
+
+  /// Get device ID for session validation
+  Future<String> _getDeviceId() async {
+    if (_cachedDeviceId != null) {
+      return _cachedDeviceId!;
+    }
+
+    final deviceInfo = DeviceInfoPlugin();
+    String deviceId = 'unknown';
+
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceId = androidInfo.id;
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceId = iosInfo.identifierForVendor ?? 'unknown';
+      }
+    } catch (e) {
+      // Use default if device info fetch fails
+    }
+
+    _cachedDeviceId = deviceId;
+    return deviceId;
   }
 }

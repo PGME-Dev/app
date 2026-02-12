@@ -19,6 +19,16 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// flutter_zoom_meeting_sdk's mobilertc.aar references Theme.SplashScreen attrs
+// but the plugin doesn't declare the core-splashscreen dependency
+subprojects {
+    if (project.name == "flutter_zoom_meeting_sdk") {
+        project.plugins.withId("com.android.library") {
+            project.dependencies.add("implementation", "androidx.core:core-splashscreen:1.0.1")
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

@@ -59,7 +59,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
 
   String _formatDateTime(String isoString) {
     try {
-      final dateTime = DateTime.parse(isoString);
+      final dateTime = DateTime.parse(isoString).toLocal();
       final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
       final period = dateTime.hour >= 12 ? 'PM' : 'AM';

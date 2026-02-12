@@ -10,12 +10,14 @@ class EnrolledCourseDetailScreen extends StatefulWidget {
   final String seriesId;
   final bool isSubscribed;
   final String packageType; // 'Theory' or 'Practical'
+  final String? packageId;
 
   const EnrolledCourseDetailScreen({
     super.key,
     required this.seriesId,
     this.isSubscribed = false,
     this.packageType = 'Theory',
+    this.packageId,
   });
 
   @override
@@ -172,7 +174,7 @@ class _EnrolledCourseDetailScreenState
                                 cardGradientEnd,
                                 onTap: () {
                                   // Navigate to lecture/modules screen
-                                  context.push('/lecture/${widget.seriesId}?subscribed=${widget.isSubscribed}&packageType=${widget.packageType}');
+                                  context.push('/lecture/${widget.seriesId}?subscribed=${widget.isSubscribed}&packageType=${widget.packageType}${widget.packageId != null ? '&packageId=${widget.packageId}' : ''}');
                                 },
                               ),
                             ),

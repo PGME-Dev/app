@@ -51,8 +51,14 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     });
 
     try {
-      // Load packages and find the one with matching ID or type
-      final packages = await _dashboardService.getPackages();
+      // Use primary subject to filter packages when no specific packageId is given
+      final dashboardProvider = context.read<DashboardProvider>();
+      final primarySubjectId = dashboardProvider.primarySubject?.subjectId;
+
+      // Load packages filtered by subject when looking up by type
+      final packages = await _dashboardService.getPackages(
+        subjectId: widget.packageId == null ? primarySubjectId : null,
+      );
 
       if (mounted) {
         PackageModel? foundPackage;
@@ -63,7 +69,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             orElse: () => packages.isNotEmpty ? packages.first : throw Exception('No packages available'),
           );
         } else if (widget.packageType != null) {
-          // Find by packageType (Theory or Practical)
+          // Find by packageType (Theory or Practical) within the subject-filtered results
           foundPackage = packages.firstWhere(
             (p) => p.type?.toLowerCase() == widget.packageType!.toLowerCase(),
             orElse: () => packages.isNotEmpty ? packages.first : throw Exception('No packages available'),
@@ -442,8 +448,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       if (!mounted) return;
 
       // Step 2: Show Zoho payment widget
-      final result = await Navigator.push<ZohoPaymentResponse>(
-        context,
+      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
         MaterialPageRoute(
           builder: (context) => ZohoPaymentWidget(
             paymentSession: paymentSession,

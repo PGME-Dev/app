@@ -25,6 +25,10 @@ class BookProvider extends ChangeNotifier {
   bool _isLoadingOrders = false;
   String? _ordersError;
 
+  // Shipping cost state
+  int _shippingCostValue = 0; // Default fallback value (matches backend DEFAULT_SHIPPING_COST)
+  String? _shippingCostError;
+
   // Getters
   List<BookModel> get books => _books;
   bool get isLoadingBooks => _isLoadingBooks;
@@ -41,14 +45,15 @@ class BookProvider extends ChangeNotifier {
   List<BookOrderModel> get orders => _orders;
   bool get isLoadingOrders => _isLoadingOrders;
   String? get ordersError => _ordersError;
+  String? get shippingCostError => _shippingCostError;
 
   /// Calculate cart subtotal
   int get cartSubtotal {
     return _cart.values.fold(0, (sum, item) => sum + item.totalPrice);
   }
 
-  /// Calculate shipping cost (flat rate for now)
-  int get shippingCost => _cart.isNotEmpty ? 50 : 0;
+  /// Calculate shipping cost (uses value from backend)
+  int get shippingCost => _cart.isNotEmpty ? _shippingCostValue : 0;
 
   /// Calculate cart total
   int get cartTotal => cartSubtotal + shippingCost;
@@ -120,6 +125,8 @@ class BookProvider extends ChangeNotifier {
 
   /// Add item to cart
   void addToCart(BookModel book, {int quantity = 1}) {
+    final wasEmpty = _cart.isEmpty;
+
     if (_cart.containsKey(book.bookId)) {
       _cart[book.bookId]!.quantity += quantity;
     } else {
@@ -133,6 +140,17 @@ class BookProvider extends ChangeNotifier {
       );
     }
     notifyListeners();
+
+    // Fetch shipping cost from backend when first item is added
+    if (wasEmpty) {
+      _shippingCostError = null; // Clear any previous errors
+      fetchShippingCost().catchError((error) {
+        debugPrint('Error fetching shipping cost: $error');
+        // Set error state - UI should display this to the user
+        _shippingCostError = error.toString().replaceAll('Exception: ', '');
+        notifyListeners();
+      });
+    }
   }
 
   /// Remove item from cart
@@ -321,6 +339,14 @@ class BookProvider extends ChangeNotifier {
     await _bookOrderService.cancelOrder(orderId);
     // Refresh orders list
     await loadOrders(refresh: true);
+  }
+
+  /// Fetch shipping cost from backend
+  /// Throws exception if fetch fails - caller should handle errors
+  Future<void> fetchShippingCost() async {
+    final cost = await _bookService.getShippingCost();
+    _shippingCostValue = cost;
+    notifyListeners();
   }
 
   /// Clear all state

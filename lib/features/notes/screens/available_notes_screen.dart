@@ -102,7 +102,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      context.push('/congratulations');
+      context.push('/purchase?packageType=Theory');
     }
   }
 

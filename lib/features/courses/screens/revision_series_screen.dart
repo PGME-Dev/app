@@ -132,7 +132,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      context.push('/congratulations');
+      context.push('/purchase?packageId=$_activePackageId&packageType=Theory');
     }
   }
 
@@ -833,7 +833,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               if (seriesId.isEmpty) return;
 
               if (_contentMode == 'lectures') {
-                context.push('/lecture/$seriesId?subscribed=$isSubscribed&packageType=Theory');
+                context.push('/lecture/$seriesId?subscribed=$isSubscribed&packageType=Theory&packageId=$_activePackageId');
               } else {
                 context.push('/available-notes?seriesId=$seriesId&subscribed=$isSubscribed');
               }

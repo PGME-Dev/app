@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
@@ -49,7 +48,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
 
   void _updateTimeUntilStart() {
     final now = DateTime.now();
-    final startTime = DateTime.parse(widget.session.scheduledStartTime);
+    final startTime = DateTime.parse(widget.session.scheduledStartTime).toLocal();
 
     setState(() {
       _timeUntilStart = startTime.difference(now);
@@ -62,7 +61,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
 
   String _formatScheduledTime() {
     try {
-      final startTime = DateTime.parse(widget.session.scheduledStartTime);
+      final startTime = DateTime.parse(widget.session.scheduledStartTime).toLocal();
       final now = DateTime.now();
 
       // Check if today
@@ -104,37 +103,9 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
     return months[month - 1];
   }
 
-  Future<void> _joinSession() async {
-    if (widget.session.meetingLink == null ||
-        widget.session.meetingLink!.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting link not available'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-      return;
-    }
-
-    try {
-      final uri = Uri.parse(widget.session.meetingLink!);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw Exception('Could not launch meeting link');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to open meeting: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
+  void _joinSession() {
+    // Navigate to session details - it handles enrollment/payment/join flow
+    context.push('/session/${widget.session.sessionId}');
   }
 
   void _viewDetails() {

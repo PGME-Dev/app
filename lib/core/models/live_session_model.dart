@@ -62,6 +62,9 @@ class LiveSessionModel {
 
   final int price;
 
+  @JsonKey(name: 'compare_at_price')
+  final int? compareAtPrice;
+
   @JsonKey(name: 'is_free')
   final bool isFree;
 
@@ -112,6 +115,7 @@ class LiveSessionModel {
     this.maxAttendees,
     this.thumbnailUrl,
     this.price = 0,
+    this.compareAtPrice,
     this.isFree = true,
     this.enrollmentMode,
     this.capacityMode,
@@ -150,6 +154,7 @@ class LiveSessionModel {
     int? maxAttendees,
     String? thumbnailUrl,
     int? price,
+    int? compareAtPrice,
     bool? isFree,
     String? enrollmentMode,
     String? capacityMode,
@@ -182,6 +187,7 @@ class LiveSessionModel {
       maxAttendees: maxAttendees ?? this.maxAttendees,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       price: price ?? this.price,
+      compareAtPrice: compareAtPrice ?? this.compareAtPrice,
       isFree: isFree ?? this.isFree,
       enrollmentMode: enrollmentMode ?? this.enrollmentMode,
       capacityMode: capacityMode ?? this.capacityMode,

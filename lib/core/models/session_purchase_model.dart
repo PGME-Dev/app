@@ -107,6 +107,9 @@ class SessionAccessStatus {
 
   final int price;
 
+  @JsonKey(name: 'compare_at_price')
+  final int? compareAtPrice;
+
   @JsonKey(name: 'purchase_id')
   final String? purchaseId;
 
@@ -117,6 +120,7 @@ class SessionAccessStatus {
     required this.hasAccess,
     required this.isFree,
     required this.price,
+    this.compareAtPrice,
     this.purchaseId,
     this.purchasedAt,
   });

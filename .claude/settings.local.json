@@ -7,7 +7,13 @@
       "Bash(flutter pub get:*)",
       "Bash(flutter pub cache:*)",
       "Bash(npm ls:*)",
-      "Bash(flutter clean:*)"
+      "Bash(flutter clean:*)",
+      "Bash(adb devices:*)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(where /r \"C:\\\\Users\\\\Yatharth\\\\AppData\\\\Local\\\\Pub\\\\Cache\" \"build.gradle\")",
+      "Bash(wmic process:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }

@@ -341,6 +341,47 @@ class AppRouter {
         },
       ),
 
+      // Book Checkout (outside shell - no nav bar)
+      GoRoute(
+        path: '/book-checkout',
+        name: 'book-checkout',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const BookCheckoutScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Book Order Confirmation (outside shell - no nav bar)
+      GoRoute(
+        path: '/book-order-confirmation/:orderId',
+        name: 'book-order-confirmation',
+        pageBuilder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: BookOrderConfirmationScreen(orderId: orderId),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
       // Shell Route - routes with persistent nav bar
       ShellRoute(
         builder: (context, state, child) {
@@ -399,12 +440,14 @@ class AppRouter {
               final seriesId = state.pathParameters['id']!;
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
               final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
+              final packageId = state.uri.queryParameters['packageId'];
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: EnrolledCourseDetailScreen(
                   seriesId: seriesId,
                   isSubscribed: isSubscribed,
                   packageType: packageType,
+                  packageId: packageId,
                 ),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
@@ -427,9 +470,10 @@ class AppRouter {
               final courseId = state.pathParameters['id']!;
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
               final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
+              final packageId = state.uri.queryParameters['packageId'];
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: LectureVideoScreen(courseId: courseId, isSubscribed: isSubscribed, packageType: packageType),
+                child: LectureVideoScreen(courseId: courseId, isSubscribed: isSubscribed, packageType: packageType, packageId: packageId),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -629,47 +673,6 @@ class AppRouter {
                 );
               },
             ),
-          ),
-
-          // Book Checkout
-          GoRoute(
-            path: '/book-checkout',
-            name: 'book-checkout',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const BookCheckoutScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                );
-              },
-            ),
-          ),
-
-          // Book Order Confirmation
-          GoRoute(
-            path: '/book-order-confirmation/:orderId',
-            name: 'book-order-confirmation',
-            pageBuilder: (context, state) {
-              final orderId = state.pathParameters['orderId']!;
-              return CustomTransitionPage(
-                key: state.pageKey,
-                child: BookOrderConfirmationScreen(orderId: orderId),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(1, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  );
-                },
-              );
-            },
           ),
 
           // Book Orders List

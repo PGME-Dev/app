@@ -682,7 +682,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             if (isItemLocked) {
               _showEnrollmentPopup(_selectedPackage!);
             } else if (series.seriesId.isNotEmpty) {
-              context.push('/series-detail/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical');
+              context.push('/series-detail/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical&packageId=${_selectedPackage!.packageId}');
             }
           },
           child: _buildSeriesCard(
@@ -931,7 +931,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
   String _formatSessionDateTime(String isoString) {
     try {
-      final dt = DateTime.parse(isoString);
+      final dt = DateTime.parse(isoString).toLocal();
       final now = DateTime.now();
       final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
       final minute = dt.minute.toString().padLeft(2, '0');
