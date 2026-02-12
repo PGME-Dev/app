@@ -11,6 +11,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/features/sessions/screens/live_session_test_screen.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -83,11 +84,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<Map<String, dynamic>?> _loadSelectedSubject() async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.subjectSelection,
+        ApiConstants.subjectSelections,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final selections = response.data['data'] as List?;
+        final selections = response.data['data']['selections'] as List?;
         if (selections != null && selections.isNotEmpty) {
           // Return the primary subject or the first one
           final primary = selections.firstWhere(
@@ -149,9 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: backgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: ShimmerWidgets.profileShimmer(isDark: isDark),
       );
     }
 

@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
-import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/models/live_session_model.dart';
+import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class PracticalSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -26,20 +27,23 @@ class PracticalSeriesScreen extends StatefulWidget {
 class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   final DashboardService _dashboardService = DashboardService();
 
-  List<PackageModel> _packages = [];
   List<LiveSessionModel> _liveSessions = [];
+  List<PackageModel> _packages = [];
   List<SeriesModel> _series = [];
   PackageModel? _selectedPackage;
   bool _isLoading = true;
   String? _error;
 
+  // null = package details view, 'videos' = series list, 'sessions' = live sessions list
+  String? _contentMode;
+
   @override
   void initState() {
     super.initState();
-    _loadPackages();
+    _loadData();
   }
 
-  Future<void> _loadPackages() async {
+  Future<void> _loadData() async {
     try {
       setState(() {
         _isLoading = true;
@@ -49,35 +53,27 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
       final primarySubjectId = dashboardProvider.primarySubject?.subjectId;
 
-      // Fetch packages and live sessions in parallel
+      // Fetch live sessions and packages in parallel
       final results = await Future.wait([
+        _dashboardService.getLiveSessions(
+          subjectId: primarySubjectId,
+          upcomingOnly: true,
+          limit: 20,
+        ),
         _dashboardService.getPackages(
           subjectId: primarySubjectId,
           packageType: 'Practical',
         ),
-        _dashboardService.getLiveSessions(
-          subjectId: primarySubjectId,
-          upcomingOnly: true,
-          limit: 5,
-        ),
       ]);
 
-      final packages = results[0] as List<PackageModel>;
-      final sessions = results[1] as List<LiveSessionModel>;
+      final sessions = results[0] as List<LiveSessionModel>;
+      final packages = results[1] as List<PackageModel>;
 
       setState(() {
-        _packages = packages;
         _liveSessions = sessions;
+        _packages = packages;
         _isLoading = false;
       });
-
-      // If a specific packageId was passed, go directly to that package's series
-      if (widget.packageId != null) {
-        final target = packages.where((p) => p.packageId == widget.packageId).firstOrNull;
-        if (target != null) {
-          _selectPackage(target);
-        }
-      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -86,15 +82,15 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     }
   }
 
-  Future<void> _selectPackage(PackageModel pkg) async {
+  Future<void> _selectPackage(PackageModel package) async {
     setState(() {
-      _selectedPackage = pkg;
+      _selectedPackage = package;
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final series = await _dashboardService.getPackageSeries(pkg.packageId);
+      final series = await _dashboardService.getPackageSeries(package.packageId);
       setState(() {
         _series = series;
         _isLoading = false;
@@ -107,26 +103,33 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     }
   }
 
-  void _goBackToPackages() {
+  void _goBackToList() {
     setState(() {
       _selectedPackage = null;
       _series = [];
+      _contentMode = null;
       _error = null;
     });
   }
 
-  void _showEnrollmentPopup(PackageModel pkg) async {
+  void _goBackToPackageDetail() {
+    setState(() {
+      _contentMode = null;
+    });
+  }
+
+  void _showEnrollmentPopup() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
 
     final shouldEnroll = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (dialogContext) => _buildEnrollmentDialog(dialogContext, isDark, pkg),
+      builder: (dialogContext) => _buildEnrollmentDialog(dialogContext, isDark),
     );
 
-    if (shouldEnroll == true && mounted) {
-      context.push('/purchase?packageId=${pkg.packageId}&packageType=Practical');
+    if (shouldEnroll == true && mounted && _selectedPackage != null) {
+      context.push('/purchase?packageId=${_selectedPackage!.packageId}&packageType=Practical');
     }
   }
 
@@ -147,13 +150,30 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final cardBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
 
     final isOnLanding = _selectedPackage == null;
-    final title = isOnLanding ? 'Practical Packages' : _selectedPackage!.name;
+    final isOnPackageDetail = _selectedPackage != null && _contentMode == null;
+
+    String title;
+    if (isOnLanding) {
+      title = 'Practical Series';
+    } else if (isOnPackageDetail) {
+      title = _selectedPackage!.name;
+    } else if (_contentMode == 'videos') {
+      title = 'Video Series';
+    } else {
+      title = 'Live Sessions';
+    }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !isOnLanding) {
-          _goBackToPackages();
+        if (!didPop) {
+          if (_contentMode != null) {
+            _goBackToPackageDetail();
+          } else if (_selectedPackage != null) {
+            _goBackToList();
+          } else {
+            context.go('/home');
+          }
         }
       },
       child: Scaffold(
@@ -165,18 +185,25 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16, bottom: 12),
               child: Row(
                 children: [
-                  if (!isOnLanding)
-                    GestureDetector(
-                      onTap: _goBackToPackages,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
-                      ),
+                  GestureDetector(
+                    onTap: () {
+                      if (isOnLanding) {
+                        context.go('/home');
+                      } else if (_contentMode != null) {
+                        _goBackToPackageDetail();
+                      } else {
+                        _goBackToList();
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
                     ),
+                  ),
                   Expanded(
                     child: Text(
                       title,
-                      textAlign: isOnLanding ? TextAlign.center : TextAlign.left,
+                      textAlign: TextAlign.left,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
@@ -200,12 +227,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             // Content
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator(color: iconColor))
+                  ? _buildLoadingShimmer(isDark)
                   : _error != null
                       ? _buildErrorView(textColor, secondaryTextColor, iconColor)
                       : isOnLanding
-                          ? _buildLandingView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
-                          : _buildSeriesView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+                          ? _buildPackagesList(isDark, textColor, secondaryTextColor, iconColor)
+                          : _contentMode == 'videos'
+                              ? _buildSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
+                              : _contentMode == 'sessions'
+                                  ? _buildSessionsListView(isDark, textColor, secondaryTextColor, iconColor)
+                                  : _buildPackageDetailView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
             ),
           ],
         ),
@@ -213,83 +244,52 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
   }
 
-  // ── Landing View (Sessions + Packages) ───────────────────────────────
+  // ── Packages List View ───────────────────────────────────────────────────
 
-  Widget _buildLandingView(
-    bool isDark,
-    Color textColor,
-    Color secondaryTextColor,
-    Color iconColor,
-    Color cardBgColor,
-    bool isSubscribed,
-  ) {
-    if (_packages.isEmpty && _liveSessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.science_outlined, size: 48, color: textColor.withValues(alpha: 0.4)),
-            const SizedBox(height: 16),
-            Text(
-              'No practical packages available',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check back later for new practical packages.',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: secondaryTextColor),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
+  Widget _buildPackagesList(bool isDark, Color textColor, Color secondaryTextColor, Color iconColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Section 1: Upcoming Sessions ──
+          const SizedBox(height: 8),
+
+          // Live Sessions Section
           if (_liveSessions.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Upcoming Sessions',
+                'Live Sessions',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 18,
                   color: textColor,
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 160,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _liveSessions.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.only(right: index < _liveSessions.length - 1 ? 12 : 0),
-                    child: _buildSessionCard(
-                      _liveSessions[index],
-                      isDark: isDark,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      iconColor: iconColor,
-                      cardBgColor: cardBgColor,
-                    ),
-                  );
-                },
-              ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _liveSessions.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSessionCard(
+                    _liveSessions[index],
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondaryTextColor: secondaryTextColor,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
           ],
 
-          // ── Section 2: Practical Packages ──
+          // Practical Packages Section
           if (_packages.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -298,158 +298,77 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 18,
                   color: textColor,
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Padding(
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: _packages.map((pkg) {
-                  return _buildPackageCard(pkg, isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed);
-                }).toList(),
-              ),
+              itemCount: _packages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildPackageCard(
+                    _packages[index],
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondaryTextColor: secondaryTextColor,
+                    iconColor: iconColor,
+                  ),
+                );
+              },
             ),
           ],
+
+          // Empty state
+          if (_liveSessions.isEmpty && _packages.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.science_outlined,
+                      size: 64,
+                      color: textColor.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No content available',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Check back later for live sessions and practical packages.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: secondaryTextColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  // ── Session Card (matches dashboard LiveClassBanner style) ──────────
+  // ── Package Detail View (Two Options + Info) ─────────────────────────────
 
-  Widget _buildSessionCard(
-    LiveSessionModel session, {
-    required bool isDark,
-    required Color textColor,
-    required Color secondaryTextColor,
-    required Color iconColor,
-    required Color cardBgColor,
-  }) {
-    final isLive = session.status == 'live';
-
-    return GestureDetector(
-      onTap: () => context.push('/session/${session.sessionId}'),
-      child: Container(
-        width: 280,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: const Alignment(-0.85, 0),
-            end: const Alignment(0.85, 0),
-            colors: isDark
-                ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
-                : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
-            stops: const [0.35, 0.71],
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            children: [
-              // Background illustration
-              Positioned(
-                right: -5,
-                bottom: 5,
-                child: Image.asset(
-                  'assets/illustrations/home.png',
-                  width: 130,
-                  height: 70,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(width: 130, height: 70),
-                ),
-              ),
-
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isLive
-                            ? Colors.red.withValues(alpha: 0.9)
-                            : Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: Text(
-                        isLive ? 'LIVE NOW' : 'LIVE CLASS',
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Title
-                    SizedBox(
-                      width: 160,
-                      child: Text(
-                        session.title,
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    // Timing
-                    Text(
-                      isLive ? 'Live Now' : _formatSessionDateTime(session.scheduledStartTime),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // View Details button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                          color: Color(0xFF1847A2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPackageCard(
-    PackageModel pkg,
+  Widget _buildPackageDetailView(
     bool isDark,
     Color textColor,
     Color secondaryTextColor,
@@ -457,190 +376,75 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
-    final isPurchased = pkg.isPurchased;
     final gradientStart = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFCDE5FF);
     final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
 
-    return GestureDetector(
-      onTap: () => _selectPackage(pkg),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [gradientStart, gradientEnd],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row: title + status badge
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      pkg.name,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        color: isDark ? Colors.white : const Color(0xFF000000),
-                      ),
-                    ),
-                  ),
-                  if (isPurchased)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Active',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+    final totalLectures = _series.fold<int>(0, (sum, s) => sum + (s.totalLectures ?? 0));
+    // Count all live sessions since sessions aren't directly linked to packages
+    final packageSessions = _liveSessions.length;
 
-              if (pkg.description != null && pkg.description!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  pkg.description!,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13,
-                    height: 1.4,
-                    color: (isDark ? Colors.white : const Color(0xFF000000)).withValues(alpha: 0.6),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+
+          // Two option cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildOptionCard(
+                    title: 'Watch\nVideo Lectures',
+                    subtitle: '$totalLectures Lectures',
+                    icon: Icons.play_circle_outline_rounded,
+                    imagePath: 'assets/illustrations/1.png',
+                    isDark: isDark,
+                    gradientStart: gradientStart,
+                    gradientEnd: gradientEnd,
+                    onTap: () => setState(() => _contentMode = 'videos'),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: _buildOptionCard(
+                    title: 'View\nLive Sessions',
+                    subtitle: '$packageSessions Sessions',
+                    icon: Icons.videocam_outlined,
+                    imagePath: 'assets/illustrations/2.png',
+                    isDark: isDark,
+                    gradientStart: gradientStart,
+                    gradientEnd: gradientEnd,
+                    onTap: () => setState(() => _contentMode = 'sessions'),
+                  ),
                 ),
               ],
-
-              const SizedBox(height: 16),
-
-              // Features chips
-              if (pkg.features != null && pkg.features!.isNotEmpty)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: pkg.features!.take(3).map((feature) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurface.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        feature,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 11,
-                          color: isDark ? Colors.white : const Color(0xFF333333),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-              const SizedBox(height: 16),
-
-              // Price + action row
-              Row(
-                children: [
-                  if (!isPurchased) ...[
-                    if (pkg.isOnSale && pkg.salePrice != null) ...[
-                      Text(
-                        '₹${pkg.salePrice}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          color: isDark ? Colors.white : const Color(0xFF000000),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '₹${pkg.price}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 13,
-                          decoration: TextDecoration.lineThrough,
-                          color: (isDark ? Colors.white : const Color(0xFF000000)).withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ] else
-                      Text(
-                        '₹${pkg.price}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          color: isDark ? Colors.white : const Color(0xFF000000),
-                        ),
-                      ),
-                    if (pkg.durationDays != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        '/ ${_formatDuration(pkg.durationDays!)}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
-                          color: (isDark ? Colors.white : const Color(0xFF000000)).withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ],
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isPurchased ? 'View' : 'Explore',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                            color: iconColor,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_rounded, size: 16, color: iconColor),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 28),
+
+          // Package info section
+          _buildPackageInfoSection(
+            isDark,
+            textColor,
+            secondaryTextColor,
+            iconColor,
+            cardBgColor,
+            isSubscribed,
+            totalLectures,
+            packageSessions,
+          ),
+        ],
       ),
     );
   }
 
-  // ── Series View (after selecting a package) ───────────────────────────
+  // ── Series List View ─────────────────────────────────────────────────────
 
-  Widget _buildSeriesView(
+  Widget _buildSeriesListView(
     bool isDark,
     Color textColor,
     Color secondaryTextColor,
@@ -657,12 +461,21 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             const SizedBox(height: 16),
             Text(
               'No series available',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'This package does not have any series yet.',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: secondaryTextColor),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: secondaryTextColor,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -680,9 +493,12 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
         return GestureDetector(
           onTap: () {
             if (isItemLocked) {
-              _showEnrollmentPopup(_selectedPackage!);
-            } else if (series.seriesId.isNotEmpty) {
-              context.push('/series-detail/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical&packageId=${_selectedPackage!.packageId}');
+              _showEnrollmentPopup();
+            } else if (series.seriesId.isNotEmpty && _selectedPackage != null) {
+              // Navigate directly to lecture/modules screen instead of series detail
+              context.push(
+                '/lecture/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical&packageId=${_selectedPackage!.packageId}',
+              );
             }
           },
           child: _buildSeriesCard(
@@ -776,32 +592,149 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
   }
 
-  // ── Error View ────────────────────────────────────────────────────────
+  // ── Sessions List View ───────────────────────────────────────────────────
 
-  Widget _buildErrorView(Color textColor, Color secondaryTextColor, Color iconColor) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+  Widget _buildSessionsListView(
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+  ) {
+    if (_liveSessions.isEmpty) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: textColor.withValues(alpha: 0.5)),
+            Icon(Icons.videocam_outlined, size: 48, color: textColor.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text(
-              'Failed to load data',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
+              'No live sessions available',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              _error!.replaceAll('Exception: ', ''),
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: secondaryTextColor),
+              'Check back later for upcoming live sessions.',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: secondaryTextColor,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _selectedPackage != null ? () => _selectPackage(_selectedPackage!) : _loadPackages,
-              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
-              child: const Text('Retry'),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(bottom: 100),
+      itemCount: _liveSessions.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildSessionCard(
+            _liveSessions[index],
+            isDark: isDark,
+            textColor: textColor,
+            secondaryTextColor: secondaryTextColor,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String imagePath,
+    required bool isDark,
+    required Color gradientStart,
+    required Color gradientEnd,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: const Alignment(-0.5, -0.5),
+            end: const Alignment(0.5, 0.5),
+            colors: [gradientStart, gradientEnd],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: isDark ? Colors.white : const Color(0xFF000000),
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Illustration
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                child: Image.asset(
+                  imagePath,
+                  width: 110,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 110,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
+                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 36,
+                        color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -809,9 +742,694 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
   }
 
-  // ── Enrollment Dialog ─────────────────────────────────────────────────
+  Widget _buildPackageInfoSection(
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+    Color cardBgColor,
+    bool isSubscribed,
+    int totalLectures,
+    int packageSessions,
+  ) {
+    final pkg = _selectedPackage!;
+    final totalDuration = _getTotalDuration();
 
-  Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark, PackageModel pkg) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Package name
+          Text(
+            pkg.name,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: textColor,
+            ),
+          ),
+          if (pkg.description != null && pkg.description!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              pkg.description!,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                height: 1.5,
+                color: secondaryTextColor,
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Stats row
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBgColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                _buildStatItem(
+                  icon: Icons.folder_outlined,
+                  value: '${_series.length}',
+                  label: 'Series',
+                  iconColor: iconColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryTextColor,
+                ),
+                _buildStatDivider(isDark),
+                _buildStatItem(
+                  icon: Icons.play_circle_outline,
+                  value: '$totalLectures',
+                  label: 'Lectures',
+                  iconColor: iconColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryTextColor,
+                ),
+                _buildStatDivider(isDark),
+                _buildStatItem(
+                  icon: Icons.videocam_outlined,
+                  value: '$packageSessions',
+                  label: 'Sessions',
+                  iconColor: iconColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryTextColor,
+                ),
+                if (totalDuration.isNotEmpty) ...[
+                  _buildStatDivider(isDark),
+                  _buildStatItem(
+                    icon: Icons.access_time_rounded,
+                    value: totalDuration,
+                    label: 'Duration',
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    secondaryColor: secondaryTextColor,
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Price and enroll button (if not purchased)
+          if (!pkg.isPurchased) ...[
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (pkg.isOnSale && pkg.salePrice != null) ...[
+                        Text(
+                          '₹${pkg.salePrice}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '₹${pkg.price}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                            decoration: TextDecoration.lineThrough,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          '₹${pkg.price}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            color: textColor,
+                          ),
+                        ),
+                      if (pkg.durationDays != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '/ ${_formatDuration(pkg.durationDays!)}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.push('/purchase?packageId=${pkg.packageId}&packageType=Practical');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Enroll Now',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // What's included / Features
+          if (pkg.features != null && pkg.features!.isNotEmpty) ...[
+            Text(
+              "What's Included",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...pkg.features!.map((feature) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 18, color: iconColor),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          feature,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 14,
+                            height: 1.4,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 16),
+          ],
+
+          // Series overview
+          if (_series.isNotEmpty) ...[
+            Text(
+              'Series',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._series.map((s) => _buildSeriesPreviewTile(
+                  s,
+                  isDark,
+                  textColor,
+                  secondaryTextColor,
+                  iconColor,
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color iconColor,
+    required Color textColor,
+    required Color secondaryColor,
+  }) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: textColor,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w400,
+              fontSize: 11,
+              color: secondaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatDivider(bool isDark) {
+    return Container(
+      width: 1,
+      height: 40,
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.black.withValues(alpha: 0.1),
+    );
+  }
+
+  Widget _buildSeriesPreviewTile(
+    SeriesModel series,
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.darkCardBackground
+                  : const Color(0xFFE8F0FE),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Icon(Icons.science_outlined, size: 18, color: iconColor),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  series.title,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                    color: textColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${series.totalLectures ?? 0} lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (series.isLocked)
+            Icon(Icons.lock_rounded, size: 16, color: secondaryTextColor)
+          else
+            Icon(Icons.chevron_right_rounded, size: 20, color: secondaryTextColor),
+        ],
+      ),
+    );
+  }
+
+  // ── Package Card (for list view) ─────────────────────────────────────────
+
+  Widget _buildPackageCard(
+    PackageModel package, {
+    required bool isDark,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color iconColor,
+  }) {
+    final isPurchased = package.isPurchased;
+    final gradientStart = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFCDE5FF);
+    final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
+
+    return GestureDetector(
+      onTap: () => _selectPackage(package),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [gradientStart, gradientEnd],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: title + status badge
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      package.name,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        color: isDark ? Colors.white : const Color(0xFF000000),
+                      ),
+                    ),
+                  ),
+                  if (isPurchased)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Active',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              if (package.description != null && package.description!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  package.description!,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                    height: 1.4,
+                    color: (isDark ? Colors.white : const Color(0xFF000000))
+                        .withValues(alpha: 0.6),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // Features chips
+              if (package.features != null && package.features!.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: package.features!.take(3).map((feature) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkSurface.withValues(alpha: 0.7)
+                            : Colors.white.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        feature,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 11,
+                          color: isDark ? Colors.white : const Color(0xFF333333),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+              const SizedBox(height: 16),
+
+              // Price + action row
+              Row(
+                children: [
+                  if (!isPurchased) ...[
+                    if (package.isOnSale && package.salePrice != null) ...[
+                      Text(
+                        '₹${package.salePrice}',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                          color: isDark ? Colors.white : const Color(0xFF000000),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '₹${package.price}',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13,
+                          decoration: TextDecoration.lineThrough,
+                          color: (isDark ? Colors.white : const Color(0xFF000000))
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ] else
+                      Text(
+                        '₹${package.price}',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                          color: isDark ? Colors.white : const Color(0xFF000000),
+                        ),
+                      ),
+                    if (package.durationDays != null) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '/ ${_formatDuration(package.durationDays!)}',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          color: (isDark ? Colors.white : const Color(0xFF000000))
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ],
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isPurchased ? 'View' : 'Explore',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                            color: iconColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_rounded, size: 16, color: iconColor),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Session Card ─────────────────────────────────────────────────────────
+
+  Widget _buildSessionCard(
+    LiveSessionModel session, {
+    required bool isDark,
+    required Color textColor,
+    required Color secondaryTextColor,
+  }) {
+    final isLive = session.status == 'live';
+
+    return GestureDetector(
+      onTap: () => context.push('/session/${session.sessionId}'),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: const Alignment(-0.85, 0),
+            end: const Alignment(0.85, 0),
+            colors: isDark
+                ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
+                : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
+            stops: const [0.35, 0.71],
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Stack(
+            children: [
+              // Background illustration
+              Positioned(
+                right: -5,
+                bottom: 5,
+                child: Image.asset(
+                  'assets/illustrations/home.png',
+                  width: 130,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(width: 130, height: 70),
+                ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isLive
+                            ? Colors.red.withValues(alpha: 0.9)
+                            : Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        isLive ? 'LIVE NOW' : 'LIVE CLASS',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Title
+                    Text(
+                      session.title,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 2),
+
+                    // Timing
+                    Text(
+                      isLive ? 'Live Now' : _formatSessionDateTime(session.scheduledStartTime),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // View Details button
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'View Details',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          color: Color(0xFF1847A2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Enrollment Dialog ────────────────────────────────────────────────────
+
+  Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
+    final pkg = _selectedPackage!;
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -844,10 +1462,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               ),
               Image.asset(
                 'assets/illustrations/enroll.png',
-                width: 180, height: 120, fit: BoxFit.contain,
+                width: 180,
+                height: 120,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    width: 180, height: 120,
+                    width: 180,
+                    height: 120,
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
                       borderRadius: BorderRadius.circular(12),
@@ -904,7 +1525,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
-                        width: double.infinity, height: 40,
+                        width: double.infinity,
+                        height: 40,
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(dialogContext).pop(true),
                           style: ElevatedButton.styleFrom(
@@ -927,7 +1549,193 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────
+  // ── Loading Shimmer ──────────────────────────────────────────────────────
+
+  Widget _buildLoadingShimmer(bool isDark) {
+    // Show different shimmer based on current view mode
+    if (_contentMode == 'videos') {
+      // Series list shimmer
+      return ShimmerWidgets.seriesListShimmer(isDark: isDark);
+    } else if (_contentMode == 'sessions') {
+      // Sessions list shimmer
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 4,
+        itemBuilder: (context, index) => ShimmerWidgets.sessionCardShimmer(isDark: isDark),
+      );
+    } else if (_selectedPackage != null) {
+      // Package detail shimmer
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Two option cards
+            Row(
+              children: [
+                Expanded(
+                  child: ShimmerWidgets.container(
+                    width: double.infinity,
+                    height: 120,
+                    borderRadius: 12,
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ShimmerWidgets.container(
+                    width: double.infinity,
+                    height: 120,
+                    borderRadius: 12,
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Package info shimmer
+            ShimmerWidgets.container(
+              width: double.infinity,
+              height: 200,
+              borderRadius: 12,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 16),
+            ShimmerWidgets.container(
+              width: double.infinity,
+              height: 150,
+              borderRadius: 12,
+              isDark: isDark,
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Landing page shimmer (packages + sessions)
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Live Sessions section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ShimmerWidgets.container(
+                width: 150,
+                height: 20,
+                borderRadius: 4,
+                isDark: isDark,
+              ),
+            ),
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 2,
+                itemBuilder: (context, index) => Padding(
+                  padding: EdgeInsets.only(right: index == 1 ? 0 : 12),
+                  child: ShimmerWidgets.container(
+                    width: 300,
+                    height: 200,
+                    borderRadius: 16,
+                    isDark: isDark,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Practical Packages section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ShimmerWidgets.container(
+                width: 150,
+                height: 20,
+                borderRadius: 4,
+                isDark: isDark,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: List.generate(
+                  3,
+                  (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ShimmerWidgets.container(
+                      width: double.infinity,
+                      height: 140,
+                      borderRadius: 12,
+                      isDark: isDark,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // ── Error View ───────────────────────────────────────────────────────────
+
+  Widget _buildErrorView(Color textColor, Color secondaryTextColor, Color iconColor) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: textColor.withValues(alpha: 0.5)),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load data',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!.replaceAll('Exception: ', ''),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: secondaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadData,
+              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Helper Methods ───────────────────────────────────────────────────────
+
+  String _getTotalDuration() {
+    int totalMinutes = 0;
+    for (final series in _series) {
+      if (series.totalDurationMinutes != null) {
+        totalMinutes += series.totalDurationMinutes!;
+      }
+    }
+    if (totalMinutes == 0) return '';
+
+    final hours = totalMinutes ~/ 60;
+    if (hours > 0) {
+      return '${hours}h';
+    }
+    return '${totalMinutes}m';
+  }
 
   String _formatSessionDateTime(String isoString) {
     try {
@@ -943,11 +1751,26 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       }
 
       final tomorrow = now.add(const Duration(days: 1));
-      if (dt.year == tomorrow.year && dt.month == tomorrow.month && dt.day == tomorrow.day) {
+      if (dt.year == tomorrow.year &&
+          dt.month == tomorrow.month &&
+          dt.day == tomorrow.day) {
         return 'Tomorrow, $time';
       }
 
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       return '${months[dt.month - 1]} ${dt.day}, $time';
     } catch (_) {
       return 'Upcoming';

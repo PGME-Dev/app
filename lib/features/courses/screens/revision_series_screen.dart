@@ -7,6 +7,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -302,10 +303,14 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             : 'Study Documents';
 
     return PopScope(
-      canPop: isOnLanding,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          setState(() => _contentMode = null);
+          if (_contentMode != null) {
+            setState(() => _contentMode = null);
+          } else {
+            context.go('/home');
+          }
         }
       },
       child: Scaffold(
@@ -317,20 +322,25 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16, bottom: 12),
               child: Row(
                 children: [
-                  // Back arrow (only when in series list mode)
-                  if (!isOnLanding)
-                    GestureDetector(
-                      onTap: () => setState(() => _contentMode = null),
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
-                      ),
+                  // Back arrow
+                  GestureDetector(
+                    onTap: () {
+                      if (isOnLanding) {
+                        context.go('/home');
+                      } else {
+                        setState(() => _contentMode = null);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
                     ),
+                  ),
                   // Title
                   Expanded(
                     child: Text(
                       title,
-                      textAlign: isOnLanding ? TextAlign.center : TextAlign.left,
+                      textAlign: TextAlign.left,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
@@ -353,7 +363,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             // Content
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator(color: iconColor))
+                  ? _buildLoadingShimmer(isDark)
                   : _error != null
                       ? _buildErrorView(textColor, secondaryTextColor, iconColor)
                       : isOnLanding
@@ -939,6 +949,98 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         ),
       ),
     );
+  }
+
+  // ── Loading Shimmer ──────────────────────────────────────────────────────
+
+  Widget _buildLoadingShimmer(bool isDark) {
+    // Show different shimmer based on current view mode
+    if (_contentMode == 'lectures' || _contentMode == 'documents') {
+      // Series list shimmer
+      return ShimmerWidgets.seriesListShimmer(isDark: isDark);
+    } else if (_activePackageId != null) {
+      // Package detail shimmer (when viewing a specific package)
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Two option cards
+            Row(
+              children: [
+                Expanded(
+                  child: ShimmerWidgets.container(
+                    width: double.infinity,
+                    height: 120,
+                    borderRadius: 12,
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ShimmerWidgets.container(
+                    width: double.infinity,
+                    height: 120,
+                    borderRadius: 12,
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Package info shimmer
+            ShimmerWidgets.container(
+              width: double.infinity,
+              height: 200,
+              borderRadius: 12,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 16),
+            ShimmerWidgets.container(
+              width: double.infinity,
+              height: 150,
+              borderRadius: 12,
+              isDark: isDark,
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Landing page shimmer (packages grid)
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ShimmerWidgets.container(
+                width: 150,
+                height: 24,
+                borderRadius: 4,
+                isDark: isDark,
+              ),
+            ),
+            // Package grid shimmer
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: 4,
+                itemBuilder: (context, index) => ShimmerWidgets.gridItemShimmer(isDark: isDark),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   // ── Error View ────────────────────────────────────────────────────────

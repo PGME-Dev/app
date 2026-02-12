@@ -18,17 +18,6 @@ class GuestDashboardScreen extends StatefulWidget {
 }
 
 class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Load dashboard data on init
-    Future.microtask(() {
-      if (mounted) {
-        context.read<DashboardProvider>().loadDashboard();
-      }
-    });
-  }
-
   /// Get display name (first name only) from AuthProvider
   String _getDisplayName(AuthProvider authProvider) {
     final fullName = authProvider.user?.name;
@@ -333,36 +322,20 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     bool isDark,
     Color textColor,
   ) {
-    final secondaryTextColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'What We Offer',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                  color: textColor,
-                ),
-              ),
-              Text(
-                'Browse All',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: secondaryTextColor,
-                ),
-              ),
-            ],
+          child: Text(
+            'What We Offer',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              color: textColor,
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -540,8 +513,11 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // View Package Button
           GestureDetector(
             onTap: () {
-              // Navigate to packages list filtered by this type
-              context.push('/packages?type=${packageType.name}');
+              // Navigate to the respective nav tab
+              final route = packageType.name == 'Practical'
+                  ? '/practical-series'
+                  : '/revision-series';
+              context.go(route);
             },
             child: Container(
               width: double.infinity,

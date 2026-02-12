@@ -7,6 +7,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
@@ -504,8 +505,10 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
           // Notes List
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(color: iconColor),
+                ? ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: 5,
+                    itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
                   )
                 : _error != null
                     ? Center(

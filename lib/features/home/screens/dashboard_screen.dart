@@ -10,7 +10,6 @@ import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/for_you_section.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
-import 'package:pgme/features/home/widgets/dashboard_skeleton.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,17 +19,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Load dashboard data on init
-    Future.microtask(() {
-      if (mounted) {
-        context.read<DashboardProvider>().loadDashboard();
-      }
-    });
-  }
-
   Future<void> _openWhatsApp() async {
     const phoneNumber = '+918074220727';
     const message = 'Hi, I need help with PGME app';
@@ -80,11 +68,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: backgroundColor,
       body: Consumer2<AuthProvider, DashboardProvider>(
         builder: (context, authProvider, dashboardProvider, _) {
-          // Show skeleton loader during initial load
-          if (dashboardProvider.isInitialLoading) {
-            return const DashboardSkeleton();
-          }
-
           final userName = _getDisplayName(authProvider);
 
           return RefreshIndicator(

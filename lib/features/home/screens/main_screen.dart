@@ -6,6 +6,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/home/screens/dashboard_screen.dart';
 import 'package:pgme/features/home/screens/guest_dashboard_screen.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/features/home/widgets/dashboard_skeleton.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -25,6 +26,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Load dashboard data once here
+    Future.microtask(() {
+      if (mounted) {
+        context.read<DashboardProvider>().loadDashboard();
+      }
+    });
   }
 
   @override
@@ -67,7 +74,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: isSubscribed ? const DashboardScreen() : const GuestDashboardScreen(),
+      body: dashboardProvider.isInitialLoading
+          ? const DashboardSkeleton()
+          : isSubscribed
+              ? const DashboardScreen()
+              : const GuestDashboardScreen(),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   const AllPackagesScreen({super.key});
@@ -115,12 +116,18 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
   void _enrollPackage(PackageModel package) {
     if (package.isPurchased) {
-      // Already purchased - go to content
       context.pop();
-      context.go('/home');
+      // Navigate to appropriate series screen based on package type
+      // Don't pass packageId so it shows the landing page with options
+      if (package.type == 'Theory') {
+        context.push('/revision-series?subscribed=true');
+      } else if (package.type == 'Practical') {
+        context.push('/practical-series?subscribed=true');
+      } else {
+        context.go('/home');
+      }
     } else {
       context.pop();
-      // Navigate to payment with selected package
       context.push('/purchase?packageId=${package.packageId}');
     }
   }
@@ -145,9 +152,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: backgroundColor,
-        body: Center(
-          child: CircularProgressIndicator(color: priceColor),
-        ),
+        body: ShimmerWidgets.packageGridShimmer(isDark: isDark),
       );
     }
 

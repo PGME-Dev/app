@@ -6,6 +6,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
@@ -224,10 +225,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                   // Dynamic Modules List
                   if (_isLoading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: CircularProgressIndicator(),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 4,
+                        itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
                       ),
                     )
                   else if (_error != null)

@@ -6,6 +6,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/subscription_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
@@ -144,7 +145,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           // Content
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? ShimmerWidgets.purchasesTabShimmer(isDark: isDark)
                 : _error != null
                     ? _buildErrorState(textColor, secondaryTextColor)
                     : TabBarView(
