@@ -14,7 +14,9 @@
       "Bash(where /r \"C:\\\\Users\\\\Yatharth\\\\AppData\\\\Local\\\\Pub\\\\Cache\" \"build.gradle\")",
       "Bash(wmic process:*)",
       "Bash(tasklist:*)",
-      "Bash(flutter --version:*)"
+      "Bash(flutter --version:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

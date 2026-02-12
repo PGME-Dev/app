@@ -34,6 +34,8 @@ import 'package:pgme/features/courses/screens/enrolled_course_detail_screen.dart
 import 'package:pgme/features/notifications/screens/notifications_screen.dart';
 import 'package:pgme/features/settings/screens/help_screen.dart';
 import 'package:pgme/features/settings/screens/about_screen.dart';
+import 'package:pgme/features/settings/screens/my_purchases_screen.dart';
+import 'package:pgme/features/settings/screens/careers_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -682,6 +684,44 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const BookOrdersScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // My Purchases
+          GoRoute(
+            path: '/my-purchases',
+            name: 'my-purchases',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const MyPurchasesScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Careers
+          GoRoute(
+            path: '/careers',
+            name: 'careers',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const CareersScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
