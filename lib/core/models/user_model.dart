@@ -33,6 +33,15 @@ class UserModel {
 
   final String? address;
 
+  @JsonKey(name: 'student_id')
+  final String? studentId;
+
+  @JsonKey(name: 'ug_college')
+  final String? ugCollege;
+
+  @JsonKey(name: 'pg_college')
+  final String? pgCollege;
+
   @JsonKey(name: 'created_at')
   final String? createdAt;
 
@@ -51,6 +60,9 @@ class UserModel {
     this.dateOfBirth,
     this.gender,
     this.address,
+    this.studentId,
+    this.ugCollege,
+    this.pgCollege,
     this.createdAt,
     this.updatedAt,
   });
@@ -72,6 +84,9 @@ class UserModel {
     String? dateOfBirth,
     String? gender,
     String? address,
+    String? studentId,
+    String? ugCollege,
+    String? pgCollege,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -88,6 +103,9 @@ class UserModel {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       address: address ?? this.address,
+      studentId: studentId ?? this.studentId,
+      ugCollege: ugCollege ?? this.ugCollege,
+      pgCollege: pgCollege ?? this.pgCollege,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

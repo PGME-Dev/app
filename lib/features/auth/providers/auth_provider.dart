@@ -202,6 +202,8 @@ class AuthProvider with ChangeNotifier {
     String? dateOfBirth,
     String? gender,
     String? address,
+    String? ugCollege,
+    String? pgCollege,
   }) async {
     try {
       // Only include fields that have actual values to avoid
@@ -217,6 +219,12 @@ class AuthProvider with ChangeNotifier {
       }
       if (address != null && address.isNotEmpty) {
         data['address'] = address.trim();
+      }
+      if (ugCollege != null && ugCollege.isNotEmpty) {
+        data['ug_college'] = ugCollege.trim();
+      }
+      if (pgCollege != null && pgCollege.isNotEmpty) {
+        data['pg_college'] = pgCollege.trim();
       }
 
       final updatedUser = await _userService.updateProfile(data);

@@ -18,9 +18,11 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _ugCollegeController = TextEditingController();
   final TextEditingController _pgCollegeController = TextEditingController();
   DateTime? _selectedDob;
+  String? _selectedGender;
   bool _isLoading = false;
 
   // Colors
@@ -28,12 +30,15 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   static const Color _labelColor = Color(0xFF78828A);
   static const Color _hintColor = Color(0xFFAAAAAA);
 
+  static const List<String> _genderOptions = ['Male', 'Female', 'Other'];
+
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
     _dobController.dispose();
+    _addressController.dispose();
     _ugCollegeController.dispose();
     _pgCollegeController.dispose();
     super.dispose();
@@ -81,14 +86,14 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
                   // Success title
                   const Text(
-                    'You have logged in\nsuccessfully',
+                    'Profile completed\nsuccessfully',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      height: 1.33, // 32px line-height / 24px
-                      letterSpacing: 0.12, // 0.5% of 24px
+                      height: 1.33,
+                      letterSpacing: 0.12,
                       color: Colors.black,
                     ),
                   ),
@@ -97,14 +102,14 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
                   // Subtitle
                   const Text(
-                    'Lorem Ipsum is simply dummy text of the\nprinting and typesetting industry.',
+                    'Your account has been set up.\nLet\'s get started!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      height: 1.57, // 22px line-height / 14px
-                      letterSpacing: 0.07, // 0.5% of 14px
+                      height: 1.57,
+                      letterSpacing: 0.07,
                       color: _labelColor,
                     ),
                   ),
@@ -118,7 +123,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        context.go('/multiple-logins');
+                        context.go('/subject-selection');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _darkBlue,
@@ -133,8 +138,8 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                           fontFamily: 'Poppins',
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          height: 1.5, // 24px line-height / 16px
-                          letterSpacing: 0.08, // 0.5% of 16px
+                          height: 1.5,
+                          letterSpacing: 0.08,
                           color: Colors.white,
                         ),
                       ),
@@ -184,6 +189,16 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
         dateOfBirth: _selectedDob != null
             ? DateFormat('yyyy-MM-dd').format(_selectedDob!)
             : null,
+        gender: _selectedGender?.toLowerCase(),
+        address: _addressController.text.trim().isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+        ugCollege: _ugCollegeController.text.trim().isNotEmpty
+            ? _ugCollegeController.text.trim()
+            : null,
+        pgCollege: _pgCollegeController.text.trim().isNotEmpty
+            ? _pgCollegeController.text.trim()
+            : null,
       );
 
       debugPrint('Profile updated successfully, showing dialog');
@@ -211,6 +226,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    int maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,12 +247,16 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
           borderRadius: BorderRadius.circular(24),
           child: Container(
             width: 327,
-            height: 52,
+            height: maxLines > 1 ? null : 52,
+            constraints: maxLines > 1
+                ? const BoxConstraints(minHeight: 52)
+                : null,
             color: Colors.white,
             child: TextFormField(
               controller: controller,
               keyboardType: keyboardType,
               validator: validator,
+              maxLines: maxLines,
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 16,
@@ -258,6 +278,71 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                 focusedErrorBorder: InputBorder.none,
                 contentPadding: const EdgeInsets.only(left: 16, top: 14, bottom: 14),
                 errorStyle: const TextStyle(height: 0, fontSize: 0),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenderSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Gender',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.57,
+            letterSpacing: 0.07,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 327,
+            height: 52,
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedGender,
+                hint: const Text(
+                  'Select your gender',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: _hintColor,
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: _hintColor,
+                ),
+                isExpanded: true,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF333333),
+                ),
+                items: _genderOptions.map((gender) {
+                  return DropdownMenuItem<String>(
+                    value: gender,
+                    child: Text(gender),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedGender = value;
+                  });
+                },
               ),
             ),
           ),
@@ -290,7 +375,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button and Login title row
+                  // Back button and title row
                   Row(
                     children: [
                       // Back button
@@ -315,7 +400,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                       const Expanded(
                         child: Center(
                           child: Text(
-                            'Login',
+                            'Sign Up',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 28,
@@ -354,7 +439,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                   // Subtitle
                   const Center(
                     child: Text(
-                      'Lorem ipsum dolor sit amet',
+                      'Tell us a bit about yourself',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 14,
@@ -384,7 +469,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                   // Last Name
                   _buildTextField(
                     label: 'Last Name',
-                    hint: 'Enter your name',
+                    hint: 'Enter your last name',
                     controller: _lastNameController,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -476,19 +561,33 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Enter UG College
+                  // Gender
+                  _buildGenderSelector(),
+
+                  const SizedBox(height: 16),
+
+                  // Address
                   _buildTextField(
-                    label: 'Enter UG College',
-                    hint: 'Enter Your UG College',
+                    label: 'Address',
+                    hint: 'Enter your address',
+                    controller: _addressController,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // UG College
+                  _buildTextField(
+                    label: 'UG College',
+                    hint: 'Enter your UG college',
                     controller: _ugCollegeController,
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Enter PG College
+                  // PG College
                   _buildTextField(
-                    label: 'Enter PG College',
-                    hint: 'Enter Your PG College',
+                    label: 'PG College',
+                    hint: 'Enter your PG college',
                     controller: _pgCollegeController,
                   ),
 
