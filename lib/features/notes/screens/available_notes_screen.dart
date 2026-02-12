@@ -634,7 +634,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
   }) {
     // If subscribed, nothing is locked; otherwise check if document is free
     final isLocked = widget.isSubscribed ? false : !document.isFree;
-    final isAlreadyAdded = _addedToLibrary.contains(document.documentId);
+    final isAlreadyAdded = document.isInLibrary || _addedToLibrary.contains(document.documentId);
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE8E8E8);
     final lockBadgeBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
@@ -810,20 +810,18 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         children: [
                           const SizedBox(height: 16),
                           // Show different buttons based on subscription status
-                          if (widget.isSubscribed)
-                            // Subscribed: Show "Add to Your Notes" button
+                          if (widget.isSubscribed && !isAlreadyAdded)
+                            // Subscribed + not yet in library: Show "Add to Notes" button
                             SizedBox(
                               width: double.infinity,
                               height: 44,
                               child: ElevatedButton(
-                                onPressed: isAlreadyAdded || _isAddingToLibrary
+                                onPressed: _isAddingToLibrary
                                     ? null
                                     : () => _addToLibrary(document),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isAlreadyAdded ? successColor : buttonColor,
-                                  disabledBackgroundColor: successColor,
+                                  backgroundColor: buttonColor,
                                   foregroundColor: Colors.white,
-                                  disabledForegroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(22),
                                   ),
@@ -844,16 +842,16 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                         ),
                                       )
                                     else
-                                      Icon(
-                                        isAlreadyAdded ? Icons.check : Icons.add,
+                                      const Icon(
+                                        Icons.add,
                                         size: 20,
                                         color: Colors.white,
                                       ),
                                     const SizedBox(width: 8),
-                                    Flexible(
+                                    const Flexible(
                                       child: Text(
-                                        isAlreadyAdded ? 'Added to Notes' : 'Add to Notes',
-                                        style: const TextStyle(
+                                        'Add to Notes',
+                                        style: TextStyle(
                                           fontFamily: 'Poppins',
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
@@ -866,17 +864,23 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 ),
                               ),
                             )
-                          else
-                            // Not subscribed: Show sample/full book buttons
+                          else if (document.isFree)
+                            // Not subscribed but FREE document: View PDF + Add to Notes (if not already added)
                             Row(
                               children: [
-                                // View sample pdf button
+                                // View PDF button
                                 Expanded(
                                   child: SizedBox(
                                     height: 40,
                                     child: ElevatedButton(
                                       onPressed: () {
-                                        // View sample pdf action
+                                        context.pushNamed(
+                                          'pdf-viewer',
+                                          queryParameters: {
+                                            'documentId': document.documentId,
+                                            'title': document.title,
+                                          },
+                                        );
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: buttonColor,
@@ -889,7 +893,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                       child: const FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
-                                          'View sample pdf',
+                                          'View PDF',
                                           style: TextStyle(
                                             fontFamily: 'Poppins',
                                             fontSize: 11,
@@ -901,8 +905,109 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                // View full book button
+                                if (!isAlreadyAdded) ...[
+                                  const SizedBox(width: 8),
+                                  // Add to Notes button
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        onPressed: _isAddingToLibrary
+                                            ? null
+                                            : () => _addToLibrary(document),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: buttonColor,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        ),
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (_isAddingToLibrary)
+                                                const SizedBox(
+                                                  width: 14,
+                                                  height: 14,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              else
+                                                const Icon(
+                                                  Icons.add,
+                                                  size: 14,
+                                                  color: Colors.white,
+                                                ),
+                                              const SizedBox(width: 4),
+                                              const Text(
+                                                'Add to Notes',
+                                                style: TextStyle(
+                                                  fontFamily: 'Poppins',
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            )
+                          else
+                            // Not subscribed + LOCKED document
+                            Row(
+                              children: [
+                                // View sample pdf button — only if preview_url exists
+                                if (document.previewUrl != null) ...[
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          context.pushNamed(
+                                            'pdf-viewer',
+                                            queryParameters: {
+                                              'pdfUrl': document.previewUrl!,
+                                              'title': '${document.title} (Sample)',
+                                            },
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: buttonColor,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        ),
+                                        child: const FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            'View sample pdf',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                // Enroll / View full book button
                                 Expanded(
                                   child: SizedBox(
                                     height: 40,
@@ -918,11 +1023,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                         elevation: 0,
                                         padding: const EdgeInsets.symmetric(horizontal: 8),
                                       ),
-                                      child: const FittedBox(
+                                      child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
-                                          'View full book',
-                                          style: TextStyle(
+                                          document.previewUrl != null ? 'View full book' : 'Enroll to access',
+                                          style: const TextStyle(
                                             fontFamily: 'Poppins',
                                             fontSize: 11,
                                             fontWeight: FontWeight.w500,

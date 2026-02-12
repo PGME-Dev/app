@@ -37,6 +37,7 @@ import 'package:pgme/features/settings/screens/help_screen.dart';
 import 'package:pgme/features/settings/screens/about_screen.dart';
 import 'package:pgme/features/settings/screens/my_purchases_screen.dart';
 import 'package:pgme/features/settings/screens/careers_screen.dart';
+import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -549,6 +550,30 @@ class AppRouter {
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: AvailableNotesScreen(seriesId: seriesId, isSubscribed: isSubscribed),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // PDF Viewer
+          GoRoute(
+            path: '/pdf-viewer',
+            name: 'pdf-viewer',
+            pageBuilder: (context, state) {
+              final documentId = state.uri.queryParameters['documentId'];
+              final pdfUrl = state.uri.queryParameters['pdfUrl'];
+              final title = state.uri.queryParameters['title'] ?? 'PDF Viewer';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: PdfViewerScreen(documentId: documentId, pdfUrl: pdfUrl, title: title),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(

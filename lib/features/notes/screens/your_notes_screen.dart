@@ -452,11 +452,13 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: GestureDetector(
         onTap: () {
-          // Navigate to document viewer or handle document opening
-          if (item.fileUrl != null) {
-            // TODO: Navigate to PDF viewer
-            debugPrint('Opening document: ${item.fileUrl}');
-          }
+          context.pushNamed(
+            'pdf-viewer',
+            queryParameters: {
+              'documentId': item.documentId,
+              'title': item.title,
+            },
+          );
         },
         child: Container(
           width: double.infinity,

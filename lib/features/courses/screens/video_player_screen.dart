@@ -107,7 +107,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       _videoUrl = videoUrl;
       _videoTitle = videoData['title'] as String? ?? 'Untitled';
-      _videoDurationSeconds = videoData['duration_seconds'] as int? ?? 0;
+      _videoDurationSeconds = (videoData['duration_seconds'] as num?)?.toInt() ?? 0;
 
       debugPrint(
           'VideoPlayer: data loaded - title=$_videoTitle, duration=${_videoDurationSeconds}s');

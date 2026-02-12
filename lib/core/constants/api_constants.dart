@@ -99,6 +99,10 @@ class ApiConstants {
   // Video Playback Endpoints
   static String videoPlayback(String videoId) => '/videos/$videoId/playback';
 
+  // Document Endpoints
+  static String documentViewUrl(String documentId) =>
+      '/documents/$documentId/view-url';
+
   // Library Endpoints (additional)
   static const String library = '/users/library';
   static const String addToLibrary = '/users/library';
