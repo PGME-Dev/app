@@ -341,43 +341,59 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         const SizedBox(height: 16),
 
         // Package Type Cards
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: provider.packageTypes
-                .map((packageType) => Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: SizedBox(
-                        width: 180,
-                        child: _buildPackageTypeCard(packageType, isDark, textColor),
-                      ),
-                    ))
-                .toList(),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            final cardHeight = screenHeight * 0.42; // 42% of screen height
+
+            return SizedBox(
+              height: cardHeight,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: provider.packageTypes.length,
+                itemBuilder: (context, index) {
+                  final packageType = provider.packageTypes[index];
+                  final isLast = index == provider.packageTypes.length - 1;
+                  return Padding(
+                    padding: EdgeInsets.only(right: isLast ? 0 : 16),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.75,
+                      child: _buildPackageTypeCard(packageType, isDark, textColor),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );
   }
 
   Widget _buildPackageTypeCard(packageType, bool isDark, Color textColor) {
+    final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
+
     return Container(
-      height: 376,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: isDark
-            ? const Color(0xFF1A3A5C)
-            : const Color(0xFFDCEAF7),
+        borderRadius: BorderRadius.circular(16),
+        color: cardBgColor,
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Trailer Video Thumbnail with Play Button
           GestureDetector(
             onTap: packageType.trailerVideoUrl != null
                 ? () {
-                    // Navigate to trailer video player
                     context.push(
                       '/trailer-video',
                       extra: {
@@ -387,17 +403,12 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     );
                   }
                 : null,
-            child: Container(
-              width: 150,
-              height: 244,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: packageType.thumbnailUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Stack(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: packageType.thumbnailUrl != null
+                    ? Stack(
                         fit: StackFit.expand,
                         children: [
                           // Video thumbnail
@@ -405,16 +416,15 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             imageUrl: packageType.thumbnailUrl!,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
-                              color: Colors.black,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                               child: const Center(
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppColors.primaryBlue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                                 ),
                               ),
                             ),
                             errorWidget: (context, url, error) => Container(
-                              color: Colors.black,
+                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                               child: const Center(
                                 child: Icon(
                                   Icons.broken_image,
@@ -428,115 +438,116 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                           if (packageType.trailerVideoUrl != null)
                             Center(
                               child: Container(
-                                width: 60,
-                                height: 60,
+                                width: 64,
+                                height: 64,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.black.withValues(alpha: 0.6),
+                                  color: Colors.black.withValues(alpha: 0.7),
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 2,
+                                    width: 3,
                                   ),
                                 ),
                                 child: const Icon(
                                   Icons.play_arrow,
-                                  size: 36,
+                                  size: 40,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
                         ],
-                      ),
-                    )
-                  : Center(
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.black,
-                            width: 2,
+                      )
+                    : Container(
+                        color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                        child: Center(
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: secondaryTextColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.play_arrow,
+                              size: 40,
+                              color: secondaryTextColor,
+                            ),
                           ),
                         ),
-                        child: const Icon(
-                          Icons.play_arrow,
-                          size: 36,
-                          color: Colors.black,
-                        ),
                       ),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Package Type Name
-          Text(
-            packageType.name,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: isDark ? Colors.white : const Color(0xFF000000),
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          // Enroll Now Button
-          GestureDetector(
-            onTap: () {
-              // Navigate to packages list filtered by this type
-              context.push('/packages?type=${packageType.name}');
-            },
-            child: Container(
-              width: double.infinity,
-              height: 26,
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Center(
-                child: Text(
-                  'Enroll Now',
+            ),
+          ),
+
+          // Content Section
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Package Type Name
+                Text(
+                  packageType.name ?? 'Package',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.white,
+                    fontSize: 18,
+                    color: textColor,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // View Package Button
-          GestureDetector(
-            onTap: () {
-              // Navigate to the respective nav tab
-              final route = packageType.name == 'Practical'
-                  ? '/practical-series'
-                  : '/revision-series';
-              context.go(route);
-            },
-            child: Container(
-              width: double.infinity,
-              height: 26,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  'View Packages',
+                const SizedBox(height: 8),
+
+                // Package Description
+                Text(
+                  packageType.description ?? 'Explore our comprehensive courses designed to help you succeed.',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: isDark ? Colors.white : AppColors.primaryBlue,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                    height: 1.5,
+                    color: secondaryTextColor,
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 12),
+
+                // View Package Button
+                GestureDetector(
+                  onTap: () {
+                    final route = packageType.name == 'Practical'
+                        ? '/practical-series'
+                        : '/revision-series';
+                    context.go(route);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'View Packages',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

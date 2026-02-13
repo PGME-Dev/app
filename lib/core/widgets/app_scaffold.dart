@@ -21,6 +21,15 @@ class AppScaffold extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
+    // Get screen dimensions and safe area insets
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    // Calculate responsive navbar width
+    // Use 95% of screen width on small screens, max 361px on larger screens
+    final navBarWidth = screenWidth > 380 ? 361.0 : screenWidth * 0.95;
+    final horizontalPadding = (screenWidth - navBarWidth) / 2;
+
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final navBarColor = isDark ? AppColors.darkSurface : const Color(0xFFF6F6F6);
@@ -34,10 +43,10 @@ class AppScaffold extends StatelessWidget {
           child,
           // Persistent Bottom Navigation Bar
           Positioned(
-            bottom: 20,
-            left: (MediaQuery.of(context).size.width - 361) / 2,
+            bottom: bottomPadding + 20,
+            left: horizontalPadding,
+            right: horizontalPadding,
             child: Container(
-              width: 361,
               height: 65,
               decoration: BoxDecoration(
                 color: navBarColor,

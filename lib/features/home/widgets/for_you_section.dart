@@ -28,36 +28,21 @@ class ForYouSection extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
-    final secondaryTextColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'For You',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                  color: textColor,
-                ),
-              ),
-              Text(
-                'Browse All',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: secondaryTextColor,
-                ),
-              ),
-            ],
+          child: Text(
+            'For You',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              color: textColor,
+            ),
           ),
         ),
         const SizedBox(height: 16),

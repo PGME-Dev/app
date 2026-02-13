@@ -8,6 +8,7 @@ import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/models/faculty_model.dart';
 import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/models/subject_selection_model.dart';
+import 'package:pgme/core/models/banner_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
@@ -28,6 +29,7 @@ class DashboardProvider with ChangeNotifier {
   VideoModel? _lastWatchedVideo;
   List<FacultyModel> _facultyList = [];
   List<SubjectModel> _allSubjects = [];
+  List<BannerModel> _banners = [];
 
   // Loading states (per section)
   bool _isInitialLoading = true; // Initial dashboard load
@@ -61,6 +63,7 @@ class DashboardProvider with ChangeNotifier {
   List<PackageTypeModel> get packageTypes => _packageTypes;
   VideoModel? get lastWatchedVideo => _lastWatchedVideo;
   List<FacultyModel> get facultyList => _facultyList;
+  List<BannerModel> get banners => _banners;
 
   bool get isInitialLoading => _isInitialLoading;
   bool get isLoadingSession => _isLoadingSession;
@@ -98,6 +101,7 @@ class DashboardProvider with ChangeNotifier {
       _loadUpcomingSession(),
       _loadFacultyList(),
       _loadContentSection(),
+      _loadBanners(),
     ], eagerError: false);
 
     // Mark initial loading as complete
@@ -168,10 +172,10 @@ class DashboardProvider with ChangeNotifier {
     try {
       debugPrint('Loading upcoming sessions...');
 
-      // Fetch multiple upcoming sessions (limit 5 for carousel)
+      // Fetch upcoming/live sessions for carousel (no subject filter —
+      // users should see all live sessions regardless of their primary subject)
       final sessions = await _dashboardService.getLiveSessions(
         upcomingOnly: true,
-        subjectId: _primarySubject?.subjectId,
         limit: 5,
       );
 
@@ -211,6 +215,18 @@ class DashboardProvider with ChangeNotifier {
       debugPrint('✗ Error loading faculty: $_facultyError');
     } finally {
       _isLoadingFaculty = false;
+    }
+  }
+
+  /// Load banners for carousel
+  Future<void> _loadBanners() async {
+    try {
+      debugPrint('Loading banners...');
+      _banners = await _dashboardService.getBanners();
+      debugPrint('✓ Banners loaded: ${_banners.length}');
+    } catch (e) {
+      debugPrint('✗ Error loading banners: $e');
+      _banners = []; // Keep empty list on error
     }
   }
 

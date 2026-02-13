@@ -54,6 +54,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return firstName.isNotEmpty ? firstName : 'User';
   }
 
+  /// Build Order Physical Book Card
+  Widget _buildOrderBookCard(bool isDark, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: GestureDetector(
+        onTap: () => context.push('/order-physical-books'),
+        child: Container(
+          width: double.infinity,
+          height: 100,
+          clipBehavior: Clip.none,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: isDark
+                  ? [const Color(0xFF0D2A5C), const Color(0xFF1A3A5C)]
+                  : [const Color(0xFF0047CF), const Color(0xFFE4F4FF)],
+              stops: const [0.3654, 1.0],
+            ),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Text
+              const Positioned(
+                top: 13,
+                left: 12,
+                child: Opacity(
+                  opacity: 0.9,
+                  child: SizedBox(
+                    width: 139,
+                    child: Text(
+                      'Order Physical\nCopies',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        height: 20 / 18,
+                        letterSpacing: -0.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Image
+              Positioned(
+                right: -130,
+                top: -120,
+                child: Transform.flip(
+                  flipX: true,
+                  child: Image.asset(
+                    'assets/illustrations/4.png',
+                    width: 350,
+                    height: 350,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 350,
+                        height: 350,
+                        color: Colors.transparent,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -205,11 +279,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   const SizedBox(height: 25),
 
-                  // Live Class Carousel (auto-sliding with multiple sessions)
-                  if (dashboardProvider.upcomingSessions.isNotEmpty)
-                    LiveClassCarousel(sessions: dashboardProvider.upcomingSessions),
+                  // Live Class Carousel (auto-sliding with multiple sessions and banners)
+                  if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                    LiveClassCarousel(
+                      sessions: dashboardProvider.upcomingSessions,
+                      banners: dashboardProvider.banners,
+                    ),
 
-                  if (dashboardProvider.upcomingSessions.isNotEmpty) const SizedBox(height: 24),
+                  if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                    const SizedBox(height: 24),
 
                   // Subject Section (if available)
                   if (dashboardProvider.primarySubject != null)
@@ -249,6 +327,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
 
                   if (dashboardProvider.hasActivePurchase == true) const SizedBox(height: 24),
+
+                  // Order Physical Book Card
+                  _buildOrderBookCard(isDark, textColor),
+
+                  const SizedBox(height: 24),
 
                   // Faculty List
                   FacultyList(

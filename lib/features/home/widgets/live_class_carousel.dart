@@ -1,14 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pgme/core/models/live_session_model.dart';
+import 'package:pgme/core/models/banner_model.dart';
 import 'package:pgme/features/home/widgets/live_class_banner.dart';
+import 'package:pgme/features/home/widgets/promotional_banner.dart';
 
 class LiveClassCarousel extends StatefulWidget {
   final List<LiveSessionModel> sessions;
+  final List<BannerModel> banners;
 
   const LiveClassCarousel({
     super.key,
     required this.sessions,
+    this.banners = const [],
   });
 
   @override
@@ -20,13 +24,16 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
   int _currentPage = 0;
   Timer? _autoSlideTimer;
 
+  // Get total count of all items (sessions + banners)
+  int get _totalItems => widget.sessions.length + widget.banners.length;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
 
-    // Start auto-slide if there are multiple sessions
-    if (widget.sessions.length > 1) {
+    // Start auto-slide if there are multiple items
+    if (_totalItems > 1) {
       _startAutoSlide();
     }
   }
@@ -39,9 +46,9 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
   }
 
   void _startAutoSlide() {
-    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted && _pageController.hasClients) {
-        final nextPage = (_currentPage + 1) % widget.sessions.length;
+        final nextPage = (_currentPage + 1) % _totalItems;
         _pageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 400),
@@ -57,18 +64,31 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
     });
   }
 
+  Widget _buildCarouselItem(int index) {
+    // Show sessions first, then banners
+    if (index < widget.sessions.length) {
+      return LiveClassBanner(session: widget.sessions[index]);
+    } else {
+      final bannerIndex = index - widget.sessions.length;
+      return PromotionalBanner(banner: widget.banners[bannerIndex]);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.sessions.isEmpty) {
+    // If no items at all, don't show anything
+    if (_totalItems == 0) {
       return const SizedBox.shrink();
     }
 
-    if (widget.sessions.length == 1) {
-      // Single session - no carousel needed
-      return LiveClassBanner(session: widget.sessions.first);
+    // Single item - no carousel needed
+    if (_totalItems == 1) {
+      return widget.sessions.isNotEmpty
+          ? LiveClassBanner(session: widget.sessions.first)
+          : PromotionalBanner(banner: widget.banners.first);
     }
 
-    // Multiple sessions - show carousel
+    // Multiple items - show carousel
     return Column(
       children: [
         SizedBox(
@@ -76,10 +96,8 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: _onPageChanged,
-            itemCount: widget.sessions.length,
-            itemBuilder: (context, index) {
-              return LiveClassBanner(session: widget.sessions[index]);
-            },
+            itemCount: _totalItems,
+            itemBuilder: (context, index) => _buildCarouselItem(index),
           ),
         ),
         const SizedBox(height: 12),
@@ -88,7 +106,7 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            widget.sessions.length,
+            _totalItems,
             (index) => Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: _currentPage == index ? 24 : 8,

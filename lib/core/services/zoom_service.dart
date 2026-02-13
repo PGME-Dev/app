@@ -65,15 +65,22 @@ class ZoomSignatureResponse {
 class ZoomMeetingService {
   final ApiService _apiService = ApiService();
   final FlutterZoomMeetingSdk _zoomSdk = FlutterZoomMeetingSdk();
+  bool _isInitialized = false;
 
   /// Initialize the Zoom SDK (call once before first use)
   Future<bool> initZoomSDK() async {
+    if (_isInitialized) {
+      debugPrint('Zoom SDK already initialized, skipping');
+      return true;
+    }
+
     try {
       debugPrint('=== ZoomMeetingService: Initializing Zoom SDK ===');
 
       final result = await _zoomSdk.initZoom();
 
       if (result.isSuccess) {
+        _isInitialized = true;
         debugPrint('Zoom SDK initialized successfully: ${result.message}');
         return true;
       } else {
@@ -117,6 +124,15 @@ class ZoomMeetingService {
     try {
       debugPrint('=== ZoomMeetingService: Joining meeting ===');
 
+      // Ensure SDK is initialized before anything else
+      final initialized = await initZoomSDK();
+      if (!initialized) {
+        throw ZoomJoinException(
+          type: ZoomErrorType.authenticationFailed,
+          message: 'Failed to initialize Zoom SDK. Please try again.',
+        );
+      }
+
       // Get the SDK signature from backend
       final zoomSignature = await getZoomSignature(sessionId);
       debugPrint('Joining meeting: ${zoomSignature.meetingNumber}');
@@ -135,6 +151,9 @@ class ZoomMeetingService {
       }
 
       debugPrint('Zoom SDK authenticated successfully');
+
+      // Brief delay to let the SDK fully settle after authentication
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // Create meeting config
       final meetingConfig = ZoomMeetingSdkRequest(

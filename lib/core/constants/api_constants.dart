@@ -76,6 +76,9 @@ class ApiConstants {
   static const String faculty = '/faculty';
   static String facultyDetails(String facultyId) => '/faculty/$facultyId';
 
+  // Banner Endpoints
+  static const String banners = '/banners';
+
   // Library Endpoints
   static const String userLibrary = '/users/library';
   static String libraryItem(String libraryId) => '/users/library/$libraryId';

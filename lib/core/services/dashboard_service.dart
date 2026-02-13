@@ -12,6 +12,7 @@ import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/library_item_model.dart';
 import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/banner_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/zoho_payment_service.dart';
 
@@ -198,6 +199,40 @@ class DashboardService {
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Get active banners for carousel
+  Future<List<BannerModel>> getBanners() async {
+    try {
+      debugPrint('=== DashboardService: Getting banners ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.banners,
+        queryParameters: {'is_active': true},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final List<dynamic> bannersData = response.data['data']['banners'] ?? [];
+
+        final banners = bannersData
+            .map((json) => BannerModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Sort by display order
+        banners.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
+        debugPrint('✓ Banners retrieved: ${banners.length}');
+        return banners;
+      }
+
+      return [];
+    } on DioException catch (e) {
+      debugPrint('✗ Get banners error: $e');
+      return []; // Return empty list on error to not break UI
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      return [];
     }
   }
 

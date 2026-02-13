@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/api_service.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   /// Document ID — used to fetch the URL from the backend (with access control).
@@ -25,9 +29,12 @@ class PdfViewerScreen extends StatefulWidget {
 }
 
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
-  WebViewController? _controller;
+  String? _localPath;
   bool _isLoading = true;
   String? _error;
+  double _downloadProgress = 0;
+  int _currentPage = 0;
+  int _totalPages = 0;
 
   @override
   void initState() {
@@ -40,10 +47,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       String pdfUrl;
 
       if (widget.pdfUrl != null) {
-        // Direct URL provided (e.g. preview_url) — no backend call needed
         pdfUrl = widget.pdfUrl!;
       } else {
-        // Fetch URL from backend with access control
         final apiService = ApiService();
         final response = await apiService.dio.get(
           ApiConstants.documentViewUrl(widget.documentId!),
@@ -53,24 +58,42 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       if (!mounted) return;
 
-      // Load via Google Docs Viewer in WebView
-      final viewerUrl = 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(pdfUrl)}';
+      // Download PDF to temp directory
+      final dir = await getTemporaryDirectory();
+      final fileName = 'pgme_${widget.documentId ?? pdfUrl.hashCode}.pdf';
+      final filePath = '${dir.path}/$fileName';
 
-      _controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onPageFinished: (_) {
-              if (mounted) setState(() => _isLoading = false);
-            },
-            onWebResourceError: (error) {
-              debugPrint('PDF WebView error: ${error.description}');
-            },
-          ),
-        )
-        ..loadRequest(Uri.parse(viewerUrl));
+      // Check if already cached
+      final file = File(filePath);
+      if (await file.exists()) {
+        if (mounted) {
+          setState(() {
+            _localPath = filePath;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
 
-      setState(() {});
+      // Download with progress
+      await Dio().download(
+        pdfUrl,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total > 0 && mounted) {
+            setState(() {
+              _downloadProgress = received / total;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _localPath = filePath;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint('PDF load error: $e');
       if (mounted) {
@@ -85,10 +108,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        toolbarHeight: 0,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.white,
         ),
       ),
       body: _error != null
@@ -105,6 +132,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       setState(() {
                         _error = null;
                         _isLoading = true;
+                        _downloadProgress = 0;
                       });
                       _loadPdf();
                     },
@@ -113,14 +141,64 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 ],
               ),
             )
-          : Stack(
-              children: [
-                if (_controller != null)
-                  WebViewWidget(controller: _controller!),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
-              ],
-            ),
+          : _isLoading
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(value: _downloadProgress > 0 ? _downloadProgress : null),
+                      if (_downloadProgress > 0) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          '${(_downloadProgress * 100).toInt()}%',
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ],
+                  ),
+                )
+              : Stack(
+                  children: [
+                    PDFView(
+                      filePath: _localPath!,
+                      enableSwipe: true,
+                      swipeHorizontal: false,
+                      autoSpacing: true,
+                      pageFling: false,
+                      onRender: (pages) {
+                        if (mounted) setState(() => _totalPages = pages ?? 0);
+                      },
+                      onPageChanged: (page, total) {
+                        if (mounted) setState(() => _currentPage = page ?? 0);
+                      },
+                      onError: (error) {
+                        debugPrint('PDFView error: $error');
+                        if (mounted) {
+                          setState(() => _error = 'Failed to render PDF');
+                        }
+                      },
+                    ),
+                    if (_totalPages > 1)
+                      Positioned(
+                        bottom: 16,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '${_currentPage + 1} / $_totalPages',
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
     );
   }
 }

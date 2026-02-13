@@ -477,9 +477,10 @@ class AppRouter {
       ShellRoute(
         builder: (context, state, child) {
           final location = state.uri.toString();
+          final path = state.uri.path;
 
-          // Hide nav bar on profile screen
-          if (location.startsWith('/profile')) return child;
+          // Hide nav bar on profile and pdf-viewer screens
+          if (path.startsWith('/profile') || path.startsWith('/pdf-viewer')) return child;
 
           final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
