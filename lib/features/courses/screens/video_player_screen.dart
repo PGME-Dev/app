@@ -97,9 +97,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       final videoUrl = videoData['video_url'] as String?;
       if (videoUrl == null || videoUrl.isEmpty) {
-        debugPrint('VideoPlayer: no video_url in response');
+        final status = videoData['status'] as String?;
+        debugPrint('VideoPlayer: no video_url in response, status=$status');
         setState(() {
-          _error = 'Video URL not available';
+          _error = status == 'processing'
+              ? 'This video is still being processed. Please try again in a few minutes.'
+              : 'Video URL not available';
           _isLoading = false;
         });
         return;
