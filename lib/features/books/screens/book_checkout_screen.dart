@@ -7,6 +7,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class BookCheckoutScreen extends StatefulWidget {
   const BookCheckoutScreen({super.key});
@@ -149,6 +150,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -159,18 +161,23 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
     final buttonColor = isDark ? const Color(0xFF1A1A4D) : const Color(0xFF000080);
     final inputFillColor = isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 21 : 16), left: hPadding, right: hPadding),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => context.pop(),
-                  child: Icon(Icons.arrow_back, size: 24, color: textColor),
+                  child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
                 ),
                 const Spacer(),
                 Text(
@@ -178,24 +185,24 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
+                    fontSize: isTablet ? 25 : 20,
                     color: textColor,
                   ),
                 ),
                 const Spacer(),
-                const SizedBox(width: 24),
+                SizedBox(width: isTablet ? 30 : 24),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 21 : 16),
 
           // Form
           Expanded(
             child: _isLoadingUser
                 ? const Center(child: CircularProgressIndicator())
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -207,11 +214,11 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              fontSize: isTablet ? 20 : 16,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 21 : 16),
 
                           // Recipient Name
                           TextFormField(
@@ -222,11 +229,11 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               filled: true,
                               fillColor: inputFillColor,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                             ),
@@ -237,7 +244,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 21 : 16),
 
                           // Phone Number
                           TextFormField(
@@ -252,11 +259,11 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               fillColor: inputFillColor,
                               counterText: '',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                             ),
@@ -270,7 +277,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 21 : 16),
 
                           // Address
                           TextFormField(
@@ -284,11 +291,11 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               filled: true,
                               fillColor: inputFillColor,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 borderSide: BorderSide(color: borderColor),
                               ),
                             ),
@@ -303,7 +310,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                             },
                           ),
 
-                          const SizedBox(height: 24),
+                          SizedBox(height: isTablet ? 31 : 24),
 
                           // Order Summary Section
                           Text(
@@ -311,33 +318,33 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              fontSize: isTablet ? 20 : 16,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 21 : 16),
 
                           Consumer<BookProvider>(
                             builder: (context, provider, _) {
                               return Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: EdgeInsets.all(isTablet ? 20 : 16),
                                 decoration: BoxDecoration(
                                   color: cardBgColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                   border: Border.all(color: borderColor),
                                 ),
                                 child: Column(
                                   children: [
                                     // Items
                                     ...provider.cartItems.map((item) => Padding(
-                                          padding: const EdgeInsets.only(bottom: 8),
+                                          padding: EdgeInsets.only(bottom: isTablet ? 10 : 8),
                                           child: Row(
                                             children: [
                                               Expanded(
                                                 child: Text(
                                                   '${item.title} x${item.quantity}',
                                                   style: TextStyle(
-                                                    fontSize: 14,
+                                                    fontSize: isTablet ? 17 : 14,
                                                     color: textColor,
                                                   ),
                                                 ),
@@ -345,7 +352,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                               Text(
                                                 '\u{20B9}${item.totalPrice}',
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: isTablet ? 17 : 14,
                                                   color: textColor,
                                                 ),
                                               ),
@@ -353,7 +360,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                           ),
                                         )),
                                     Divider(color: borderColor),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: isTablet ? 10 : 8),
                                     // Subtotal
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -361,20 +368,20 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                         Text(
                                           'Subtotal',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: isTablet ? 17 : 14,
                                             color: secondaryTextColor,
                                           ),
                                         ),
                                         Text(
                                           '\u{20B9}${provider.cartSubtotal}',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: isTablet ? 17 : 14,
                                             color: textColor,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: isTablet ? 10 : 8),
                                     // Shipping
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -382,22 +389,22 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                         Text(
                                           'Shipping',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: isTablet ? 17 : 14,
                                             color: secondaryTextColor,
                                           ),
                                         ),
                                         Text(
                                           '\u{20B9}${provider.shippingCost}',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: isTablet ? 17 : 14,
                                             color: textColor,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: isTablet ? 10 : 8),
                                     Divider(color: borderColor),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: isTablet ? 10 : 8),
                                     // Total
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -405,7 +412,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                         Text(
                                           'Total',
                                           style: TextStyle(
-                                            fontSize: 18,
+                                            fontSize: isTablet ? 22 : 18,
                                             fontWeight: FontWeight.w600,
                                             color: textColor,
                                           ),
@@ -413,7 +420,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                                         Text(
                                           '\u{20B9}${provider.cartTotal}',
                                           style: TextStyle(
-                                            fontSize: 18,
+                                            fontSize: isTablet ? 22 : 18,
                                             fontWeight: FontWeight.w600,
                                             color: textColor,
                                           ),
@@ -425,7 +432,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 100), // Space for button
+                          SizedBox(height: isTablet ? 130 : 100), // Space for button
                         ],
                       ),
                     ),
@@ -434,7 +441,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
 
           // Place Order Button
           Container(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 16),
+            padding: EdgeInsets.fromLTRB(hPadding, isTablet ? 20 : 16, hPadding, bottomPadding + (isTablet ? 21 : 16)),
             decoration: BoxDecoration(
               color: cardBgColor,
               border: Border(
@@ -443,7 +450,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
             ),
             child: SizedBox(
               width: double.infinity,
-              height: 50,
+              height: isTablet ? 60 : 50,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _processOrder,
                 style: ElevatedButton.styleFrom(
@@ -451,30 +458,32 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: buttonColor.withValues(alpha: 0.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                   ),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
+                    ? SizedBox(
+                        height: isTablet ? 30 : 24,
+                        width: isTablet ? 30 : 24,
+                        child: const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Place Order',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                         ),
                       ),
               ),
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
@@ -75,6 +76,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -89,7 +91,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: Icon(Icons.arrow_back, color: textColor, size: isTablet ? 28 : 24),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -97,13 +99,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: isTablet ? 20 : 16,
             color: textColor,
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_horiz, color: textColor),
+            icon: Icon(Icons.more_horiz, color: textColor, size: isTablet ? 28 : 24),
             onPressed: () {},
           ),
         ],
@@ -115,13 +117,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
+                      Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load course',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                           color: textColor,
                         ),
                       ),
@@ -135,103 +137,110 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   ),
                 )
               : SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Video Banner
-                      _buildVideoBanner(iconColor),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Video Banner
+                          _buildVideoBanner(iconColor, isTablet),
 
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Video Title - Show first video or series title
-                            Text(
-                              _getFirstVideoTitle() ?? _series?.title ?? 'Video Title',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Description
-                            Text(
-                              _series?.description ?? 'No description available',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                height: 1.5,
-                                color: secondaryTextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Notes section
-                            if (_documents.isNotEmpty) ...[
-                              Text(
-                                'Notes for this chapter',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              ..._documents.map((doc) => _buildDocumentCard(
-                                    doc,
-                                    cardColor,
-                                    textColor,
-                                    secondaryTextColor,
-                                    iconColor,
-                                  )),
-                              const SizedBox(height: 24),
-                            ],
-
-                            // Modules section
-                            ..._modules.map((module) => _buildModuleCard(
-                                  module,
-                                  cardColor,
-                                  textColor,
-                                  secondaryTextColor,
-                                  iconColor,
-                                )),
-
-                            // Enroll button
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  context.push('/purchase?packageType=Theory');
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: iconColor,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Enroll Now',
+                          Padding(
+                            padding: EdgeInsets.all(isTablet ? 24 : 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Video Title - Show first video or series title
+                                Text(
+                                  _getFirstVideoTitle() ?? _series?.title ?? 'Video Title',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: Colors.white,
+                                    fontSize: isTablet ? 20 : 16,
+                                    color: textColor,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+
+                                // Description
+                                Text(
+                                  _series?.description ?? 'No description available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isTablet ? 17 : 14,
+                                    height: 1.5,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Notes section
+                                if (_documents.isNotEmpty) ...[
+                                  Text(
+                                    'Notes for this chapter',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: isTablet ? 20 : 16,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ..._documents.map((doc) => _buildDocumentCard(
+                                        doc,
+                                        cardColor,
+                                        textColor,
+                                        secondaryTextColor,
+                                        iconColor,
+                                        isTablet,
+                                      )),
+                                  const SizedBox(height: 24),
+                                ],
+
+                                // Modules section
+                                ..._modules.map((module) => _buildModuleCard(
+                                      module,
+                                      cardColor,
+                                      textColor,
+                                      secondaryTextColor,
+                                      iconColor,
+                                      isTablet,
+                                    )),
+
+                                // Enroll button
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      context.push('/purchase?packageType=Theory');
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: iconColor,
+                                      padding: EdgeInsets.symmetric(vertical: isTablet ? 20 : 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(isTablet ? 18 : 12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Enroll Now',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 20 : 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                             ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
     );
@@ -259,12 +268,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     return null;
   }
 
-  Widget _buildVideoBanner(Color iconColor) {
+  Widget _buildVideoBanner(Color iconColor, bool isTablet) {
     final firstVideo = _getFirstVideo();
 
     return Container(
       width: double.infinity,
-      height: 200,
+      height: isTablet ? 300 : 200,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -278,10 +287,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       child: Stack(
         children: [
           // Placeholder for video thumbnail
-          const Center(
+          Center(
             child: Icon(
               Icons.play_circle_filled,
-              size: 64,
+              size: isTablet ? 80 : 64,
               color: Colors.white,
             ),
           ),
@@ -295,10 +304,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               children: [
                 Text(
                   firstVideo?.title ?? _series?.title ?? 'Video Title',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: isTablet ? 24 : 18,
                     color: Colors.white,
                   ),
                   maxLines: 2,
@@ -309,7 +318,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   firstVideo?.facultyName ?? 'Faculty',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: isTablet ? 17 : 14,
                     color: Colors.white.withOpacity(0.9),
                   ),
                 ),
@@ -327,25 +336,27 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     Color textColor,
     Color secondaryTextColor,
     Color iconColor,
+    bool isTablet,
   ) {
+    final containerSize = isTablet ? 60.0 : 48.0;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
       ),
       child: Row(
         children: [
           // PDF icon placeholder
           Container(
-            width: 48,
-            height: 48,
+            width: containerSize,
+            height: containerSize,
             decoration: BoxDecoration(
               color: iconColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.description, color: iconColor),
+            child: Icon(Icons.description, color: iconColor, size: isTablet ? 30 : 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -357,7 +368,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,
-                    fontSize: 14,
+                    fontSize: isTablet ? 17 : 14,
                     color: textColor,
                   ),
                 ),
@@ -366,7 +377,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   doc.description ?? '',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: isTablet ? 15 : 12,
                     color: secondaryTextColor,
                   ),
                   maxLines: 2,
@@ -386,6 +397,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     Color textColor,
     Color secondaryTextColor,
     Color iconColor,
+    bool isTablet,
   ) {
     final isExpanded = _expandedModules.contains(module.moduleId);
 
@@ -393,7 +405,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
       ),
       child: Column(
         children: [
@@ -408,19 +420,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 }
               });
             },
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 20 : 16),
               child: Row(
                 children: [
                   // Lock icon
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(isTablet ? 12 : 8),
                     decoration: BoxDecoration(
                       color: iconColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                     ),
-                    child: Icon(Icons.lock, color: iconColor, size: 20),
+                    child: Icon(Icons.lock, color: iconColor, size: isTablet ? 26 : 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -432,7 +444,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: textColor,
                           ),
                         ),
@@ -441,7 +453,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                           '${module.lessonCount} lessons  •  ${module.completedLessons}/${module.lessonCount} complete',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 12,
+                            fontSize: isTablet ? 15 : 12,
                             color: secondaryTextColor,
                           ),
                         ),
@@ -465,6 +477,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   textColor,
                   secondaryTextColor,
                   iconColor,
+                  isTablet,
                 )),
           ],
         ],
@@ -477,7 +490,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     Color textColor,
     Color secondaryTextColor,
     Color iconColor,
+    bool isTablet,
   ) {
+    final completionIconSize = isTablet ? 40.0 : 32.0;
+    final innerIconSize = isTablet ? 22.0 : 18.0;
     return InkWell(
       onTap: video.isLocked
           ? null
@@ -486,13 +502,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               context.push('/video/${video.videoId}');
             },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16, vertical: 12),
         child: Row(
           children: [
             // Completion/Lock status icon
             Container(
-              width: 32,
-              height: 32,
+              width: completionIconSize,
+              height: completionIconSize,
               decoration: BoxDecoration(
                 color: video.isCompleted
                     ? Colors.green.withOpacity(0.1)
@@ -512,7 +528,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     : video.isLocked
                         ? secondaryTextColor
                         : iconColor,
-                size: 18,
+                size: innerIconSize,
               ),
             ),
             const SizedBox(width: 12),
@@ -525,32 +541,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 14,
+                      fontSize: isTablet ? 17 : 14,
                       color: video.isLocked ? secondaryTextColor : textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 12, color: secondaryTextColor),
+                      Icon(Icons.access_time, size: isTablet ? 15 : 12, color: secondaryTextColor),
                       const SizedBox(width: 4),
                       Text(
                         video.formattedDuration,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.person, size: 12, color: secondaryTextColor),
+                      Icon(Icons.person, size: isTablet ? 15 : 12, color: secondaryTextColor),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           video.facultyName,
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 12,
+                            fontSize: isTablet ? 15 : 12,
                             color: secondaryTextColor,
                           ),
                           overflow: TextOverflow.ellipsis,

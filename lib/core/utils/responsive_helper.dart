@@ -7,7 +7,7 @@ class ResponsiveHelper {
   static const double tabletBreakpoint = 600.0;
 
   /// Max content width on tablets to prevent overly wide layouts
-  static const double maxContentWidth = 600.0;
+  static const double maxContentWidth = 780.0;
 
   /// Check if the device is a tablet based on shortest side
   static bool isTablet(BuildContext context) {
@@ -93,46 +93,46 @@ class ResponsiveHelper {
     if (!isTablet(context)) {
       return width > 380 ? 361.0 : width * 0.95;
     }
-    // Tablet: wider navbar but still centered, max 500px
-    return width > 520 ? 500.0 : width * 0.85;
+    // Tablet: full width nav bar with small side margins
+    return width - 48;
   }
 
   /// Get carousel height responsive to device
   static double carouselHeight(BuildContext context) {
-    return isTablet(context) ? 200.0 : 140.0;
+    return isTablet(context) ? 260.0 : 140.0;
   }
 
   /// Get responsive card height for ForYou section
   static double forYouCardHeight(BuildContext context) {
-    return isTablet(context) ? 340.0 : 281.0;
+    return isTablet(context) ? 420.0 : 281.0;
   }
 
   /// Faculty card dimensions
   static double facultyCardWidth(BuildContext context) {
-    return isTablet(context) ? 170.0 : 140.0;
+    return isTablet(context) ? 210.0 : 140.0;
   }
 
   static double facultyCardHeight(BuildContext context) {
-    return isTablet(context) ? 185.0 : 148.0;
+    return isTablet(context) ? 240.0 : 148.0;
   }
 
   /// Faculty photo size
   static double facultyPhotoSize(BuildContext context) {
-    return isTablet(context) ? 100.0 : 88.0;
+    return isTablet(context) ? 130.0 : 88.0;
   }
 
   /// Profile avatar size on dashboard header
   static double profileAvatarSize(BuildContext context) {
-    return isTablet(context) ? 52.0 : 44.0;
+    return isTablet(context) ? 68.0 : 44.0;
   }
 
   /// Action button size on dashboard header
   static double actionButtonSize(BuildContext context) {
-    return isTablet(context) ? 44.0 : 38.0;
+    return isTablet(context) ? 56.0 : 38.0;
   }
 
   /// Order book card height
   static double orderBookCardHeight(BuildContext context) {
-    return isTablet(context) ? 120.0 : 100.0;
+    return isTablet(context) ? 160.0 : 100.0;
   }
 }

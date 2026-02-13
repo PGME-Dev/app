@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
@@ -53,6 +54,8 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 23.0;
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -72,184 +75,191 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Section
-                  Padding(
-                    padding: EdgeInsets.only(top: topPadding + 16, left: 23, right: 23),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'My Courses',
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Section
+                      Padding(
+                        padding: EdgeInsets.only(top: topPadding + 16, left: hPadding, right: hPadding),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'My Courses',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 32 : 24,
+                                letterSpacing: -0.5,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Continue Watching Section
+                      if (provider.continueWatchingList.isNotEmpty) ...[
+                        Padding(
+                          padding: EdgeInsets.only(left: hPadding),
+                          child: Text(
+                            'Continue Watching',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 24 : 18,
+                              letterSpacing: -0.5,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: isTablet ? 240 : 180,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: EdgeInsets.symmetric(horizontal: hPadding),
+                            itemCount: provider.continueWatchingList.length,
+                            itemBuilder: (context, index) {
+                              final progress = provider.continueWatchingList[index];
+                              return _buildContinueWatchingCard(
+                                progress,
+                                textColor,
+                                secondaryTextColor,
+                                cardColor,
+                                borderColor,
+                                isTablet,
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+
+                      // Enrolled Courses Section
+                      Padding(
+                        padding: EdgeInsets.only(left: hPadding, right: hPadding),
+                        child: Text(
+                          'Enrolled Courses',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
-                            fontSize: 24,
+                            fontSize: isTablet ? 24 : 18,
                             letterSpacing: -0.5,
                             color: textColor,
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Loading State
+                      if (provider.isLoadingPurchases) ...[
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                      ]
+                      // Error State
+                      else if (provider.purchasesError != null) ...[
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: isTablet ? 64 : 48,
+                                  color: secondaryTextColor,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  provider.purchasesError!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isTablet ? 17 : 14,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: provider.retryPurchases,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ]
+                      // Empty State
+                      else if (provider.purchases.isEmpty) ...[
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.school_outlined,
+                                  size: isTablet ? 80 : 64,
+                                  color: secondaryTextColor,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No enrolled courses yet',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isTablet ? 22 : 18,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Explore packages to get started.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isTablet ? 17 : 14,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ]
+                      // Purchases List
+                      else ...[
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: hPadding),
+                          itemCount: provider.purchases.length,
+                          itemBuilder: (context, index) {
+                            final purchase = provider.purchases[index];
+                            return _buildPurchaseCard(
+                              purchase,
+                              textColor,
+                              secondaryTextColor,
+                              cardColor,
+                              borderColor,
+                              isTablet,
+                            );
+                          },
+                        ),
                       ],
-                    ),
+
+                      SizedBox(height: isTablet ? 120 : 32),
+                    ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Continue Watching Section
-                  if (provider.continueWatchingList.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(left: 23),
-                      child: Text(
-                        'Continue Watching',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          letterSpacing: -0.5,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 180,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 23),
-                        itemCount: provider.continueWatchingList.length,
-                        itemBuilder: (context, index) {
-                          final progress = provider.continueWatchingList[index];
-                          return _buildContinueWatchingCard(
-                            progress,
-                            textColor,
-                            secondaryTextColor,
-                            cardColor,
-                            borderColor,
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-
-                  // Enrolled Courses Section
-                  Padding(
-                    padding: const EdgeInsets.only(left: 23, right: 23),
-                    child: Text(
-                      'Enrolled Courses',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        letterSpacing: -0.5,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Loading State
-                  if (provider.isLoadingPurchases) ...[
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  ]
-                  // Error State
-                  else if (provider.purchasesError != null) ...[
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: secondaryTextColor,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              provider.purchasesError!,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: secondaryTextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: provider.retryPurchases,
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ]
-                  // Empty State
-                  else if (provider.purchases.isEmpty) ...[
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.school_outlined,
-                              size: 64,
-                              color: secondaryTextColor,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No enrolled courses yet',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Explore packages to get started.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: secondaryTextColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ]
-                  // Purchases List
-                  else ...[
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 23),
-                      itemCount: provider.purchases.length,
-                      itemBuilder: (context, index) {
-                        final purchase = provider.purchases[index];
-                        return _buildPurchaseCard(
-                          purchase,
-                          textColor,
-                          secondaryTextColor,
-                          cardColor,
-                          borderColor,
-                        );
-                      },
-                    ),
-                  ],
-
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
           );
@@ -264,13 +274,15 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     Color secondaryTextColor,
     Color cardColor,
     Color borderColor,
+    bool isTablet,
   ) {
+    final thumbnailHeight = isTablet ? 140.0 : 100.0;
     return GestureDetector(
       onTap: () {
         context.push('/video/${progress.lecture.lectureId}');
       },
       child: Container(
-        width: 280,
+        width: isTablet ? 380 : 280,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           color: cardColor,
@@ -296,16 +308,16 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                       ? Image.network(
                           progress.lecture.thumbnailUrl!,
                           width: double.infinity,
-                          height: 100,
+                          height: thumbnailHeight,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
-                            height: 100,
+                            height: thumbnailHeight,
                             color: borderColor,
                             child: Icon(Icons.play_circle_outline, size: 48, color: secondaryTextColor),
                           ),
                         )
                       : Container(
-                          height: 100,
+                          height: thumbnailHeight,
                           color: borderColor,
                           child: Icon(Icons.play_circle_outline, size: 48, color: secondaryTextColor),
                         ),
@@ -319,14 +331,14 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                     value: progress.completionPercentage / 100,
                     backgroundColor: Colors.grey.withOpacity(0.3),
                     valueColor: const AlwaysStoppedAnimation<Color>(AppColors.secondaryBlue),
-                    minHeight: 4,
+                    minHeight: isTablet ? 6 : 4,
                   ),
                 ),
               ],
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(isTablet ? 16 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -337,7 +349,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: isTablet ? 18 : 14,
                       color: textColor,
                     ),
                   ),
@@ -349,15 +361,15 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                         '${progress.completionPercentage}% complete',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                       ),
                       Text(
                         progress.formattedTimeRemaining,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           fontWeight: FontWeight.w500,
                           color: AppColors.secondaryBlue,
                         ),
@@ -379,7 +391,9 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     Color secondaryTextColor,
     Color cardColor,
     Color borderColor,
+    bool isTablet,
   ) {
+    final thumbnailHeight = isTablet ? 200.0 : 150.0;
     return GestureDetector(
       onTap: () {
         final packageType = purchase.package.type?.toLowerCase() ?? '';
@@ -393,7 +407,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 18 : 12),
           border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
@@ -408,28 +422,28 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
           children: [
             // Thumbnail
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 18 : 12)),
               child: purchase.package.thumbnailUrl != null
                   ? Image.network(
                       purchase.package.thumbnailUrl!,
                       width: double.infinity,
-                      height: 150,
+                      height: thumbnailHeight,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        height: 150,
+                        height: thumbnailHeight,
                         color: borderColor,
-                        child: Icon(Icons.book_outlined, size: 64, color: secondaryTextColor),
+                        child: Icon(Icons.book_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
                       ),
                     )
                   : Container(
-                      height: 150,
+                      height: thumbnailHeight,
                       color: borderColor,
-                      child: Icon(Icons.book_outlined, size: 64, color: secondaryTextColor),
+                      child: Icon(Icons.book_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
                     ),
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 22 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -443,7 +457,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                            fontSize: isTablet ? 20 : 16,
                             color: textColor,
                           ),
                         ),
@@ -452,16 +466,16 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                       // Type badge
                       if (purchase.package.type != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8, vertical: isTablet ? 5 : 4),
                           decoration: BoxDecoration(
                             color: AppColors.secondaryBlue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             purchase.package.type!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 10,
+                              fontSize: isTablet ? 13 : 10,
                               fontWeight: FontWeight.w600,
                               color: AppColors.secondaryBlue,
                             ),
@@ -482,13 +496,13 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w700,
-                          fontSize: 18,
+                          fontSize: isTablet ? 22 : 18,
                           color: textColor,
                         ),
                       ),
                       // Status and expiry badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 8 : 6),
                         decoration: BoxDecoration(
                           color: _getExpiryBadgeColor(purchase.daysRemaining).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -503,7 +517,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                               : 'Expired',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 12,
+                            fontSize: isTablet ? 15 : 12,
                             fontWeight: FontWeight.w600,
                             color: _getExpiryBadgeColor(purchase.daysRemaining),
                           ),
@@ -516,7 +530,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                     'Expires on ${_formatDate(purchase.expiresAt)}',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       color: secondaryTextColor,
                     ),
                   ),

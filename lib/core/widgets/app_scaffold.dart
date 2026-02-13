@@ -32,11 +32,11 @@ class AppScaffold extends StatelessWidget {
     final horizontalPadding = (screenWidth - navBarWidth) / 2;
 
     // Tablet-responsive sizes
-    final navBarHeight = isTablet ? 72.0 : 65.0;
-    final navItemWidth = isTablet ? 80.0 : 64.0;
-    final navItemHeight = isTablet ? 64.0 : 56.0;
-    final navIconSize = isTablet ? 28.0 : 24.0;
-    final navLabelSize = isTablet ? 12.0 : 10.0;
+    final navBarHeight = isTablet ? 82.0 : 65.0;
+    final navItemWidth = isTablet ? 96.0 : 64.0;
+    final navItemHeight = isTablet ? 72.0 : 56.0;
+    final navIconSize = isTablet ? 32.0 : 24.0;
+    final navLabelSize = isTablet ? 14.0 : 10.0;
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -58,7 +58,7 @@ class AppScaffold extends StatelessWidget {
               height: navBarHeight,
               decoration: BoxDecoration(
                 color: navBarColor,
-                borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+                borderRadius: BorderRadius.circular(isTablet ? 28 : 16),
                 boxShadow: isDark
                     ? [
                         BoxShadow(

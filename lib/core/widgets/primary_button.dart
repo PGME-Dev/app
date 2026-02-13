@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -21,9 +22,11 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      height: height ?? 56,
+      height: height ?? (isTablet ? 64 : 56),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -31,18 +34,21 @@ class PrimaryButton extends StatelessWidget {
           foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.buttonDisabled,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 40 : 32,
+            vertical: isTablet ? 20 : 16,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(isTablet ? 34 : 30),
           ),
         ),
         child: isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
+            ? SizedBox(
+                height: isTablet ? 28 : 24,
+                width: isTablet ? 28 : 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: isTablet ? 3.0 : 2.5,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : Row(
@@ -50,13 +56,13 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: isTablet ? 24 : 20),
+                    SizedBox(width: isTablet ? 10 : 8),
                   ],
                   Text(
                     text,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: isTablet ? 18 : 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
@@ -84,17 +90,22 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      height: 56,
+      height: isTablet ? 64 : 56,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primaryBlue,
           side: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 40 : 32,
+            vertical: isTablet ? 20 : 16,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(isTablet ? 34 : 30),
           ),
         ),
         child: Row(
@@ -102,13 +113,13 @@ class SecondaryButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, size: isTablet ? 24 : 20),
+              SizedBox(width: isTablet ? 10 : 8),
             ],
             Text(
               text,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.primaryBlue,
               ),

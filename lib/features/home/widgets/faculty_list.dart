@@ -50,13 +50,27 @@ class FacultyList extends StatelessWidget {
     final cardBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFFFFFFF);
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    final sectionTitleSize = isTablet ? 24.0 : 20.0;
-    final browseAllSize = isTablet ? 16.0 : 14.0;
-    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
-    final cardWidth = ResponsiveHelper.facultyCardWidth(context);
-    final cardHeight = ResponsiveHelper.facultyCardHeight(context);
+    final sectionTitleSize = isTablet ? 30.0 : 20.0;
+    final browseAllSize = isTablet ? 18.0 : 14.0;
+    final hPadding = isTablet ? 24.0 : 16.0;
+
+    // On tablet: calculate card width to fit exactly 3 cards on screen
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double cardWidth;
+    final double cardHeight;
+    final double photoSize;
+    if (isTablet) {
+      final availableWidth = screenWidth - (hPadding * 2); // subtract list padding
+      final cardGap = 20.0;
+      cardWidth = (availableWidth - (cardGap * 2)) / 3; // 3 cards, 2 gaps
+      cardHeight = cardWidth * 1.15; // proportional cards
+      photoSize = cardWidth * 0.65; // big photo relative to card
+    } else {
+      cardWidth = ResponsiveHelper.facultyCardWidth(context);
+      cardHeight = ResponsiveHelper.facultyCardHeight(context);
+      photoSize = ResponsiveHelper.facultyPhotoSize(context);
+    }
     final listHeight = cardHeight + 12;
-    final photoSize = ResponsiveHelper.facultyPhotoSize(context);
 
     return Column(
       children: [
@@ -94,7 +108,7 @@ class FacultyList extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 24 : 16),
 
         // Faculty Cards
         SizedBox(
@@ -146,16 +160,16 @@ class FacultyList extends StatelessWidget {
     double photoSize,
     bool isTablet,
   ) {
-    final nameSize = isTablet ? 14.0 : 12.0;
-    final photoHeight = photoSize * 0.92; // Slight oval
+    final nameSize = isTablet ? 18.0 : 12.0;
+    final photoHeight = photoSize; // Perfect circle
 
     return Container(
       width: cardWidth,
       height: cardHeight,
-      margin: EdgeInsets.only(right: isTablet ? 16 : 12),
+      margin: EdgeInsets.only(right: isTablet ? 20 : 12),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(isTablet ? 18 : 8),
         border: Border.all(
           color: isDark ? AppColors.darkDivider : const Color(0xFF000080),
           width: 1,
@@ -163,11 +177,11 @@ class FacultyList extends StatelessWidget {
       ),
       child: Column(
         children: [
-          SizedBox(height: isTablet ? 16 : 14),
+          SizedBox(height: isTablet ? 20 : 14),
 
           // Faculty Photo
           ClipRRect(
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(photoSize / 2),
             child: member.photoUrl != null && member.photoUrl!.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: member.photoUrl!,
@@ -194,7 +208,7 @@ class FacultyList extends StatelessWidget {
                       ),
                       child: Icon(
                         Icons.person,
-                        size: isTablet ? 48 : 40,
+                        size: isTablet ? 56 : 40,
                         color: isDark
                             ? AppColors.darkTextTertiary
                             : const Color(0xFF999999),
@@ -217,7 +231,7 @@ class FacultyList extends StatelessWidget {
                         ),
                         child: Icon(
                           Icons.person,
-                          size: isTablet ? 48 : 40,
+                          size: isTablet ? 56 : 40,
                           color: isDark
                               ? AppColors.darkTextTertiary
                               : const Color(0xFF999999),
@@ -227,11 +241,16 @@ class FacultyList extends StatelessWidget {
                   ),
           ),
 
-          SizedBox(height: isTablet ? 10 : 8),
+          SizedBox(height: isTablet ? 20 : 8),
 
           // Name
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 14 : 8,
+              0,
+              isTablet ? 14 : 8,
+              isTablet ? 12 : 0,
+            ),
             child: Text(
               member.name,
               style: TextStyle(
@@ -241,7 +260,7 @@ class FacultyList extends StatelessWidget {
                 color: textColor,
               ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: isTablet ? 2 : 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -267,12 +286,12 @@ class _FacultyDetailSheet extends StatelessWidget {
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    final titleSize = isTablet ? 20.0 : 18.0;
-    final nameSize = isTablet ? 26.0 : 22.0;
-    final specSize = isTablet ? 16.0 : 14.0;
-    final photoSize = isTablet ? 140.0 : 120.0;
-    final aboutTitleSize = isTablet ? 18.0 : 16.0;
-    final aboutBodySize = isTablet ? 16.0 : 14.0;
+    final titleSize = isTablet ? 24.0 : 18.0;
+    final nameSize = isTablet ? 32.0 : 22.0;
+    final specSize = isTablet ? 20.0 : 14.0;
+    final photoSize = isTablet ? 170.0 : 120.0;
+    final aboutTitleSize = isTablet ? 22.0 : 16.0;
+    final aboutBodySize = isTablet ? 18.0 : 14.0;
 
     return Center(
       child: ConstrainedBox(
@@ -285,16 +304,16 @@ class _FacultyDetailSheet extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 32 : 24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Handle bar
               Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
+                margin: EdgeInsets.only(top: isTablet ? 16 : 12),
+                width: isTablet ? 50 : 40,
+                height: isTablet ? 5 : 4,
                 decoration: BoxDecoration(
                   color: secondaryTextColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
@@ -303,7 +322,7 @@ class _FacultyDetailSheet extends StatelessWidget {
 
               // Header with close button
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+                padding: EdgeInsets.fromLTRB(isTablet ? 32 : 20, isTablet ? 20 : 16, isTablet ? 24 : 12, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -321,7 +340,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                       icon: Icon(
                         Icons.close,
                         color: secondaryTextColor,
-                        size: isTablet ? 28 : 24,
+                        size: isTablet ? 30 : 24,
                       ),
                     ),
                   ],
@@ -337,7 +356,7 @@ class _FacultyDetailSheet extends StatelessWidget {
               // Content
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  padding: EdgeInsets.fromLTRB(isTablet ? 32 : 20, isTablet ? 12 : 8, isTablet ? 32 : 20, isTablet ? 32 : 20),
                   child: Column(
                     children: [
                       // Faculty Photo
@@ -385,7 +404,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: isTablet ? 24 : 16),
 
                       // Name
                       Text(
@@ -399,7 +418,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
 
-                      const SizedBox(height: 4),
+                      SizedBox(height: isTablet ? 8 : 4),
 
                       // Specialization
                       Text(
@@ -413,7 +432,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: isTablet ? 28 : 20),
 
                       // Info Cards Row
                       Row(
@@ -432,7 +451,7 @@ class _FacultyDetailSheet extends StatelessWidget {
                               ),
                             ),
                           if (faculty.experienceYears != null && faculty.qualifications != null)
-                            const SizedBox(width: 12),
+                            SizedBox(width: isTablet ? 18 : 12),
                           // Qualifications
                           if (faculty.qualifications != null)
                             Expanded(
@@ -451,7 +470,7 @@ class _FacultyDetailSheet extends StatelessWidget {
 
                       // Bio Section
                       if (faculty.bio != null && faculty.bio!.isNotEmpty) ...[
-                        const SizedBox(height: 24),
+                        SizedBox(height: isTablet ? 32 : 24),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -464,13 +483,13 @@ class _FacultyDetailSheet extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: isTablet ? 12 : 8),
                         Container(
                           width: double.infinity,
-                          padding: EdgeInsets.all(isTablet ? 20 : 16),
+                          padding: EdgeInsets.all(isTablet ? 24 : 16),
                           decoration: BoxDecoration(
                             color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(isTablet ? 18 : 12),
                           ),
                           child: Text(
                             faculty.bio!,
@@ -508,35 +527,35 @@ class _FacultyDetailSheet extends StatelessWidget {
     required bool isTablet,
   }) {
     return Container(
-      padding: EdgeInsets.all(isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 22 : 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 18 : 12),
       ),
       child: Column(
         children: [
           Icon(
             icon,
             color: AppColors.primaryBlue,
-            size: isTablet ? 28 : 24,
+            size: isTablet ? 34 : 24,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 12 : 8),
           Text(
             label,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: isTablet ? 14 : 12,
+              fontSize: isTablet ? 16 : 12,
               color: secondaryTextColor,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: isTablet ? 6 : 4),
           Text(
             value,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: isTablet ? 16 : 14,
+              fontSize: isTablet ? 18 : 14,
               color: textColor,
             ),
             textAlign: TextAlign.center,

@@ -9,6 +9,7 @@ import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class GuestDashboardScreen extends StatefulWidget {
   const GuestDashboardScreen({super.key});
@@ -79,10 +80,19 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final isLandscape = ResponsiveHelper.isLandscape(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+
+    // Responsive sizes
+    final avatarSize = ResponsiveHelper.profileAvatarSize(context);
+    final actionBtnSize = ResponsiveHelper.actionButtonSize(context);
+    final greetingFontSize = isTablet ? 30.0 : 20.0;
+    final subtitleFontSize = isTablet ? 18.0 : 13.0;
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 20.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -94,20 +104,30 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             onRefresh: provider.refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isTablet && isLandscape ? 900 : double.infinity,
+                  ),
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header Section
                   Padding(
-                    padding: EdgeInsets.only(top: topPadding + 20, left: 20, right: 20),
-                    child: Row(
+                    padding: EdgeInsets.only(top: topPadding + 20, left: hPadding, right: hPadding),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                        ),
+                        child: Row(
                       children: [
                         // Profile Avatar
                         GestureDetector(
                           onTap: () => context.push('/profile'),
                           child: Container(
-                            width: 44,
-                            height: 44,
+                            width: avatarSize,
+                            height: avatarSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
@@ -123,23 +143,23 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Icon(
                                       Icons.person_rounded,
-                                      size: 24,
+                                      size: isTablet ? 40 : 24,
                                       color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                     ),
                                     errorWidget: (context, url, error) => Icon(
                                       Icons.person_rounded,
-                                      size: 24,
+                                      size: isTablet ? 40 : 24,
                                       color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                     ),
                                   )
                                 : Icon(
                                     Icons.person_rounded,
-                                    size: 24,
+                                    size: isTablet ? 40 : 24,
                                     color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                   ),
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        SizedBox(width: isTablet ? 22 : 14),
                         // Greeting
                         Expanded(
                           child: Column(
@@ -150,7 +170,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 20,
+                                  fontSize: greetingFontSize,
                                   height: 1.2,
                                   letterSpacing: -0.3,
                                   color: textColor,
@@ -163,7 +183,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w400,
-                                  fontSize: 13,
+                                  fontSize: subtitleFontSize,
                                   height: 1.3,
                                   color: isDark ? AppColors.darkTextTertiary : const Color(0xFF999999),
                                 ),
@@ -177,8 +197,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         GestureDetector(
                           onTap: _openWhatsApp,
                           child: Container(
-                            width: 38,
-                            height: 38,
+                            width: actionBtnSize,
+                            height: actionBtnSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
@@ -186,14 +206,14 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             child: Center(
                               child: Image.asset(
                                 'assets/icons/whatsapp_logo.png',
-                                width: 20,
-                                height: 20,
+                                width: isTablet ? 32 : 20,
+                                height: isTablet ? 32 : 20,
                                 color: const Color(0xFF25D366),
                                 errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
+                                  return Icon(
                                     Icons.chat_rounded,
-                                    size: 20,
-                                    color: Color(0xFF25D366),
+                                    size: isTablet ? 32 : 20,
+                                    color: const Color(0xFF25D366),
                                   );
                                 },
                               ),
@@ -204,8 +224,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         GestureDetector(
                           onTap: () => context.push('/notifications'),
                           child: Container(
-                            width: 38,
-                            height: 38,
+                            width: actionBtnSize,
+                            height: actionBtnSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
@@ -213,7 +233,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             child: Center(
                               child: Icon(
                                 Icons.notifications_outlined,
-                                size: 22,
+                                size: isTablet ? 34 : 22,
                                 color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
                               ),
                             ),
@@ -221,82 +241,94 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         ),
                       ],
                     ),
+                      ),
+                    ),
                   ),
 
-                  const SizedBox(height: 25),
+                  SizedBox(height: isTablet ? 40 : 25),
 
                   // Live Class Carousel (auto-sliding with multiple sessions)
                   if (provider.upcomingSessions.isNotEmpty)
                     LiveClassCarousel(sessions: provider.upcomingSessions),
 
-                  if (provider.upcomingSessions.isNotEmpty) const SizedBox(height: 24),
+                  if (provider.upcomingSessions.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Subject Section (if available)
                   if (provider.primarySubject != null)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 16.0),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                          ),
+                          child: Column(
                             children: [
-                              Text(
-                                'Subject',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                  color: textColor,
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Subject',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: isTablet ? 28.0 : 20.0,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _showSubjectPicker,
+                                    child: Text(
+                                      'Browse All',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: isTablet ? 18.0 : 14.0,
+                                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              GestureDetector(
-                                onTap: _showSubjectPicker,
-                                child: Text(
-                                  'Browse All',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 14,
-                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              SizedBox(height: isTablet ? 18.0 : 12.0),
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 28.0 : 16.0,
+                                  vertical: isTablet ? 18.0 : 12.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.darkCardBackground
+                                      : const Color(0xFFE3F2FD),
+                                  borderRadius: BorderRadius.circular(isTablet ? 28.0 : 20.0),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    provider.primarySubject!.subjectName,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: isTablet ? 22.0 : 16.0,
+                                      color: AppColors.primaryBlue,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppColors.darkCardBackground
-                                  : const Color(0xFFE3F2FD),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Text(
-                                provider.primarySubject!.subjectName,
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
 
-                  if (provider.primarySubject != null) const SizedBox(height: 24),
+                  if (provider.primarySubject != null) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // What We Offer Section (guest users - no purchase)
                   if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
-                    _buildWhatWeOfferSection(context, provider, isDark, textColor),
+                    _buildWhatWeOfferSection(context, provider, isDark, textColor, isTablet),
 
                   if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
-                    const SizedBox(height: 24),
+                    SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Faculty List
                   FacultyList(
@@ -306,11 +338,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     onRetry: provider.retryFaculty,
                   ),
 
-                  const SizedBox(height: 100), // Space for bottom nav
+                  SizedBox(height: isTablet ? 120.0 : 100.0), // Space for bottom nav
                 ],
               ),
             ),
-          );
+          ),
+        ),
+      );
         },
       ),
     );
@@ -321,68 +355,115 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     DashboardProvider provider,
     bool isDark,
     Color textColor,
+    bool isTablet,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'What We Offer',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-              color: textColor,
+          padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 16.0),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              ),
+              child: Text(
+                'What We Offer',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: isTablet ? 28.0 : 20.0,
+                  color: textColor,
+                ),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 24.0 : 16.0),
 
         // Package Type Cards
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = MediaQuery.of(context).size.height;
-            final cardHeight = screenHeight * 0.42; // 42% of screen height
-
-            return SizedBox(
-              height: cardHeight,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: provider.packageTypes.length,
-                itemBuilder: (context, index) {
-                  final packageType = provider.packageTypes[index];
-                  final isLast = index == provider.packageTypes.length - 1;
-                  return Padding(
-                    padding: EdgeInsets.only(right: isLast ? 0 : 16),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.75,
-                      child: _buildPackageTypeCard(packageType, isDark, textColor),
-                    ),
-                  );
-                },
+        if (isTablet)
+          // Tablet: show cards side by side, no scrolling
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.maxContentWidth,
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < provider.packageTypes.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildPackageTypeCard(
+                            provider.packageTypes[i], isDark, textColor, isTablet,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            );
-          },
-        ),
+            ),
+          )
+        else
+          // Phone: horizontal scroll
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = MediaQuery.of(context).size.height;
+              final cardHeight = screenHeight * 0.42;
+
+              return SizedBox(
+                height: cardHeight,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  itemCount: provider.packageTypes.length,
+                  itemBuilder: (context, index) {
+                    final packageType = provider.packageTypes[index];
+                    final isLast = index == provider.packageTypes.length - 1;
+                    return Padding(
+                      padding: EdgeInsets.only(right: isLast ? 0 : 16.0),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.75,
+                        child: _buildPackageTypeCard(packageType, isDark, textColor, isTablet),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 
-  Widget _buildPackageTypeCard(packageType, bool isDark, Color textColor) {
+  Widget _buildPackageTypeCard(packageType, bool isDark, Color textColor, bool isTablet) {
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
 
+    final playBtnSize = isTablet ? 80.0 : 64.0;
+    final playIconSize = isTablet ? 48.0 : 40.0;
+    final cardRadius = isTablet ? 24.0 : 16.0;
+    final contentPadding = isTablet ? 24.0 : 16.0;
+    final titleSize = isTablet ? 24.0 : 18.0;
+    final descSize = isTablet ? 17.0 : 13.0;
+    final buttonHeight = isTablet ? 56.0 : 44.0;
+    final buttonFontSize = isTablet ? 18.0 : 15.0;
+    final buttonRadius = isTablet ? 16.0 : 12.0;
+
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(cardRadius),
         color: cardBgColor,
         boxShadow: [
           BoxShadow(
             color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
+            blurRadius: isTablet ? 16 : 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -404,7 +485,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   }
                 : null,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(cardRadius)),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: packageType.thumbnailUrl != null
@@ -425,11 +506,11 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             ),
                             errorWidget: (context, url, error) => Container(
                               color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-                              child: const Center(
+                              child: Center(
                                 child: Icon(
                                   Icons.broken_image,
                                   color: Colors.white54,
-                                  size: 48,
+                                  size: isTablet ? 60 : 48,
                                 ),
                               ),
                             ),
@@ -438,19 +519,19 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                           if (packageType.trailerVideoUrl != null)
                             Center(
                               child: Container(
-                                width: 64,
-                                height: 64,
+                                width: playBtnSize,
+                                height: playBtnSize,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.black.withValues(alpha: 0.7),
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 3,
+                                    width: isTablet ? 4 : 3,
                                   ),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.play_arrow,
-                                  size: 40,
+                                  size: playIconSize,
                                   color: Colors.white,
                                 ),
                               ),
@@ -461,18 +542,18 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
                         child: Center(
                           child: Container(
-                            width: 64,
-                            height: 64,
+                            width: playBtnSize,
+                            height: playBtnSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: secondaryTextColor,
-                                width: 2,
+                                width: isTablet ? 3 : 2,
                               ),
                             ),
                             child: Icon(
                               Icons.play_arrow,
-                              size: 40,
+                              size: playIconSize,
                               color: secondaryTextColor,
                             ),
                           ),
@@ -484,7 +565,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
           // Content Section
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(contentPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -495,13 +576,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: titleSize,
                     color: textColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isTablet ? 12.0 : 8.0),
 
                 // Package Description
                 Text(
@@ -509,7 +590,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 13,
+                    fontSize: descSize,
                     height: 1.5,
                     color: secondaryTextColor,
                   ),
@@ -517,7 +598,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                const SizedBox(height: 12),
+                SizedBox(height: isTablet ? 18.0 : 12.0),
 
                 // View Package Button
                 GestureDetector(
@@ -529,18 +610,18 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   },
                   child: Container(
                     width: double.infinity,
-                    height: 44,
+                    height: buttonHeight,
                     decoration: BoxDecoration(
                       color: AppColors.primaryBlue,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(buttonRadius),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'View Packages',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                          fontSize: buttonFontSize,
                           color: Colors.white,
                         ),
                       ),
@@ -606,222 +687,247 @@ class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final provider = widget.provider;
+    final isTablet = ResponsiveHelper.isTablet(context);
     final backgroundColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: secondaryTextColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+    final sheetRadius = isTablet ? 32.0 : 24.0;
+    final headerPadding = isTablet ? 28.0 : 20.0;
+    final titleSize = isTablet ? 26.0 : 20.0;
+    final closeIconSize = isTablet ? 30.0 : 24.0;
+    final itemIconSize = isTablet ? 64.0 : 48.0;
+    final itemIconRadius = isTablet ? 18.0 : 12.0;
+    final itemNameSize = isTablet ? 20.0 : 16.0;
+    final itemPaddingH = isTablet ? 28.0 : 20.0;
+    final itemPaddingV = isTablet ? 16.0 : 12.0;
+    final itemGap = isTablet ? 20.0 : 16.0;
+    final trailingSize = isTablet ? 30.0 : 24.0;
+    final handleWidth = isTablet ? 56.0 : 40.0;
 
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Select Subject',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                    color: textColor,
-                  ),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+          maxWidth: isTablet ? 600.0 : double.infinity,
+        ),
+        child: Container(
+          margin: isTablet ? const EdgeInsets.only(bottom: 24) : EdgeInsets.zero,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: isTablet
+                ? BorderRadius.circular(sheetRadius)
+                : BorderRadius.vertical(top: Radius.circular(sheetRadius)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: isTablet ? 16 : 12),
+                width: handleWidth,
+                height: isTablet ? 5 : 4,
+                decoration: BoxDecoration(
+                  color: secondaryTextColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                GestureDetector(
-                  onTap: _selectedSubjectId != null ? null : () => Navigator.pop(context),
-                  child: Icon(
-                    Icons.close,
-                    color: _selectedSubjectId != null
-                        ? secondaryTextColor.withValues(alpha: 0.3)
-                        : secondaryTextColor,
-                    size: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
 
-          // Divider
-          Divider(
-            height: 1,
-            color: secondaryTextColor.withValues(alpha: 0.2),
-          ),
-
-          // Content
-          Flexible(
-            child: ListenableBuilder(
-              listenable: provider,
-              builder: (context, _) {
-                if (provider.isLoadingAllSubjects) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (provider.allSubjects.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.school_outlined,
-                            size: 48,
-                            color: secondaryTextColor,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No subjects available',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              color: secondaryTextColor,
-                            ),
-                          ),
-                        ],
+              // Header
+              Padding(
+                padding: EdgeInsets.all(headerPadding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Select Subject',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: titleSize,
+                        color: textColor,
                       ),
                     ),
-                  );
-                }
+                    GestureDetector(
+                      onTap: _selectedSubjectId != null ? null : () => Navigator.pop(context),
+                      child: Icon(
+                        Icons.close,
+                        color: _selectedSubjectId != null
+                            ? secondaryTextColor.withValues(alpha: 0.3)
+                            : secondaryTextColor,
+                        size: closeIconSize,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: provider.allSubjects.length,
-                  itemBuilder: (context, index) {
-                    final subject = provider.allSubjects[index];
-                    final isCurrentlySelected = provider.primarySubject?.subjectId == subject.subjectId;
-                    final isBeingSelected = _selectedSubjectId == subject.subjectId;
-                    final isDisabled = _selectedSubjectId != null && !isBeingSelected;
+              // Divider
+              Divider(
+                height: 1,
+                color: secondaryTextColor.withValues(alpha: 0.2),
+              ),
 
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: (_selectedSubjectId != null || isCurrentlySelected)
-                            ? null
-                            : () => _onSubjectTap(subject),
-                        splashColor: AppColors.primaryBlue.withValues(alpha: 0.1),
-                        highlightColor: AppColors.primaryBlue.withValues(alpha: 0.05),
-                        child: Opacity(
-                          opacity: isDisabled ? 0.4 : 1.0,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            child: Row(
-                              children: [
-                                // Icon container
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: isCurrentlySelected || isBeingSelected
-                                        ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                                        : (isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5)),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: isBeingSelected
-                                        ? Border.all(color: AppColors.primaryBlue, width: 2)
-                                        : null,
-                                  ),
-                                  child: subject.iconUrl != null && subject.iconUrl!.isNotEmpty
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: Image.network(
-                                            subject.iconUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Icon(
+              // Content
+              Flexible(
+                child: ListenableBuilder(
+                  listenable: provider,
+                  builder: (context, _) {
+                    if (provider.isLoadingAllSubjects) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    if (provider.allSubjects.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.school_outlined,
+                                size: isTablet ? 64 : 48,
+                                color: secondaryTextColor,
+                              ),
+                              SizedBox(height: isTablet ? 18 : 12),
+                              Text(
+                                'No subjects available',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 20 : 16,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.symmetric(vertical: isTablet ? 12 : 8),
+                      itemCount: provider.allSubjects.length,
+                      itemBuilder: (context, index) {
+                        final subject = provider.allSubjects[index];
+                        final isCurrentlySelected = provider.primarySubject?.subjectId == subject.subjectId;
+                        final isBeingSelected = _selectedSubjectId == subject.subjectId;
+                        final isDisabled = _selectedSubjectId != null && !isBeingSelected;
+
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: (_selectedSubjectId != null || isCurrentlySelected)
+                                ? null
+                                : () => _onSubjectTap(subject),
+                            splashColor: AppColors.primaryBlue.withValues(alpha: 0.1),
+                            highlightColor: AppColors.primaryBlue.withValues(alpha: 0.05),
+                            child: Opacity(
+                              opacity: isDisabled ? 0.4 : 1.0,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: itemPaddingH, vertical: itemPaddingV),
+                                child: Row(
+                                  children: [
+                                    // Icon container
+                                    Container(
+                                      width: itemIconSize,
+                                      height: itemIconSize,
+                                      decoration: BoxDecoration(
+                                        color: isCurrentlySelected || isBeingSelected
+                                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                                            : (isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5)),
+                                        borderRadius: BorderRadius.circular(itemIconRadius),
+                                        border: isBeingSelected
+                                            ? Border.all(color: AppColors.primaryBlue, width: isTablet ? 3 : 2)
+                                            : null,
+                                      ),
+                                      child: subject.iconUrl != null && subject.iconUrl!.isNotEmpty
+                                          ? ClipRRect(
+                                              borderRadius: BorderRadius.circular(itemIconRadius - 2),
+                                              child: Image.network(
+                                                subject.iconUrl!,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => Icon(
+                                                  Icons.school_outlined,
+                                                  size: isTablet ? 32 : 24,
+                                                  color: isCurrentlySelected || isBeingSelected
+                                                      ? AppColors.primaryBlue
+                                                      : secondaryTextColor,
+                                                ),
+                                              ),
+                                            )
+                                          : Icon(
                                               Icons.school_outlined,
+                                              size: isTablet ? 32 : 24,
                                               color: isCurrentlySelected || isBeingSelected
                                                   ? AppColors.primaryBlue
                                                   : secondaryTextColor,
                                             ),
-                                          ),
-                                        )
-                                      : Icon(
-                                          Icons.school_outlined,
+                                    ),
+                                    SizedBox(width: itemGap),
+
+                                    // Subject name
+                                    Expanded(
+                                      child: Text(
+                                        subject.name,
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontWeight: isCurrentlySelected || isBeingSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                          fontSize: itemNameSize,
                                           color: isCurrentlySelected || isBeingSelected
                                               ? AppColors.primaryBlue
-                                              : secondaryTextColor,
+                                              : textColor,
                                         ),
-                                ),
-                                const SizedBox(width: 16),
-
-                                // Subject name
-                                Expanded(
-                                  child: Text(
-                                    subject.name,
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontWeight: isCurrentlySelected || isBeingSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      fontSize: 16,
-                                      color: isCurrentlySelected || isBeingSelected
-                                          ? AppColors.primaryBlue
-                                          : textColor,
+                                      ),
                                     ),
-                                  ),
-                                ),
 
-                                // Trailing indicator
-                                if (isBeingSelected)
-                                  const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-                                    ),
-                                  )
-                                else if (isCurrentlySelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.primaryBlue,
-                                    size: 24,
-                                  )
-                                else
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: secondaryTextColor.withValues(alpha: 0.5),
-                                    size: 16,
-                                  ),
-                              ],
+                                    // Trailing indicator
+                                    if (isBeingSelected)
+                                      SizedBox(
+                                        width: trailingSize,
+                                        height: trailingSize,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                        ),
+                                      )
+                                    else if (isCurrentlySelected)
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: AppColors.primaryBlue,
+                                        size: trailingSize,
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: secondaryTextColor.withValues(alpha: 0.5),
+                                        size: isTablet ? 20 : 16,
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
+                ),
+              ),
 
-          // Bottom padding to clear the floating nav bar (65h + 20 from bottom)
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 90),
-        ],
+              // Bottom padding to clear the floating nav bar
+              SizedBox(height: MediaQuery.of(context).padding.bottom + (isTablet ? 100 : 90)),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/providers/subscription_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class ManagePlansScreen extends StatefulWidget {
   const ManagePlansScreen({super.key});
@@ -35,7 +36,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
   String _formatCurrency(int amount) {
     final formatter = NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: '\u20B9',
       decimalDigits: 0,
     );
     return formatter.format(amount);
@@ -47,6 +48,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
@@ -57,13 +59,15 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     final backButtonBgColor = isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
     final primaryColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
           // Header
           Container(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16, bottom: 16),
+            padding: EdgeInsets.only(top: topPadding + 16, left: isTablet ? hPadding : 16, right: isTablet ? hPadding : 16, bottom: 16),
             decoration: BoxDecoration(
               color: headerBgColor,
               boxShadow: [
@@ -79,28 +83,28 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                 GestureDetector(
                   onTap: () => context.pop(),
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: isTablet ? 54 : 44,
+                    height: isTablet ? 54 : 44,
                     decoration: BoxDecoration(
                       color: backButtonBgColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
                     child: Center(
                       child: Icon(
                         Icons.arrow_back_ios_new,
-                        size: 18,
+                        size: isTablet ? 22 : 18,
                         color: textColor,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isTablet ? 20 : 16),
                 Expanded(
                   child: Text(
                     'Manage Plans',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 20,
+                      fontSize: isTablet ? 25 : 20,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -123,14 +127,14 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                        const SizedBox(height: 16),
+                        Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                        SizedBox(height: isTablet ? 20 : 16),
                         Text(
                           provider.error!,
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(color: secondaryTextColor, fontSize: isTablet ? 17 : 14),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isTablet ? 20 : 16),
                         ElevatedButton(
                           onPressed: () => provider.loadSubscriptionData(),
                           child: const Text('Retry'),
@@ -147,86 +151,92 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.only(top: 20, bottom: bottomPadding + 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Active Plans Section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Active Plans',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Active Plans Section
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: hPadding),
+                              child: Text(
+                                'Active Plans',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 20 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                            SizedBox(height: isTablet ? 16 : 12),
 
-                        // Active Plan Cards - Horizontally Scrollable
-                        if (activePurchases.isNotEmpty)
-                          SizedBox(
-                            height: 145,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: activePurchases.length,
-                              itemBuilder: (context, index) {
-                                final purchase = activePurchases[index];
-                                final isLast = index == activePurchases.length - 1;
-                                return Padding(
-                                  padding: EdgeInsets.only(right: isLast ? 0 : 12),
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: _buildActivePlanCard(purchase, isDark, primaryColor),
-                                  ),
-                                );
-                              },
+                            // Active Plan Cards - Horizontally Scrollable
+                            if (activePurchases.isNotEmpty)
+                              SizedBox(
+                                height: isTablet ? 175 : 145,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                                  itemCount: activePurchases.length,
+                                  itemBuilder: (context, index) {
+                                    final purchase = activePurchases[index];
+                                    final isLast = index == activePurchases.length - 1;
+                                    return Padding(
+                                      padding: EdgeInsets.only(right: isLast ? 0 : isTablet ? 16 : 12),
+                                      child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: _buildActivePlanCard(purchase, isDark, primaryColor, isTablet),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                                child: _buildNoPlanCard(isDark, cardBgColor, textColor, secondaryTextColor, primaryColor, isTablet),
+                              ),
+
+                            SizedBox(height: isTablet ? 26 : 20),
+
+                            // Actions Section
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: hPadding),
+                              child: Text(
+                                'Actions',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 20 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
                             ),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _buildNoPlanCard(isDark, cardBgColor, textColor, secondaryTextColor, primaryColor),
-                          ),
+                            SizedBox(height: isTablet ? 16 : 12),
 
-                        const SizedBox(height: 20),
-
-                        // Actions Section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Actions',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
+                            // Action Buttons
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: hPadding),
+                              child: _buildActionItem(
+                                icon: Icons.card_giftcard_outlined,
+                                title: 'See more Plans',
+                                subtitle: 'Explore available plans',
+                                onTap: () {
+                                  context.push('/all-packages');
+                                },
+                                isDark: isDark,
+                                cardBgColor: cardBgColor,
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                                primaryColor: primaryColor,
+                                isTablet: isTablet,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-
-                        // Action Buttons
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _buildActionItem(
-                            icon: Icons.card_giftcard_outlined,
-                            title: 'See more Plans',
-                            subtitle: 'Explore available plans',
-                            onTap: () {
-                              context.push('/all-packages');
-                            },
-                            isDark: isDark,
-                            cardBgColor: cardBgColor,
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            primaryColor: primaryColor,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -238,7 +248,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildActivePlanCard(PurchaseModel plan, bool isDark, Color primaryColor) {
+  Widget _buildActivePlanCard(PurchaseModel plan, bool isDark, Color primaryColor, bool isTablet) {
     final packageName = plan.package.name;
     final packageType = plan.package.type ?? '';
     final price = _formatCurrency(plan.amountPaid);
@@ -256,15 +266,15 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
             : [const Color(0xFF00897B), const Color(0xFF4DB6AC)]);
 
     return Container(
-      width: 250,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      width: isTablet ? 300 : 250,
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 16 : 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: gradientColors,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
         boxShadow: [
           BoxShadow(
             color: gradientColors[0].withValues(alpha: 0.3),
@@ -281,36 +291,36 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: isTablet ? 3 : 2),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'ACTIVE',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 8,
+                    fontSize: isTablet ? 10 : 8,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isTablet ? 8 : 6),
               if (packageType.isNotEmpty)
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: isTablet ? 3 : 2),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       packageType,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 8,
+                        fontSize: isTablet ? 10 : 8,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
                       ),
@@ -320,13 +330,13 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           // Plan Name
           Text(
             packageName,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 15,
+              fontSize: isTablet ? 19 : 15,
               fontWeight: FontWeight.w700,
               color: Colors.white,
               height: 1.2,
@@ -334,25 +344,25 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: isTablet ? 3 : 2),
           // Price
           Text(
             price,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 20,
+              fontSize: isTablet ? 25 : 20,
               fontWeight: FontWeight.w600,
               color: Colors.white,
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           // Divider
           Container(
             height: 1,
             color: Colors.white.withValues(alpha: 0.2),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           // Expiry Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -366,7 +376,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                       'EXPIRES',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 8,
+                        fontSize: isTablet ? 10 : 8,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.5,
                         color: Colors.white.withValues(alpha: 0.6),
@@ -375,9 +385,9 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                     ),
                     Text(
                       expiryDate,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 10,
+                        fontSize: isTablet ? 12 : 10,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                         height: 1.2,
@@ -387,9 +397,9 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isTablet ? 8 : 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
@@ -398,7 +408,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   '$daysLeft days',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 9,
+                    fontSize: isTablet ? 11 : 9,
                     fontWeight: FontWeight.w600,
                     color: gradientColors[0],
                   ),
@@ -411,13 +421,13 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildNoPlanCard(bool isDark, Color cardBgColor, Color textColor, Color secondaryTextColor, Color primaryColor) {
+  Widget _buildNoPlanCard(bool isDark, Color cardBgColor, Color textColor, Color secondaryTextColor, Color primaryColor, bool isTablet) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 26 : 20, vertical: isTablet ? 30 : 24),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
         border: Border.all(
           color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
           width: 1,
@@ -428,43 +438,43 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
         children: [
           Icon(
             Icons.workspace_premium_outlined,
-            size: 44,
+            size: isTablet ? 56 : 44,
             color: secondaryTextColor,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isTablet ? 16 : 12),
           Text(
             'No Active Subscription',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 16,
+              fontSize: isTablet ? 20 : 16,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: isTablet ? 8 : 6),
           Text(
             'Subscribe to a plan to unlock premium content',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 13,
+              fontSize: isTablet ? 16 : 13,
               color: secondaryTextColor,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 20 : 16),
           GestureDetector(
             onTap: () => context.push('/all-packages'),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 26 : 20, vertical: isTablet ? 13 : 10),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
               ),
-              child: const Text(
+              child: Text(
                 'Explore Plans',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: isTablet ? 16 : 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -487,15 +497,16 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     required Color textColor,
     required Color secondaryTextColor,
     required Color primaryColor,
+    bool isTablet = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
           boxShadow: [
             BoxShadow(
               color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.03),
@@ -508,23 +519,23 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
           children: [
             // Icon
             Container(
-              width: 44,
-              height: 44,
+              width: isTablet ? 55 : 44,
+              height: isTablet ? 55 : 44,
               decoration: BoxDecoration(
                 color: isDestructive
                     ? const Color(0xFFFF5252).withValues(alpha: 0.1)
                     : primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  size: 22,
+                  size: isTablet ? 27 : 22,
                   color: isDestructive ? const Color(0xFFFF5252) : primaryColor,
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: isTablet ? 18 : 14),
             // Details
             Expanded(
               child: Column(
@@ -534,19 +545,19 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                     title,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 14,
+                      fontSize: isTablet ? 17 : 14,
                       fontWeight: FontWeight.w600,
                       color: isDestructive ? const Color(0xFFFF5252) : textColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: isTablet ? 3 : 2),
                   Text(
                     subtitle,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 11,
+                      fontSize: isTablet ? 14 : 11,
                       fontWeight: FontWeight.w400,
                       color: secondaryTextColor,
                     ),
@@ -556,11 +567,11 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: isTablet ? 10 : 8),
             // Arrow
             Icon(
               Icons.arrow_forward_ios,
-              size: 14,
+              size: isTablet ? 18 : 14,
               color: isDestructive
                   ? const Color(0xFFFF5252).withValues(alpha: 0.5)
                   : textColor.withValues(alpha: 0.3),

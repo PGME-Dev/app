@@ -11,6 +11,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -135,6 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -145,6 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final iconColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
     final borderColor = isDark ? AppColors.darkDivider : const Color(0x5C000080);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     if (_isLoading) {
       return Scaffold(
@@ -158,23 +162,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: backgroundColor,
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                const SizedBox(height: 16),
+                Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                SizedBox(height: isTablet ? 20 : 16),
                 Text(
                   'Failed to load profile',
-                  style: TextStyle(fontSize: 16, color: textColor),
+                  style: TextStyle(fontSize: isTablet ? 20 : 16, color: textColor),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isTablet ? 10 : 8),
                 Text(
                   _error!,
-                  style: TextStyle(fontSize: 14, color: secondaryTextColor),
+                  style: TextStyle(fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isTablet ? 32 : 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -183,14 +187,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24, vertical: isTablet ? 16 : 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                         ),
                       ),
                       child: const Text('Retry'),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: isTablet ? 20 : 16),
                     OutlinedButton(
                       onPressed: _handleLogout,
                       style: OutlinedButton.styleFrom(
@@ -198,9 +202,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         side: BorderSide(
                           color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24, vertical: isTablet ? 16 : 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                         ),
                       ),
                       child: const Text('Log Out'),
@@ -231,637 +235,651 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top curved box with profile info
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : Colors.white,
-                            ),
-                            child: Icon(
-                              Icons.arrow_back,
-                              size: 20,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top curved box with profile info
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(isTablet ? 52 : 40),
+                        bottomRight: Radius.circular(isTablet ? 52 : 40),
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(isTablet ? 26 : 20, isTablet ? 10 : 8, isTablet ? 26 : 20, isTablet ? 30 : 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Profile picture on the left
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
-                                  width: 2,
+                            GestureDetector(
+                              onTap: () => context.pop(),
+                              child: Container(
+                                width: isTablet ? 50 : 40,
+                                height: isTablet ? 50 : 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDark ? AppColors.darkSurface : Colors.white,
                                 ),
-                                color: Colors.transparent,
-                                image: _user?.photoUrl != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(_user!.photoUrl!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
+                                child: Icon(
+                                  Icons.arrow_back,
+                                  size: isTablet ? 25 : 20,
+                                  color: textColor,
+                                ),
                               ),
-                              child: _user?.photoUrl == null
-                                  ? Center(
-                                      child: Icon(
-                                        Icons.person_outline,
-                                        size: 36,
-                                        color: secondaryTextColor,
-                                      ),
-                                    )
-                                  : null,
                             ),
-                            const SizedBox(width: 16),
-                            // User details on the right
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Name
-                                  Text(
-                                    _user?.name ?? 'User',
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Display',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 18,
-                                      color: textColor,
+                            SizedBox(height: isTablet ? 16 : 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Profile picture on the left
+                                Container(
+                                  width: isTablet ? 100 : 80,
+                                  height: isTablet ? 100 : 80,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
+                                      width: 2,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    color: Colors.transparent,
+                                    image: _user?.photoUrl != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(_user!.photoUrl!),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                                   ),
-                                  const SizedBox(height: 4),
-                                  // Phone number
-                                  Row(
+                                  child: _user?.photoUrl == null
+                                      ? Center(
+                                          child: Icon(
+                                            Icons.person_outline,
+                                            size: isTablet ? 45 : 36,
+                                            color: secondaryTextColor,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(width: isTablet ? 20 : 16),
+                                // User details on the right
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
-                                        Icons.phone_outlined,
-                                        size: 14,
-                                        color: secondaryTextColor,
-                                      ),
-                                      const SizedBox(width: 4),
+                                      // Name
                                       Text(
-                                        _user?.phoneNumber ?? '',
+                                        _user?.name ?? 'User',
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Display',
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 13,
-                                          color: secondaryTextColor,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: isTablet ? 22 : 18,
+                                          color: textColor,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: isTablet ? 6 : 4),
+                                      // Phone number
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.phone_outlined,
+                                            size: isTablet ? 18 : 14,
+                                            color: secondaryTextColor,
+                                          ),
+                                          SizedBox(width: isTablet ? 6 : 4),
+                                          Text(
+                                            _user?.phoneNumber ?? '',
+                                            style: TextStyle(
+                                              fontFamily: 'SF Pro Display',
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: isTablet ? 16 : 13,
+                                              color: secondaryTextColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: isTablet ? 10 : 8),
+                                      // Subject selection - tappable
+                                      GestureDetector(
+                                        onTap: () {
+                                          context.push('/subject-selection');
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 8 : 6),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? const Color(0xFF1A1A4D)
+                                                : const Color(0xFF0000D1).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? const Color(0xFF3D3D8C)
+                                                  : const Color(0xFF0000D1).withValues(alpha: 0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.menu_book_outlined,
+                                                size: isTablet ? 18 : 14,
+                                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                              ),
+                                              SizedBox(width: isTablet ? 8 : 6),
+                                              Flexible(
+                                                child: Text(
+                                                  _selectedSubject?['subject_name'] ?? 'Select Subject',
+                                                  style: TextStyle(
+                                                    fontFamily: 'SF Pro Display',
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: isTablet ? 15 : 12,
+                                                    color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              SizedBox(width: isTablet ? 6 : 4),
+                                              Icon(
+                                                Icons.chevron_right,
+                                                size: isTablet ? 20 : 16,
+                                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  // Subject selection - tappable
-                                  GestureDetector(
-                                    onTap: () {
-                                      context.push('/subject-selection');
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? const Color(0xFF1A1A4D)
-                                            : const Color(0xFF0000D1).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: isDark
-                                              ? const Color(0xFF3D3D8C)
-                                              : const Color(0xFF0000D1).withValues(alpha: 0.3),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.menu_book_outlined,
-                                            size: 14,
-                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
-                                              _selectedSubject?['subject_name'] ?? 'Select Subject',
-                                              style: TextStyle(
-                                                fontFamily: 'SF Pro Display',
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 12,
-                                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.chevron_right,
-                                            size: 16,
-                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Active Packages Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Active Packages',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                        height: 20 / 16,
-                        letterSpacing: -0.5,
-                        color: textColor,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        context.push('/manage-plans');
-                      },
-                      child: Text(
-                        'Manage',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          height: 20 / 12,
-                          letterSpacing: -0.5,
-                          color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                        ),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 17),
-
-              // Active Package Cards - Horizontally Scrollable
-              if (allActivePackages.isNotEmpty)
-                SizedBox(
-                  height: 115,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: allActivePackages.length,
-                    itemBuilder: (context, index) {
-                      final package = allActivePackages[index];
-                      final isLast = index == allActivePackages.length - 1;
-                      return Padding(
-                        padding: EdgeInsets.only(right: isLast ? 0 : 12),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: _buildActivePackageCard(
-                            package: package,
-                            isDark: isDark,
-                          ),
-                        ),
-                      );
-                    },
                   ),
-                )
-              else
-                // No active package
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Column(
+
+                  SizedBox(height: isTablet ? 16 : 12),
+
+                  // Active Packages Section
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.card_membership_outlined, size: 48, color: secondaryTextColor),
-                        const SizedBox(height: 12),
                         Text(
-                          'No Active Packages',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Browse our packages to start learning',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: secondaryTextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: 16),
-
-              // Basic Information Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Basic Information',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                        height: 20 / 16,
-                        letterSpacing: -0.5,
-                        color: textColor,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to edit profile
-                      },
-                      child: Opacity(
-                        opacity: 0.4,
-                        child: Text(
-                          'Edit',
+                          'Active Packages',
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            height: 20 / 12,
+                            fontSize: isTablet ? 20 : 16,
+                            height: 20 / 16,
                             letterSpacing: -0.5,
                             color: textColor,
                           ),
-                          textAlign: TextAlign.right,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 9),
-
-              // Basic Information Box
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: borderColor,
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Full Name
-                      _buildInfoRow(
-                        icon: Icons.person_outline,
-                        label: 'FULL NAME',
-                        value: _user?.name ?? 'Not set',
-                        showDivider: true,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        iconBgColor: iconBgColor,
-                        iconColor: iconColor,
-                        dividerColor: dividerColor,
-                      ),
-                      // Email
-                      _buildInfoRow(
-                        icon: Icons.mail_outline,
-                        label: 'EMAIL',
-                        value: _user?.email ?? 'Not set',
-                        showDivider: true,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        iconBgColor: iconBgColor,
-                        iconColor: iconColor,
-                        dividerColor: dividerColor,
-                      ),
-                      // Phone Number
-                      _buildInfoRow(
-                        icon: Icons.phone_outlined,
-                        label: 'PHONE NUMBER',
-                        value: _user?.phoneNumber ?? 'Not set',
-                        showDivider: true,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        iconBgColor: iconBgColor,
-                        iconColor: iconColor,
-                        dividerColor: dividerColor,
-                      ),
-                      // Gender
-                      _buildInfoRow(
-                        icon: Icons.wc_outlined,
-                        label: 'GENDER',
-                        value: _user?.gender ?? 'Not set',
-                        showDivider: false,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        iconBgColor: iconBgColor,
-                        iconColor: iconColor,
-                        dividerColor: dividerColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Address Section (only if address exists)
-              if (_user?.address != null && _user!.address!.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Address',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          height: 20 / 16,
-                          letterSpacing: -0.5,
-                          color: textColor,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          // Navigate to edit address
-                        },
-                        child: Opacity(
-                          opacity: 0.4,
+                        GestureDetector(
+                          onTap: () {
+                            context.push('/manage-plans');
+                          },
                           child: Text(
-                            'Edit',
+                            'Manage',
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
                               fontWeight: FontWeight.w500,
-                              fontSize: 12,
+                              fontSize: isTablet ? 15 : 12,
                               height: 20 / 12,
                               letterSpacing: -0.5,
-                              color: textColor,
+                              color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
                             ),
                             textAlign: TextAlign.right,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 9),
-
-                // Address Box
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Location icon circle
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: iconBgColor,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.location_on_outlined,
-                              size: 20,
-                              color: iconColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Address text
-                        Expanded(
-                          child: Text(
-                            _user!.address!,
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              height: 1.4,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
-              ],
+                  SizedBox(height: isTablet ? 22 : 17),
 
-              // Quick Actions Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    height: 20 / 16,
-                    letterSpacing: -0.5,
-                    color: textColor,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Quick Actions Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    // My Purchases
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.shopping_bag_outlined,
-                        label: 'My Purchases',
-                        subtitle: 'View purchases',
-                        onTap: () => context.push('/my-purchases'),
-                        cardColor: cardColor,
-                        iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
-                        iconColor: Colors.green,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Settings
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.settings_outlined,
-                        label: 'Settings',
-                        subtitle: 'Preferences',
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SettingsScreen(),
+                  // Active Package Cards - Horizontally Scrollable
+                  if (allActivePackages.isNotEmpty)
+                    SizedBox(
+                      height: isTablet ? 140 : 115,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        itemCount: allActivePackages.length,
+                        itemBuilder: (context, index) {
+                          final package = allActivePackages[index];
+                          final isLast = index == allActivePackages.length - 1;
+                          return Padding(
+                            padding: EdgeInsets.only(right: isLast ? 0 : isTablet ? 16 : 12),
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: _buildActivePackageCard(
+                                package: package,
+                                isDark: isDark,
+                                isTablet: isTablet,
+                              ),
                             ),
                           );
                         },
-                        cardColor: cardColor,
-                        iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
-                        iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Help & About Row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    // Help & Support
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.help_outline,
-                        label: 'Help',
-                        subtitle: 'Get support',
-                        onTap: () => context.push('/help'),
-                        cardColor: cardColor,
-                        iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
-                        iconColor: Colors.orange,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // About
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.info_outline,
-                        label: 'About',
-                        subtitle: 'App info',
-                        onTap: () => context.push('/about'),
-                        cardColor: cardColor,
-                        iconBgColor: isDark ? const Color(0xFF4D1A4D) : const Color(0xFFF3E5F5),
-                        iconColor: isDark ? const Color(0xFFCE93D8) : const Color(0xFF7B1FA2),
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Log Out Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: _handleLogout,
-                  child: Container(
-                    width: double.infinity,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF8B3A3A) : const Color(0xFFEF9A9A),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.logout_rounded,
-                          size: 20,
-                          color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                    )
+                  else
+                    // No active package
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isTablet ? 30 : 24),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
+                          border: Border.all(color: borderColor),
                         ),
-                        const SizedBox(width: 8),
+                        child: Column(
+                          children: [
+                            Icon(Icons.card_membership_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            Text(
+                              'No Active Packages',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 20 : 16,
+                                color: textColor,
+                              ),
+                            ),
+                            SizedBox(height: isTablet ? 10 : 8),
+                            Text(
+                              'Browse our packages to start learning',
+                              style: TextStyle(
+                                fontSize: isTablet ? 17 : 14,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(height: isTablet ? 20 : 16),
+
+                  // Basic Information Section
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Text(
-                          'Log Out',
+                          'Basic Information',
                           style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 20 : 16,
+                            height: 20 / 16,
+                            letterSpacing: -0.5,
+                            color: textColor,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            // Navigate to edit profile
+                          },
+                          child: Opacity(
+                            opacity: 0.4,
+                            child: Text(
+                              'Edit',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 15 : 12,
+                                height: 20 / 12,
+                                letterSpacing: -0.5,
+                                color: textColor,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 32),
-            ],
+                  SizedBox(height: isTablet ? 12 : 9),
+
+                  // Basic Information Box
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                        border: Border.all(
+                          color: borderColor,
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          // Full Name
+                          _buildInfoRow(
+                            icon: Icons.person_outline,
+                            label: 'FULL NAME',
+                            value: _user?.name ?? 'Not set',
+                            showDivider: true,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            iconBgColor: iconBgColor,
+                            iconColor: iconColor,
+                            dividerColor: dividerColor,
+                            isTablet: isTablet,
+                          ),
+                          // Email
+                          _buildInfoRow(
+                            icon: Icons.mail_outline,
+                            label: 'EMAIL',
+                            value: _user?.email ?? 'Not set',
+                            showDivider: true,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            iconBgColor: iconBgColor,
+                            iconColor: iconColor,
+                            dividerColor: dividerColor,
+                            isTablet: isTablet,
+                          ),
+                          // Phone Number
+                          _buildInfoRow(
+                            icon: Icons.phone_outlined,
+                            label: 'PHONE NUMBER',
+                            value: _user?.phoneNumber ?? 'Not set',
+                            showDivider: true,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            iconBgColor: iconBgColor,
+                            iconColor: iconColor,
+                            dividerColor: dividerColor,
+                            isTablet: isTablet,
+                          ),
+                          // Gender
+                          _buildInfoRow(
+                            icon: Icons.wc_outlined,
+                            label: 'GENDER',
+                            value: _user?.gender ?? 'Not set',
+                            showDivider: false,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            iconBgColor: iconBgColor,
+                            iconColor: iconColor,
+                            dividerColor: dividerColor,
+                            isTablet: isTablet,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 20 : 16),
+
+                  // Address Section (only if address exists)
+                  if (_user?.address != null && _user!.address!.isNotEmpty) ...[
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Address',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 20 : 16,
+                              height: 20 / 16,
+                              letterSpacing: -0.5,
+                              color: textColor,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              // Navigate to edit address
+                            },
+                            child: Opacity(
+                              opacity: 0.4,
+                              child: Text(
+                                'Edit',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 15 : 12,
+                                  height: 20 / 12,
+                                  letterSpacing: -0.5,
+                                  color: textColor,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 12 : 9),
+
+                    // Address Box
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isTablet ? 20 : 16),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Location icon circle
+                            Container(
+                              width: isTablet ? 52 : 42,
+                              height: isTablet ? 52 : 42,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: iconBgColor,
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.location_on_outlined,
+                                  size: isTablet ? 25 : 20,
+                                  color: iconColor,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: isTablet ? 16 : 12),
+                            // Address text
+                            Expanded(
+                              child: Text(
+                                _user!.address!,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 17 : 14,
+                                  height: 1.4,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 20 : 16),
+                  ],
+
+                  // Quick Actions Section
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w500,
+                        fontSize: isTablet ? 20 : 16,
+                        height: 20 / 16,
+                        letterSpacing: -0.5,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 16 : 12),
+
+                  // Quick Actions Grid
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Row(
+                      children: [
+                        // My Purchases
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.shopping_bag_outlined,
+                            label: 'My Purchases',
+                            subtitle: 'View purchases',
+                            onTap: () => context.push('/my-purchases'),
+                            cardColor: cardColor,
+                            iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
+                            iconColor: Colors.green,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            isTablet: isTablet,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 12),
+                        // Settings
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.settings_outlined,
+                            label: 'Settings',
+                            subtitle: 'Preferences',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                            cardColor: cardColor,
+                            iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
+                            iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            isTablet: isTablet,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 16 : 12),
+
+                  // Help & About Row
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Row(
+                      children: [
+                        // Help & Support
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.help_outline,
+                            label: 'Help',
+                            subtitle: 'Get support',
+                            onTap: () => context.push('/help'),
+                            cardColor: cardColor,
+                            iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
+                            iconColor: Colors.orange,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            isTablet: isTablet,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 12),
+                        // About
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.info_outline,
+                            label: 'About',
+                            subtitle: 'App info',
+                            onTap: () => context.push('/about'),
+                            cardColor: cardColor,
+                            iconBgColor: isDark ? const Color(0xFF4D1A4D) : const Color(0xFFF3E5F5),
+                            iconColor: isDark ? const Color(0xFFCE93D8) : const Color(0xFF7B1FA2),
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            isTablet: isTablet,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 30 : 24),
+
+                  // Log Out Button
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: GestureDetector(
+                      onTap: _handleLogout,
+                      child: Container(
+                        width: double.infinity,
+                        height: isTablet ? 62 : 52,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF8B3A3A) : const Color(0xFFEF9A9A),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.logout_rounded,
+                              size: isTablet ? 25 : 20,
+                              color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                            ),
+                            SizedBox(width: isTablet ? 10 : 8),
+                            Text(
+                              'Log Out',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 19 : 15,
+                                color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFD32F2F),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + (isTablet ? 120 : 32)),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -881,6 +899,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildActivePackageCard({
     required Map<String, dynamic> package,
     required bool isDark,
+    bool isTablet = false,
   }) {
     final packageName = package['package_name'] ?? 'Package';
     final packageType = package['type'] ?? '';
@@ -894,11 +913,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : (isTheory ? const Color(0xFF0000D1) : const Color(0xFF00897B));
 
     return Container(
-      width: 240,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      width: isTablet ? 290 : 240,
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 16 : 12),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,34 +927,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: isTablet ? 3 : 2),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'ACTIVE',
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.w600,
-                    fontSize: 8,
+                    fontSize: isTablet ? 10 : 8,
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isTablet ? 8 : 6),
               if (packageType.isNotEmpty)
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: isTablet ? 3 : 2),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       packageType,
-                      style: const TextStyle(
-                        fontSize: 8,
+                      style: TextStyle(
+                        fontSize: isTablet ? 10 : 8,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
                       ),
@@ -945,21 +964,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           // Plan Name
           Text(
             packageName,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: isTablet ? 17 : 14,
               color: Colors.white,
               height: 1.2,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: isTablet ? 12 : 10),
           // Divider
           Opacity(
             opacity: 0.3,
@@ -968,7 +987,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           // Expires and Days Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -978,14 +997,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Opacity(
+                    Opacity(
                       opacity: 0.6,
                       child: Text(
                         'EXPIRES',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
-                          fontSize: 8,
+                          fontSize: isTablet ? 10 : 8,
                           letterSpacing: 0.5,
                           color: Colors.white,
                           height: 1.2,
@@ -994,10 +1013,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     Text(
                       _formatExpiryDate(expiresAt),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontWeight: FontWeight.w600,
-                        fontSize: 10,
+                        fontSize: isTablet ? 12 : 10,
                         color: Colors.white,
                         height: 1.2,
                       ),
@@ -1006,9 +1025,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isTablet ? 8 : 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
@@ -1018,7 +1037,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.w600,
-                    fontSize: 9,
+                    fontSize: isTablet ? 11 : 9,
                     color: cardColor,
                   ),
                 ),
@@ -1040,17 +1059,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color iconBgColor,
     required Color iconColor,
     required Color dividerColor,
+    bool isTablet = false,
   }) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16, vertical: isTablet ? 16 : 12),
           child: Row(
             children: [
               // Icon circle
               Container(
-                width: 42,
-                height: 42,
+                width: isTablet ? 52 : 42,
+                height: isTablet ? 52 : 42,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: iconBgColor,
@@ -1059,13 +1079,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? Center(
                         child: Icon(
                           icon,
-                          size: 22,
+                          size: isTablet ? 27 : 22,
                           color: iconColor,
                         ),
                       )
                     : null,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
               // Label and Value
               Expanded(
                 child: Column(
@@ -1076,7 +1096,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontWeight: FontWeight.w400,
-                        fontSize: 10,
+                        fontSize: isTablet ? 13 : 10,
                         height: 1.5,
                         color: secondaryTextColor,
                       ),
@@ -1086,7 +1106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: isTablet ? 17 : 14,
                         height: 1.4,
                         color: textColor,
                       ),
@@ -1099,7 +1119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (showDivider)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16),
             child: Divider(
               height: 1,
               color: dividerColor,
@@ -1119,50 +1139,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color iconColor,
     required Color textColor,
     required Color secondaryTextColor,
+    bool isTablet = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: isTablet ? 55 : 44,
+              height: isTablet ? 55 : 44,
               decoration: BoxDecoration(
                 color: iconBgColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  size: 22,
+                  size: isTablet ? 27 : 22,
                   color: iconColor,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isTablet ? 16 : 12),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 color: textColor,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: isTablet ? 3 : 2),
             Text(
               subtitle,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w400,
-                fontSize: 11,
+                fontSize: isTablet ? 14 : 11,
                 color: secondaryTextColor,
               ),
             ),

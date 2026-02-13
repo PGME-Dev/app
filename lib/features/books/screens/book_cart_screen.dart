@@ -5,6 +5,7 @@ import 'package:pgme/core/models/book_order_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class BookCartScreen extends StatelessWidget {
   const BookCartScreen({super.key});
@@ -15,6 +16,7 @@ class BookCartScreen extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -24,18 +26,23 @@ class BookCartScreen extends StatelessWidget {
     final borderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
     final buttonColor = isDark ? const Color(0xFF1A1A4D) : const Color(0xFF000080);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 21 : 16), left: hPadding, right: hPadding),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => context.pop(),
-                  child: Icon(Icons.arrow_back, size: 24, color: textColor),
+                  child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
                 ),
                 const Spacer(),
                 Text(
@@ -43,17 +50,17 @@ class BookCartScreen extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
+                    fontSize: isTablet ? 25 : 20,
                     color: textColor,
                   ),
                 ),
                 const Spacer(),
-                const SizedBox(width: 24),
+                SizedBox(width: isTablet ? 30 : 24),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 21 : 16),
 
           // Cart Items
           Expanded(
@@ -66,27 +73,27 @@ class BookCartScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.shopping_cart_outlined,
-                          size: 64,
+                          size: isTablet ? 80 : 64,
                           color: secondaryTextColor,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           'Your cart is empty',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w500,
                             color: textColor,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: isTablet ? 10 : 8),
                         Text(
                           'Add some books to get started',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: secondaryTextColor,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: isTablet ? 31 : 24),
                         ElevatedButton(
                           onPressed: () => context.pop(),
                           style: ElevatedButton.styleFrom(
@@ -101,7 +108,7 @@ class BookCartScreen extends StatelessWidget {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                  padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: isTablet ? 21 : 16),
                   itemCount: provider.cartItems.length,
                   itemBuilder: (context, index) {
                     final item = provider.cartItems[index];
@@ -110,6 +117,7 @@ class BookCartScreen extends StatelessWidget {
                       item: item,
                       provider: provider,
                       isDark: isDark,
+                      isTablet: isTablet,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
                       cardBgColor: cardBgColor,
@@ -127,7 +135,7 @@ class BookCartScreen extends StatelessWidget {
               if (provider.isCartEmpty) return const SizedBox.shrink();
 
               return Container(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 120),
+                padding: EdgeInsets.fromLTRB(hPadding, isTablet ? 20 : 16, hPadding, bottomPadding + (isTablet ? 150 : 120)),
                 decoration: BoxDecoration(
                   color: cardBgColor,
                   border: Border(
@@ -143,20 +151,20 @@ class BookCartScreen extends StatelessWidget {
                         Text(
                           'Subtotal',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: secondaryTextColor,
                           ),
                         ),
                         Text(
                           '\u{20B9}${provider.cartSubtotal}',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: textColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 10 : 8),
                     // Shipping
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -164,22 +172,22 @@ class BookCartScreen extends StatelessWidget {
                         Text(
                           'Shipping',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: secondaryTextColor,
                           ),
                         ),
                         Text(
                           '\u{20B9}${provider.shippingCost}',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: textColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 10 : 8),
                     Divider(color: borderColor),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 10 : 8),
                     // Total
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,7 +195,7 @@ class BookCartScreen extends StatelessWidget {
                         Text(
                           'Total',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
@@ -195,33 +203,33 @@ class BookCartScreen extends StatelessWidget {
                         Text(
                           '\u{20B9}${provider.cartTotal}',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: isTablet ? 21 : 16),
                     // Checkout Button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: isTablet ? 60 : 50,
                       child: ElevatedButton(
                         onPressed: () => context.push('/book-checkout'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                           ),
                         ),
                         child: Text(
                           'Proceed to Checkout (${provider.cartItemCount} items)',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                            fontSize: isTablet ? 20 : 16,
                           ),
                         ),
                       ),
@@ -233,6 +241,8 @@ class BookCartScreen extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -241,6 +251,7 @@ class BookCartScreen extends StatelessWidget {
     required CartItem item,
     required BookProvider provider,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color secondaryTextColor,
     required Color cardBgColor,
@@ -249,11 +260,11 @@ class BookCartScreen extends StatelessWidget {
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 16 : 12),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(color: borderColor),
       ),
       child: Row(
@@ -261,32 +272,32 @@ class BookCartScreen extends StatelessWidget {
         children: [
           // Book Image
           Container(
-            width: 80,
-            height: 100,
+            width: isTablet ? 100 : 80,
+            height: isTablet ? 125 : 100,
             decoration: BoxDecoration(
               color: placeholderColor,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
             ),
             child: item.thumbnailUrl != null
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                     child: Image.network(
                       item.thumbnailUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Icon(
                         Icons.menu_book,
-                        size: 32,
+                        size: isTablet ? 40 : 32,
                         color: textColor.withValues(alpha: 0.3),
                       ),
                     ),
                   )
                 : Icon(
                     Icons.menu_book,
-                    size: 32,
+                    size: isTablet ? 40 : 32,
                     color: textColor.withValues(alpha: 0.3),
                   ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isTablet ? 16 : 12),
           // Book Details
           Expanded(
             child: Column(
@@ -299,7 +310,7 @@ class BookCartScreen extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: isTablet ? 17 : 14,
                     color: textColor,
                   ),
                 ),
@@ -308,21 +319,21 @@ class BookCartScreen extends StatelessWidget {
                     item.author!,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       color: secondaryTextColor,
                     ),
                   ),
-                const SizedBox(height: 8),
+                SizedBox(height: isTablet ? 10 : 8),
                 Text(
                   '\u{20B9}${item.price}',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: isTablet ? 20 : 16,
                     color: textColor,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isTablet ? 10 : 8),
                 // Quantity Controls
                 Row(
                   children: [
@@ -330,16 +341,17 @@ class BookCartScreen extends StatelessWidget {
                       icon: Icons.remove,
                       onTap: () => provider.decrementQuantity(item.bookId),
                       isDark: isDark,
+                      isTablet: isTablet,
                     ),
                     Container(
-                      width: 40,
+                      width: isTablet ? 50 : 40,
                       alignment: Alignment.center,
                       child: Text(
                         '${item.quantity}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                           color: textColor,
                         ),
                       ),
@@ -348,6 +360,7 @@ class BookCartScreen extends StatelessWidget {
                       icon: Icons.add,
                       onTap: () => provider.incrementQuantity(item.bookId),
                       isDark: isDark,
+                      isTablet: isTablet,
                     ),
                     const Spacer(),
                     // Remove button
@@ -355,6 +368,7 @@ class BookCartScreen extends StatelessWidget {
                       onPressed: () => provider.removeFromCart(item.bookId),
                       icon: Icon(
                         Icons.delete_outline,
+                        size: isTablet ? 30 : 24,
                         color: Colors.red.shade400,
                       ),
                     ),
@@ -372,17 +386,18 @@ class BookCartScreen extends StatelessWidget {
     required IconData icon,
     required VoidCallback onTap,
     required bool isDark,
+    required bool isTablet,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        width: isTablet ? 40 : 32,
+        height: isTablet ? 40 : 32,
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
         ),
-        child: Icon(icon, size: 18),
+        child: Icon(icon, size: isTablet ? 22 : 18),
       ),
     );
   }

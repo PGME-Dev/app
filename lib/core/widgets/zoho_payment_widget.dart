@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class ZohoPaymentWidget extends StatefulWidget {
   final ZohoPaymentSession paymentSession;
@@ -123,11 +124,17 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Complete Payment'),
+        title: Text(
+          'Complete Payment',
+          style: TextStyle(fontSize: isTablet ? 20 : null),
+        ),
+        toolbarHeight: isTablet ? 64 : null,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: Icon(Icons.close, size: isTablet ? 28 : 24),
           onPressed: () {
             widget.onCancel?.call();
             Navigator.of(context).pop();
@@ -141,15 +148,24 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
           if (_isLoading)
             Container(
               color: Colors.white,
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
+                    SizedBox(
+                      width: isTablet ? 48 : 36,
+                      height: isTablet ? 48 : 36,
+                      child: CircularProgressIndicator(
+                        strokeWidth: isTablet ? 4.0 : 3.0,
+                      ),
+                    ),
+                    SizedBox(height: isTablet ? 24 : 16),
                     Text(
                       'Loading payment gateway...',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: isTablet ? 18 : 16,
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),

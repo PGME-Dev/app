@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
@@ -59,116 +60,124 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedSubject = context.read<OnboardingProvider>().selectedSubject;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 48 : 24),
+              child: Column(
+                children: [
+                  const Spacer(),
 
-              // Success Icon/Illustration
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    size: 120,
-                    color: AppColors.success,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Congratulations Title
-              const Text(
-                'Congratulations!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF000000),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Success Message
-              Text(
-                selectedSubject != null
-                    ? 'You\'ve successfully selected ${selectedSubject.name} as your primary subject!'
-                    : 'Your profile setup is complete!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Welcome message
-              const Text(
-                'Welcome to PGME!\nLet\'s start your learning journey.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                  height: 1.4,
-                ),
-              ),
-
-              const Spacer(),
-
-              // Continue to Dashboard Button
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: _isCompleting ? null : _completeToDashboard,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
+                  // Success Icon/Illustration
+                  Container(
+                    width: isTablet ? 280 : 200,
+                    height: isTablet ? 280 : 200,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    elevation: 0,
+                    child: Center(
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        size: isTablet ? 170 : 120,
+                        color: AppColors.success,
+                      ),
+                    ),
                   ),
-                  child: _isCompleting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Continue to Dashboard',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-              ),
 
-              const SizedBox(height: 32),
-            ],
+                  SizedBox(height: isTablet ? 50 : 40),
+
+                  // Congratulations Title
+                  Text(
+                    'Congratulations!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isTablet ? 48 : 36,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF000000),
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 20 : 16),
+
+                  // Success Message
+                  Text(
+                    selectedSubject != null
+                        ? 'You\'ve successfully selected ${selectedSubject.name} as your primary subject!'
+                        : 'Your profile setup is complete!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isTablet ? 22 : 18,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 20 : 16),
+
+                  // Welcome message
+                  Text(
+                    'Welcome to PGME!\nLet\'s start your learning journey.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isTablet ? 20 : 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Continue to Dashboard Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: isTablet ? 68 : 54,
+                    child: ElevatedButton(
+                      onPressed: _isCompleting ? null : _completeToDashboard,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(isTablet ? 28 : 22),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isCompleting
+                          ? SizedBox(
+                              width: isTablet ? 28 : 20,
+                              height: isTablet ? 28 : 20,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'Continue to Dashboard',
+                              style: TextStyle(
+                                fontSize: isTablet ? 20 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 40 : 32),
+                ],
+              ),
+            ),
           ),
         ),
       ),

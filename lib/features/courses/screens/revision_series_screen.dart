@@ -8,6 +8,7 @@ import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -138,6 +139,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   }
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -149,13 +151,13 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Container(
-        width: 356,
+        width: isTablet ? 480 : 356,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height - 80,
         ),
         decoration: BoxDecoration(
           color: dialogBgColor,
-          borderRadius: BorderRadius.circular(20.8),
+          borderRadius: BorderRadius.circular(isTablet ? 28 : 20.8),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -173,25 +175,25 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               ),
               Image.asset(
                 'assets/illustrations/enroll.png',
-                width: 180,
-                height: 120,
+                width: isTablet ? 240 : 180,
+                height: isTablet ? 160 : 120,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    width: 180,
-                    height: 120,
+                    width: isTablet ? 240 : 180,
+                    height: isTablet ? 160 : 120,
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
-                    child: Icon(Icons.school_outlined, size: 60, color: iconColor),
+                    child: Icon(Icons.school_outlined, size: isTablet ? 80 : 60, color: iconColor),
                   );
                 },
               ),
               const SizedBox(height: 16),
               Text(
                 'Get the Theory Package',
-                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 20, color: textColor),
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: isTablet ? 26 : 20, color: textColor),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -199,7 +201,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Unlock all revision series and get access to comprehensive study materials.',
-                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 14, height: 1.4, color: secondaryTextColor),
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: isTablet ? 17 : 14, height: 1.4, color: secondaryTextColor),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -223,7 +225,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Text('₹4,999', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 24, color: textColor)),
+                          Text('₹4,999', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: isTablet ? 30 : 24, color: textColor)),
                           const SizedBox(width: 8),
                           Text('/ 3 months', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 12, color: secondaryTextColor)),
                         ],
@@ -231,7 +233,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: isTablet ? 52 : 40,
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(dialogContext).pop(true),
                           style: ElevatedButton.styleFrom(
@@ -239,20 +241,20 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                             elevation: 0,
                           ),
-                          child: const Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white)),
+                          child: Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: Colors.white)),
                         ),
                       ),
                       const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: isTablet ? 52 : 40,
                         child: OutlinedButton(
                           onPressed: () => Navigator.of(dialogContext).pop(false),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: buttonColor, width: 1),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
-                          child: Text('See All Packages', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: 16, color: buttonColor)),
+                          child: Text('See All Packages', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: buttonColor)),
                         ),
                       ),
                     ],
@@ -268,12 +270,13 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   }
 
   Widget _buildFeatureCheckItem(String text, Color textColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Row(
       children: [
-        Icon(Icons.check_circle, size: 18, color: iconColor),
+        Icon(Icons.check_circle, size: isTablet ? 22 : 18, color: iconColor),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(text, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 13, color: textColor)),
+          child: Text(text, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: isTablet ? 16 : 13, color: textColor)),
         ),
       ],
     );
@@ -284,6 +287,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     final dashboardProvider = Provider.of<DashboardProvider>(context);
     // Use the active theory package's purchase status when available,
@@ -332,7 +337,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
           children: [
             // App bar area
             Padding(
-              padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16, bottom: 12),
+              padding: EdgeInsets.only(top: topPadding + 12, left: hPadding, right: hPadding, bottom: 12),
               child: Row(
                 children: [
                   // Back arrow
@@ -346,7 +351,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
+                      child: Icon(Icons.arrow_back_rounded, size: isTablet ? 30 : 24, color: textColor),
                     ),
                   ),
                   // Title
@@ -357,7 +362,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 20,
+                        fontSize: isTablet ? 26 : 20,
                         letterSpacing: -0.3,
                         color: textColor,
                       ),
@@ -367,7 +372,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                   if (isOnLanding)
                     GestureDetector(
                       onTap: () {},
-                      child: Icon(Icons.more_horiz, size: 24, color: textColor),
+                      child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
                     ),
                 ],
               ),
@@ -400,55 +405,62 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final gradientStart = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFCDE5FF);
     final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
 
-          // Two option cards
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildOptionCard(
-                    title: 'Watch\nVideo Lectures',
-                    subtitle: '${_getTotalLectures()} Lectures',
-                    icon: Icons.play_circle_outline_rounded,
-                    imagePath: 'assets/illustrations/1.png',
-                    isDark: isDark,
-                    gradientStart: gradientStart,
-                    gradientEnd: gradientEnd,
-                    onTap: () => setState(() => _contentMode = 'lectures'),
-                  ),
+              // Two option cards
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildOptionCard(
+                        title: 'Watch\nVideo Lectures',
+                        subtitle: '${_getTotalLectures()} Lectures',
+                        icon: Icons.play_circle_outline_rounded,
+                        imagePath: 'assets/illustrations/1.png',
+                        isDark: isDark,
+                        gradientStart: gradientStart,
+                        gradientEnd: gradientEnd,
+                        onTap: () => setState(() => _contentMode = 'lectures'),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 20 : 14),
+                    Expanded(
+                      child: _buildOptionCard(
+                        title: 'Read\nDocuments',
+                        subtitle: '${_getTotalDocuments()} Documents',
+                        icon: Icons.description_outlined,
+                        imagePath: 'assets/illustrations/2.png',
+                        isDark: isDark,
+                        gradientStart: gradientStart,
+                        gradientEnd: gradientEnd,
+                        onTap: () => setState(() => _contentMode = 'documents'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _buildOptionCard(
-                    title: 'Read\nDocuments',
-                    subtitle: '${_getTotalDocuments()} Documents',
-                    icon: Icons.description_outlined,
-                    imagePath: 'assets/illustrations/2.png',
-                    isDark: isDark,
-                    gradientStart: gradientStart,
-                    gradientEnd: gradientEnd,
-                    onTap: () => setState(() => _contentMode = 'documents'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Package info section
+              _buildPackageInfoSection(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+            ],
           ),
-
-          const SizedBox(height: 28),
-
-          // Package info section
-          _buildPackageInfoSection(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
-        ],
+        ),
       ),
     );
   }
@@ -463,12 +475,24 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     required Color gradientEnd,
     required VoidCallback onTap,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final cardHeight = isTablet ? 280.0 : 180.0;
+    final imgWidth = isTablet ? 200.0 : 110.0;
+    final imgHeight = isTablet ? 160.0 : 80.0;
+    final cardRadius = isTablet ? 22.0 : 16.0;
+    final cardPadding = isTablet ? 24.0 : 16.0;
+    final titleSize = isTablet ? 22.0 : 16.0;
+    final subtitleSize = isTablet ? 15.0 : 11.0;
+    final pillPaddingH = isTablet ? 14.0 : 10.0;
+    final pillPaddingV = isTablet ? 6.0 : 4.0;
+    final errorIconSize = isTablet ? 48.0 : 36.0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 180,
+        height: cardHeight,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           gradient: LinearGradient(
             begin: const Alignment(-0.5, -0.5),
             end: const Alignment(0.5, 0.5),
@@ -478,7 +502,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(cardPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -487,24 +511,24 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: titleSize,
                       color: isDark ? Colors.white : const Color(0xFF000000),
                       height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: isTablet ? 10 : 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: pillPaddingH, vertical: pillPaddingV),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
                     child: Text(
                       subtitle,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: 11,
+                        fontSize: subtitleSize,
                         color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
                       ),
                     ),
@@ -517,23 +541,23 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               right: 0,
               bottom: 0,
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
                 child: Image.asset(
                   imagePath,
-                  width: 110,
-                  height: 80,
+                  width: imgWidth,
+                  height: imgHeight,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: 110,
-                      height: 80,
+                      width: imgWidth,
+                      height: imgHeight,
                       decoration: BoxDecoration(
                         color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
                       ),
                       child: Icon(
                         icon,
-                        size: 36,
+                        size: errorIconSize,
                         color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
                       ),
                     );
@@ -555,13 +579,15 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final pkg = _theoryPackage;
     final totalLectures = _getTotalLectures();
     final totalDocs = _getTotalDocuments();
     final totalDuration = _getTotalDuration();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: hPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -571,7 +597,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: 18,
+              fontSize: isTablet ? 24 : 18,
               color: textColor,
             ),
           ),
@@ -582,7 +608,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w400,
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 height: 1.5,
                 color: secondaryTextColor,
               ),
@@ -593,10 +619,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
 
           // Stats row
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isTablet ? 22 : 16),
             decoration: BoxDecoration(
               color: cardBgColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
             ),
             child: Row(
               children: [
@@ -650,7 +676,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 color: textColor,
               ),
             ),
@@ -660,7 +686,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 18, color: iconColor),
+                      Icon(Icons.check_circle_rounded, size: isTablet ? 22 : 18, color: iconColor),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -668,7 +694,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             height: 1.4,
                             color: textColor,
                           ),
@@ -686,7 +712,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isTablet ? 20 : 16,
               color: textColor,
             ),
           ),
@@ -705,17 +731,18 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     required Color textColor,
     required Color secondaryColor,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, size: 20, color: iconColor),
+          Icon(icon, size: isTablet ? 26 : 20, color: iconColor),
           const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isTablet ? 20 : 16,
               color: textColor,
             ),
           ),
@@ -724,7 +751,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: 11,
+              fontSize: isTablet ? 14 : 11,
               color: secondaryColor,
             ),
           ),
@@ -734,9 +761,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   }
 
   Widget _buildStatDivider(bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
       width: 1,
-      height: 40,
+      height: isTablet ? 52 : 40,
       color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1),
     );
   }
@@ -748,12 +776,19 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     Color secondaryTextColor,
     Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final tileMargin = isTablet ? 14.0 : 10.0;
+    final tilePaddingH = isTablet ? 20.0 : 14.0;
+    final tilePaddingV = isTablet ? 16.0 : 12.0;
+    final iconBoxSize = isTablet ? 52.0 : 36.0;
+    final iconBoxRadius = isTablet ? 14.0 : 10.0;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: EdgeInsets.only(bottom: tileMargin),
+      padding: EdgeInsets.symmetric(horizontal: tilePaddingH, vertical: tilePaddingV),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(
           color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
         ),
@@ -761,17 +796,17 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: iconBoxSize,
+            height: iconBoxSize,
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkCardBackground : const Color(0xFFE8F0FE),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(iconBoxRadius),
             ),
             child: Center(
-              child: Icon(Icons.menu_book_rounded, size: 18, color: iconColor),
+              child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isTablet ? 16 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,19 +816,19 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                    fontSize: isTablet ? 16 : 13,
                     color: textColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: isTablet ? 4 : 2),
                 Text(
                   '${series.totalLectures ?? 0} lectures · ${series.totalDocuments ?? 0} docs',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 11,
+                    fontSize: isTablet ? 14 : 11,
                     color: secondaryTextColor,
                   ),
                 ),
@@ -801,9 +836,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             ),
           ),
           if (series.isLocked)
-            Icon(Icons.lock_rounded, size: 16, color: secondaryTextColor)
+            Icon(Icons.lock_rounded, size: isTablet ? 22 : 16, color: secondaryTextColor)
           else
-            Icon(Icons.chevron_right_rounded, size: 20, color: secondaryTextColor),
+            Icon(Icons.chevron_right_rounded, size: isTablet ? 24 : 20, color: secondaryTextColor),
         ],
       ),
     );
@@ -819,21 +854,24 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     if (_series.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open_outlined, size: 48, color: textColor.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
+            Icon(Icons.folder_open_outlined, size: isTablet ? 64 : 48, color: textColor.withValues(alpha: 0.5)),
+            SizedBox(height: isTablet ? 20 : 16),
             Text(
               'No series available',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 20 : 16, fontWeight: FontWeight.w600, color: textColor),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isTablet ? 12 : 8),
             Text(
               'This package does not have any series yet.',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: secondaryTextColor),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
               textAlign: TextAlign.center,
             ),
           ],
@@ -841,38 +879,43 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 100),
-      itemCount: _series.length,
-      itemBuilder: (context, index) {
-        final series = _series[index];
-        final isItemLocked = series.isLocked;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
+          itemCount: _series.length,
+          itemBuilder: (context, index) {
+            final series = _series[index];
+            final isItemLocked = series.isLocked;
 
-        return GestureDetector(
-          onTap: () {
-            if (isItemLocked) {
-              _showEnrollmentPopup();
-            } else {
-              final seriesId = series.seriesId;
-              if (seriesId.isEmpty) return;
+            return GestureDetector(
+              onTap: () {
+                if (isItemLocked) {
+                  _showEnrollmentPopup();
+                } else {
+                  final seriesId = series.seriesId;
+                  if (seriesId.isEmpty) return;
 
-              if (_contentMode == 'lectures') {
-                context.push('/lecture/$seriesId?subscribed=$isSubscribed&packageType=Theory&packageId=$_activePackageId');
-              } else {
-                context.push('/available-notes?seriesId=$seriesId&subscribed=$isSubscribed');
-              }
-            }
+                  if (_contentMode == 'lectures') {
+                    context.push('/lecture/$seriesId?subscribed=$isSubscribed&packageType=Theory&packageId=$_activePackageId');
+                  } else {
+                    context.push('/available-notes?seriesId=$seriesId&subscribed=$isSubscribed');
+                  }
+                }
+              },
+              child: _buildSeriesCard(
+                series,
+                isDark: isDark,
+                textColor: textColor,
+                cardBgColor: cardBgColor,
+                iconColor: iconColor,
+                isLocked: isItemLocked,
+              ),
+            );
           },
-          child: _buildSeriesCard(
-            series,
-            isDark: isDark,
-            textColor: textColor,
-            cardBgColor: cardBgColor,
-            iconColor: iconColor,
-            isLocked: isItemLocked,
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -884,35 +927,44 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     required Color iconColor,
     required bool isLocked,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final isLectureMode = _contentMode == 'lectures';
 
+    final cardMargin = isTablet ? 18.0 : 14.0;
+    final cardPadding = isTablet ? 24.0 : 18.0;
+    final iconBoxSize = isTablet ? 60.0 : 44.0;
+    final iconBoxRadius = isTablet ? 16.0 : 12.0;
+    final contentIconSize = isTablet ? 30.0 : 22.0;
+    final lockBoxSize = isTablet ? 42.0 : 32.0;
+    final contentGap = isTablet ? 18.0 : 14.0;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: cardMargin),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(cardPadding),
         child: Row(
           children: [
             // Icon
             Container(
-              width: 44,
-              height: 44,
+              width: iconBoxSize,
+              height: iconBoxSize,
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(iconBoxRadius),
               ),
               child: Center(
                 child: Icon(
                   isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
-                  size: 22,
+                  size: contentIconSize,
                   color: iconColor,
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: contentGap),
             // Content
             Expanded(
               child: Column(
@@ -923,14 +975,14 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: isTablet ? 18 : 14,
                       height: 1.3,
                       color: textColor,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isTablet ? 6 : 4),
                   Text(
                     isLectureMode
                         ? '${series.totalLectures ?? 0} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}'
@@ -938,27 +990,27 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       color: textColor.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: isTablet ? 12 : 8),
             // Lock or arrow
             if (isLocked)
               Container(
-                width: 32,
-                height: 32,
+                width: lockBoxSize,
+                height: lockBoxSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDark ? AppColors.darkSurface : Colors.white,
                 ),
-                child: Center(child: Icon(Icons.lock_rounded, size: 16, color: iconColor)),
+                child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 22 : 16, color: iconColor)),
               )
             else
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: textColor.withValues(alpha: 0.4)),
+              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -968,6 +1020,11 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   // ── Loading Shimmer ──────────────────────────────────────────────────────
 
   Widget _buildLoadingShimmer(bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPad = isTablet ? 24.0 : 16.0;
+    final cardHeight = isTablet ? 180.0 : 120.0;
+    final radius = isTablet ? 18.0 : 12.0;
+
     // Show different shimmer based on current view mode
     if (_contentMode == 'lectures' || _contentMode == 'documents') {
       // Series list shimmer
@@ -975,83 +1032,93 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     } else if (_activePackageId != null) {
       // Package detail shimmer (when viewing a specific package)
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Two option cards
-            Row(
+        padding: EdgeInsets.all(hPad),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            child: Column(
               children: [
-                Expanded(
-                  child: ShimmerWidgets.container(
-                    width: double.infinity,
-                    height: 120,
-                    borderRadius: 12,
-                    isDark: isDark,
-                  ),
+                // Two option cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: ShimmerWidgets.container(
+                        width: double.infinity,
+                        height: cardHeight,
+                        borderRadius: radius,
+                        isDark: isDark,
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 20 : 16),
+                    Expanded(
+                      child: ShimmerWidgets.container(
+                        width: double.infinity,
+                        height: cardHeight,
+                        borderRadius: radius,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ShimmerWidgets.container(
-                    width: double.infinity,
-                    height: 120,
-                    borderRadius: 12,
-                    isDark: isDark,
-                  ),
+                SizedBox(height: isTablet ? 32 : 24),
+                // Package info shimmer
+                ShimmerWidgets.container(
+                  width: double.infinity,
+                  height: isTablet ? 260 : 200,
+                  borderRadius: radius,
+                  isDark: isDark,
+                ),
+                SizedBox(height: isTablet ? 20 : 16),
+                ShimmerWidgets.container(
+                  width: double.infinity,
+                  height: isTablet ? 200 : 150,
+                  borderRadius: radius,
+                  isDark: isDark,
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            // Package info shimmer
-            ShimmerWidgets.container(
-              width: double.infinity,
-              height: 200,
-              borderRadius: 12,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 16),
-            ShimmerWidgets.container(
-              width: double.infinity,
-              height: 150,
-              borderRadius: 12,
-              isDark: isDark,
-            ),
-          ],
+          ),
         ),
       );
     } else {
       // Landing page shimmer (packages grid)
       return SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ShimmerWidgets.container(
-                width: 150,
-                height: 24,
-                borderRadius: 4,
-                isDark: isDark,
-              ),
-            ),
-            // Package grid shimmer
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.75,
+        padding: EdgeInsets.only(bottom: isTablet ? 120 : 100),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header section
+                Padding(
+                  padding: EdgeInsets.all(hPad),
+                  child: ShimmerWidgets.container(
+                    width: isTablet ? 200 : 150,
+                    height: isTablet ? 30 : 24,
+                    borderRadius: isTablet ? 6 : 4,
+                    isDark: isDark,
+                  ),
                 ),
-                itemCount: 4,
-                itemBuilder: (context, index) => ShimmerWidgets.gridItemShimmer(isDark: isDark),
-              ),
+                // Package grid shimmer
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: isTablet ? 18 : 12,
+                      mainAxisSpacing: isTablet ? 18 : 12,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: 4,
+                    itemBuilder: (context, index) => ShimmerWidgets.gridItemShimmer(isDark: isDark),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
@@ -1060,25 +1127,26 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   // ── Error View ────────────────────────────────────────────────────────
 
   Widget _buildErrorView(Color textColor, Color secondaryTextColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isTablet ? 32.0 : 16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: textColor.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
+            Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: textColor.withValues(alpha: 0.5)),
+            SizedBox(height: isTablet ? 20 : 16),
             Text(
               'Failed to load data',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 20 : 16, fontWeight: FontWeight.w600, color: textColor),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isTablet ? 12 : 8),
             Text(
               _error!.replaceAll('Exception: ', ''),
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: secondaryTextColor),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isTablet ? 20 : 16),
             ElevatedButton(
               onPressed: _loadData,
               style: ElevatedButton.styleFrom(backgroundColor: iconColor),

@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: cardHeight,
               clipBehavior: Clip.none,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
                 gradient: LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
@@ -90,18 +90,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Text
                   Positioned(
-                    top: isTablet ? 16 : 13,
-                    left: isTablet ? 16 : 12,
+                    top: isTablet ? 28 : 13,
+                    left: isTablet ? 28 : 12,
                     child: Opacity(
                       opacity: 0.9,
                       child: SizedBox(
-                        width: isTablet ? 170 : 139,
+                        width: isTablet ? 260 : 139,
                         child: Text(
                           'Order Physical\nCopies',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 20 : 18,
+                            fontSize: isTablet ? 28 : 18,
                             height: 20 / 18,
                             letterSpacing: -0.5,
                             color: Colors.white,
@@ -113,13 +113,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Image
                   Positioned(
                     right: -130,
-                    top: isTablet ? -140 : -120,
+                    top: isTablet ? -150 : -120,
                     child: Transform.flip(
                       flipX: true,
                       child: Image.asset(
                         'assets/illustrations/4.png',
-                        width: isTablet ? 380 : 350,
-                        height: isTablet ? 380 : 350,
+                        width: isTablet ? 420 : 350,
+                        height: isTablet ? 420 : 350,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -155,8 +155,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Responsive sizes
     final avatarSize = ResponsiveHelper.profileAvatarSize(context);
     final actionBtnSize = ResponsiveHelper.actionButtonSize(context);
-    final greetingFontSize = isTablet ? 24.0 : 20.0;
-    final subtitleFontSize = isTablet ? 15.0 : 13.0;
+    final greetingFontSize = isTablet ? 30.0 : 20.0;
+    final subtitleFontSize = isTablet ? 18.0 : 13.0;
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 20.0;
 
     return Scaffold(
@@ -208,23 +208,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             fit: BoxFit.cover,
                                             placeholder: (context, url) => Icon(
                                               Icons.person_rounded,
-                                              size: isTablet ? 28 : 24,
+                                              size: isTablet ? 40 : 24,
                                               color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                             ),
                                             errorWidget: (context, url, error) => Icon(
                                               Icons.person_rounded,
-                                              size: isTablet ? 28 : 24,
+                                              size: isTablet ? 40 : 24,
                                               color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                             ),
                                           )
                                         : Icon(
                                             Icons.person_rounded,
-                                            size: isTablet ? 28 : 24,
+                                            size: isTablet ? 40 : 24,
                                             color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
                                           ),
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                SizedBox(width: isTablet ? 22 : 14),
                                 // Greeting
                                 Expanded(
                                   child: Column(
@@ -271,13 +271,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     child: Center(
                                       child: Image.asset(
                                         'assets/icons/whatsapp_logo.png',
-                                        width: isTablet ? 24 : 20,
-                                        height: isTablet ? 24 : 20,
+                                        width: isTablet ? 32 : 20,
+                                        height: isTablet ? 32 : 20,
                                         color: const Color(0xFF25D366),
                                         errorBuilder: (context, error, stackTrace) {
                                           return Icon(
                                             Icons.chat_rounded,
-                                            size: isTablet ? 24 : 20,
+                                            size: isTablet ? 32 : 20,
                                             color: const Color(0xFF25D366),
                                           );
                                         },
@@ -298,7 +298,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     child: Center(
                                       child: Icon(
                                         Icons.notifications_outlined,
-                                        size: isTablet ? 26 : 22,
+                                        size: isTablet ? 34 : 22,
                                         color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
                                       ),
                                     ),
@@ -310,7 +310,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 25),
+                      SizedBox(height: isTablet ? 40 : 25),
 
                       // Live Class Carousel (auto-sliding with multiple sessions and banners)
                       if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
@@ -320,7 +320,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
 
                       if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
-                        const SizedBox(height: 24),
+                        SizedBox(height: isTablet ? 36 : 24),
 
                       // Subject Section (if available)
                       if (dashboardProvider.primarySubject != null)
@@ -334,19 +334,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
                               ),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 28 : 16,
+                                  vertical: isTablet ? 14 : 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isDark
                                       ? AppColors.darkCardBackground
                                       : const Color(0xFFE3F2FD),
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
                                 ),
                                 child: Text(
                                   dashboardProvider.primarySubject!.subjectName,
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w500,
-                                    fontSize: isTablet ? 16 : 14,
+                                    fontSize: isTablet ? 22 : 14,
                                     color: textColor,
                                   ),
                                 ),
@@ -355,7 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
 
-                      if (dashboardProvider.primarySubject != null) const SizedBox(height: 24),
+                      if (dashboardProvider.primarySubject != null) SizedBox(height: isTablet ? 36 : 24),
 
                       // For You Section (enrolled users)
                       if (dashboardProvider.hasActivePurchase == true)
@@ -368,12 +371,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           hasPracticalSubscription: dashboardProvider.hasPracticalSubscription,
                         ),
 
-                      if (dashboardProvider.hasActivePurchase == true) const SizedBox(height: 24),
+                      if (dashboardProvider.hasActivePurchase == true) SizedBox(height: isTablet ? 36 : 24),
 
                       // Order Physical Book Card
                       _buildOrderBookCard(isDark, textColor, isTablet),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: isTablet ? 36 : 24),
 
                       // Faculty List
                       FacultyList(

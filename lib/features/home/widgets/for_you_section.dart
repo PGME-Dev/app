@@ -31,7 +31,7 @@ class ForYouSection extends StatelessWidget {
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    final sectionTitleSize = isTablet ? 24.0 : 20.0;
+    final sectionTitleSize = isTablet ? 30.0 : 20.0;
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Column(
@@ -57,7 +57,7 @@ class ForYouSection extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 24 : 16),
 
         // Content - Responsive layout
         Padding(
@@ -70,21 +70,21 @@ class ForYouSection extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final availableWidth = constraints.maxWidth;
-                  const gap = 9.0;
+                  final gap = isTablet ? 14.0 : 9.0;
                   // Left card takes ~49% of available width, right column takes ~51%
                   final resumeCardWidth = (availableWidth - gap) * 0.49;
                   final rightColumnWidth = (availableWidth - gap) * 0.51;
 
                   final resumeCardHeight = ResponsiveHelper.forYouCardHeight(context);
-                  final smallCardHeight = isTablet ? 164.0 : 137.0;
-                  final smallCardHeight2 = isTablet ? 162.0 : 135.0;
+                  final smallCardHeight = isTablet ? 200.0 : 137.0;
+                  final smallCardHeight2 = isTablet ? 198.0 : 135.0;
 
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Resume Card (Left - Tall)
                       _buildResumeCard(isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
-                      const SizedBox(width: gap),
+                      SizedBox(width: gap),
 
                       // Right Column - Theory and Practical
                       SizedBox(
@@ -92,7 +92,7 @@ class ForYouSection extends StatelessWidget {
                         child: Column(
                           children: [
                             _buildTheoryCard(context, isDark, textColor, rightColumnWidth, smallCardHeight, isTablet),
-                            const SizedBox(height: 9),
+                            SizedBox(height: isTablet ? 14 : 9),
                             _buildPracticalCard(context, isDark, textColor, rightColumnWidth, smallCardHeight2, isTablet),
                           ],
                         ),
@@ -109,17 +109,17 @@ class ForYouSection extends StatelessWidget {
   }
 
   Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video, double cardWidth, double cardHeight, bool isTablet) {
-    final labelSize = isTablet ? 14.0 : 12.0;
-    final titleSize = isTablet ? 20.0 : 18.0;
-    final subtitleSize = isTablet ? 16.0 : 14.0;
-    final timeSize = isTablet ? 16.0 : 14.0;
-    final playBtnSize = isTablet ? 38.0 : 32.0;
+    final labelSize = isTablet ? 17.0 : 12.0;
+    final titleSize = isTablet ? 26.0 : 18.0;
+    final subtitleSize = isTablet ? 19.0 : 14.0;
+    final timeSize = isTablet ? 19.0 : 14.0;
+    final playBtnSize = isTablet ? 50.0 : 32.0;
 
     return Container(
       width: cardWidth,
       height: cardHeight,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(isTablet ? 26 : 18),
         gradient: LinearGradient(
           begin: const Alignment(-0.5, -0.5),
           end: const Alignment(0.5, 0.5),
@@ -131,7 +131,7 @@ class ForYouSection extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: EdgeInsets.all(isTablet ? 20 : 16),
+            padding: EdgeInsets.all(isTablet ? 26 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -145,7 +145,7 @@ class ForYouSection extends StatelessWidget {
                         isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
                   ),
                 ),
-                SizedBox(height: isTablet ? 20 : 16),
+                SizedBox(height: isTablet ? 24 : 16),
                 Text(
                   'Continue where\nyou left off',
                   style: TextStyle(
@@ -174,8 +174,8 @@ class ForYouSection extends StatelessWidget {
           ),
           // Play button and time
           Positioned(
-            bottom: isTablet ? 20 : 16,
-            left: isTablet ? 20 : 16,
+            bottom: isTablet ? 26 : 16,
+            left: isTablet ? 26 : 16,
             child: Text(
               video != null ? '${video.remainingMinutes} Min Left' : '--',
               style: TextStyle(
@@ -187,8 +187,8 @@ class ForYouSection extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: isTablet ? 16 : 12,
-            right: isTablet ? 20 : 16,
+            bottom: isTablet ? 22 : 12,
+            right: isTablet ? 26 : 16,
             child: _buildPlayButton(isDark, playBtnSize),
           ),
         ],
@@ -198,11 +198,11 @@ class ForYouSection extends StatelessWidget {
 
   Widget _buildTheoryCard(BuildContext context, bool isDark, Color textColor, double cardWidth, double cardHeight, bool isTablet) {
     final isLocked = !hasTheorySubscription;
-    final labelSize = isTablet ? 14.0 : 12.0;
-    final titleSize = isTablet ? 18.0 : 16.0;
-    final imageWidth = isTablet ? 120.0 : 101.0;
-    final imageHeight = isTablet ? 92.0 : 78.0;
-    final btnSize = isTablet ? 38.0 : 32.0;
+    final labelSize = isTablet ? 17.0 : 12.0;
+    final titleSize = isTablet ? 22.0 : 16.0;
+    final imageWidth = isTablet ? 160.0 : 101.0;
+    final imageHeight = isTablet ? 130.0 : 78.0;
+    final btnSize = isTablet ? 48.0 : 32.0;
 
     return GestureDetector(
       onTap: () {
@@ -213,7 +213,7 @@ class ForYouSection extends StatelessWidget {
         width: cardWidth,
         height: cardHeight,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 12),
           gradient: LinearGradient(
             begin: const Alignment(-0.5, -0.5),
             end: const Alignment(0.8, 0.8),
@@ -230,8 +230,8 @@ class ForYouSection extends StatelessWidget {
               right: 0,
               bottom: 0,
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(13),
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(isTablet ? 22 : 13),
                 ),
                 child: Image.asset(
                   'assets/illustrations/1.png',
@@ -246,7 +246,7 @@ class ForYouSection extends StatelessWidget {
             ),
             // Content
             Padding(
-              padding: EdgeInsets.all(isTablet ? 16 : 12),
+              padding: EdgeInsets.all(isTablet ? 24 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -261,7 +261,7 @@ class ForYouSection extends StatelessWidget {
                           : const Color(0xFF666666),
                     ),
                   ),
-                  SizedBox(height: isTablet ? 10 : 8),
+                  SizedBox(height: isTablet ? 14 : 8),
                   Text(
                     'View Classes',
                     style: TextStyle(
@@ -276,8 +276,8 @@ class ForYouSection extends StatelessWidget {
             ),
             // Play button or lock button based on subscription
             Positioned(
-              bottom: isTablet ? 16 : 12,
-              right: isTablet ? 16 : 12,
+              bottom: isTablet ? 20 : 12,
+              right: isTablet ? 20 : 12,
               child: isLocked ? _buildLockButton(isDark, btnSize) : _buildPlayButton(isDark, btnSize),
             ),
           ],
@@ -288,11 +288,11 @@ class ForYouSection extends StatelessWidget {
 
   Widget _buildPracticalCard(BuildContext context, bool isDark, Color textColor, double cardWidth, double cardHeight, bool isTablet) {
     final isLocked = !hasPracticalSubscription;
-    final labelSize = isTablet ? 14.0 : 12.0;
-    final titleSize = isTablet ? 18.0 : 16.0;
-    final imageWidth = isTablet ? 145.0 : 123.0;
-    final imageHeight = isTablet ? 100.0 : 85.0;
-    final btnSize = isTablet ? 38.0 : 32.0;
+    final labelSize = isTablet ? 17.0 : 12.0;
+    final titleSize = isTablet ? 22.0 : 16.0;
+    final imageWidth = isTablet ? 180.0 : 123.0;
+    final imageHeight = isTablet ? 135.0 : 85.0;
+    final btnSize = isTablet ? 48.0 : 32.0;
 
     return GestureDetector(
       onTap: () {
@@ -303,7 +303,7 @@ class ForYouSection extends StatelessWidget {
         width: cardWidth,
         height: cardHeight,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 12),
           gradient: LinearGradient(
             begin: const Alignment(-0.5, -0.5),
             end: const Alignment(0.8, 0.8),
@@ -320,8 +320,8 @@ class ForYouSection extends StatelessWidget {
               right: 0,
               bottom: 0,
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(14),
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(isTablet ? 22 : 14),
                 ),
                 child: Image.asset(
                   'assets/illustrations/2.png',
@@ -336,7 +336,7 @@ class ForYouSection extends StatelessWidget {
             ),
             // Content
             Padding(
-              padding: EdgeInsets.all(isTablet ? 16 : 12),
+              padding: EdgeInsets.all(isTablet ? 24 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -351,7 +351,7 @@ class ForYouSection extends StatelessWidget {
                           : const Color(0xFF666666),
                     ),
                   ),
-                  SizedBox(height: isTablet ? 10 : 8),
+                  SizedBox(height: isTablet ? 14 : 8),
                   Text(
                     'View Classes',
                     style: TextStyle(
@@ -366,8 +366,8 @@ class ForYouSection extends StatelessWidget {
             ),
             // Play button or lock button based on subscription
             Positioned(
-              bottom: isTablet ? 16 : 12,
-              right: isTablet ? 16 : 12,
+              bottom: isTablet ? 20 : 12,
+              right: isTablet ? 20 : 12,
               child: isLocked ? _buildLockButton(isDark, btnSize) : _buildPlayButton(isDark, btnSize),
             ),
           ],

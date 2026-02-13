@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/subject_model.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 
@@ -84,7 +85,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           // Changing subject from profile — refresh dashboard and pop back
           context.read<DashboardProvider>().refresh();
           if (mounted) {
-            context.pop();
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
           }
         } else {
           // Initial onboarding — complete onboarding and navigate to home
@@ -108,6 +113,30 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
+    // Responsive sizes
+    final backBtnSize = isTablet ? 56.0 : 48.0;
+    final backIconSize = isTablet ? 24.0 : 20.0;
+    final backBtnRadius = isTablet ? 14.0 : 12.0;
+    final logoWidth = isTablet ? 280.0 : 200.0;
+    final logoHeight = isTablet ? 74.0 : 53.0;
+    final titleSize = isTablet ? 36.0 : 28.0;
+    final subtitleSize = isTablet ? 18.0 : 16.0;
+    final headerPadding = isTablet ? 24.0 : 16.0;
+    final gridHPadding = isTablet ? 40.0 : 24.0;
+    const gridCrossCount = 2;
+    final gridSpacing = isTablet ? 24.0 : 16.0;
+    final gridAspectRatio = isTablet ? 1.15 : 1.0;
+    final btnHeight = isTablet ? 72.0 : 54.0;
+    final btnFontSize = isTablet ? 20.0 : 16.0;
+    final btnRadius = isTablet ? 30.0 : 22.0;
+    final btnPadding = isTablet ? 32.0 : 24.0;
+    final titleLogoGap = isTablet ? 28.0 : 32.0;
+    final titleSubGap = isTablet ? 10.0 : 12.0;
+    final subGridGap = isTablet ? 28.0 : 32.0;
+    final maxContentWidth = isTablet ? 780.0 : double.infinity;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -115,23 +144,23 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           children: [
             // Header with back button
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(headerPadding),
               child: Row(
                 children: [
                   GestureDetector(
                     onTap: () => context.pop(),
                     child: Container(
-                      width: 48,
-                      height: 48,
+                      width: backBtnSize,
+                      height: backBtnSize,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(backBtnRadius),
                         border: Border.all(color: AppColors.divider, width: 1),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.arrow_back_ios_new,
-                          size: 20,
+                          size: backIconSize,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -144,45 +173,45 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
             // Logo
             Image.asset(
               'assets/illustrations/logo2.png',
-              width: 200,
-              height: 53,
+              width: logoWidth,
+              height: logoHeight,
               errorBuilder: (context, error, stackTrace) {
-                return const SizedBox(width: 200, height: 53);
+                return SizedBox(width: logoWidth, height: logoHeight);
               },
             ),
 
-            const SizedBox(height: 32),
+            SizedBox(height: titleLogoGap),
 
             // Title
-            const Text(
+            Text(
               'Select Your Primary Subject',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 28,
+                fontSize: titleSize,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF000000),
+                color: const Color(0xFF000000),
               ),
             ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: titleSubGap),
 
             // Subtitle
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 48.0 : 32.0),
               child: Text(
                 'Choose the subject you want to focus on',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 16,
+                  fontSize: subtitleSize,
                   fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
                 ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            SizedBox(height: subGridGap),
 
             // Subjects Grid
             Expanded(
@@ -201,25 +230,25 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.school_outlined,
-                            size: 64,
+                            size: isTablet ? 80 : 64,
                             color: AppColors.textTertiary,
                           ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'No subjects available',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: isTablet ? 22 : 18,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Please try again later',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: isTablet ? 16 : 14,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -229,7 +258,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryBlue,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                               ),
                             ),
                             child: const Text('Retry'),
@@ -239,25 +268,31 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                     );
                   }
 
-                  return GridView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: provider.subjects.length,
-                    itemBuilder: (context, index) {
-                      final subject = provider.subjects[index];
-                      final isSelected = provider.selectedSubject?.id == subject.id;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxContentWidth),
+                      child: GridView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: gridHPadding, vertical: 16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: gridCrossCount,
+                          crossAxisSpacing: gridSpacing,
+                          mainAxisSpacing: gridSpacing,
+                          childAspectRatio: gridAspectRatio,
+                        ),
+                        itemCount: provider.subjects.length,
+                        itemBuilder: (context, index) {
+                          final subject = provider.subjects[index];
+                          final isSelected = provider.selectedSubject?.id == subject.id;
 
-                      return _SubjectCard(
-                        subject: subject,
-                        isSelected: isSelected,
-                        onTap: () => provider.selectSubject(subject),
-                      );
-                    },
+                          return _SubjectCard(
+                            subject: subject,
+                            isSelected: isSelected,
+                            isTablet: isTablet,
+                            onTap: () => provider.selectSubject(subject),
+                          );
+                        },
+                      ),
+                    ),
                   );
                 },
               ),
@@ -265,38 +300,47 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 
             // Continue Button
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(btnPadding),
               child: Consumer<OnboardingProvider>(
                 builder: (context, provider, _) {
-                  return SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: provider.isSubmitting ? null : _onContinue,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: provider.isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Continue',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isTablet ? 520.0 : double.infinity),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: btnHeight,
+                        child: ElevatedButton(
+                          onPressed: provider.isSubmitting ? null : _onContinue,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBlue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(btnRadius),
                             ),
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
+                            alignment: Alignment.center,
+                          ),
+                          child: provider.isSubmitting
+                              ? SizedBox(
+                                  width: isTablet ? 26 : 20,
+                                  height: isTablet ? 26 : 20,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: btnFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -312,23 +356,34 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 class _SubjectCard extends StatelessWidget {
   final SubjectModel subject;
   final bool isSelected;
+  final bool isTablet;
   final VoidCallback onTap;
 
   const _SubjectCard({
     required this.subject,
     required this.isSelected,
+    required this.isTablet,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cardPadding = isTablet ? 16.0 : 12.0;
+    final cardRadius = isTablet ? 20.0 : 16.0;
+    final iconSize = isTablet ? 60.0 : 48.0;
+    final nameSize = isTablet ? 16.0 : 14.0;
+    final badgeFontSize = isTablet ? 12.0 : 10.0;
+    final badgePaddingH = isTablet ? 12.0 : 8.0;
+    final badgePaddingV = isTablet ? 4.0 : 2.0;
+    final badgeRadius = isTablet ? 12.0 : 10.0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(cardPadding),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryBlue.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           border: Border.all(
             color: isSelected ? AppColors.primaryBlue : AppColors.divider,
             width: isSelected ? 2 : 1,
@@ -351,24 +406,24 @@ class _SubjectCard extends StatelessWidget {
             if (subject.iconUrl != null && subject.iconUrl!.isNotEmpty)
               Image.network(
                 subject.iconUrl!,
-                width: 48,
-                height: 48,
+                width: iconSize,
+                height: iconSize,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
+                  return Icon(
                     Icons.school_outlined,
-                    size: 48,
+                    size: iconSize,
                     color: AppColors.primaryBlue,
                   );
                 },
               )
             else
-              const Icon(
+              Icon(
                 Icons.school_outlined,
-                size: 48,
+                size: iconSize,
                 color: AppColors.primaryBlue,
               ),
 
-            const SizedBox(height: 8),
+            SizedBox(height: isTablet ? 12 : 8),
 
             // Subject name
             Flexible(
@@ -378,7 +433,8 @@ class _SubjectCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                  fontSize: nameSize,
                   fontWeight: FontWeight.w600,
                   color: isSelected ? AppColors.primaryBlue : AppColors.textPrimary,
                 ),
@@ -387,17 +443,18 @@ class _SubjectCard extends StatelessWidget {
 
             // Selected indicator
             if (isSelected) ...[
-              const SizedBox(height: 6),
+              SizedBox(height: isTablet ? 8 : 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: badgePaddingH, vertical: badgePaddingV),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(badgeRadius),
                 ),
-                child: const Text(
+                child: Text(
                   'Selected',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontFamily: 'Poppins',
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),

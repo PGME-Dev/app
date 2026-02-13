@@ -7,6 +7,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/subscription_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
@@ -68,6 +69,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     final backgroundColor =
         isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
@@ -92,12 +94,12 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 16),
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => context.pop(),
-                        child: Icon(Icons.arrow_back, size: 24, color: textColor),
+                        child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
                       ),
                       const Spacer(),
                       Text(
@@ -105,16 +107,16 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 20,
+                          fontSize: isTablet ? 25 : 20,
                           color: textColor,
                         ),
                       ),
                       const Spacer(),
-                      const SizedBox(width: 24),
+                      SizedBox(width: isTablet ? 30 : 24),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: isTablet ? 20 : 16),
                 // Tab bar
                 TabBar(
                   controller: _tabController,
@@ -122,20 +124,20 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                   tabAlignment: TabAlignment.start,
                   labelColor: accentColor,
                   unselectedLabelColor: secondaryTextColor,
-                  labelStyle: const TextStyle(
+                  labelStyle: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: isTablet ? 17 : 14,
                   ),
-                  unselectedLabelStyle: const TextStyle(
+                  unselectedLabelStyle: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 14,
+                    fontSize: isTablet ? 17 : 14,
                   ),
                   indicatorColor: accentColor,
                   indicatorWeight: 3,
                   dividerColor: borderColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8),
                   tabs: _tabs.map((t) => Tab(text: t)).toList(),
                 ),
               ],
@@ -147,22 +149,22 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
             child: _isLoading
                 ? ShimmerWidgets.purchasesTabShimmer(isDark: isDark)
                 : _error != null
-                    ? _buildErrorState(textColor, secondaryTextColor)
+                    ? _buildErrorState(textColor, secondaryTextColor, isTablet)
                     : TabBarView(
                         controller: _tabController,
                         children: [
                           _buildPackagesTab(
                               isDark, textColor, secondaryTextColor,
-                              cardColor, borderColor, accentColor),
+                              cardColor, borderColor, accentColor, isTablet),
                           _buildBooksTab(
                               isDark, textColor, secondaryTextColor,
-                              cardColor, borderColor, accentColor),
+                              cardColor, borderColor, accentColor, isTablet),
                           _buildSessionsTab(
                               isDark, textColor, secondaryTextColor,
-                              cardColor, borderColor, accentColor),
+                              cardColor, borderColor, accentColor, isTablet),
                           _buildInvoicesTab(
                               isDark, textColor, secondaryTextColor,
-                              cardColor, borderColor, accentColor),
+                              cardColor, borderColor, accentColor, isTablet),
                         ],
                       ),
           ),
@@ -171,21 +173,21 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     );
   }
 
-  Widget _buildErrorState(Color textColor, Color secondaryTextColor) {
+  Widget _buildErrorState(Color textColor, Color secondaryTextColor, bool isTablet) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isTablet ? 32 : 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-            const SizedBox(height: 16),
+            Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+            SizedBox(height: isTablet ? 20 : 16),
             Text(
               _error!,
-              style: TextStyle(color: secondaryTextColor, fontSize: 14),
+              style: TextStyle(color: secondaryTextColor, fontSize: isTablet ? 17 : 14),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isTablet ? 20 : 16),
             ElevatedButton(
               onPressed: _loadData,
               child: const Text('Retry'),
@@ -197,26 +199,26 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   }
 
   Widget _buildEmptyState(
-      String message, IconData icon, Color textColor, Color secondaryTextColor) {
+      String message, IconData icon, Color textColor, Color secondaryTextColor, bool isTablet) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: secondaryTextColor.withValues(alpha: 0.5)),
-          const SizedBox(height: 16),
+          Icon(icon, size: isTablet ? 80 : 64, color: secondaryTextColor.withValues(alpha: 0.5)),
+          SizedBox(height: isTablet ? 20 : 16),
           Text(
             message,
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 16,
+              fontSize: isTablet ? 20 : 16,
               fontWeight: FontWeight.w500,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           Text(
             'Your purchases will appear here',
-            style: TextStyle(fontSize: 14, color: secondaryTextColor),
+            style: TextStyle(fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
           ),
         ],
       ),
@@ -226,23 +228,28 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   // ── Packages Tab ──
 
   Widget _buildPackagesTab(bool isDark, Color textColor,
-      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor) {
+      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor, bool isTablet) {
     final packages = _data?.packages ?? [];
     if (packages.isEmpty) {
       return _buildEmptyState(
-          'No package purchases', Icons.inventory_2_outlined, textColor, secondaryTextColor);
+          'No package purchases', Icons.inventory_2_outlined, textColor, secondaryTextColor, isTablet);
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: packages.length,
-        itemBuilder: (context, index) {
-          final pkg = packages[index];
-          return _buildPackageCard(pkg, isDark, textColor, secondaryTextColor,
-              cardColor, borderColor, accentColor);
-        },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.all(isTablet ? 20 : 16),
+            itemCount: packages.length,
+            itemBuilder: (context, index) {
+              final pkg = packages[index];
+              return _buildPackageCard(pkg, isDark, textColor, secondaryTextColor,
+                  cardColor, borderColor, accentColor, isTablet);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -254,7 +261,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       Color secondaryTextColor,
       Color cardColor,
       Color borderColor,
-      Color accentColor) {
+      Color accentColor,
+      bool isTablet) {
     final isActive = pkg.isActive && pkg.daysRemaining > 0;
     final statusColor = isActive ? AppColors.success : Colors.orange;
 
@@ -267,11 +275,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     } catch (_) {}
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -280,15 +288,15 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: isTablet ? 55 : 44,
+                height: isTablet ? 55 : 44,
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
                 ),
-                child: Icon(Icons.school_outlined, color: accentColor, size: 24),
+                child: Icon(Icons.school_outlined, color: accentColor, size: isTablet ? 30 : 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +306,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: isTablet ? 19 : 15,
                         color: textColor,
                       ),
                       maxLines: 1,
@@ -307,22 +315,22 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                     if (pkg.packageType != null)
                       Text(
                         pkg.packageType!,
-                        style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                        style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                       ),
                   ],
                 ),
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Text(
                   isActive ? 'Active' : 'Expired',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w500,
                     color: statusColor,
                   ),
@@ -330,36 +338,36 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isTablet ? 16 : 12),
           Row(
             children: [
               Icon(Icons.calendar_today_outlined,
-                  size: 14, color: secondaryTextColor),
-              const SizedBox(width: 6),
+                  size: isTablet ? 18 : 14, color: secondaryTextColor),
+              SizedBox(width: isTablet ? 8 : 6),
               Text(formattedDate,
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor)),
+                  style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor)),
               const Spacer(),
               Text(
                 '\u{20B9}${pkg.amountPaid}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: isTablet ? 19 : 15,
                   color: textColor,
                 ),
               ),
             ],
           ),
           if (isActive) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: isTablet ? 10 : 8),
             Row(
               children: [
-                Icon(Icons.timer_outlined, size: 14, color: accentColor),
-                const SizedBox(width: 6),
+                Icon(Icons.timer_outlined, size: isTablet ? 18 : 14, color: accentColor),
+                SizedBox(width: isTablet ? 8 : 6),
                 Text(
                   '${pkg.daysRemaining} days remaining',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: isTablet ? 16 : 13,
                     fontWeight: FontWeight.w500,
                     color: accentColor,
                   ),
@@ -375,23 +383,28 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   // ── Books Tab ──
 
   Widget _buildBooksTab(bool isDark, Color textColor,
-      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor) {
+      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor, bool isTablet) {
     final books = _data?.books ?? [];
     if (books.isEmpty) {
       return _buildEmptyState(
-          'No book orders', Icons.menu_book_outlined, textColor, secondaryTextColor);
+          'No book orders', Icons.menu_book_outlined, textColor, secondaryTextColor, isTablet);
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: books.length,
-        itemBuilder: (context, index) {
-          final book = books[index];
-          return _buildBookCard(book, isDark, textColor, secondaryTextColor,
-              cardColor, borderColor);
-        },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.all(isTablet ? 20 : 16),
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+              final book = books[index];
+              return _buildBookCard(book, isDark, textColor, secondaryTextColor,
+                  cardColor, borderColor, isTablet);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -402,7 +415,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       Color textColor,
       Color secondaryTextColor,
       Color cardColor,
-      Color borderColor) {
+      Color borderColor,
+      bool isTablet) {
     Color statusColor;
     switch (book.orderStatus) {
       case 'confirmed':
@@ -429,11 +443,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     } catch (_) {}
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -442,15 +456,15 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: isTablet ? 55 : 44,
+                height: isTablet ? 55 : 44,
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
                 ),
-                child: const Icon(Icons.menu_book, color: Colors.orange, size: 24),
+                child: Icon(Icons.menu_book, color: Colors.orange, size: isTablet ? 30 : 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,30 +474,30 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: isTablet ? 17 : 14,
                         color: textColor,
                       ),
                     ),
                     Text(
                       '${book.itemsCount} item${book.itemsCount > 1 ? 's' : ''}',
                       style:
-                          TextStyle(fontSize: 13, color: secondaryTextColor),
+                          TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                     ),
                   ],
                 ),
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Text(
                   book.orderStatus[0].toUpperCase() +
                       book.orderStatus.substring(1),
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w500,
                     color: statusColor,
                   ),
@@ -491,19 +505,19 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isTablet ? 16 : 12),
           // Items list
           ...book.items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: EdgeInsets.only(bottom: isTablet ? 5 : 4),
                 child: Row(
                   children: [
-                    const SizedBox(width: 4),
-                    Icon(Icons.circle, size: 6, color: secondaryTextColor),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isTablet ? 5 : 4),
+                    Icon(Icons.circle, size: isTablet ? 8 : 6, color: secondaryTextColor),
+                    SizedBox(width: isTablet ? 10 : 8),
                     Expanded(
                       child: Text(
                         '${item.title} (x${item.quantity})',
-                        style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                        style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -511,36 +525,36 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                   ],
                 ),
               )),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
           Row(
             children: [
               Icon(Icons.calendar_today_outlined,
-                  size: 14, color: secondaryTextColor),
-              const SizedBox(width: 6),
+                  size: isTablet ? 18 : 14, color: secondaryTextColor),
+              SizedBox(width: isTablet ? 8 : 6),
               Text(formattedDate,
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor)),
+                  style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor)),
               const Spacer(),
               Text(
                 '\u{20B9}${book.totalAmount}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: isTablet ? 19 : 15,
                   color: textColor,
                 ),
               ),
             ],
           ),
           if (book.trackingNumber != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: isTablet ? 10 : 8),
             Row(
               children: [
                 Icon(Icons.local_shipping_outlined,
-                    size: 14, color: secondaryTextColor),
-                const SizedBox(width: 6),
+                    size: isTablet ? 18 : 14, color: secondaryTextColor),
+                SizedBox(width: isTablet ? 8 : 6),
                 Text(
                   'Tracking: ${book.trackingNumber}',
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                  style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                 ),
               ],
             ),
@@ -553,23 +567,28 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   // ── Sessions Tab ──
 
   Widget _buildSessionsTab(bool isDark, Color textColor,
-      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor) {
+      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor, bool isTablet) {
     final sessions = _data?.liveSessions ?? [];
     if (sessions.isEmpty) {
       return _buildEmptyState('No session purchases',
-          Icons.videocam_outlined, textColor, secondaryTextColor);
+          Icons.videocam_outlined, textColor, secondaryTextColor, isTablet);
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: sessions.length,
-        itemBuilder: (context, index) {
-          final session = sessions[index];
-          return _buildSessionCard(session, isDark, textColor,
-              secondaryTextColor, cardColor, borderColor, accentColor);
-        },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.all(isTablet ? 20 : 16),
+            itemCount: sessions.length,
+            itemBuilder: (context, index) {
+              final session = sessions[index];
+              return _buildSessionCard(session, isDark, textColor,
+                  secondaryTextColor, cardColor, borderColor, accentColor, isTablet);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -581,7 +600,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       Color secondaryTextColor,
       Color cardColor,
       Color borderColor,
-      Color accentColor) {
+      Color accentColor,
+      bool isTablet) {
     Color statusColor;
     switch (session.sessionStatus) {
       case 'completed':
@@ -603,17 +623,17 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     String formattedDate = '-';
     try {
       if (session.scheduledStartTime != null) {
-        formattedDate = DateFormat('MMM dd, yyyy • hh:mm a')
+        formattedDate = DateFormat('MMM dd, yyyy \u2022 hh:mm a')
             .format(DateTime.parse(session.scheduledStartTime!));
       }
     } catch (_) {}
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -622,23 +642,23 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: isTablet ? 55 : 44,
+                height: isTablet ? 55 : 44,
                 decoration: BoxDecoration(
                   color: Colors.purple.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
                 ),
-                child: const Icon(Icons.videocam_outlined,
-                    color: Colors.purple, size: 24),
+                child: Icon(Icons.videocam_outlined,
+                    color: Colors.purple, size: isTablet ? 30 : 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 child: Text(
                   session.name,
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontSize: isTablet ? 19 : 15,
                     color: textColor,
                   ),
                   maxLines: 2,
@@ -647,16 +667,16 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Text(
                   (session.sessionStatus ?? 'pending')[0].toUpperCase() +
                       (session.sessionStatus ?? 'pending').substring(1),
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w500,
                     color: statusColor,
                   ),
@@ -664,17 +684,17 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isTablet ? 16 : 12),
           if (session.facultyName != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: EdgeInsets.only(bottom: isTablet ? 5 : 4),
               child: Row(
                 children: [
-                  Icon(Icons.person_outline, size: 14, color: secondaryTextColor),
-                  const SizedBox(width: 6),
+                  Icon(Icons.person_outline, size: isTablet ? 18 : 14, color: secondaryTextColor),
+                  SizedBox(width: isTablet ? 8 : 6),
                   Text(
                     session.facultyName!,
-                    style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                    style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                   ),
                 ],
               ),
@@ -682,18 +702,18 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           Row(
             children: [
               Icon(Icons.schedule_outlined,
-                  size: 14, color: secondaryTextColor),
-              const SizedBox(width: 6),
+                  size: isTablet ? 18 : 14, color: secondaryTextColor),
+              SizedBox(width: isTablet ? 8 : 6),
               Expanded(
                 child: Text(formattedDate,
-                    style: TextStyle(fontSize: 13, color: secondaryTextColor)),
+                    style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor)),
               ),
               Text(
                 '\u{20B9}${session.amountPaid}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: isTablet ? 19 : 15,
                   color: textColor,
                 ),
               ),
@@ -707,23 +727,28 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   // ── Invoices Tab ──
 
   Widget _buildInvoicesTab(bool isDark, Color textColor,
-      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor) {
+      Color secondaryTextColor, Color cardColor, Color borderColor, Color accentColor, bool isTablet) {
     final invoices = _data?.invoices ?? [];
     if (invoices.isEmpty) {
       return _buildEmptyState(
-          'No invoices', Icons.receipt_long_outlined, textColor, secondaryTextColor);
+          'No invoices', Icons.receipt_long_outlined, textColor, secondaryTextColor, isTablet);
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: invoices.length,
-        itemBuilder: (context, index) {
-          final invoice = invoices[index];
-          return _buildInvoiceCard(invoice, isDark, textColor,
-              secondaryTextColor, cardColor, borderColor, accentColor);
-        },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.all(isTablet ? 20 : 16),
+            itemCount: invoices.length,
+            itemBuilder: (context, index) {
+              final invoice = invoices[index];
+              return _buildInvoiceCard(invoice, isDark, textColor,
+                  secondaryTextColor, cardColor, borderColor, accentColor, isTablet);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -735,7 +760,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       Color secondaryTextColor,
       Color cardColor,
       Color borderColor,
-      Color accentColor) {
+      Color accentColor,
+      bool isTablet) {
     final isPaid = invoice.paymentStatus == 'paid';
 
     String formattedDate = '-';
@@ -767,11 +793,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -780,15 +806,15 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: isTablet ? 55 : 44,
+                height: isTablet ? 55 : 44,
                 decoration: BoxDecoration(
                   color: typeColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
                 ),
-                child: Icon(typeIcon, color: typeColor, size: 24),
+                child: Icon(typeIcon, color: typeColor, size: isTablet ? 30 : 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,30 +824,30 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: isTablet ? 17 : 14,
                         color: textColor,
                       ),
                     ),
                     Text(
                       typeLabel,
                       style:
-                          TextStyle(fontSize: 13, color: secondaryTextColor),
+                          TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
                     ),
                   ],
                 ),
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: (isPaid ? AppColors.success : Colors.orange)
                       .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Text(
                   isPaid ? 'Paid' : 'Unpaid',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isTablet ? 15 : 12,
                     fontWeight: FontWeight.w500,
                     color: isPaid ? AppColors.success : Colors.orange,
                   ),
@@ -829,28 +855,28 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isTablet ? 16 : 12),
           Row(
             children: [
               Icon(Icons.calendar_today_outlined,
-                  size: 14, color: secondaryTextColor),
-              const SizedBox(width: 6),
+                  size: isTablet ? 18 : 14, color: secondaryTextColor),
+              SizedBox(width: isTablet ? 8 : 6),
               Text(formattedDate,
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor)),
+                  style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor)),
               const Spacer(),
               Text(
                 '\u{20B9}${(invoice.amount + invoice.gstAmount).toStringAsFixed(0)}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: isTablet ? 19 : 15,
                   color: textColor,
                 ),
               ),
             ],
           ),
           if (invoice.invoiceUrl != null) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: isTablet ? 13 : 10),
             GestureDetector(
               onTap: () async {
                 final uri = Uri.parse(invoice.invoiceUrl!);
@@ -860,12 +886,12 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               },
               child: Row(
                 children: [
-                  Icon(Icons.download_outlined, size: 16, color: accentColor),
-                  const SizedBox(width: 6),
+                  Icon(Icons.download_outlined, size: isTablet ? 20 : 16, color: accentColor),
+                  SizedBox(width: isTablet ? 8 : 6),
                   Text(
                     'Download Invoice',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: isTablet ? 16 : 13,
                       fontWeight: FontWeight.w500,
                       color: accentColor,
                     ),

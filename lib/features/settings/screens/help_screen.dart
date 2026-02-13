@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -42,6 +43,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -49,6 +51,8 @@ class HelpScreen extends StatelessWidget {
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF888888);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -58,34 +62,34 @@ class HelpScreen extends StatelessWidget {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 20 : 16),
               child: Row(
                 children: [
                   GestureDetector(
                     onTap: () => context.pop(),
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: isTablet ? 54 : 44,
+                      height: isTablet ? 54 : 44,
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                       ),
                       child: Center(
                         child: Icon(
                           Icons.arrow_back_ios_new,
-                          size: 18,
+                          size: isTablet ? 22 : 18,
                           color: textColor,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isTablet ? 20 : 16),
                   Text(
                     'Help & Support',
                     style: TextStyle(
                       fontFamily: 'SF Pro Display',
                       fontWeight: FontWeight.w600,
-                      fontSize: 20,
+                      fontSize: isTablet ? 25 : 20,
                       color: textColor,
                     ),
                   ),
@@ -95,187 +99,200 @@ class HelpScreen extends StatelessWidget {
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Contact Support Section
-                    Text(
-                      'Contact Support',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                        letterSpacing: -0.5,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // WhatsApp Card
-                    _buildContactCard(
-                      icon: Icons.chat_outlined,
-                      title: 'WhatsApp',
-                      subtitle: 'Chat with us on WhatsApp',
-                      iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
-                      iconColor: Colors.green,
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      onTap: _launchWhatsApp,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Email Card
-                    _buildContactCard(
-                      icon: Icons.mail_outline,
-                      title: 'Email',
-                      subtitle: 'support@pgme.in',
-                      iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
-                      iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      onTap: _launchEmail,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Phone Card
-                    _buildContactCard(
-                      icon: Icons.phone_outlined,
-                      title: 'Call Us',
-                      subtitle: '+91 8074220727',
-                      iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
-                      iconColor: Colors.orange,
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      onTap: _launchPhone,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // FAQ Section
-                    Text(
-                      'Frequently Asked Questions',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                        letterSpacing: -0.5,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildFaqItem(
-                      question: 'How do I purchase a course?',
-                      answer: 'Go to the Home tab, browse available packages, and tap on any package to view details and purchase options.',
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      dividerColor: dividerColor,
-                      isDark: isDark,
-                    ),
-
-                    _buildFaqItem(
-                      question: 'How do I access my purchased content?',
-                      answer: 'After purchase, go to the Courses tab to access your video lectures, notes, and study materials.',
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      dividerColor: dividerColor,
-                      isDark: isDark,
-                    ),
-
-                    _buildFaqItem(
-                      question: 'Can I download videos for offline viewing?',
-                      answer: 'Yes, you can download videos within the app for offline access. Look for the download icon on each video.',
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      dividerColor: dividerColor,
-                      isDark: isDark,
-                    ),
-
-                    _buildFaqItem(
-                      question: 'How do I change my selected subject?',
-                      answer: 'Go to your Profile, tap on the subject badge next to your name, and select a new subject from the list.',
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      dividerColor: dividerColor,
-                      isDark: isDark,
-                    ),
-
-                    _buildFaqItem(
-                      question: 'What payment methods are accepted?',
-                      answer: 'We accept all major payment methods including UPI, Credit/Debit cards, Net Banking, and popular wallets.',
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      dividerColor: dividerColor,
-                      isDark: isDark,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Support Hours
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF1A1A4D)
-                            : const Color(0xFF0000D1).withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF3D3D8C)
-                              : const Color(0xFF0000D1).withValues(alpha: 0.2),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Contact Support Section
+                        Text(
+                          'Contact Support',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 20 : 16,
+                            letterSpacing: -0.5,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.access_time_outlined,
-                            size: 32,
-                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Support Hours',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Monday - Saturday',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 14,
-                              color: secondaryTextColor,
-                            ),
-                          ),
-                          Text(
-                            '9:00 AM - 6:00 PM IST',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        SizedBox(height: isTablet ? 16 : 12),
 
-                    const SizedBox(height: 32),
-                  ],
+                        // WhatsApp Card
+                        _buildContactCard(
+                          icon: Icons.chat_outlined,
+                          title: 'WhatsApp',
+                          subtitle: 'Chat with us on WhatsApp',
+                          iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
+                          iconColor: Colors.green,
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          onTap: _launchWhatsApp,
+                          isTablet: isTablet,
+                        ),
+                        SizedBox(height: isTablet ? 16 : 12),
+
+                        // Email Card
+                        _buildContactCard(
+                          icon: Icons.mail_outline,
+                          title: 'Email',
+                          subtitle: 'support@pgme.in',
+                          iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
+                          iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          onTap: _launchEmail,
+                          isTablet: isTablet,
+                        ),
+                        SizedBox(height: isTablet ? 16 : 12),
+
+                        // Phone Card
+                        _buildContactCard(
+                          icon: Icons.phone_outlined,
+                          title: 'Call Us',
+                          subtitle: '+91 8074220727',
+                          iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
+                          iconColor: Colors.orange,
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          onTap: _launchPhone,
+                          isTablet: isTablet,
+                        ),
+
+                        SizedBox(height: isTablet ? 30 : 24),
+
+                        // FAQ Section
+                        Text(
+                          'Frequently Asked Questions',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 20 : 16,
+                            letterSpacing: -0.5,
+                            color: textColor,
+                          ),
+                        ),
+                        SizedBox(height: isTablet ? 16 : 12),
+
+                        _buildFaqItem(
+                          question: 'How do I purchase a course?',
+                          answer: 'Go to the Home tab, browse available packages, and tap on any package to view details and purchase options.',
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          dividerColor: dividerColor,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                        ),
+
+                        _buildFaqItem(
+                          question: 'How do I access my purchased content?',
+                          answer: 'After purchase, go to the Courses tab to access your video lectures, notes, and study materials.',
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          dividerColor: dividerColor,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                        ),
+
+                        _buildFaqItem(
+                          question: 'Can I download videos for offline viewing?',
+                          answer: 'Yes, you can download videos within the app for offline access. Look for the download icon on each video.',
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          dividerColor: dividerColor,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                        ),
+
+                        _buildFaqItem(
+                          question: 'How do I change my selected subject?',
+                          answer: 'Go to your Profile, tap on the subject badge next to your name, and select a new subject from the list.',
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          dividerColor: dividerColor,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                        ),
+
+                        _buildFaqItem(
+                          question: 'What payment methods are accepted?',
+                          answer: 'We accept all major payment methods including UPI, Credit/Debit cards, Net Banking, and popular wallets.',
+                          cardColor: cardColor,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          dividerColor: dividerColor,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                        ),
+
+                        SizedBox(height: isTablet ? 30 : 24),
+
+                        // Support Hours
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isTablet ? 20 : 16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1A1A4D)
+                                : const Color(0xFF0000D1).withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF3D3D8C)
+                                  : const Color(0xFF0000D1).withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.access_time_outlined,
+                                size: isTablet ? 40 : 32,
+                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                              ),
+                              SizedBox(height: isTablet ? 10 : 8),
+                              Text(
+                                'Support Hours',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTablet ? 20 : 16,
+                                  color: textColor,
+                                ),
+                              ),
+                              SizedBox(height: isTablet ? 6 : 4),
+                              Text(
+                                'Monday - Saturday',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontSize: isTablet ? 17 : 14,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                              Text(
+                                '9:00 AM - 6:00 PM IST',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 17 : 14,
+                                  color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: isTablet ? 40 : 32),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -295,33 +312,34 @@ class HelpScreen extends StatelessWidget {
     required Color textColor,
     required Color secondaryTextColor,
     required VoidCallback onTap,
+    bool isTablet = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         ),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: isTablet ? 60 : 48,
+              height: isTablet ? 60 : 48,
               decoration: BoxDecoration(
                 color: iconBgColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  size: 24,
+                  size: isTablet ? 30 : 24,
                   color: iconColor,
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: isTablet ? 20 : 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,17 +349,17 @@ class HelpScreen extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: isTablet ? 19 : 15,
                       color: textColor,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: isTablet ? 3 : 2),
                   Text(
                     subtitle,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,
-                      fontSize: 13,
+                      fontSize: isTablet ? 16 : 13,
                       color: secondaryTextColor,
                     ),
                   ),
@@ -350,7 +368,7 @@ class HelpScreen extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios,
-              size: 16,
+              size: isTablet ? 20 : 16,
               color: secondaryTextColor,
             ),
           ],
@@ -367,12 +385,13 @@ class HelpScreen extends StatelessWidget {
     required Color secondaryTextColor,
     required Color dividerColor,
     required bool isDark,
+    bool isTablet = false,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: isTablet ? 10 : 8),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
       ),
       child: Theme(
         data: ThemeData(
@@ -381,8 +400,8 @@ class HelpScreen extends StatelessWidget {
           highlightColor: Colors.transparent,
         ),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          tilePadding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16, vertical: isTablet ? 6 : 4),
+          childrenPadding: EdgeInsets.fromLTRB(isTablet ? 20 : 16, 0, isTablet ? 20 : 16, isTablet ? 20 : 16),
           iconColor: secondaryTextColor,
           collapsedIconColor: secondaryTextColor,
           title: Text(
@@ -390,7 +409,7 @@ class HelpScreen extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontWeight: FontWeight.w500,
-              fontSize: 14,
+              fontSize: isTablet ? 17 : 14,
               color: textColor,
             ),
           ),
@@ -399,7 +418,7 @@ class HelpScreen extends StatelessWidget {
               answer,
               style: TextStyle(
                 fontFamily: 'SF Pro Display',
-                fontSize: 13,
+                fontSize: isTablet ? 16 : 13,
                 height: 1.5,
                 color: secondaryTextColor,
               ),

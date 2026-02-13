@@ -42,7 +42,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         debugPrint('hasMultipleSessions: ${provider.hasMultipleSessions}');
         debugPrint('onboardingCompleted: ${provider.onboardingCompleted}');
 
-        // Always show data collection first for new users
         if (!provider.onboardingCompleted) {
           debugPrint('Navigating to: /data-collection');
           context.go('/data-collection');

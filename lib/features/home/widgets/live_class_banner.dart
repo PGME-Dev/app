@@ -122,15 +122,15 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
     final bannerHeight = ResponsiveHelper.carouselHeight(context);
 
     // Responsive sizes
-    final titleSize = isTablet ? 22.0 : 18.0;
-    final badgeFontSize = isTablet ? 13.0 : 11.0;
-    final timeFontSize = isTablet ? 14.0 : 12.0;
-    final buttonFontSize = isTablet ? 14.0 : 12.0;
-    final titleMaxWidth = isTablet ? 280.0 : 180.0;
-    final imageWidth = isTablet ? 200.0 : 161.0;
-    final imageHeight = isTablet ? 110.0 : 83.0;
-    final buttonPaddingH = isTablet ? 20.0 : 16.0;
-    final buttonPaddingV = isTablet ? 8.0 : 6.0;
+    final titleSize = isTablet ? 28.0 : 18.0;
+    final badgeFontSize = isTablet ? 16.0 : 11.0;
+    final timeFontSize = isTablet ? 18.0 : 12.0;
+    final buttonFontSize = isTablet ? 17.0 : 12.0;
+    final titleMaxWidth = isTablet ? 420.0 : 180.0;
+    final imageWidth = isTablet ? 280.0 : 161.0;
+    final imageHeight = isTablet ? 160.0 : 83.0;
+    final buttonPaddingH = isTablet ? 28.0 : 16.0;
+    final buttonPaddingV = isTablet ? 12.0 : 6.0;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 19),
@@ -143,7 +143,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
             width: double.infinity,
             height: bannerHeight,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
               gradient: LinearGradient(
                 begin: const Alignment(-0.85, 0),
                 end: const Alignment(0.85, 0),
@@ -154,7 +154,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
               ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
               child: Stack(
                 children: [
                   // Background image - use local asset
@@ -180,10 +180,10 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                   // Content
                   Padding(
                     padding: EdgeInsets.only(
-                      left: isTablet ? 18 : 13,
-                      top: isTablet ? 14 : 10,
-                      right: isTablet ? 18 : 13,
-                      bottom: isTablet ? 14 : 10,
+                      left: isTablet ? 30 : 13,
+                      top: isTablet ? 24 : 10,
+                      right: isTablet ? 30 : 13,
+                      bottom: isTablet ? 24 : 10,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,14 +191,14 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                       // Status Badge
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 12 : 10,
-                          vertical: isTablet ? 5 : 4,
+                          horizontal: isTablet ? 18 : 10,
+                          vertical: isTablet ? 8 : 4,
                         ),
                         decoration: BoxDecoration(
                           color: widget.session.status == 'live'
                               ? Colors.red.withValues(alpha: 0.9)
                               : Colors.white.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(7.15),
+                          borderRadius: BorderRadius.circular(isTablet ? 10 : 7.15),
                         ),
                         child: Text(
                           widget.session.status == 'live'
@@ -212,7 +212,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                           ),
                         ),
                       ),
-                      SizedBox(height: isTablet ? 8 : 6),
+                      SizedBox(height: isTablet ? 12 : 6),
 
                       // Title
                       SizedBox(
@@ -263,7 +263,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                                         ? Colors.green
                                         : const Color(0xFF2470E4))
                                     : Colors.grey,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                               ),
                               child: Text(
                                 widget.session.status == 'live'
@@ -278,7 +278,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: isTablet ? 14 : 8),
 
                           // View Details Button
                           GestureDetector(
@@ -290,7 +290,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                               ),
                               child: Text(
                                 'View Details',

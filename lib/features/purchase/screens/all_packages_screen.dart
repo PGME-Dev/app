@@ -7,6 +7,7 @@ import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   const AllPackagesScreen({super.key});
@@ -138,6 +139,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
@@ -148,6 +150,8 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     final borderColor = isDark ? AppColors.darkDivider : Colors.transparent;
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     final priceColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     if (_isLoading) {
       return Scaffold(
@@ -163,17 +167,17 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: isTablet ? 60 : 48, color: secondaryTextColor),
+              SizedBox(height: isTablet ? 20 : 16),
               Text(
                 _error != null ? 'Failed to load packages' : 'No packages available',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 16,
+                  fontSize: isTablet ? 20 : 16,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isTablet ? 20 : 16),
               ElevatedButton(
                 onPressed: _loadPackages,
                 style: ElevatedButton.styleFrom(backgroundColor: priceColor),
@@ -191,7 +195,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         children: [
           // Header
           Container(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16, bottom: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 20 : 16), left: hPadding, right: hPadding, bottom: isTablet ? 20 : 16),
             decoration: BoxDecoration(
               color: surfaceColor,
               boxShadow: isDark
@@ -215,28 +219,28 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 GestureDetector(
                   onTap: () => context.pop(),
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: isTablet ? 54 : 44,
+                    height: isTablet ? 54 : 44,
                     decoration: BoxDecoration(
                       color: backgroundColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
                     child: Center(
                       child: Icon(
                         Icons.arrow_back_ios_new,
-                        size: 18,
+                        size: isTablet ? 22 : 18,
                         color: textColor,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isTablet ? 20 : 16),
                 Expanded(
                   child: Text(
                     'Choose Your Package',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 20,
+                      fontSize: isTablet ? 25 : 20,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -248,14 +252,19 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
           // Package List
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 20, left: 16, right: 16, bottom: bottomPadding + 100),
-              itemCount: _packages.length,
-              itemBuilder: (context, index) {
-                final package = _packages[index];
-                final isSelected = _selectedIndex == index;
-                return _buildPackageCard(package, index, isSelected, isDark, textColor, secondaryTextColor, cardBgColor, borderColor);
-              },
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                child: ListView.builder(
+                  padding: EdgeInsets.only(top: isTablet ? 26 : 20, left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 125 : 100)),
+                  itemCount: _packages.length,
+                  itemBuilder: (context, index) {
+                    final package = _packages[index];
+                    final isSelected = _selectedIndex == index;
+                    return _buildPackageCard(package, index, isSelected, isDark, textColor, secondaryTextColor, cardBgColor, borderColor, isTablet: isTablet);
+                  },
+                ),
+              ),
             ),
           ),
         ],
@@ -263,9 +272,10 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
       // Bottom Enroll Button
       bottomSheet: Container(
-        padding: EdgeInsets.only(left: 20, right: 20, top: 16, bottom: bottomPadding + 16),
+        padding: EdgeInsets.only(left: isTablet ? 26 : 20, right: isTablet ? 26 : 20, top: isTablet ? 20 : 16, bottom: bottomPadding + (isTablet ? 20 : 16)),
         decoration: BoxDecoration(
           color: surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 28 : 20)),
           boxShadow: [
             BoxShadow(
               color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
@@ -274,83 +284,89 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // Selected package info
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _packages[_selectedIndex].name,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: secondaryTextColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+        child: Center(
+          heightFactor: 1.0,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            child: Row(
+              children: [
+                // Selected package info
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _packages[_selectedIndex].name,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 17 : 14,
+                          fontWeight: FontWeight.w500,
+                          color: secondaryTextColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: isTablet ? 3 : 2),
+                      Text(
+                        _formatPrice(_packages[_selectedIndex].isOnSale && _packages[_selectedIndex].salePrice != null
+                            ? _packages[_selectedIndex].salePrice!
+                            : _packages[_selectedIndex].price),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 30 : 24,
+                          fontWeight: FontWeight.w400,
+                          color: priceColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatPrice(_packages[_selectedIndex].isOnSale && _packages[_selectedIndex].salePrice != null
-                        ? _packages[_selectedIndex].salePrice!
-                        : _packages[_selectedIndex].price),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w400,
-                      color: priceColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Enroll/Access Button
-            GestureDetector(
-              onTap: () => _enrollPackage(_packages[_selectedIndex]),
-              child: Container(
-                width: 160,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: _packages[_selectedIndex].isPurchased
-                      ? const Color(0xFF4CAF50)
-                      : buttonColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (_packages[_selectedIndex].isPurchased
+                ),
+                // Enroll/Access Button
+                GestureDetector(
+                  onTap: () => _enrollPackage(_packages[_selectedIndex]),
+                  child: Container(
+                    width: isTablet ? 200 : 160,
+                    height: isTablet ? 66 : 54,
+                    decoration: BoxDecoration(
+                      color: _packages[_selectedIndex].isPurchased
                           ? const Color(0xFF4CAF50)
-                          : buttonColor).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                          : buttonColor,
+                      borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (_packages[_selectedIndex].isPurchased
+                              ? const Color(0xFF4CAF50)
+                              : buttonColor).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    _packages[_selectedIndex].isPurchased
-                        ? 'Go to Content'
-                        : 'Enroll Now',
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                    child: Center(
+                      child: Text(
+                        _packages[_selectedIndex].isPurchased
+                            ? 'Go to Content'
+                            : 'Enroll Now',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 20 : 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPackageCard(PackageModel package, int index, bool isSelected, bool isDark, Color textColor, Color secondaryTextColor, Color cardBgColor, Color borderColor) {
+  Widget _buildPackageCard(PackageModel package, int index, bool isSelected, bool isDark, Color textColor, Color secondaryTextColor, Color cardBgColor, Color borderColor, {bool isTablet = false}) {
     final selectedBorderColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
     final featureTextColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF333333);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFEEEEEE);
@@ -362,10 +378,10 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       onTap: () => _selectPackage(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(isTablet ? 26 : 20),
           border: Border.all(
             color: isSelected ? selectedBorderColor : borderColor,
             width: 2,
@@ -384,37 +400,37 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
           children: [
             // Header with gradient
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isTablet ? 26 : 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: gradientColors,
                 ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isTablet ? 24 : 18),
+                  topRight: Radius.circular(isTablet ? 24 : 18),
                 ),
               ),
               child: Row(
                 children: [
                   // Icon
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: isTablet ? 62 : 50,
+                    height: isTablet ? 62 : 50,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
                     ),
                     child: Center(
                       child: Icon(
                         _getPackageIcon(package.type),
-                        size: 26,
+                        size: isTablet ? 32 : 26,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  SizedBox(width: isTablet ? 18 : 14),
                   // Title & Subtitle
                   Expanded(
                     child: Column(
@@ -422,21 +438,21 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                       children: [
                         Text(
                           package.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 18,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: isTablet ? 3 : 2),
                         Text(
                           package.type ?? 'Package',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 13,
+                            fontSize: isTablet ? 16 : 13,
                             fontWeight: FontWeight.w400,
                             color: Colors.white.withValues(alpha: 0.8),
                           ),
@@ -447,21 +463,21 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                   // Badges
                   if (package.isPurchased)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 7 : 5),
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CAF50),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle, color: Colors.white, size: 12),
-                          SizedBox(width: 4),
+                          Icon(Icons.check_circle, color: Colors.white, size: isTablet ? 15 : 12),
+                          SizedBox(width: isTablet ? 6 : 4),
                           Text(
                             'PURCHASED',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 10,
+                              fontSize: isTablet ? 13 : 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                               letterSpacing: 0.5,
@@ -472,7 +488,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     )
                   else if (index == 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 7 : 5),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -481,7 +497,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                         'POPULAR',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 10,
+                          fontSize: isTablet ? 13 : 10,
                           fontWeight: FontWeight.w700,
                           color: gradientColors[0],
                           letterSpacing: 0.5,
@@ -494,19 +510,19 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
             // Content
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isTablet ? 26 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Features
                   if (package.features != null && package.features!.isNotEmpty)
                     ...package.features!.take(4).map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: EdgeInsets.only(bottom: isTablet ? 13 : 10),
                       child: Row(
                         children: [
                           Container(
-                            width: 20,
-                            height: 20,
+                            width: isTablet ? 25 : 20,
+                            height: isTablet ? 25 : 20,
                             decoration: BoxDecoration(
                               color: gradientColors[0].withValues(alpha: 0.1),
                               shape: BoxShape.circle,
@@ -514,18 +530,18 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                             child: Center(
                               child: Icon(
                                 Icons.check,
-                                size: 12,
+                                size: isTablet ? 15 : 12,
                                 color: isDark ? gradientColors[1] : gradientColors[0],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: isTablet ? 16 : 12),
                           Expanded(
                             child: Text(
                               feature,
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 14,
+                                fontSize: isTablet ? 17 : 14,
                                 fontWeight: FontWeight.w400,
                                 color: featureTextColor,
                               ),
@@ -536,12 +552,12 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ))
                   else
                     ..._getDefaultFeatures(package.type).map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: EdgeInsets.only(bottom: isTablet ? 13 : 10),
                       child: Row(
                         children: [
                           Container(
-                            width: 20,
-                            height: 20,
+                            width: isTablet ? 25 : 20,
+                            height: isTablet ? 25 : 20,
                             decoration: BoxDecoration(
                               color: gradientColors[0].withValues(alpha: 0.1),
                               shape: BoxShape.circle,
@@ -549,18 +565,18 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                             child: Center(
                               child: Icon(
                                 Icons.check,
-                                size: 12,
+                                size: isTablet ? 15 : 12,
                                 color: isDark ? gradientColors[1] : gradientColors[0],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: isTablet ? 16 : 12),
                           Expanded(
                             child: Text(
                               feature,
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 14,
+                                fontSize: isTablet ? 17 : 14,
                                 fontWeight: FontWeight.w400,
                                 color: featureTextColor,
                               ),
@@ -570,9 +586,9 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                       ),
                     )),
 
-                  const SizedBox(height: 10),
+                  SizedBox(height: isTablet ? 13 : 10),
                   Divider(color: dividerColor, height: 1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isTablet ? 20 : 16),
 
                   // Price Row
                   Row(
@@ -582,20 +598,20 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                         _formatPrice(displayPrice),
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 28,
+                          fontSize: isTablet ? 35 : 28,
                           fontWeight: FontWeight.w400,
                           color: isDark ? gradientColors[1] : gradientColors[0],
                         ),
                       ),
                       if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
-                        const SizedBox(width: 8),
+                        SizedBox(width: isTablet ? 10 : 8),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: EdgeInsets.only(bottom: isTablet ? 6 : 4),
                           child: Text(
                             _formatPrice(package.originalPrice!),
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 16,
+                              fontSize: isTablet ? 20 : 16,
                               fontWeight: FontWeight.w400,
                               color: textColor.withValues(alpha: 0.4),
                               decoration: TextDecoration.lineThrough,
@@ -604,20 +620,20 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                         ),
                       ],
                       if (discount > 0) ...[
-                        const SizedBox(width: 12),
+                        SizedBox(width: isTablet ? 16 : 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 6 : 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
                           ),
                           child: Text(
                             '$discount% OFF',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 12,
+                              fontSize: isTablet ? 15 : 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF4CAF50),
+                              color: const Color(0xFF4CAF50),
                             ),
                           ),
                         ),
@@ -628,7 +644,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                           '/ ${_formatDuration(package.durationDays)}',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             fontWeight: FontWeight.w400,
                             color: textColor.withValues(alpha: 0.5),
                           ),
@@ -638,27 +654,27 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
                   // Selection indicator
                   if (isSelected) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: isTablet ? 20 : 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: EdgeInsets.symmetric(vertical: isTablet ? 13 : 10),
                       decoration: BoxDecoration(
                         color: (isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2)).withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(isTablet ? 13 : 10),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.check_circle,
-                            size: 18,
+                            size: isTablet ? 22 : 18,
                             color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: isTablet ? 10 : 8),
                           Text(
                             'Selected Package',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 14,
+                              fontSize: isTablet ? 17 : 14,
                               fontWeight: FontWeight.w500,
                               color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2),
                             ),

@@ -5,6 +5,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class SeriesSessionsScreen extends StatefulWidget {
   final String seriesId;
@@ -104,6 +105,8 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -117,14 +120,14 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + 12, left: hPadding, right: hPadding),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => context.pop(),
                   child: Icon(
                     Icons.arrow_back,
-                    size: 24,
+                    size: isTablet ? 30 : 24,
                     color: textColor,
                   ),
                 ),
@@ -135,7 +138,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 20,
+                      fontSize: isTablet ? 26 : 20,
                       color: textColor,
                     ),
                   ),
@@ -149,7 +152,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
           // Series name subtitle
           if (widget.seriesName != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -157,7 +160,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 14,
+                    fontSize: isTablet ? 18 : 14,
                     color: secondaryTextColor,
                   ),
                 ),
@@ -183,7 +186,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                               'Failed to load sessions',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 16,
+                                fontSize: isTablet ? 20 : 16,
                                 color: textColor,
                               ),
                             ),
@@ -192,7 +195,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                               _error!.replaceAll('Exception: ', ''),
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 12,
+                                fontSize: isTablet ? 15 : 12,
                                 color: secondaryTextColor,
                               ),
                               textAlign: TextAlign.center,
@@ -217,7 +220,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                                   'No live sessions available',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 16,
+                                    fontSize: isTablet ? 20 : 16,
                                     color: textColor,
                                   ),
                                 ),
@@ -226,7 +229,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                                   'Check back later for upcoming sessions',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 14,
+                                    fontSize: isTablet ? 17 : 14,
                                     color: secondaryTextColor,
                                   ),
                                 ),
@@ -235,20 +238,25 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                           )
                         : RefreshIndicator(
                             onRefresh: _loadSessions,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: _sessions.length,
-                              itemBuilder: (context, index) {
-                                final session = _sessions[index];
-                                return _buildSessionCard(
-                                  session,
-                                  isDark: isDark,
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                  cardBgColor: cardBgColor,
-                                  iconColor: iconColor,
-                                );
-                              },
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                                  itemCount: _sessions.length,
+                                  itemBuilder: (context, index) {
+                                    final session = _sessions[index];
+                                    return _buildSessionCard(
+                                      session,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                      secondaryTextColor: secondaryTextColor,
+                                      cardBgColor: cardBgColor,
+                                      iconColor: iconColor,
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ),
           ),
@@ -265,6 +273,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
     required Color cardBgColor,
     required Color iconColor,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final statusColor = _getStatusColor(session.status, isDark);
 
     return GestureDetector(
@@ -276,7 +285,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
           boxShadow: isDark
               ? [
                   BoxShadow(
@@ -298,19 +307,19 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
           children: [
             // Thumbnail
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 22 : 16)),
               child: Stack(
                 children: [
                   session.thumbnailUrl != null
                       ? Image.network(
                           session.thumbnailUrl!,
                           width: double.infinity,
-                          height: 140,
+                          height: isTablet ? 200 : 140,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               width: double.infinity,
-                              height: 140,
+                              height: isTablet ? 200 : 140,
                               color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
                               child: Icon(
                                 Icons.videocam_outlined,
@@ -322,7 +331,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                         )
                       : Container(
                           width: double.infinity,
-                          height: 140,
+                          height: isTablet ? 200 : 140,
                           color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
                           child: Icon(
                             Icons.videocam_outlined,
@@ -342,9 +351,9 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                       ),
                       child: Text(
                         _getStatusLabel(session.status),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 11,
+                          fontSize: isTablet ? 14 : 11,
                           fontWeight: FontWeight.w500,
                           color: Colors.white,
                         ),
@@ -357,8 +366,8 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                       top: 12,
                       right: 12,
                       child: Container(
-                        width: 12,
-                        height: 12,
+                        width: isTablet ? 16 : 12,
+                        height: isTablet ? 16 : 12,
                         decoration: BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
@@ -378,7 +387,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
 
             // Content
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 22 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -388,7 +397,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 20 : 16,
                       color: textColor,
                     ),
                     maxLines: 2,
@@ -402,7 +411,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        size: 14,
+                        size: isTablet ? 18 : 14,
                         color: iconColor,
                       ),
                       const SizedBox(width: 6),
@@ -410,7 +419,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                         _formatDateTime(session.scheduledStartTime),
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -424,7 +433,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: 14,
+                        size: isTablet ? 18 : 14,
                         color: iconColor,
                       ),
                       const SizedBox(width: 6),
@@ -432,7 +441,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                         '${session.durationMinutes} mins',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -445,7 +454,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 14,
+                          radius: isTablet ? 20 : 14,
                           backgroundColor: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
                           backgroundImage: session.facultyPhotoUrl != null
                               ? NetworkImage(session.facultyPhotoUrl!)
@@ -453,7 +462,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                           child: session.facultyPhotoUrl == null
                               ? Icon(
                                   Icons.person,
-                                  size: 14,
+                                  size: isTablet ? 20 : 14,
                                   color: secondaryTextColor,
                                 )
                               : null,
@@ -464,7 +473,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                             session.facultyName!,
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 12,
+                              fontSize: isTablet ? 15 : 12,
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),

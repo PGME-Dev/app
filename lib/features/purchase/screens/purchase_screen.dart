@@ -8,6 +8,7 @@ import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class PurchaseScreen extends StatefulWidget {
   final String? packageId;
@@ -133,6 +134,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   }
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -147,62 +149,162 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         ? package.salePrice!
         : package.price;
 
+    // Tablet-scaled dimensions
+    final dialogWidth = isTablet ? 560.0 : 356.0;
+    final dialogRadius = isTablet ? 28.0 : 20.8;
+    final closePad = isTablet ? 18.0 : 12.0;
+    final closeSize = isTablet ? 32.0 : 24.0;
+    final imgWidth = isTablet ? dialogWidth : 180.0;
+    final imgHeight = isTablet ? 380.0 : 120.0;
+    final titleSize = isTablet ? 26.0 : 16.0;
+    final descSize = isTablet ? 17.0 : 12.0;
+    final descPadH = isTablet ? 48.0 : 40.0;
+    final boxMarginH = isTablet ? 32.0 : 18.0;
+    final boxPad = isTablet ? 28.0 : 16.0;
+    final boxRadius = isTablet ? 18.0 : 10.93;
+    final pkgNameSize = isTablet ? 22.0 : 14.0;
+    final featureIconSize = isTablet ? 26.0 : 16.0;
+    final featureCheckSize = isTablet ? 16.0 : 10.0;
+    final featureTextSize = isTablet ? 17.0 : 12.0;
+    final featureGap = isTablet ? 14.0 : 8.0;
+    final featureIconGap = isTablet ? 14.0 : 8.0;
+    final priceSize = isTablet ? 36.0 : 24.0;
+    final durationSize = isTablet ? 19.0 : 14.0;
+    final saleSize = isTablet ? 17.0 : 12.0;
+    final btnHeight = isTablet ? 58.0 : 40.0;
+    final btnFontSize = isTablet ? 21.0 : 16.0;
+    final btnRadius = isTablet ? 28.0 : 22.0;
+    final btnPadH = isTablet ? 24.0 : 16.0;
+    final btnPadV = isTablet ? 14.0 : 10.0;
+    final fallbackIconSize = isTablet ? 100.0 : 60.0;
+    final fallbackRadius = isTablet ? 22.0 : 12.0;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      insetPadding: EdgeInsets.symmetric(horizontal: isTablet ? 48 : 24, vertical: isTablet ? 60 : 40),
       child: Container(
-        width: 356,
+        width: dialogWidth,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height - 80,
+          maxHeight: MediaQuery.of(context).size.height - (isTablet ? 120 : 80),
         ),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: dialogBgColor,
-          borderRadius: BorderRadius.circular(20.8),
+          borderRadius: BorderRadius.circular(dialogRadius),
         ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Close button
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 12, right: 12),
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(dialogContext).pop(false),
-                    child: Icon(
-                      Icons.close,
-                      size: 24,
-                      color: secondaryTextColor,
+              // Image + Close button (stacked on tablet so close overlays image)
+              if (isTablet)
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(dialogRadius),
+                        topRight: Radius.circular(dialogRadius),
+                      ),
+                      child: Image.asset(
+                        'assets/illustrations/enroll.png',
+                        width: imgWidth,
+                        height: imgHeight,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: imgWidth,
+                            height: imgHeight,
+                            decoration: BoxDecoration(
+                              color: featureBgColor,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(dialogRadius),
+                                topRight: Radius.circular(dialogRadius),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.play_circle_outline,
+                              size: fallbackIconSize,
+                              color: iconColor,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      top: closePad,
+                      right: closePad,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(dialogContext).pop(false),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: dialogBgColor.withValues(alpha: 0.7),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            size: closeSize,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else ...[
+                // Close button (mobile)
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: closePad, right: closePad),
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(false),
+                      child: Icon(
+                        Icons.close,
+                        size: closeSize,
+                        color: secondaryTextColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
+                // Illustration (mobile)
+                Image.asset(
+                  'assets/illustrations/enroll.png',
+                  width: imgWidth,
+                  height: imgHeight,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: imgWidth,
+                      height: imgHeight,
+                      decoration: BoxDecoration(
+                        color: featureBgColor,
+                        borderRadius: BorderRadius.circular(fallbackRadius),
+                      ),
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        size: fallbackIconSize,
+                        color: iconColor,
+                      ),
+                    );
+                  },
+                ),
+              ],
 
-              // Illustration
-              Image.asset(
-                'assets/illustrations/enroll.png',
-                width: 180,
-                height: 120,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 180,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: featureBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.play_circle_outline,
-                      size: 60,
-                      color: iconColor,
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 16),
+              // Content section - overlaps image on tablet
+              Container(
+                width: isTablet ? double.infinity : null,
+                transform: isTablet ? Matrix4.translationValues(0, -50, 0) : null,
+                decoration: isTablet
+                    ? BoxDecoration(
+                        color: dialogBgColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                      )
+                    : null,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: isTablet ? 20 : 16),
 
               // Title
               Text(
@@ -211,27 +313,27 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  height: 1.1,
+                  fontSize: titleSize,
+                  height: isTablet ? 1.25 : 1.1,
                   letterSpacing: -0.18,
                   color: textColor,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: isTablet ? 10 : 12),
 
               // Description
               if (package.description != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: EdgeInsets.symmetric(horizontal: descPadH),
                   child: Text(
                     package.description!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.05,
+                      fontSize: descSize,
+                      height: isTablet ? 1.4 : 1.05,
                       letterSpacing: -0.18,
                       color: secondaryTextColor,
                     ),
@@ -240,16 +342,16 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: isTablet ? 14 : 16),
 
               // Package details box
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 18),
-                padding: const EdgeInsets.all(16),
+                margin: EdgeInsets.symmetric(horizontal: boxMarginH),
+                padding: EdgeInsets.all(boxPad),
                 decoration: BoxDecoration(
                   color: boxBgColor,
-                  borderRadius: BorderRadius.circular(10.93),
-                  border: Border.all(
+                  borderRadius: BorderRadius.circular(boxRadius),
+                  border: isTablet ? null : Border.all(
                     color: borderColor,
                     width: 1,
                   ),
@@ -262,27 +364,36 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: pkgNameSize,
                         color: textColor,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: isTablet ? 20 : 12),
                     // Features
                     if (package.features != null && package.features!.isNotEmpty)
                       ...package.features!.take(4).map((feature) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildPopupFeatureItem(feature, isDark, textColor, iconColor, featureBgColor),
+                        padding: EdgeInsets.only(bottom: featureGap),
+                        child: _buildPopupFeatureItem(feature, isDark, textColor, iconColor, featureBgColor,
+                          isTablet: isTablet,
+                          iconSize: featureIconSize,
+                          checkSize: featureCheckSize,
+                          textSize: featureTextSize,
+                          iconGap: featureIconGap,
+                        ),
                       ))
                     else ...[
-                      _buildPopupFeatureItem('Full access to ${package.type?.toLowerCase() ?? ''} content', isDark, textColor, iconColor, featureBgColor),
-                      const SizedBox(height: 8),
-                      _buildPopupFeatureItem('Expert faculty guidance', isDark, textColor, iconColor, featureBgColor),
-                      const SizedBox(height: 8),
-                      _buildPopupFeatureItem('24/7 doubt resolution support', isDark, textColor, iconColor, featureBgColor),
+                      _buildPopupFeatureItem('Full access to ${package.type?.toLowerCase() ?? ''} content', isDark, textColor, iconColor, featureBgColor,
+                        isTablet: isTablet, iconSize: featureIconSize, checkSize: featureCheckSize, textSize: featureTextSize, iconGap: featureIconGap),
+                      SizedBox(height: featureGap),
+                      _buildPopupFeatureItem('Expert faculty guidance', isDark, textColor, iconColor, featureBgColor,
+                        isTablet: isTablet, iconSize: featureIconSize, checkSize: featureCheckSize, textSize: featureTextSize, iconGap: featureIconGap),
+                      SizedBox(height: featureGap),
+                      _buildPopupFeatureItem('24/7 doubt resolution support', isDark, textColor, iconColor, featureBgColor,
+                        isTablet: isTablet, iconSize: featureIconSize, checkSize: featureCheckSize, textSize: featureTextSize, iconGap: featureIconGap),
                     ],
-                    const SizedBox(height: 16),
-                    Divider(height: 1, color: borderColor),
-                    const SizedBox(height: 16),
+                    SizedBox(height: isTablet ? 24 : 16),
+                    Divider(height: 1, thickness: 1, color: borderColor),
+                    SizedBox(height: isTablet ? 24 : 16),
                     // Price
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -293,20 +404,20 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 24,
+                            fontSize: priceSize,
                             height: 1.0,
                             letterSpacing: -0.18,
                             color: textColor,
                           ),
                         ),
                         if (package.durationDays != null) ...[
-                          const SizedBox(width: 8),
+                          SizedBox(width: isTablet ? 12 : 8),
                           Text(
                             '/ ${_formatDuration(package.durationDays)}',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w400,
-                              fontSize: 14,
+                              fontSize: durationSize,
                               color: textColor.withValues(alpha: 0.5),
                             ),
                           ),
@@ -314,22 +425,22 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       ],
                     ),
                     if (package.isOnSale) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: isTablet ? 8 : 4),
                       Text(
                         'Limited Time Offer',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 12,
+                          fontSize: saleSize,
                           color: secondaryTextColor,
                         ),
                       ),
                     ],
-                    const SizedBox(height: 16),
+                    SizedBox(height: isTablet ? 28 : 16),
                     // Enroll Now button
                     SizedBox(
                       width: double.infinity,
-                      height: 40,
+                      height: btnHeight,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(dialogContext).pop(true);
@@ -337,29 +448,29 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonColor,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(btnRadius),
                           ),
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: btnPadV),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Enroll Now',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w500,
-                            fontSize: 16,
+                            fontSize: btnFontSize,
                             letterSpacing: -0.18,
                             color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 14 : 8),
                     // See All Packages button
                     SizedBox(
                       width: double.infinity,
-                      height: 40,
+                      height: btnHeight,
                       child: OutlinedButton(
                         onPressed: () {
                           Navigator.of(dialogContext).pop(false);
@@ -368,12 +479,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: buttonColor,
-                            width: 1,
+                            width: isTablet ? 1.5 : 1,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(btnRadius),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: btnPadV),
                         ),
                         child: Text(
                           'See All Packages',
@@ -381,7 +492,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w500,
-                            fontSize: 16,
+                            fontSize: btnFontSize,
                             letterSpacing: -0.18,
                             color: buttonColor,
                           ),
@@ -392,7 +503,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: isTablet ? 0 : 24),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -400,12 +514,25 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     );
   }
 
-  Widget _buildPopupFeatureItem(String text, bool isDark, Color textColor, Color iconColor, Color featureBgColor) {
+  Widget _buildPopupFeatureItem(String text, bool isDark, Color textColor, Color iconColor, Color featureBgColor, {
+    bool isTablet = false,
+    double? iconSize,
+    double? checkSize,
+    double? textSize,
+    double? iconGap,
+  }) {
+    final circleSize = iconSize ?? (isTablet ? 20.0 : 16.0);
+    final checkIconSize = checkSize ?? (isTablet ? 13.0 : 10.0);
+    final fontSize = textSize ?? (isTablet ? 15.0 : 12.0);
+    final gap = iconGap ?? (isTablet ? 10.0 : 8.0);
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 16,
-          height: 16,
+          width: circleSize,
+          height: circleSize,
+          margin: EdgeInsets.only(top: isTablet ? 4 : 2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: featureBgColor,
@@ -413,19 +540,20 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           child: Center(
             child: Icon(
               Icons.check,
-              size: 10,
+              size: checkIconSize,
               color: iconColor,
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: gap),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: 12,
+              fontSize: fontSize,
+              height: isTablet ? 1.45 : 1.2,
               color: textColor,
             ),
           ),
@@ -523,6 +651,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -535,6 +664,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     final priceColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     if (_isLoading) {
       return Scaffold(
@@ -552,17 +683,17 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: isTablet ? 60 : 48, color: secondaryTextColor),
+              SizedBox(height: isTablet ? 20 : 16),
               Text(
                 'Failed to load package',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 16,
+                  fontSize: isTablet ? 20 : 16,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isTablet ? 20 : 16),
               ElevatedButton(
                 onPressed: _loadPackageData,
                 style: ElevatedButton.styleFrom(backgroundColor: iconColor),
@@ -586,205 +717,210 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         children: [
           // Main scrollable content
           SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with back button
-                Container(
-                  padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: borderColor, width: 1),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with back button
+                    Container(
+                      padding: EdgeInsets.only(top: topPadding + (isTablet ? 20 : 16), left: hPadding, right: hPadding),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => context.pop(),
+                            child: Container(
+                              width: isTablet ? 54 : 44,
+                              height: isTablet ? 54 : 44,
+                              decoration: BoxDecoration(
+                                color: surfaceColor,
+                                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                                border: Border.all(color: borderColor, width: 1),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  size: isTablet ? 22 : 18,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: Center(
-                            child: Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 18,
+                          SizedBox(width: isTablet ? 20 : 16),
+                          Text(
+                            'Course Details',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isTablet ? 25 : 20,
+                              fontWeight: FontWeight.w600,
                               color: textColor,
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 30 : 24),
+
+                    // Course Banner
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Container(
+                        width: double.infinity,
+                        height: isTablet ? 225 : 180,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(isTablet ? 26 : 20),
+                          gradient: LinearGradient(
+                            begin: const Alignment(-0.85, 0),
+                            end: const Alignment(0.85, 0),
+                            colors: isDark
+                                ? [const Color(0xFF0D2A5C), const Color(0xFF1A5A9E)]
+                                : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
+                            stops: const [0.3469, 0.7087],
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            // Background pattern
+                            Positioned(
+                              right: -20,
+                              bottom: -20,
+                              child: Opacity(
+                                opacity: 0.1,
+                                child: Icon(
+                                  package.type == 'Practical' ? Icons.science : Icons.school,
+                                  size: isTablet ? 225 : 180,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            // Content
+                            Padding(
+                              padding: EdgeInsets.all(isTablet ? 26 : 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 8 : 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '${package.type?.toUpperCase() ?? 'COURSE'} PACKAGE',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: isTablet ? 14 : 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: isTablet ? 16 : 12),
+                                  Text(
+                                    package.name,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: isTablet ? 30 : 24,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const Spacer(),
+                                  Row(
+                                    children: [
+                                      if (package.durationDays != null) ...[
+                                        Icon(Icons.access_time, size: isTablet ? 20 : 16, color: Colors.white70),
+                                        SizedBox(width: isTablet ? 8 : 6),
+                                        Text(
+                                          '${_formatDuration(package.durationDays)} Access',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: isTablet ? 16 : 13,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Course Details',
+                    ),
+
+                    SizedBox(height: isTablet ? 30 : 24),
+
+                    // Course Overview
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Text(
+                        'Course Overview',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 20,
+                          fontSize: isTablet ? 22 : 18,
                           fontWeight: FontWeight.w600,
                           color: textColor,
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                const SizedBox(height: 24),
+                    SizedBox(height: isTablet ? 16 : 12),
 
-                // Course Banner
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: const Alignment(-0.85, 0),
-                        end: const Alignment(0.85, 0),
-                        colors: isDark
-                            ? [const Color(0xFF0D2A5C), const Color(0xFF1A5A9E)]
-                            : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
-                        stops: const [0.3469, 0.7087],
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Text(
+                        package.description ?? 'Master your medical education with our comprehensive ${package.type?.toLowerCase() ?? ''} package. This course covers all essential topics with expert faculty guidance and structured learning paths.',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 17 : 14,
+                          fontWeight: FontWeight.w400,
+                          color: secondaryTextColor,
+                          height: 1.5,
+                        ),
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        // Background pattern
-                        Positioned(
-                          right: -20,
-                          bottom: -20,
-                          child: Opacity(
-                            opacity: 0.1,
-                            child: Icon(
-                              package.type == 'Practical' ? Icons.science : Icons.school,
-                              size: 180,
-                              color: Colors.white,
-                            ),
-                          ),
+
+                    SizedBox(height: isTablet ? 30 : 24),
+
+                    // What's Included
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Text(
+                        'What\'s Included',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 22 : 18,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
-                        // Content
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '${package.type?.toUpperCase() ?? 'COURSE'} PACKAGE',
-                                  style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                package.name,
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  height: 1.2,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  if (package.durationDays != null) ...[
-                                    const Icon(Icons.access_time, size: 16, color: Colors.white70),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${_formatDuration(package.durationDays)} Access',
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 13,
-                                        color: Colors.white70,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 24),
+                    SizedBox(height: isTablet ? 20 : 16),
 
-                // Course Overview
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'Course Overview',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
+                    // Feature Cards from package features
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
+                      child: Column(
+                        children: _buildFeatureCards(package, isDark, textColor, cardBgColor, borderColor, iconBgColor, iconColor, isTablet: isTablet),
+                      ),
                     ),
-                  ),
+
+                    SizedBox(height: isTablet ? 30 : 24),
+
+                    // Space for bottom button
+                    SizedBox(height: bottomPadding + (isTablet ? 150 : 120)),
+                  ],
                 ),
-
-                const SizedBox(height: 12),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    package.description ?? 'Master your medical education with our comprehensive ${package.type?.toLowerCase() ?? ''} package. This course covers all essential topics with expert faculty guidance and structured learning paths.',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: secondaryTextColor,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // What's Included
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'What\'s Included',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Feature Cards from package features
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: _buildFeatureCards(package, isDark, textColor, cardBgColor, borderColor, iconBgColor, iconColor),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Space for bottom button
-                SizedBox(height: bottomPadding + 120),
-              ],
+              ),
             ),
           ),
 
@@ -806,10 +942,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             bottom: 0,
             child: Container(
               padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 16,
-                bottom: bottomPadding + 16,
+                left: isTablet ? 26 : 20,
+                right: isTablet ? 26 : 20,
+                top: isTablet ? 20 : 16,
+                bottom: bottomPadding + (isTablet ? 20 : 16),
               ),
               decoration: BoxDecoration(
                 color: surfaceColor,
@@ -821,96 +957,101 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  // Price
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                  child: Row(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      // Price
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            _formatPrice(displayPrice),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 28,
-                              fontWeight: FontWeight.w400,
-                              color: priceColor,
-                            ),
-                          ),
-                          if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
-                            const SizedBox(width: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                _formatPrice(package.originalPrice!),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _formatPrice(displayPrice),
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: 16,
+                                  fontSize: isTablet ? 35 : 28,
                                   fontWeight: FontWeight.w400,
-                                  color: textColor.withValues(alpha: 0.4),
-                                  decoration: TextDecoration.lineThrough,
+                                  color: priceColor,
+                                ),
+                              ),
+                              if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
+                                SizedBox(width: isTablet ? 10 : 8),
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: isTablet ? 6 : 4),
+                                  child: Text(
+                                    _formatPrice(package.originalPrice!),
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: isTablet ? 20 : 16,
+                                      fontWeight: FontWeight.w400,
+                                      color: textColor.withValues(alpha: 0.4),
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (discount > 0) ...[
+                            SizedBox(height: isTablet ? 3 : 2),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8, vertical: isTablet ? 3 : 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(isTablet ? 6 : 4),
+                              ),
+                              child: Text(
+                                '$discount% OFF',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 14 : 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF4CAF50),
                                 ),
                               ),
                             ),
                           ],
                         ],
                       ),
-                      if (discount > 0) ...[
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      const Spacer(),
+                      // Buy Button
+                      GestureDetector(
+                        onTap: _isProcessing ? null : _showPaymentPopup,
+                        child: Container(
+                          width: isTablet ? 200 : 160,
+                          height: isTablet ? 66 : 54,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            color: buttonColor,
+                            borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: buttonColor.withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            '$discount% OFF',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4CAF50),
+                          child: Center(
+                            child: Text(
+                              'Buy Now',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 22 : 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
-                  const Spacer(),
-                  // Buy Button
-                  GestureDetector(
-                    onTap: _isProcessing ? null : _showPaymentPopup,
-                    child: Container(
-                      width: 160,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: buttonColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: buttonColor.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Buy Now',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -926,14 +1067,15 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     Color cardBgColor,
     Color borderColor,
     Color iconBgColor,
-    Color iconColor,
-  ) {
+    Color iconColor, {
+    bool isTablet = false,
+  }) {
     final features = package.features;
 
     if (features != null && features.isNotEmpty) {
       return features.map((feature) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: isTablet ? 16 : 12),
           child: _buildFeatureCard(
             icon: _getFeatureIcon(feature),
             title: feature,
@@ -944,6 +1086,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             borderColor: borderColor,
             iconBgColor: iconBgColor,
             iconColor: iconColor,
+            isTablet: isTablet,
           ),
         );
       }).toList();
@@ -964,7 +1107,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
     return defaultFeatures.map((f) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.only(bottom: isTablet ? 16 : 12),
         child: _buildFeatureCard(
           icon: f['icon'] as IconData,
           title: f['title'] as String,
@@ -975,6 +1118,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           borderColor: borderColor,
           iconBgColor: iconBgColor,
           iconColor: iconColor,
+          isTablet: isTablet,
         ),
       );
     }).toList();
@@ -1009,32 +1153,33 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     required Color borderColor,
     required Color iconBgColor,
     required Color iconColor,
+    bool isTablet = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: isTablet ? 60 : 48,
+            height: isTablet ? 60 : 48,
             decoration: BoxDecoration(
               color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
             ),
             child: Center(
               child: Icon(
                 icon,
-                size: 24,
+                size: isTablet ? 30 : 24,
                 color: iconColor,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: isTablet ? 18 : 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1043,18 +1188,18 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   title,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 15,
+                    fontSize: isTablet ? 19 : 15,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
                 ),
                 if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  SizedBox(height: isTablet ? 3 : 2),
                   Text(
                     subtitle,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 13,
+                      fontSize: isTablet ? 16 : 13,
                       fontWeight: FontWeight.w400,
                       color: textColor.withValues(alpha: 0.5),
                     ),
@@ -1063,10 +1208,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
               ],
             ),
           ),
-          const Icon(
+          Icon(
             Icons.check_circle,
-            size: 22,
-            color: Color(0xFF4CAF50),
+            size: isTablet ? 27 : 22,
+            color: const Color(0xFF4CAF50),
           ),
         ],
       ),

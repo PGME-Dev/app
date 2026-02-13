@@ -5,6 +5,7 @@ import 'package:pgme/core/models/book_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class OrderPhysicalBooksScreen extends StatefulWidget {
   const OrderPhysicalBooksScreen({super.key});
@@ -56,6 +57,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -68,25 +70,30 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
     final buttonColor = isDark ? const Color(0xFF1A1A4D) : const Color(0xFF000080);
     final cardFooterBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFE4F4FF);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 21 : 16), left: hPadding, right: hPadding),
             child: Row(
               children: [
                 // Back Arrow
                 GestureDetector(
                   onTap: () => context.pop(),
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: isTablet ? 30 : 24,
+                    height: isTablet ? 30 : 24,
                     child: Icon(
                       Icons.arrow_back,
-                      size: 24,
+                      size: isTablet ? 30 : 24,
                       color: textColor,
                     ),
                   ),
@@ -99,7 +106,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
+                    fontSize: isTablet ? 25 : 20,
                     height: 1.0,
                     letterSpacing: -0.5,
                     color: textColor,
@@ -115,7 +122,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                         children: [
                           Icon(
                             Icons.shopping_cart_outlined,
-                            size: 24,
+                            size: isTablet ? 30 : 24,
                             color: textColor,
                           ),
                           if (provider.cartItemCount > 0)
@@ -123,20 +130,20 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                               right: 0,
                               top: 0,
                               child: Container(
-                                padding: const EdgeInsets.all(2),
+                                padding: EdgeInsets.all(isTablet ? 3 : 2),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(isTablet ? 12 : 10),
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
+                                constraints: BoxConstraints(
+                                  minWidth: isTablet ? 20 : 16,
+                                  minHeight: isTablet ? 20 : 16,
                                 ),
                                 child: Text(
                                   '${provider.cartItemCount}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 10,
+                                    fontSize: isTablet ? 12 : 10,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   textAlign: TextAlign.center,
@@ -152,17 +159,17 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 21 : 16),
 
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: Container(
               width: double.infinity,
-              height: 48,
+              height: isTablet ? 56 : 48,
               decoration: BoxDecoration(
                 color: surfaceColor,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(isTablet ? 23 : 18),
                 border: Border.all(
                   color: iconColor.withValues(alpha: 0.3),
                   width: 1,
@@ -170,13 +177,13 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 16),
+                  SizedBox(width: isTablet ? 20 : 16),
                   Icon(
                     Icons.search,
-                    size: 24,
+                    size: isTablet ? 30 : 24,
                     color: secondaryTextColor,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: isTablet ? 16 : 12),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
@@ -185,7 +192,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                         hintText: 'Search the book you want...',
                         hintStyle: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           fontWeight: FontWeight.w500,
                           height: 20 / 12,
                           letterSpacing: -0.5,
@@ -197,7 +204,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                       ),
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 12,
+                        fontSize: isTablet ? 15 : 12,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.5,
                         color: textColor,
@@ -211,10 +218,10 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                         _onSearch('');
                       },
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 16),
+                        padding: EdgeInsets.only(right: isTablet ? 20 : 16),
                         child: Icon(
                           Icons.close,
-                          size: 20,
+                          size: isTablet ? 25 : 20,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -224,7 +231,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 21 : 16),
 
           // Books Grid
           Expanded(
@@ -239,14 +246,14 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                        const SizedBox(height: 16),
+                        Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           provider.booksError!,
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(color: secondaryTextColor, fontSize: isTablet ? 17 : 14),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isTablet ? 21 : 16),
                         ElevatedButton(
                           onPressed: () => provider.loadBooks(refresh: true),
                           child: const Text('Retry'),
@@ -261,13 +268,13 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.menu_book_outlined, size: 48, color: secondaryTextColor),
-                        const SizedBox(height: 16),
+                        Icon(Icons.menu_book_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           'No books available',
                           style: TextStyle(
                             color: secondaryTextColor,
-                            fontSize: 16,
+                            fontSize: isTablet ? 20 : 16,
                           ),
                         ),
                       ],
@@ -279,12 +286,12 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                   onRefresh: () => provider.loadBooks(refresh: true),
                   child: GridView.builder(
                     controller: _scrollController,
-                    padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomPadding + 100),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 170 / 284,
+                    padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 130 : 100)),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isTablet ? 3 : 2,
+                      crossAxisSpacing: isTablet ? 20 : 16,
+                      mainAxisSpacing: isTablet ? 20 : 16,
+                      childAspectRatio: isTablet ? 170 / 310 : 170 / 284,
                     ),
                     itemCount: provider.books.length + (provider.pagination?.hasNext == true ? 1 : 0),
                     itemBuilder: (context, index) {
@@ -303,6 +310,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                         book: book,
                         provider: provider,
                         isDark: isDark,
+                        isTablet: isTablet,
                         textColor: textColor,
                         cardBgColor: cardBgColor,
                         borderColor: borderColor,
@@ -317,6 +325,8 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -325,6 +335,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
     required BookModel book,
     required BookProvider provider,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color cardBgColor,
     required Color borderColor,
@@ -334,14 +345,26 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
     final isInCart = provider.isInCart(book.bookId);
 
+    final cardRadius = isTablet ? 20.0 : 14.0;
+    final footerPadH = isTablet ? 14.0 : 8.0;
+    final footerPadV = isTablet ? 12.0 : 6.0;
+    final titleSize = isTablet ? 18.0 : 12.0;
+    final authorSize = isTablet ? 15.0 : 10.0;
+    final priceSize = isTablet ? 20.0 : 14.0;
+    final strikePriceSize = isTablet ? 15.0 : 10.0;
+    final btnHeight = isTablet ? 42.0 : 30.0;
+    final btnFontSize = isTablet ? 15.0 : 12.0;
+    final btnRadius = isTablet ? 12.0 : 7.0;
+    final placeholderW = isTablet ? 100.0 : 71.0;
+    final placeholderH = isTablet ? 96.0 : 68.0;
+    final placeholderIcon = isTablet ? 44.0 : 32.0;
+
     return GestureDetector(
       onTap: () => context.push('/book/${book.bookId}'),
       child: Container(
-        width: 170,
-        height: 284,
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(cardRadius),
           border: Border.all(
             color: borderColor,
             width: 1,
@@ -350,80 +373,84 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
         child: Column(
           children: [
             // Upper part - with image
-            Container(
-              width: 170,
-              height: 163,
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  topRight: Radius.circular(14),
+            Expanded(
+              flex: 163,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(cardRadius),
+                    topRight: Radius.circular(cardRadius),
+                  ),
                 ),
-              ),
-              child: book.thumbnailUrl != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(14),
-                        topRight: Radius.circular(14),
-                      ),
-                      child: Image.network(
-                        book.thumbnailUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Center(
-                          child: Container(
-                            width: 71,
-                            height: 68,
-                            color: placeholderColor,
-                            child: Icon(
-                              Icons.menu_book,
-                              size: 32,
-                              color: textColor.withValues(alpha: 0.3),
+                child: book.thumbnailUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(cardRadius),
+                          topRight: Radius.circular(cardRadius),
+                        ),
+                        child: Image.network(
+                          book.thumbnailUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Container(
+                              width: placeholderW,
+                              height: placeholderH,
+                              color: placeholderColor,
+                              child: Icon(
+                                Icons.menu_book,
+                                size: placeholderIcon,
+                                color: textColor.withValues(alpha: 0.3),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    )
-                  : Center(
-                      child: Container(
-                        width: 71,
-                        height: 68,
-                        color: placeholderColor,
-                        child: Icon(
-                          Icons.menu_book,
-                          size: 32,
-                          color: textColor.withValues(alpha: 0.3),
+                      )
+                    : Center(
+                        child: Container(
+                          width: placeholderW,
+                          height: placeholderH,
+                          color: placeholderColor,
+                          child: Icon(
+                            Icons.menu_book,
+                            size: placeholderIcon,
+                            color: textColor.withValues(alpha: 0.3),
+                          ),
                         ),
                       ),
-                    ),
+              ),
             ),
             // Lower part - with details
             Expanded(
+              flex: isTablet ? 135 : 121,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: cardFooterBgColor,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(14),
-                    bottomRight: Radius.circular(14),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(cardRadius),
+                    bottomRight: Radius.circular(cardRadius),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: footerPadH, vertical: footerPadV),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Book Name
                     Text(
                       book.title,
-                      maxLines: 1,
+                      maxLines: isTablet ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontSize: titleSize,
                         height: 1.2,
                         color: textColor,
                       ),
                     ),
+                    SizedBox(height: isTablet ? 2 : 0),
                     // Author Name
                     Text(
                       book.author,
@@ -432,12 +459,12 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
-                        fontSize: 10,
+                        fontSize: authorSize,
                         height: 1.2,
                         color: textColor.withValues(alpha: 0.5),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: isTablet ? 8 : 4),
                     // Price
                     Row(
                       children: [
@@ -447,7 +474,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                              fontSize: priceSize,
                               height: 1.2,
                               color: textColor,
                             ),
@@ -455,13 +482,13 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                           ),
                         ),
                         if (book.hasDiscount) ...[
-                          const SizedBox(width: 4),
+                          SizedBox(width: isTablet ? 6 : 4),
                           Text(
                             '\u{20B9}${book.originalPrice}',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w400,
-                              fontSize: 10,
+                              fontSize: strikePriceSize,
                               height: 1.2,
                               color: textColor.withValues(alpha: 0.5),
                               decoration: TextDecoration.lineThrough,
@@ -492,26 +519,36 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                       },
                       child: Container(
                         width: double.infinity,
-                        height: 24,
+                        height: btnHeight,
                         decoration: BoxDecoration(
                           color: isInCart ? Colors.green : buttonColor,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(btnRadius),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              isInCart ? 'In Cart' : 'Add',
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10,
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (isTablet)
+                              Icon(
+                                isInCart ? Icons.check : Icons.add_shopping_cart,
+                                size: 18,
                                 color: Colors.white,
                               ),
-                              maxLines: 1,
+                            if (isTablet) const SizedBox(width: 6),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                isInCart ? 'In Cart' : (isTablet ? 'Add to Cart' : 'Add'),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: btnFontSize,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),

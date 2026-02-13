@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class CustomTextField extends StatelessWidget {
   final String? label;
@@ -38,6 +39,9 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final borderRadiusValue = isTablet ? 14.0 : 12.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -47,9 +51,10 @@ class CustomTextField extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w500,
+                  fontSize: isTablet ? 18 : null,
                 ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
         ],
         TextFormField(
           controller: controller,
@@ -62,37 +67,41 @@ class CustomTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           enabled: enabled,
           focusNode: focusNode,
-          style: const TextStyle(
-            fontSize: 15,
+          style: TextStyle(
+            fontSize: isTablet ? 17 : 15,
             fontWeight: FontWeight.w400,
             color: AppColors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: hintText,
+            hintStyle: isTablet ? const TextStyle(fontSize: 17) : null,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
             counterText: '',
             filled: true,
             fillColor: enabled ? Colors.white : AppColors.cardBackground,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 24 : 20,
+              vertical: isTablet ? 20 : 16,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadiusValue),
               borderSide: const BorderSide(color: AppColors.divider),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadiusValue),
               borderSide: const BorderSide(color: AppColors.divider),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadiusValue),
               borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadiusValue),
               borderSide: const BorderSide(color: AppColors.error),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadiusValue),
               borderSide: const BorderSide(color: AppColors.divider),
             ),
           ),

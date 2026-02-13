@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class CourseCard extends StatelessWidget {
   final String title;
@@ -27,13 +28,15 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
           border: Border.all(color: AppColors.divider.withOpacity(0.5)),
         ),
         child: Column(
@@ -42,35 +45,38 @@ class CourseCard extends StatelessWidget {
             // Image Section
             if (imageUrl != null)
               Container(
-                height: 140,
+                height: isTablet ? 180 : 140,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 20 : 16)),
                   color: AppColors.primaryBlue.withOpacity(0.1),
                 ),
                 child: Stack(
                   children: [
-                    const Center(
+                    Center(
                       child: Icon(
                         Icons.play_circle_outline,
-                        size: 48,
+                        size: isTablet ? 60 : 48,
                         color: AppColors.primaryBlue,
                       ),
                     ),
                     if (tag != null)
                       Positioned(
-                        top: 12,
-                        left: 12,
+                        top: isTablet ? 16 : 12,
+                        left: isTablet ? 16 : 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 16 : 12,
+                            vertical: isTablet ? 8 : 6,
+                          ),
                           decoration: BoxDecoration(
                             color: tagColor ?? AppColors.primaryBlue,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
                           ),
                           child: Text(
                             tag!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: isTablet ? 14 : 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -82,7 +88,7 @@ class CourseCard extends StatelessWidget {
 
             // Content Section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 20 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -91,42 +97,45 @@ class CourseCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
+                          fontSize: isTablet ? 18 : null,
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 6),
+                    SizedBox(height: isTablet ? 8 : 6),
                     Text(
                       subtitle!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
+                            fontSize: isTablet ? 15 : null,
                           ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   if (instructor != null) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 10 : 8),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.person_outline,
-                          size: 16,
+                          size: isTablet ? 20 : 16,
                           color: AppColors.textTertiary,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: isTablet ? 6 : 4),
                         Text(
                           instructor!,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textTertiary,
+                                fontSize: isTablet ? 15 : null,
                               ),
                         ),
                       ],
                     ),
                   ],
                   if (progress != null) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: isTablet ? 16 : 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -138,27 +147,28 @@ class CourseCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w500,
+                                    fontSize: isTablet ? 15 : null,
                                   ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: isTablet ? 8 : 6),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(isTablet ? 5 : 4),
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: AppColors.divider,
                             valueColor: const AlwaysStoppedAnimation<Color>(
                               AppColors.primaryBlue,
                             ),
-                            minHeight: 6,
+                            minHeight: isTablet ? 8 : 6,
                           ),
                         ),
                       ],
                     ),
                   ],
                   if (trailing != null) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: isTablet ? 16 : 12),
                     trailing!,
                   ],
                 ],

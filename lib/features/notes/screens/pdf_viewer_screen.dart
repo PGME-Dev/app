@@ -6,6 +6,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/api_service.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   /// Document ID — used to fetch the URL from the backend (with access control).
@@ -107,6 +108,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -123,10 +126,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(_error!, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(height: 16),
+                  Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: Colors.grey),
+                  SizedBox(height: isTablet ? 21 : 16),
+                  Text(_error!, style: TextStyle(fontSize: isTablet ? 20 : 16)),
+                  SizedBox(height: isTablet ? 21 : 16),
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
@@ -148,10 +151,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     children: [
                       CircularProgressIndicator(value: _downloadProgress > 0 ? _downloadProgress : null),
                       if (_downloadProgress > 0) ...[
-                        const SizedBox(height: 16),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           '${(_downloadProgress * 100).toInt()}%',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style: TextStyle(fontSize: isTablet ? 17 : 14, color: Colors.grey),
                         ),
                       ],
                     ],
@@ -180,19 +183,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     ),
                     if (_totalPages > 1)
                       Positioned(
-                        bottom: 16,
+                        bottom: isTablet ? 24 : 16,
                         left: 0,
                         right: 0,
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 8 : 6),
                             decoration: BoxDecoration(
                               color: Colors.black54,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
                             ),
                             child: Text(
                               '${_currentPage + 1} / $_totalPages',
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              style: TextStyle(color: Colors.white, fontSize: isTablet ? 16 : 13),
                             ),
                           ),
                         ),

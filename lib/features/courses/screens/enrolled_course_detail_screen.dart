@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 
@@ -67,6 +68,7 @@ class _EnrolledCourseDetailScreenState
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -84,7 +86,7 @@ class _EnrolledCourseDetailScreenState
         backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: Icon(Icons.arrow_back, color: textColor, size: isTablet ? 28 : 24),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -92,7 +94,7 @@ class _EnrolledCourseDetailScreenState
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w500,
-            fontSize: 20,
+            fontSize: isTablet ? 24 : 20,
             color: textColor,
           ),
           maxLines: 1,
@@ -101,7 +103,7 @@ class _EnrolledCourseDetailScreenState
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.search, color: textColor),
+            icon: Icon(Icons.search, color: textColor, size: isTablet ? 28 : 24),
             onPressed: () {
               // Search functionality
             },
@@ -119,9 +121,9 @@ class _EnrolledCourseDetailScreenState
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
-                        size: 64,
+                        size: isTablet ? 80 : 64,
                         color: AppColors.error,
                       ),
                       const SizedBox(height: 16),
@@ -129,7 +131,7 @@ class _EnrolledCourseDetailScreenState
                         'Failed to load course',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                           color: textColor,
                         ),
                       ),
@@ -138,7 +140,7 @@ class _EnrolledCourseDetailScreenState
                         _error!,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                         textAlign: TextAlign.center,
@@ -152,144 +154,156 @@ class _EnrolledCourseDetailScreenState
                   ),
                 )
               : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Quick Access Cards - Different content based on purchase status
-                        Row(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                      child: Padding(
+                        padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Video Card - Shows "Watch Lectures" if subscribed, "Watch Demo Video" if not
-                            Expanded(
-                              child: _buildQuickAccessCard(
-                                context,
-                                widget.isSubscribed
-                                    ? 'Watch\nLectures'
-                                    : 'Watch Demo\nVideo',
-                                widget.isSubscribed ? 'Start' : 'Check Out',
-                                'assets/illustrations/1.png',
-                                isDark,
-                                cardGradientStart,
-                                cardGradientEnd,
-                                onTap: () {
-                                  // Navigate to lecture/modules screen
-                                  context.push('/lecture/${widget.seriesId}?subscribed=${widget.isSubscribed}&packageType=${widget.packageType}${widget.packageId != null ? '&packageId=${widget.packageId}' : ''}');
-                                },
+                            // Quick Access Cards - Different content based on purchase status
+                            Row(
+                              children: [
+                                // Video Card - Shows "Watch Lectures" if subscribed, "Watch Demo Video" if not
+                                Expanded(
+                                  child: _buildQuickAccessCard(
+                                    context,
+                                    widget.isSubscribed
+                                        ? 'Watch\nLectures'
+                                        : 'Watch Demo\nVideo',
+                                    widget.isSubscribed ? 'Start' : 'Check Out',
+                                    'assets/illustrations/1.png',
+                                    isDark,
+                                    cardGradientStart,
+                                    cardGradientEnd,
+                                    isTablet: isTablet,
+                                    onTap: () {
+                                      // Navigate to lecture/modules screen
+                                      context.push('/lecture/${widget.seriesId}?subscribed=${widget.isSubscribed}&packageType=${widget.packageType}${widget.packageId != null ? '&packageId=${widget.packageId}' : ''}');
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Second Card - Different based on package type and subscription status
+                                Expanded(
+                                  child: widget.packageType == 'Practical'
+                                      ? _buildQuickAccessCard(
+                                          context,
+                                          widget.isSubscribed
+                                              ? 'Join Live\nSessions'
+                                              : 'View Live\nSession',
+                                          'Join',
+                                          'assets/illustrations/2.png',
+                                          isDark,
+                                          cardGradientStart,
+                                          cardGradientEnd,
+                                          isTablet: isTablet,
+                                          onTap: () {
+                                            // Navigate to series live sessions screen
+                                            final seriesName = Uri.encodeComponent(_series?.title ?? '');
+                                            context.push('/series-sessions/${widget.seriesId}?seriesName=$seriesName');
+                                          },
+                                        )
+                                      : _buildQuickAccessCard(
+                                          context,
+                                          widget.isSubscribed
+                                              ? 'Read\nDocuments'
+                                              : 'Free Sample\nPDF',
+                                          widget.isSubscribed ? 'Open' : 'View',
+                                          'assets/illustrations/2.png',
+                                          isDark,
+                                          cardGradientStart,
+                                          cardGradientEnd,
+                                          isTablet: isTablet,
+                                          onTap: () {
+                                            // Navigate to available notes/documents screen
+                                            context.push('/available-notes?seriesId=${widget.seriesId}&subscribed=${widget.isSubscribed}');
+                                          },
+                                        ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Series Title
+                            Text(
+                              _series?.title ?? 'Series Title',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 24 : 18,
+                                color: textColor,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            // Second Card - Different based on package type and subscription status
-                            Expanded(
-                              child: widget.packageType == 'Practical'
-                                  ? _buildQuickAccessCard(
-                                      context,
-                                      widget.isSubscribed
-                                          ? 'Join Live\nSessions'
-                                          : 'View Live\nSession',
-                                      'Join',
-                                      'assets/illustrations/2.png',
-                                      isDark,
-                                      cardGradientStart,
-                                      cardGradientEnd,
-                                      onTap: () {
-                                        // Navigate to series live sessions screen
-                                        final seriesName = Uri.encodeComponent(_series?.title ?? '');
-                                        context.push('/series-sessions/${widget.seriesId}?seriesName=$seriesName');
-                                      },
-                                    )
-                                  : _buildQuickAccessCard(
-                                      context,
-                                      widget.isSubscribed
-                                          ? 'Read\nDocuments'
-                                          : 'Free Sample\nPDF',
-                                      widget.isSubscribed ? 'Open' : 'View',
-                                      'assets/illustrations/2.png',
-                                      isDark,
-                                      cardGradientStart,
-                                      cardGradientEnd,
-                                      onTap: () {
-                                        // Navigate to available notes/documents screen
-                                        context.push('/available-notes?seriesId=${widget.seriesId}&subscribed=${widget.isSubscribed}');
-                                      },
-                                    ),
+
+                            const SizedBox(height: 12),
+
+                            // Description
+                            Text(
+                              _series?.description ?? 'No description available',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
+                                fontSize: isTablet ? 17 : 14,
+                                height: 1.5,
+                                color: secondaryTextColor,
+                              ),
                             ),
+
+                            const SizedBox(height: 24),
+
+                            // Series Info Section
+                            Text(
+                              'What\'s Included',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 24 : 18,
+                                color: textColor,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Info Items
+                            if (_series?.moduleCount != null)
+                              _buildInclusionItem(
+                                '${_series!.moduleCount} Modules',
+                                secondaryTextColor,
+                                icon: Icons.folder_outlined,
+                                isTablet: isTablet,
+                              ),
+                            if (_series?.moduleCount != null) const SizedBox(height: 12),
+                            if (_series?.totalLectures != null)
+                              _buildInclusionItem(
+                                '${_series!.totalLectures} Video Lectures',
+                                secondaryTextColor,
+                                icon: Icons.play_circle_outline,
+                                isTablet: isTablet,
+                              ),
+                            if (_series?.totalLectures != null) const SizedBox(height: 12),
+                            if (_series?.totalDocuments != null)
+                              _buildInclusionItem(
+                                '${_series!.totalDocuments} Study Documents',
+                                secondaryTextColor,
+                                icon: Icons.description_outlined,
+                                isTablet: isTablet,
+                              ),
+                            if (_series?.totalDocuments != null) const SizedBox(height: 12),
+                            if (_series?.totalDurationMinutes != null)
+                              _buildInclusionItem(
+                                _series!.formattedDuration,
+                                secondaryTextColor,
+                                icon: Icons.access_time,
+                                isTablet: isTablet,
+                              ),
+
+                            const SizedBox(height: 100),
                           ],
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // Series Title
-                        Text(
-                          _series?.title ?? 'Series Title',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                            color: textColor,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Description
-                        Text(
-                          _series?.description ?? 'No description available',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 14,
-                            height: 1.5,
-                            color: secondaryTextColor,
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Series Info Section
-                        Text(
-                          'What\'s Included',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                            color: textColor,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Info Items
-                        if (_series?.moduleCount != null)
-                          _buildInclusionItem(
-                            '${_series!.moduleCount} Modules',
-                            secondaryTextColor,
-                            icon: Icons.folder_outlined,
-                          ),
-                        if (_series?.moduleCount != null) const SizedBox(height: 12),
-                        if (_series?.totalLectures != null)
-                          _buildInclusionItem(
-                            '${_series!.totalLectures} Video Lectures',
-                            secondaryTextColor,
-                            icon: Icons.play_circle_outline,
-                          ),
-                        if (_series?.totalLectures != null) const SizedBox(height: 12),
-                        if (_series?.totalDocuments != null)
-                          _buildInclusionItem(
-                            '${_series!.totalDocuments} Study Documents',
-                            secondaryTextColor,
-                            icon: Icons.description_outlined,
-                          ),
-                        if (_series?.totalDocuments != null) const SizedBox(height: 12),
-                        if (_series?.totalDurationMinutes != null)
-                          _buildInclusionItem(
-                            _series!.formattedDuration,
-                            secondaryTextColor,
-                            icon: Icons.access_time,
-                          ),
-
-                        const SizedBox(height: 100),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -305,14 +319,17 @@ class _EnrolledCourseDetailScreenState
     Color gradientStart,
     Color gradientEnd, {
     bool showButton = true,
+    bool isTablet = false,
     VoidCallback? onTap,
   }) {
+    final cardBorderRadius = isTablet ? 18.0 : 12.0;
+    final illustrationScale = isTablet ? 1.3 : 1.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 180,
+        height: isTablet ? 240 : 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(cardBorderRadius),
           gradient: LinearGradient(
             begin: const Alignment(-0.5, -0.5),
             end: const Alignment(0.5, 0.5),
@@ -331,7 +348,7 @@ class _EnrolledCourseDetailScreenState
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: isTablet ? 20 : 16,
                   color: isDark ? Colors.white : const Color(0xFF000000),
                   height: 1.3,
                 ),
@@ -341,7 +358,7 @@ class _EnrolledCourseDetailScreenState
             // Button
             if (showButton)
               Positioned(
-                top: 60,
+                top: isTablet ? 80 : 60,
                 left: 16,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -357,7 +374,7 @@ class _EnrolledCourseDetailScreenState
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       color: isDark
                           ? const Color(0xFF00BEFA)
                           : const Color(0xFF2470E4),
@@ -371,24 +388,24 @@ class _EnrolledCourseDetailScreenState
               right: 0,
               bottom: 0,
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(12),
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(cardBorderRadius),
                 ),
                 child: Image.asset(
                   imagePath,
-                  width: (title.contains('PDF') || title.contains('Documents')) ? 123 : 101,
-                  height: (title.contains('PDF') || title.contains('Documents')) ? 85 : 78,
+                  width: ((title.contains('PDF') || title.contains('Documents')) ? 123 : 101) * illustrationScale,
+                  height: ((title.contains('PDF') || title.contains('Documents')) ? 85 : 78) * illustrationScale,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: (title.contains('PDF') || title.contains('Documents')) ? 123 : 101,
-                      height: (title.contains('PDF') || title.contains('Documents')) ? 85 : 78,
+                      width: ((title.contains('PDF') || title.contains('Documents')) ? 123 : 101) * illustrationScale,
+                      height: ((title.contains('PDF') || title.contains('Documents')) ? 85 : 78) * illustrationScale,
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.darkCardBackground
                             : const Color(0xFFDCEAF7),
-                        borderRadius: const BorderRadius.only(
-                          bottomRight: Radius.circular(12),
+                        borderRadius: BorderRadius.only(
+                          bottomRight: Radius.circular(cardBorderRadius),
                         ),
                       ),
                       child: Icon(
@@ -397,7 +414,7 @@ class _EnrolledCourseDetailScreenState
                             : title.contains('Live')
                                 ? Icons.live_tv
                                 : Icons.play_circle_outline,
-                        size: 40,
+                        size: isTablet ? 52 : 40,
                         color: isDark
                             ? const Color(0xFF00BEFA)
                             : const Color(0xFF2470E4),
@@ -413,7 +430,7 @@ class _EnrolledCourseDetailScreenState
     );
   }
 
-  Widget _buildInclusionItem(String text, Color textColor, {IconData icon = Icons.check_circle_outline}) {
+  Widget _buildInclusionItem(String text, Color textColor, {IconData icon = Icons.check_circle_outline, bool isTablet = false}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -421,7 +438,7 @@ class _EnrolledCourseDetailScreenState
           padding: const EdgeInsets.only(top: 4),
           child: Icon(
             icon,
-            size: 20,
+            size: isTablet ? 26 : 20,
             color: textColor,
           ),
         ),
@@ -432,7 +449,7 @@ class _EnrolledCourseDetailScreenState
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: 14,
+              fontSize: isTablet ? 17 : 14,
               height: 1.5,
               color: textColor,
             ),

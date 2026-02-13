@@ -8,6 +8,7 @@ import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
@@ -108,6 +109,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
   }
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -117,17 +119,39 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     final featureBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFE8F4FF);
 
+    final dialogWidth = isTablet ? 480.0 : 356.0;
+    final dialogRadius = isTablet ? 28.0 : 20.8;
+    final closePad = isTablet ? 16.0 : 12.0;
+    final closeSize = isTablet ? 28.0 : 24.0;
+    final imgWidth = isTablet ? 240.0 : 180.0;
+    final imgHeight = isTablet ? 160.0 : 120.0;
+    final titleSize = isTablet ? 20.0 : 16.0;
+    final descSize = isTablet ? 15.0 : 12.0;
+    final descPadH = isTablet ? 48.0 : 40.0;
+    final boxMarginH = isTablet ? 24.0 : 18.0;
+    final boxPad = isTablet ? 22.0 : 16.0;
+    final boxRadius = isTablet ? 16.0 : 10.93;
+    final pkgNameSize = isTablet ? 18.0 : 14.0;
+    final priceSize = isTablet ? 28.0 : 22.57;
+    final strikePriceSize = isTablet ? 19.0 : 16.0;
+    final durationSize = isTablet ? 17.0 : 14.0;
+    final offerSize = isTablet ? 15.0 : 12.0;
+    final btnHeight = isTablet ? 52.0 : 40.0;
+    final btnFontSize = isTablet ? 19.0 : 16.0;
+    final btnRadius = isTablet ? 26.0 : 22.0;
+    final btnPadH = isTablet ? 22.0 : 16.0;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      insetPadding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 24, vertical: isTablet ? 48 : 40),
       child: Container(
-        width: 356,
+        width: dialogWidth,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height - 80,
+          maxHeight: MediaQuery.of(context).size.height - (isTablet ? 100 : 80),
         ),
         decoration: BoxDecoration(
           color: dialogBgColor,
-          borderRadius: BorderRadius.circular(20.8),
+          borderRadius: BorderRadius.circular(dialogRadius),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -137,12 +161,12 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: const EdgeInsets.only(top: 12, right: 12),
+                padding: EdgeInsets.only(top: closePad, right: closePad),
                 child: GestureDetector(
                   onTap: () => Navigator.of(dialogContext).pop(false),
                   child: Icon(
                     Icons.close,
-                    size: 24,
+                    size: closeSize,
                     color: secondaryTextColor,
                   ),
                 ),
@@ -152,27 +176,27 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             // Illustration
             Image.asset(
               'assets/illustrations/enroll.png',
-              width: 180,
-              height: 120,
+              width: imgWidth,
+              height: imgHeight,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  width: 180,
-                  height: 120,
+                  width: imgWidth,
+                  height: imgHeight,
                   decoration: BoxDecoration(
                     color: featureBgColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                   ),
                   child: Icon(
                     Icons.play_circle_outline,
-                    size: 60,
+                    size: isTablet ? 80 : 60,
                     color: iconColor,
                   ),
                 );
               },
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: isTablet ? 20 : 16),
 
             // Title
             Text(
@@ -181,25 +205,25 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
-                fontSize: 16,
+                fontSize: titleSize,
                 height: 1.1,
                 letterSpacing: -0.18,
                 color: textColor,
               ),
             ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: isTablet ? 16 : 12),
 
             // Description
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: EdgeInsets.symmetric(horizontal: descPadH),
               child: Text(
                 _package?.description ?? 'Access theory modules, recorded lectures, and expert study resources',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w400,
-                  fontSize: 12,
+                  fontSize: descSize,
                   height: 1.05,
                   letterSpacing: -0.18,
                   color: secondaryTextColor,
@@ -207,15 +231,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: isTablet ? 22 : 16),
 
             // Package details box
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 18),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.symmetric(horizontal: boxMarginH),
+              padding: EdgeInsets.all(boxPad),
               decoration: BoxDecoration(
                 color: boxBgColor,
-                borderRadius: BorderRadius.circular(10.93),
+                borderRadius: BorderRadius.circular(boxRadius),
                 border: Border.all(
                   color: borderColor,
                   width: 1,
@@ -229,27 +253,27 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: pkgNameSize,
                       color: textColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isTablet ? 16 : 12),
                   ...(_package?.features?.isNotEmpty == true
                       ? _package!.features!.take(3).map((feature) =>
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _buildFeatureItem(feature, isDark, textColor, iconColor, featureBgColor),
+                            padding: EdgeInsets.only(bottom: isTablet ? 10 : 8),
+                            child: _buildFeatureItem(feature, isDark, isTablet, textColor, iconColor, featureBgColor),
                           ))
                       : [
-                          _buildFeatureItem('Full access to theory content', isDark, textColor, iconColor, featureBgColor),
-                          const SizedBox(height: 8),
-                          _buildFeatureItem('Downloadable study materials', isDark, textColor, iconColor, featureBgColor),
-                          const SizedBox(height: 8),
-                          _buildFeatureItem('MCQ practice sets', isDark, textColor, iconColor, featureBgColor),
+                          _buildFeatureItem('Full access to theory content', isDark, isTablet, textColor, iconColor, featureBgColor),
+                          SizedBox(height: isTablet ? 10 : 8),
+                          _buildFeatureItem('Downloadable study materials', isDark, isTablet, textColor, iconColor, featureBgColor),
+                          SizedBox(height: isTablet ? 10 : 8),
+                          _buildFeatureItem('MCQ practice sets', isDark, isTablet, textColor, iconColor, featureBgColor),
                         ]),
-                  const SizedBox(height: 8),
+                  SizedBox(height: isTablet ? 10 : 8),
                   Divider(height: 1, color: borderColor),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isTablet ? 20 : 16),
                   // Price
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -261,31 +285,31 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 16,
+                            fontSize: strikePriceSize,
                             decoration: TextDecoration.lineThrough,
                             color: secondaryTextColor,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: isTablet ? 10 : 8),
                       ],
                       Text(
                         '₹${_package?.salePrice?.toStringAsFixed(0) ?? _package?.price.toStringAsFixed(0) ?? '4,999'}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 22.57,
+                          fontSize: priceSize,
                           height: 1.0,
                           letterSpacing: -0.18,
                           color: textColor,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isTablet ? 10 : 8),
                       Text(
                         '/ ${_package?.durationDays != null ? '${(_package!.durationDays! / 30).round()} months' : '3 months'}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 14,
+                          fontSize: durationSize,
                           color: textColor.withValues(alpha: 0.5),
                         ),
                       ),
@@ -298,15 +322,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
-                        fontSize: 12,
+                        fontSize: offerSize,
                         color: secondaryTextColor,
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isTablet ? 20 : 16),
                   // Enroll Now button
                   SizedBox(
                     width: double.infinity,
-                    height: 40,
+                    height: btnHeight,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop(true);
@@ -314,29 +338,29 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+                          borderRadius: BorderRadius.circular(btnRadius),
                         ),
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: isTablet ? 12 : 10),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enroll Now',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 16,
+                          fontSize: btnFontSize,
                           letterSpacing: -0.18,
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: isTablet ? 10 : 8),
                   // See All Packages button
                   SizedBox(
                     width: double.infinity,
-                    height: 40,
+                    height: btnHeight,
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop(false);
@@ -348,9 +372,9 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           width: 1,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+                          borderRadius: BorderRadius.circular(btnRadius),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: isTablet ? 12 : 10),
                       ),
                       child: Text(
                         'See All Packages',
@@ -358,7 +382,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 16,
+                          fontSize: btnFontSize,
                           letterSpacing: -0.18,
                           color: buttonColor,
                         ),
@@ -369,7 +393,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
               ),
             ),
 
-            const SizedBox(height: 100),
+            SizedBox(height: isTablet ? 120 : 100),
             ],
           ),
         ),
@@ -377,12 +401,16 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     );
   }
 
-  Widget _buildFeatureItem(String text, bool isDark, Color textColor, Color iconColor, Color featureBgColor) {
+  Widget _buildFeatureItem(String text, bool isDark, bool isTablet, Color textColor, Color iconColor, Color featureBgColor) {
+    final checkBgSize = isTablet ? 22.0 : 16.0;
+    final checkIconSize = isTablet ? 14.0 : 10.0;
+    final featureTextSize = isTablet ? 15.0 : 12.0;
+
     return Row(
       children: [
         Container(
-          width: 16,
-          height: 16,
+          width: checkBgSize,
+          height: checkBgSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: featureBgColor,
@@ -390,19 +418,21 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
           child: Center(
             child: Icon(
               Icons.check,
-              size: 10,
+              size: checkIconSize,
               color: iconColor,
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            color: textColor,
+        SizedBox(width: isTablet ? 12 : 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w400,
+              fontSize: featureTextSize,
+              color: textColor,
+            ),
           ),
         ),
       ],
@@ -414,6 +444,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -422,6 +453,8 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final imagePlaceholderColor = isDark ? AppColors.darkSurface : const Color(0xFFD9D9D9);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return BackButtonListener(
       onBackButtonPressed: () async {
@@ -435,22 +468,25 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
         },
         child: Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 16 : 12), left: hPadding, right: hPadding),
             child: Row(
               children: [
                 // Back arrow
                 GestureDetector(
                   onTap: () => context.pop(),
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: isTablet ? 30 : 24,
+                    height: isTablet ? 30 : 24,
                     child: Icon(
                       Icons.arrow_back,
-                      size: 24,
+                      size: isTablet ? 30 : 24,
                       color: textColor,
                     ),
                   ),
@@ -458,15 +494,14 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 const Spacer(),
                 // Title
                 SizedBox(
-                  width: 180,
-                  height: 20,
+                  width: isTablet ? 240 : 180,
                   child: Text(
                     widget.isSubscribed ? 'Series Documents' : 'Available notes',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 20,
+                      fontSize: isTablet ? 25 : 20,
                       height: 1.0,
                       letterSpacing: -0.5,
                       color: textColor,
@@ -480,11 +515,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     // Menu options
                   },
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: isTablet ? 30 : 24,
+                    height: isTablet ? 30 : 24,
                     child: Icon(
                       Icons.more_horiz,
-                      size: 24,
+                      size: isTablet ? 30 : 24,
                       color: textColor,
                     ),
                   ),
@@ -493,30 +528,30 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             ),
           ),
 
-          const SizedBox(height: 22),
+          SizedBox(height: isTablet ? 29 : 22),
 
           // Image placeholder
           Container(
-            width: 408,
-            height: 196,
+            width: isTablet ? 500 : 408,
+            height: isTablet ? 240 : 196,
             margin: const EdgeInsets.only(left: 0),
             color: imagePlaceholderColor,
             child: Center(
               child: Icon(
                 Icons.image_outlined,
-                size: 60,
+                size: isTablet ? 75 : 60,
                 color: secondaryTextColor,
               ),
             ),
           ),
 
-          const SizedBox(height: 28),
+          SizedBox(height: isTablet ? 36 : 28),
 
           // Notes List
           Expanded(
             child: _isLoading
                 ? ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
                     itemCount: 5,
                     itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
                   )
@@ -525,17 +560,17 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                            const SizedBox(height: 16),
+                            Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                            SizedBox(height: isTablet ? 21 : 16),
                             Text(
                               'Failed to load notes',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 16,
+                                fontSize: isTablet ? 20 : 16,
                                 color: textColor,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: isTablet ? 21 : 16),
                             ElevatedButton(
                               onPressed: _loadData,
                               style: ElevatedButton.styleFrom(backgroundColor: iconColor),
@@ -549,13 +584,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.description_outlined, size: 48, color: secondaryTextColor),
-                                const SizedBox(height: 16),
+                                Icon(Icons.description_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                                SizedBox(height: isTablet ? 21 : 16),
                                 Text(
                                   'No notes available',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 16,
+                                    fontSize: isTablet ? 20 : 16,
                                     color: textColor,
                                   ),
                                 ),
@@ -565,7 +600,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         : ClipRect(
                             clipBehavior: Clip.none,
                             child: ListView.builder(
-                              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 120),
+                              padding: EdgeInsets.only(left: hPadding, right: hPadding, top: isTablet ? 16 : 12, bottom: isTablet ? 150 : 120),
                               clipBehavior: Clip.none,
                               itemCount: _documents.length,
                               itemBuilder: (context, index) {
@@ -576,6 +611,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                   index: index,
                                   isExpanded: _expandedIndex == index,
                                   isDark: isDark,
+                                  isTablet: isTablet,
                                   textColor: textColor,
                                   cardBgColor: cardBgColor,
                                   iconColor: iconColor,
@@ -585,6 +621,8 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           ),
           ),
         ],
+      ),
+        ),
       ),
     ),
       ),
@@ -640,6 +678,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     required int index,
     required bool isExpanded,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color cardBgColor,
     required Color iconColor,
@@ -650,8 +689,6 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     final placeholderColor = isDark ? AppColors.darkDivider : const Color(0xFFE8E8E8);
     final lockBadgeBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
-    final successColor = isDark ? const Color(0xFF00C853) : const Color(0xFF00C853);
-
     return GestureDetector(
       onTap: () {
         if (isLocked) {
@@ -663,11 +700,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
         }
       },
       child: Container(
-        width: 359,
-        margin: EdgeInsets.only(top: index == 0 ? 4 : 0, bottom: 16),
+        width: isTablet ? double.infinity : 359,
+        margin: EdgeInsets.only(top: index == 0 ? 4 : 0, bottom: isTablet ? 21 : 16),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
           boxShadow: isDark
               ? [
                   BoxShadow(
@@ -691,7 +728,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -702,16 +739,16 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                   Stack(
                     children: [
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: isTablet ? 100 : 80,
+                        height: isTablet ? 100 : 80,
                         decoration: BoxDecoration(
                           color: placeholderColor,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                         ),
                         child: Center(
                           child: Icon(
                             Icons.picture_as_pdf,
-                            size: 32,
+                            size: isTablet ? 40 : 32,
                             color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
                           ),
                         ),
@@ -721,12 +758,12 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                             ),
                             child: Center(
                               child: Container(
-                                width: 32,
-                                height: 32,
+                                width: isTablet ? 40 : 32,
+                                height: isTablet ? 40 : 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: lockBadgeBgColor,
@@ -734,7 +771,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 child: Center(
                                   child: Icon(
                                     Icons.lock,
-                                    size: 16,
+                                    size: isTablet ? 20 : 16,
                                     color: iconColor,
                                   ),
                                 ),
@@ -744,7 +781,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isTablet ? 20 : 16),
                   // Content
                   Expanded(
                     child: Column(
@@ -758,7 +795,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                                  fontSize: isTablet ? 20 : 16,
                                   height: 1.2,
                                   color: textColor,
                                 ),
@@ -766,25 +803,25 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             ),
                             if (isLocked)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8, vertical: isTablet ? 5 : 4),
                                 decoration: BoxDecoration(
                                   color: lockBadgeBgColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.lock,
-                                      size: 12,
+                                      size: isTablet ? 15 : 12,
                                       color: iconColor,
                                     ),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: isTablet ? 5 : 4),
                                     Text(
                                       'Locked',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: 10,
+                                        fontSize: isTablet ? 13 : 10,
                                         fontWeight: FontWeight.w500,
                                         color: iconColor,
                                       ),
@@ -794,13 +831,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                               ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: isTablet ? 8 : 6),
                         Text(
                           document.description ?? 'No description available',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 12,
+                            fontSize: isTablet ? 15 : 12,
                             height: 1.4,
                             color: textColor.withValues(alpha: 0.5),
                           ),
@@ -820,13 +857,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 child: isExpanded
                     ? Column(
                         children: [
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 20 : 16),
                           // Show different buttons based on subscription status
                           if (widget.isSubscribed && !isAlreadyAdded)
                             // Subscribed + not yet in library: Show "Add to Notes" button
                             SizedBox(
                               width: double.infinity,
-                              height: 44,
+                              height: isTablet ? 54 : 44,
                               child: ElevatedButton(
                                 onPressed: _isAddingToLibrary
                                     ? null
@@ -835,37 +872,37 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                   backgroundColor: buttonColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
+                                    borderRadius: BorderRadius.circular(isTablet ? 27 : 22),
                                   ),
                                   elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (_isAddingToLibrary)
-                                      const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
+                                      SizedBox(
+                                        width: isTablet ? 22 : 18,
+                                        height: isTablet ? 22 : 18,
+                                        child: const CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: Colors.white,
                                         ),
                                       )
                                     else
-                                      const Icon(
+                                      Icon(
                                         Icons.add,
-                                        size: 20,
+                                        size: isTablet ? 25 : 20,
                                         color: Colors.white,
                                       ),
-                                    const SizedBox(width: 8),
-                                    const Flexible(
+                                    SizedBox(width: isTablet ? 10 : 8),
+                                    Flexible(
                                       child: Text(
                                         'Add to Notes',
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: 14,
+                                          fontSize: isTablet ? 17 : 14,
                                           fontWeight: FontWeight.w500,
                                           color: Colors.white,
                                         ),
@@ -883,7 +920,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 // View PDF button
                                 Expanded(
                                   child: SizedBox(
-                                    height: 40,
+                                    height: isTablet ? 50 : 40,
                                     child: ElevatedButton(
                                       onPressed: () {
                                         context.pushNamed(
@@ -897,18 +934,18 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: buttonColor,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(isTablet ? 25 : 20),
                                         ),
                                         elevation: 0,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8),
                                       ),
-                                      child: const FittedBox(
+                                      child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
                                           'View PDF',
                                           style: TextStyle(
                                             fontFamily: 'Poppins',
-                                            fontSize: 11,
+                                            fontSize: isTablet ? 14 : 11,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.white,
                                           ),
@@ -918,11 +955,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                   ),
                                 ),
                                 if (!isAlreadyAdded) ...[
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: isTablet ? 10 : 8),
                                   // Add to Notes button
                                   Expanded(
                                     child: SizedBox(
-                                      height: 40,
+                                      height: isTablet ? 50 : 40,
                                       child: ElevatedButton(
                                         onPressed: _isAddingToLibrary
                                             ? null
@@ -931,10 +968,10 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                           backgroundColor: buttonColor,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(isTablet ? 25 : 20),
                                           ),
                                           elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8),
                                         ),
                                         child: FittedBox(
                                           fit: BoxFit.scaleDown,
@@ -942,26 +979,26 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               if (_isAddingToLibrary)
-                                                const SizedBox(
-                                                  width: 14,
-                                                  height: 14,
-                                                  child: CircularProgressIndicator(
+                                                SizedBox(
+                                                  width: isTablet ? 18 : 14,
+                                                  height: isTablet ? 18 : 14,
+                                                  child: const CircularProgressIndicator(
                                                     strokeWidth: 2,
                                                     color: Colors.white,
                                                   ),
                                                 )
                                               else
-                                                const Icon(
+                                                Icon(
                                                   Icons.add,
-                                                  size: 14,
+                                                  size: isTablet ? 18 : 14,
                                                   color: Colors.white,
                                                 ),
-                                              const SizedBox(width: 4),
-                                              const Text(
+                                              SizedBox(width: isTablet ? 5 : 4),
+                                              Text(
                                                 'Add to Notes',
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
-                                                  fontSize: 11,
+                                                  fontSize: isTablet ? 14 : 11,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.white,
                                                 ),
@@ -983,7 +1020,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 if (document.previewUrl != null) ...[
                                   Expanded(
                                     child: SizedBox(
-                                      height: 40,
+                                      height: isTablet ? 50 : 40,
                                       child: ElevatedButton(
                                         onPressed: () {
                                           context.pushNamed(
@@ -997,18 +1034,18 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: buttonColor,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(isTablet ? 25 : 20),
                                           ),
                                           elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8),
                                         ),
-                                        child: const FittedBox(
+                                        child: FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(
                                             'View sample pdf',
                                             style: TextStyle(
                                               fontFamily: 'Poppins',
-                                              fontSize: 11,
+                                              fontSize: isTablet ? 14 : 11,
                                               fontWeight: FontWeight.w500,
                                               color: Colors.white,
                                             ),
@@ -1017,12 +1054,12 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: isTablet ? 10 : 8),
                                 ],
                                 // Enroll / View full book button
                                 Expanded(
                                   child: SizedBox(
-                                    height: 40,
+                                    height: isTablet ? 50 : 40,
                                     child: ElevatedButton(
                                       onPressed: () {
                                         _showEnrollmentPopup();
@@ -1030,18 +1067,18 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: buttonColor,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(isTablet ? 25 : 20),
                                         ),
                                         elevation: 0,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 10 : 8),
                                       ),
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
                                           document.previewUrl != null ? 'View full book' : 'Enroll to access',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'Poppins',
-                                            fontSize: 11,
+                                            fontSize: isTablet ? 14 : 11,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.white,
                                           ),

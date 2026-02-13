@@ -6,6 +6,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/subject_selection_model.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class NotesListScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -70,6 +71,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -77,15 +79,20 @@ class _NotesListScreenState extends State<NotesListScreen> {
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF718BA9);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: SingleChildScrollView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header with back arrow, title, and search
             Padding(
-              padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
+              padding: EdgeInsets.only(top: topPadding + (isTablet ? 21 : 16), left: hPadding, right: hPadding),
               child: Row(
                 children: [
                   // Back Arrow - navigates to home
@@ -95,11 +102,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
                       context.go('/home?subscribed=${widget.isSubscribed}');
                     },
                     child: SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: isTablet ? 30 : 24,
+                      height: isTablet ? 30 : 24,
                       child: Icon(
                         Icons.arrow_back,
-                        size: 24,
+                        size: isTablet ? 30 : 24,
                         color: textColor,
                       ),
                     ),
@@ -112,7 +119,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 20 : 16,
                       height: 1.0,
                       letterSpacing: -0.5,
                       color: textColor,
@@ -125,11 +132,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
                       // Search functionality
                     },
                     child: SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: isTablet ? 30 : 24,
+                      height: isTablet ? 30 : 24,
                       child: Icon(
                         Icons.search,
-                        size: 24,
+                        size: isTablet ? 30 : 24,
                         color: textColor,
                       ),
                     ),
@@ -138,46 +145,48 @@ class _NotesListScreenState extends State<NotesListScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: isTablet ? 31 : 24),
 
             // Show different content based on subscription status
             if (widget.isSubscribed)
-              _buildSubscribedContent(isDark, textColor, secondaryTextColor, iconColor)
+              _buildSubscribedContent(isDark, textColor, secondaryTextColor, iconColor, isTablet, hPadding)
             else
-              _buildGuestContent(context, isDark, textColor, secondaryTextColor, iconColor),
+              _buildGuestContent(context, isDark, textColor, secondaryTextColor, iconColor, isTablet, hPadding),
 
-            const SizedBox(height: 100), // Space for bottom nav
+            SizedBox(height: isTablet ? 130 : 100), // Space for bottom nav
           ],
+        ),
+      ),
         ),
       ),
     );
   }
 
   // Guest content - Free samples
-  Widget _buildGuestContent(BuildContext context, bool isDark, Color textColor, Color secondaryTextColor, Color iconColor) {
+  Widget _buildGuestContent(BuildContext context, bool isDark, Color textColor, Color secondaryTextColor, Color iconColor, bool isTablet, double hPadding) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Two Gradient Boxes Row
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Lecture Box
-              _buildLectureBox(context, isSubscribed: widget.isSubscribed, isDark: isDark),
-              const SizedBox(width: 12),
+              _buildLectureBox(context, isSubscribed: widget.isSubscribed, isDark: isDark, isTablet: isTablet),
+              SizedBox(width: isTablet ? 16 : 12),
               // Notes Box
-              _buildNotesBox(context, isSubscribed: widget.isSubscribed, isDark: isDark),
+              _buildNotesBox(context, isSubscribed: widget.isSubscribed, isDark: isDark, isTablet: isTablet),
             ],
           ),
         ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: isTablet ? 42 : 32),
 
         // Subject Title Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -186,44 +195,44 @@ class _NotesListScreenState extends State<NotesListScreen> {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 20,
+                  fontSize: isTablet ? 25 : 20,
                   height: 1.0,
                   letterSpacing: -0.5,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: isTablet ? 16 : 12),
               Text(
                 'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w400,
-                  fontSize: 14,
+                  fontSize: isTablet ? 17 : 14,
                   height: 1.5,
                   letterSpacing: 0,
                   color: secondaryTextColor,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: isTablet ? 31 : 24),
               Text(
                 'Inclusions',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 20,
+                  fontSize: isTablet ? 25 : 20,
                   height: 1.0,
                   letterSpacing: -0.5,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildInclusionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Mute your microphone upon entry to avoid echo in the OR.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Q&A session will follow the primary procedure.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Recording will be available 24 hours after the session', textColor, iconColor),
+              SizedBox(height: isTablet ? 21 : 16),
+              _buildInclusionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Mute your microphone upon entry to avoid echo in the OR.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Q&A session will follow the primary procedure.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Recording will be available 24 hours after the session', textColor, iconColor, isTablet),
             ],
           ),
         ),
@@ -232,30 +241,30 @@ class _NotesListScreenState extends State<NotesListScreen> {
   }
 
   // Subscribed content - Same layout as guest, just different box text
-  Widget _buildSubscribedContent(bool isDark, Color textColor, Color secondaryTextColor, Color iconColor) {
+  Widget _buildSubscribedContent(bool isDark, Color textColor, Color secondaryTextColor, Color iconColor, bool isTablet, double hPadding) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Two Gradient Boxes Row
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Lecture Box
-              _buildLectureBox(context, isSubscribed: true, isDark: isDark),
-              const SizedBox(width: 12),
+              _buildLectureBox(context, isSubscribed: true, isDark: isDark, isTablet: isTablet),
+              SizedBox(width: isTablet ? 16 : 12),
               // Notes Box
-              _buildNotesBox(context, isSubscribed: true, isDark: isDark),
+              _buildNotesBox(context, isSubscribed: true, isDark: isDark, isTablet: isTablet),
             ],
           ),
         ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: isTablet ? 42 : 32),
 
         // Subject Title Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -264,44 +273,44 @@ class _NotesListScreenState extends State<NotesListScreen> {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 20,
+                  fontSize: isTablet ? 25 : 20,
                   height: 1.0,
                   letterSpacing: -0.5,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: isTablet ? 16 : 12),
               Text(
                 'aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu aliqua dolor proident exercitation cillum exercitation laboris voluptate ea reprehenderit eu consequat pariatur qui eu',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w400,
-                  fontSize: 14,
+                  fontSize: isTablet ? 17 : 14,
                   height: 1.5,
                   letterSpacing: 0,
                   color: secondaryTextColor,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: isTablet ? 31 : 24),
               Text(
                 'Details',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 20,
+                  fontSize: isTablet ? 25 : 20,
                   height: 1.0,
                   letterSpacing: -0.5,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildInclusionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Mute your microphone upon entry to avoid echo in the OR.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Q&A session will follow the primary procedure.', textColor, iconColor),
-              const SizedBox(height: 12),
-              _buildInclusionItem('Recording will be available 24 hours after the session', textColor, iconColor),
+              SizedBox(height: isTablet ? 21 : 16),
+              _buildInclusionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Mute your microphone upon entry to avoid echo in the OR.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Q&A session will follow the primary procedure.', textColor, iconColor, isTablet),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildInclusionItem('Recording will be available 24 hours after the session', textColor, iconColor, isTablet),
             ],
           ),
         ),
@@ -309,7 +318,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
-  Widget _buildLectureBox(BuildContext context, {required bool isSubscribed, required bool isDark}) {
+  Widget _buildLectureBox(BuildContext context, {required bool isSubscribed, required bool isDark, required bool isTablet}) {
     final titleText = isSubscribed ? 'Watch Lecture\nVideo' : 'Free Sample\nLecture';
     final buttonText = isSubscribed ? 'Watch' : 'Check Out';
     final buttonBgColor = isDark ? AppColors.darkSurface : Colors.white;
@@ -317,9 +326,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
 
     return Expanded(
       child: Container(
-        height: 211,
+        height: isTablet ? 260 : 211,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(isTablet ? 26 : 20),
           gradient: LinearGradient(
             begin: const Alignment(-0.7, 0.7),
             end: const Alignment(0.7, -0.7),
@@ -334,14 +343,14 @@ class _NotesListScreenState extends State<NotesListScreen> {
           children: [
             // Title text
             Positioned(
-              top: 20,
-              left: 16,
+              top: isTablet ? 26 : 20,
+              left: isTablet ? 20 : 16,
               child: Text(
                 titleText,
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
-                  fontSize: 18,
+                  fontSize: isTablet ? 22 : 18,
                   height: 1.3,
                   letterSpacing: -0.5,
                   color: isDark ? Colors.white : const Color(0xFF000000),
@@ -350,24 +359,24 @@ class _NotesListScreenState extends State<NotesListScreen> {
             ),
             // 3.png Image
             Positioned(
-              bottom: -65,
+              bottom: isTablet ? -80 : -65,
               left: 0,
               child: IgnorePointer(
                 child: Image.asset(
                   'assets/illustrations/3.png',
-                  width: 250,
-                  height: 250,
+                  width: isTablet ? 310 : 250,
+                  height: isTablet ? 310 : 250,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(width: 250, height: 250);
+                    return SizedBox(width: isTablet ? 310 : 250, height: isTablet ? 310 : 250);
                   },
                 ),
               ),
             ),
             // Button
             Positioned(
-              top: 84,
-              left: 10,
+              top: isTablet ? 105 : 84,
+              left: isTablet ? 13 : 10,
               child: GestureDetector(
                 onTap: () {
                   // Navigate to lecture video
@@ -379,11 +388,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
                   }
                 },
                 child: Container(
-                  width: 92,
-                  height: 27,
+                  width: isTablet ? 115 : 92,
+                  height: isTablet ? 34 : 27,
                   decoration: BoxDecoration(
                     color: buttonBgColor,
-                    borderRadius: BorderRadius.circular(10.87),
+                    borderRadius: BorderRadius.circular(isTablet ? 14 : 10.87),
                   ),
                   child: Center(
                     child: Text(
@@ -391,7 +400,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: isTablet ? 17 : 14,
                         height: 16.73 / 14,
                         letterSpacing: -0.42,
                         color: buttonTextColor,
@@ -407,7 +416,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
-  Widget _buildNotesBox(BuildContext context, {required bool isSubscribed, required bool isDark}) {
+  Widget _buildNotesBox(BuildContext context, {required bool isSubscribed, required bool isDark, required bool isTablet}) {
     final titleText = isSubscribed ? 'View\nNotes' : 'Free Sample\nNotes';
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
@@ -419,9 +428,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
           context.push('/available-notes/6981eb434c02eb97b950ecdb');
         },
         child: Container(
-          height: 211,
+          height: isTablet ? 260 : 211,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(isTablet ? 26 : 20),
             gradient: LinearGradient(
               begin: const Alignment(-0.7, 0.7),
               end: const Alignment(0.7, -0.7),
@@ -436,17 +445,17 @@ class _NotesListScreenState extends State<NotesListScreen> {
             children: [
               // 4.png Image (flipped horizontally) - placed first so title is on top
               Positioned(
-                top: -35,
-                right: -145,
+                top: isTablet ? -45 : -35,
+                right: isTablet ? -170 : -145,
                 child: IgnorePointer(
                   child: Transform.flip(
                     flipX: true,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
                       child: Image.asset(
                         'assets/illustrations/4.png',
-                        width: 400,
-                        height: 400,
+                        width: isTablet ? 480 : 400,
+                        height: isTablet ? 480 : 400,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -454,11 +463,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
                             height: 114,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
                             ),
                             child: Icon(
                               Icons.folder_outlined,
-                              size: 40,
+                              size: isTablet ? 50 : 40,
                               color: iconColor,
                             ),
                           );
@@ -470,14 +479,14 @@ class _NotesListScreenState extends State<NotesListScreen> {
               ),
               // Title text
               Positioned(
-                top: 20,
-                left: 16,
+                top: isTablet ? 26 : 20,
+                left: isTablet ? 20 : 16,
                 child: Text(
                   titleText,
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: isTablet ? 22 : 18,
                     height: 1.3,
                     letterSpacing: -0.5,
                     color: isDark ? Colors.white : const Color(0xFF000000),
@@ -491,28 +500,28 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
-  Widget _buildInclusionItem(String text, Color textColor, Color iconColor) {
+  Widget _buildInclusionItem(String text, Color textColor, Color iconColor, bool isTablet) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 20,
-          height: 20,
+          width: isTablet ? 25 : 20,
+          height: isTablet ? 25 : 20,
           margin: const EdgeInsets.only(top: 2),
           child: Icon(
             Icons.link,
-            size: 18,
+            size: isTablet ? 22 : 18,
             color: iconColor,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isTablet ? 16 : 12),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: 14,
+              fontSize: isTablet ? 17 : 14,
               height: 1.4,
               letterSpacing: 0,
               color: textColor,

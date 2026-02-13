@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/models/notification_model.dart';
 import 'package:pgme/features/notifications/providers/notification_provider.dart';
@@ -78,6 +79,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -93,7 +95,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
-            fontSize: 18,
+            fontSize: isTablet ? 24 : 18,
             color: textColor,
           ),
         ),
@@ -106,37 +108,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
 
           if (provider.error != null) {
-            return _buildErrorState(provider, textColor, secondaryTextColor);
+            return _buildErrorState(provider, textColor, secondaryTextColor, isTablet);
           }
 
           if (provider.notifications.isEmpty) {
-            return _buildEmptyState(secondaryTextColor);
+            return _buildEmptyState(secondaryTextColor, isTablet);
           }
 
           return RefreshIndicator(
             onRefresh: provider.refresh,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: provider.notifications.length + (provider.isLoadingMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == provider.notifications.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                ),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 12 : 8),
+                  itemCount: provider.notifications.length + (provider.isLoadingMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == provider.notifications.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
 
-                final notification = provider.notifications[index];
-                return _NotificationTile(
-                  notification: notification,
-                  isDark: isDark,
-                  onTap: () => _onNotificationTap(notification, provider),
-                  onDismiss: () => _onNotificationDismiss(notification, provider),
-                );
-              },
+                    final notification = provider.notifications[index];
+                    return _NotificationTile(
+                      notification: notification,
+                      isDark: isDark,
+                      isTablet: isTablet,
+                      onTap: () => _onNotificationTap(notification, provider),
+                      onDismiss: () => _onNotificationDismiss(notification, provider),
+                    );
+                  },
+                ),
+              ),
             ),
           );
         },
@@ -148,88 +158,104 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     NotificationProvider provider,
     Color textColor,
     Color secondaryTextColor,
+    bool isTablet,
   ) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: secondaryTextColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load notifications',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              provider.error ?? 'Unknown error',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 48 : 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: isTablet ? 80 : 64,
                 color: secondaryTextColor,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => provider.loadNotifications(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              SizedBox(height: isTablet ? 20 : 16),
+              Text(
+                'Failed to load notifications',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: isTablet ? 22 : 18,
+                  color: textColor,
                 ),
               ),
-              child: const Text('Retry'),
-            ),
-          ],
+              SizedBox(height: isTablet ? 10 : 8),
+              Text(
+                provider.error ?? 'Unknown error',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: isTablet ? 17 : 14,
+                  color: secondaryTextColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: isTablet ? 30 : 24),
+              ElevatedButton(
+                onPressed: () => provider.loadNotifications(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                  ),
+                ),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: isTablet ? 17 : 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(Color secondaryTextColor) {
+  Widget _buildEmptyState(Color secondaryTextColor, bool isTablet) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_none_outlined,
-              size: 80,
-              color: secondaryTextColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No notifications yet',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 48 : 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.notifications_none_outlined,
+                size: isTablet ? 100 : 80,
                 color: secondaryTextColor,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'You\'ll see your notifications here',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: secondaryTextColor,
+              SizedBox(height: isTablet ? 20 : 16),
+              Text(
+                'No notifications yet',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: isTablet ? 22 : 18,
+                  color: secondaryTextColor,
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: isTablet ? 10 : 8),
+              Text(
+                'You\'ll see your notifications here',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: isTablet ? 17 : 14,
+                  color: secondaryTextColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -267,12 +293,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 class _NotificationTile extends StatelessWidget {
   final NotificationModel notification;
   final bool isDark;
+  final bool isTablet;
   final VoidCallback onTap;
   final VoidCallback onDismiss;
 
   const _NotificationTile({
     required this.notification,
     required this.isDark,
+    required this.isTablet,
     required this.onTap,
     required this.onDismiss,
   });
@@ -307,37 +335,41 @@ class _NotificationTile extends StatelessWidget {
       background: Container(
         color: AppColors.error,
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(
+        padding: EdgeInsets.only(right: isTablet ? 28 : 20),
+        child: Icon(
           Icons.delete_outline,
           color: Colors.white,
+          size: isTablet ? 28 : 24,
         ),
       ),
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 24 : 16,
+            vertical: isTablet ? 16 : 12,
+          ),
           color: notification.isRead ? backgroundColor : unreadBackground,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Icon
               Container(
-                width: 44,
-                height: 44,
+                width: isTablet ? 60 : 44,
+                height: isTablet ? 60 : 44,
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkSurface
                       : const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Icon(
                   _getNotificationIcon(),
-                  size: 22,
+                  size: isTablet ? 28 : 22,
                   color: notification.isRead ? secondaryTextColor : AppColors.primaryBlue,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isTablet ? 16 : 12),
 
               // Content
               Expanded(
@@ -352,7 +384,7 @@ class _NotificationTile extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w600,
-                              fontSize: 15,
+                              fontSize: isTablet ? 19 : 15,
                               color: textColor,
                             ),
                             maxLines: 1,
@@ -361,8 +393,8 @@ class _NotificationTile extends StatelessWidget {
                         ),
                         if (!notification.isRead)
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: isTablet ? 10 : 8,
+                            height: isTablet ? 10 : 8,
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.primaryBlue,
@@ -370,26 +402,26 @@ class _NotificationTile extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: isTablet ? 6 : 4),
                     Text(
                       notification.message,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
-                        fontSize: 13,
+                        fontSize: isTablet ? 16 : 13,
                         color: secondaryTextColor,
                         height: 1.4,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: isTablet ? 8 : 6),
                     Text(
                       _formatTimeAgo(notification.sentAt),
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
-                        fontSize: 12,
+                        fontSize: isTablet ? 15 : 12,
                         color: secondaryTextColor.withValues(alpha: 0.7),
                       ),
                     ),

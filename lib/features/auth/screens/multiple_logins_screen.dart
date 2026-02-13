@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class MultipleLoginsScreen extends StatefulWidget {
   const MultipleLoginsScreen({super.key});
@@ -119,6 +120,8 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0000D1),
       body: Container(
@@ -132,8 +135,11 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
               position: _slideAnimation,
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                  child: _buildMainCard(),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 32 : 24,
+                    vertical: 20,
+                  ),
+                  child: _buildMainCard(isTablet),
                 ),
               ),
             ),
@@ -143,7 +149,22 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
     );
   }
 
-  Widget _buildMainCard() {
+  Widget _buildMainCard(bool isTablet) {
+    // Responsive sizes
+    final cardWidth = isTablet ? 520.0 : 327.0;
+    final cardPaddingH = isTablet ? 20.0 : 10.0;
+    final cardPaddingV = isTablet ? 36.0 : 28.0;
+    final cardRadius = isTablet ? 24.0 : 16.0;
+    final iconBoxSize = isTablet ? 100.0 : 80.0;
+    final iconBoxRadius = isTablet ? 28.0 : 20.0;
+    final iconSize = isTablet ? 52.0 : 40.0;
+    final titleSize = isTablet ? 32.0 : 24.0;
+    final subtitleSize = isTablet ? 18.0 : 14.0;
+    final btnWidth = isTablet ? 440.0 : 275.0;
+    final btnHeight = isTablet ? 68.0 : 56.0;
+    final btnFontSize = isTablet ? 20.0 : 16.0;
+    final btnRadius = isTablet ? 32.0 : 24.0;
+
     return Consumer<AuthProvider>(
       builder: (context, provider, _) {
         // Get other ACTIVE sessions (exclude current session)
@@ -153,16 +174,16 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
         ).toList();
 
         return Container(
-          width: 327,
-          padding: const EdgeInsets.only(
-            top: 28,
-            right: 10,
-            bottom: 28,
-            left: 10,
+          width: cardWidth,
+          padding: EdgeInsets.only(
+            top: cardPaddingV,
+            right: cardPaddingH,
+            bottom: cardPaddingV,
+            left: cardPaddingH,
           ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(cardRadius),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -176,96 +197,81 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
             children: [
               // Warning Icon - Red hexagon with exclamation
               Container(
-                width: 80,
-                height: 80,
+                width: iconBoxSize,
+                height: iconBoxSize,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF6B6B),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(iconBoxRadius),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.priority_high_rounded,
-                    size: 40,
+                    size: iconSize,
                     color: Colors.white,
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               // Title
-              const SizedBox(
-                width: 267,
+              SizedBox(
+                width: cardWidth - 60,
                 child: Text(
                   'Multiple Logins\nDetected',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 24,
+                    fontSize: titleSize,
                     fontWeight: FontWeight.w700,
                     height: 32 / 24,
                     letterSpacing: 0.12,
-                    color: Color(0xFF000000),
+                    color: const Color(0xFF000000),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
               // Subtitle
               SizedBox(
-                width: 307,
+                width: cardWidth - 20,
                 child: Text(
                   otherSessions.isEmpty
                       ? 'You can now continue to the app'
                       : 'Log Out from any one of the devices',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: subtitleSize,
                     fontWeight: FontWeight.w500,
                     height: 22 / 14,
                     letterSpacing: 0.07,
-                    color: Color(0xFF666666),
+                    color: const Color(0xFF666666),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               // Device Cards
               if (otherSessions.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'All other devices have been logged out',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Color(0xFF2E7D32),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                _buildAllLoggedOutBanner(isTablet)
               else
                 ...otherSessions.asMap().entries.map((entry) {
                   final index = entry.key;
                   final session = entry.value;
                   return Padding(
                     padding: EdgeInsets.only(
-                      bottom: index < otherSessions.length - 1 ? 8 : 0,
+                      bottom: index < otherSessions.length - 1 ? (isTablet ? 12 : 8) : 0,
                     ),
-                    child: _buildDeviceCard(session),
+                    child: _buildDeviceCard(session, isTablet),
                   );
                 }),
               const SizedBox(height: 24),
               // Continue Button
-              _buildContinueButton(isEnabled: otherSessions.isEmpty),
+              _buildContinueButton(
+                isEnabled: otherSessions.isEmpty,
+                isTablet: isTablet,
+                btnWidth: btnWidth,
+                btnHeight: btnHeight,
+                btnFontSize: btnFontSize,
+                btnRadius: btnRadius,
+              ),
             ],
           ),
         );
@@ -273,18 +279,55 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
     );
   }
 
-  Widget _buildDeviceCard(Map<String, dynamic> session) {
+  Widget _buildAllLoggedOutBanner(bool isTablet) {
+    return Container(
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green, size: isTablet ? 28 : 24),
+          SizedBox(width: isTablet ? 16 : 12),
+          Expanded(
+            child: Text(
+              'All other devices have been logged out',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: isTablet ? 16 : 14,
+                color: const Color(0xFF2E7D32),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceCard(Map<String, dynamic> session, bool isTablet) {
     final deviceName = session['device_name'] ?? 'Unknown Device';
     final lastActive = session['last_active'] as String?;
     final sessionId = session['session_id'] as String?;
 
+    final cardHeight = isTablet ? 86.0 : 72.29;
+    final cardRadius = isTablet ? 32.0 : 27.45;
+    final deviceNameSize = isTablet ? 17.0 : 14.0;
+    final lastActiveSize = isTablet ? 14.0 : 12.0;
+    final logoutBtnSize = isTablet ? 44.0 : 36.0;
+    final logoutIconSize = isTablet ? 22.0 : 18.31;
+    final logoutBtnRadius = isTablet ? 12.0 : 8.0;
+
     return Container(
-      width: 301.78,
-      height: 72.29,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      width: double.infinity,
+      height: cardHeight,
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24 : 20,
+        vertical: isTablet ? 16 : 14,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(27.45),
+        borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -303,11 +346,11 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
               children: [
                 Text(
                   deviceName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: deviceNameSize,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF000000),
+                    color: const Color(0xFF000000),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -315,11 +358,11 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
                 const SizedBox(height: 2),
                 Text(
                   'Last active ${_formatLastActive(lastActive).replaceAll('Active ', '')}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: lastActiveSize,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF888888),
+                    color: const Color(0xFF888888),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -333,25 +376,25 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
                 ? null
                 : () => _logoutDevice(sessionId),
             child: Container(
-              width: 36,
-              height: 36,
+              width: logoutBtnSize,
+              height: logoutBtnSize,
               decoration: BoxDecoration(
                 color: const Color(0xFF0000D1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(logoutBtnRadius),
               ),
               child: Center(
                 child: _isLoggingOut
-                    ? const SizedBox(
-                        width: 18.31,
-                        height: 18.31,
-                        child: CircularProgressIndicator(
+                    ? SizedBox(
+                        width: logoutIconSize,
+                        height: logoutIconSize,
+                        child: const CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.exit_to_app_rounded,
-                        size: 18.31,
+                        size: logoutIconSize,
                         color: Colors.white,
                       ),
               ),
@@ -362,36 +405,42 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
     );
   }
 
-  Widget _buildContinueButton({required bool isEnabled}) {
+  Widget _buildContinueButton({
+    required bool isEnabled,
+    required bool isTablet,
+    required double btnWidth,
+    required double btnHeight,
+    required double btnFontSize,
+    required double btnRadius,
+  }) {
     final canContinue = isEnabled && !_isLoading;
 
     return GestureDetector(
       onTap: canContinue ? _continue : null,
       child: Container(
-        width: 275,
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 101.5, vertical: 16),
+        width: btnWidth,
+        height: btnHeight,
         decoration: BoxDecoration(
           color: const Color(0xFF0000D1),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(btnRadius),
         ),
         child: Center(
           child: _isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
+              ? SizedBox(
+                  width: isTablet ? 28 : 24,
+                  height: isTablet ? 28 : 24,
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2.5,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Text(
+              : Text(
                   'Continue',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 16,
+                    fontSize: btnFontSize,
                     fontWeight: FontWeight.w600,
-                    height: 24 / 16,
+                    height: 1.0,
                     letterSpacing: 0.08,
                     color: Colors.white,
                   ),

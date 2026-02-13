@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/services/location_service.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class DataCollectionScreen extends StatefulWidget {
   const DataCollectionScreen({super.key});
@@ -59,6 +60,19 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   }
 
   void _showSuccessDialog() {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final dialogWidth = isTablet ? 440.0 : 327.0;
+    final checkSize = isTablet ? 120.0 : 100.0;
+    final checkIconSize = isTablet ? 60.0 : 50.0;
+    final titleSize = isTablet ? 30.0 : 24.0;
+    final subtitleSize = isTablet ? 18.0 : 14.0;
+    final btnWidth = isTablet ? 380.0 : 275.0;
+    final btnHeight = isTablet ? 68.0 : 56.0;
+    final btnFontSize = isTablet ? 20.0 : 16.0;
+    final btnRadius = isTablet ? 32.0 : 24.0;
+    final dialogPadding = isTablet ? 40.0 : 32.0;
+    final dialogRadius = isTablet ? 30.0 : 24.0;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -70,28 +84,28 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             child: Container(
-              width: 327,
-              padding: const EdgeInsets.all(32),
+              width: dialogWidth,
+              padding: EdgeInsets.all(dialogPadding),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(dialogRadius),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Green checkmark circle
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: checkSize,
+                    height: checkSize,
                     decoration: const BoxDecoration(
                       color: Color(0xFF4CD964),
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Icon(
                         Icons.check,
                         color: Colors.white,
-                        size: 50,
+                        size: checkIconSize,
                       ),
                     ),
                   ),
@@ -99,12 +113,12 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                   const SizedBox(height: 24),
 
                   // Success title
-                  const Text(
+                  Text(
                     'Profile completed\nsuccessfully',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 24,
+                      fontSize: titleSize,
                       fontWeight: FontWeight.w700,
                       height: 1.33,
                       letterSpacing: 0.12,
@@ -115,12 +129,12 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                   const SizedBox(height: 16),
 
                   // Subtitle
-                  const Text(
+                  Text(
                     'Your account has been set up.\nLet\'s get started!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 14,
+                      fontSize: subtitleSize,
                       fontWeight: FontWeight.w500,
                       height: 1.57,
                       letterSpacing: 0.07,
@@ -132,8 +146,8 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
                   // Continue button
                   SizedBox(
-                    width: 275,
-                    height: 56,
+                    width: btnWidth,
+                    height: btnHeight,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop();
@@ -142,17 +156,19 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _darkBlue,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(btnRadius),
                         ),
                         elevation: 0,
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.center,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Continue',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 16,
+                          fontSize: btnFontSize,
                           fontWeight: FontWeight.w600,
-                          height: 1.5,
+                          height: 1.0,
                           letterSpacing: 0.08,
                           color: Colors.white,
                         ),
@@ -281,123 +297,140 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     required String label,
     required String hint,
     required TextEditingController controller,
+    required bool isTablet,
+    required double fieldWidth,
+    required double fieldHeight,
+    required double labelSize,
+    required double inputSize,
+    required double hintSize,
+    required double fieldRadius,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     int maxLines = 1,
     Widget? trailingWidget,
     FocusNode? focusNode,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 1.57,
-            letterSpacing: 0.07,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 327,
-            height: maxLines > 1 ? null : 52,
-            constraints: maxLines > 1
-                ? const BoxConstraints(minHeight: 52)
-                : null,
-            color: Colors.white,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: controller,
-                    keyboardType: keyboardType,
-                    validator: validator,
-                    maxLines: maxLines,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF333333),
-                    ),
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      hintStyle: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: _hintColor,
-                      ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      errorBorder: InputBorder.none,
-                      focusedErrorBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.only(left: 16, top: 14, bottom: 14),
-                      errorStyle: const TextStyle(height: 0, fontSize: 0),
-                    ),
-                  ),
-                ),
-                if (trailingWidget != null) trailingWidget,
-              ],
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(fieldRadius),
+      borderSide: BorderSide.none,
+    );
+
+    return SizedBox(
+      width: fieldWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              height: 1.57,
+              letterSpacing: 0.07,
+              color: Colors.white,
             ),
           ),
-        ),
-      ],
+          SizedBox(height: isTablet ? 10 : 8),
+          SizedBox(
+            height: maxLines > 1 ? null : fieldHeight,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: keyboardType,
+              validator: validator,
+              maxLines: maxLines,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: inputSize,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF333333),
+              ),
+              focusNode: focusNode,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: hintSize,
+                  fontWeight: FontWeight.w400,
+                  color: _hintColor,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                border: border,
+                enabledBorder: border,
+                focusedBorder: border,
+                errorBorder: border,
+                focusedErrorBorder: border,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 22 : 16,
+                  vertical: isTablet ? 18 : 14,
+                ),
+                errorStyle: const TextStyle(height: 0, fontSize: 0),
+                suffixIcon: trailingWidget,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildGenderSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Gender',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 1.57,
-            letterSpacing: 0.07,
-            color: Colors.white,
+  Widget _buildGenderSelector({
+    required bool isTablet,
+    required double fieldWidth,
+    required double fieldHeight,
+    required double labelSize,
+    required double inputSize,
+    required double hintSize,
+    required double fieldRadius,
+  }) {
+    return SizedBox(
+      width: fieldWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Gender',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              height: 1.57,
+              letterSpacing: 0.07,
+              color: Colors.white,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 327,
-            height: 52,
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          SizedBox(height: isTablet ? 10 : 8),
+          Container(
+            height: fieldHeight,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(fieldRadius),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedGender,
-                hint: const Text(
+                hint: Text(
                   'Select your gender',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: hintSize,
                     fontWeight: FontWeight.w400,
                     color: _hintColor,
                   ),
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.keyboard_arrow_down,
                   color: _hintColor,
+                  size: isTablet ? 28 : 24,
                 ),
                 isExpanded: true,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 16,
+                  fontSize: inputSize,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF333333),
+                  color: const Color(0xFF333333),
                 ),
                 items: _genderOptions.map((gender) {
                   return DropdownMenuItem<String>(
@@ -413,8 +446,73 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  /// Sign-up illustration: person with edit/pencil badge (tablet only)
+  Widget _buildSignUpIllustration(double size) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer glow ring
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 1.5,
+              ),
+            ),
+          ),
+          // Main circle with person icon
+          Container(
+            width: size * 0.72,
+            height: size * 0.72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.15),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              Icons.person_outline_rounded,
+              size: size * 0.42,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+          // Edit badge (bottom-right)
+          Positioned(
+            right: size * 0.12,
+            bottom: size * 0.10,
+            child: Container(
+              width: size * 0.30,
+              height: size * 0.30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF00C2FF),
+                border: Border.all(
+                  color: const Color(0xFF0033CC),
+                  width: 2.5,
+                ),
+              ),
+              child: Icon(
+                Icons.edit_rounded,
+                size: size * 0.15,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -422,6 +520,26 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isTablet = ResponsiveHelper.isTablet(context);
+
+    // Responsive sizes
+    final fieldWidth = isTablet ? 520.0 : 327.0;
+    final fieldHeight = isTablet ? 62.0 : 52.0;
+    final fieldRadius = isTablet ? 28.0 : 24.0;
+    final labelSize = isTablet ? 18.0 : 14.0;
+    final inputSize = isTablet ? 18.0 : 16.0;
+    final hintSize = isTablet ? 16.0 : 14.0;
+    final backBtnSize = isTablet ? 52.0 : 48.0;
+    final backIconSize = isTablet ? 28.0 : 24.0;
+    final signUpTitleSize = isTablet ? 32.0 : 28.0;
+    final completeTitleSize = isTablet ? 28.0 : 24.0;
+    final completeSubSize = isTablet ? 16.0 : 14.0;
+    final submitBtnWidth = isTablet ? 520.0 : 327.0;
+    final submitBtnHeight = isTablet ? 78.0 : 56.0;
+    final submitBtnFontSize = isTablet ? 21.0 : 16.0;
+    final submitBtnRadius = isTablet ? 32.0 : 24.0;
+    final fieldGap = isTablet ? 20.0 : 16.0;
+    final hPadding = isTablet ? 32.0 : 24.0;
 
     return Scaffold(
       body: Container(
@@ -436,311 +554,407 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(24, 12, 24, keyboardHeight > 0 ? keyboardHeight + 16 : bottomPadding + 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back button and title row
-                  Row(
-                    children: [
-                      // Back button
-                      GestureDetector(
-                        onTap: () => context.go('/login'),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.arrow_back,
-                              size: 24,
-                              color: Colors.white,
+            padding: EdgeInsets.fromLTRB(hPadding, 12, hPadding, keyboardHeight > 0 ? keyboardHeight + 16 : bottomPadding + 24),
+            child: Center(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back button and title row
+                    Row(
+                      children: [
+                        // Back button
+                        GestureDetector(
+                          onTap: () => context.go('/login'),
+                          child: Container(
+                            width: backBtnSize,
+                            height: backBtnSize,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.arrow_back,
+                                size: backIconSize,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const Expanded(
-                        child: Center(
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              height: 0.93,
-                              letterSpacing: 0.14,
-                              color: Colors.white,
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: signUpTitleSize,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                                letterSpacing: 0.14,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      // Spacer to balance
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Complete your account title
-                  const Center(
-                    child: Text(
-                      'Complete your account',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        height: 1.33,
-                        letterSpacing: 0.12,
-                        color: Colors.white,
-                      ),
+                        // Spacer to balance
+                        SizedBox(width: backBtnSize),
+                      ],
                     ),
-                  ),
 
-                  const SizedBox(height: 8),
+                    // Illustration (tablet only)
+                    if (isTablet) ...[
+                      const SizedBox(height: 16),
+                      Center(child: _buildSignUpIllustration(110)),
+                      const SizedBox(height: 12),
+                    ] else
+                      const SizedBox(height: 32),
 
-                  // Subtitle
-                  const Center(
-                    child: Text(
-                      'Tell us a bit about yourself',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF00C2FF),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // First Name
-                  _buildTextField(
-                    label: 'First Name',
-                    hint: 'Enter your first name',
-                    controller: _firstNameController,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Required';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Last Name
-                  _buildTextField(
-                    label: 'Last Name',
-                    hint: 'Enter your last name',
-                    controller: _lastNameController,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Required';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // E-mail
-                  _buildTextField(
-                    label: 'E-mail',
-                    hint: 'Enter your email',
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Required';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'Invalid email';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Date of Birth
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Date of Birth',
+                    // Complete your account title
+                    Center(
+                      child: Text(
+                        'Complete your account',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.57,
-                          letterSpacing: 0.07,
+                          fontSize: completeTitleSize,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          letterSpacing: 0.12,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: _pickDateOfBirth,
-                        child: AbsorbPointer(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Container(
-                              width: 327,
-                              height: 52,
-                              color: Colors.white,
-                              child: TextFormField(
-                                controller: _dobController,
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xFF333333),
-                                ),
-                                decoration: const InputDecoration(
-                                  hintText: 'DD/MM/YYYY',
-                                  hintStyle: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: _hintColor,
-                                  ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.only(left: 16, top: 14, bottom: 14),
-                                  suffixIcon: Icon(
-                                    Icons.calendar_today_outlined,
-                                    color: _hintColor,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                    ),
+
+                    SizedBox(height: isTablet ? 2 : 8),
+
+                    // Subtitle
+                    Center(
+                      child: Text(
+                        'Tell us a bit about yourself',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: completeSubSize,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF00C2FF),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Gender
-                  _buildGenderSelector(),
-
-                  const SizedBox(height: 16),
-
-                  // Address
-                  _buildTextField(
-                    label: 'Address',
-                    hint: 'Enter your address',
-                    controller: _addressController,
-                    focusNode: _addressFocusNode,
-                    trailingWidget: _isAddressFocused
-                        ? Container(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: SizedBox(
-                              height: 36,
-                              child: ElevatedButton(
-                                onPressed: _isAutoFetchingAddress
-                                    ? null
-                                    : _autoFetchAddress,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0000C8),
-                                  disabledBackgroundColor:
-                                      const Color(0xFF0000C8).withValues(alpha: 0.5),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: _isAutoFetchingAddress
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                  Colors.white),
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Auto Fetch',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // UG College
-                  _buildTextField(
-                    label: 'UG College',
-                    hint: 'Enter your UG college',
-                    controller: _ugCollegeController,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // PG College
-                  _buildTextField(
-                    label: 'PG College',
-                    hint: 'Enter your PG college',
-                    controller: _pgCollegeController,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Sign Up Button
-                  Center(
-                    child: SizedBox(
-                      width: 327,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submitData,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00C2FF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0000D1)),
-                                ),
-                              )
-                            : const Text(
-                                'Sign Up',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0000D1),
-                                ),
-                              ),
                       ),
                     ),
-                  ),
-                ],
+
+                    SizedBox(height: isTablet ? 24 : 32),
+
+                    // First Name
+                    Center(
+                      child: _buildTextField(
+                        label: 'First Name',
+                        hint: 'Enter your first name',
+                        controller: _firstNameController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Last Name
+                    Center(
+                      child: _buildTextField(
+                        label: 'Last Name',
+                        hint: 'Enter your last name',
+                        controller: _lastNameController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // E-mail
+                    Center(
+                      child: _buildTextField(
+                        label: 'E-mail',
+                        hint: 'Enter your email',
+                        controller: _emailController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                            return 'Invalid email';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Date of Birth
+                    Center(
+                      child: SizedBox(
+                        width: fieldWidth,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Date of Birth',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: labelSize,
+                                fontWeight: FontWeight.w500,
+                                height: 1.57,
+                                letterSpacing: 0.07,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: isTablet ? 10 : 8),
+                            GestureDetector(
+                              onTap: _pickDateOfBirth,
+                              child: AbsorbPointer(
+                                child: SizedBox(
+                                  height: fieldHeight,
+                                  child: TextFormField(
+                                    controller: _dobController,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: inputSize,
+                                      fontWeight: FontWeight.w400,
+                                      color: const Color(0xFF333333),
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'DD/MM/YYYY',
+                                      hintStyle: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: hintSize,
+                                        fontWeight: FontWeight.w400,
+                                        color: _hintColor,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(fieldRadius),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(fieldRadius),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(fieldRadius),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 22 : 16,
+                                        vertical: isTablet ? 18 : 14,
+                                      ),
+                                      suffixIcon: Padding(
+                                        padding: EdgeInsets.only(right: isTablet ? 24 : 12),
+                                        child: Icon(
+                                          Icons.calendar_today_outlined,
+                                          color: _hintColor,
+                                          size: isTablet ? 20 : 18,
+                                        ),
+                                      ),
+                                      suffixIconConstraints: BoxConstraints(
+                                        minHeight: isTablet ? 20 : 18,
+                                        minWidth: isTablet ? 20 : 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Gender
+                    Center(
+                      child: _buildGenderSelector(
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Address
+                    Center(
+                      child: _buildTextField(
+                        label: 'Address',
+                        hint: 'Enter your address',
+                        controller: _addressController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        focusNode: _addressFocusNode,
+                        trailingWidget: _isAddressFocused
+                            ? Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: SizedBox(
+                                  height: isTablet ? 40 : 34,
+                                  child: ElevatedButton(
+                                    onPressed: _isAutoFetchingAddress
+                                        ? null
+                                        : _autoFetchAddress,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0000C8),
+                                      disabledBackgroundColor:
+                                          const Color(0xFF0000C8).withValues(alpha: 0.5),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: isTablet ? 16 : 12, vertical: 0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: _isAutoFetchingAddress
+                                        ? SizedBox(
+                                            width: isTablet ? 18 : 16,
+                                            height: isTablet ? 18 : 16,
+                                            child: const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                            ),
+                                          )
+                                        : Text(
+                                            'Auto Fetch',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: isTablet ? 14 : 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // UG College
+                    Center(
+                      child: _buildTextField(
+                        label: 'UG College',
+                        hint: 'Enter your UG college',
+                        controller: _ugCollegeController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // PG College
+                    Center(
+                      child: _buildTextField(
+                        label: 'PG College',
+                        hint: 'Enter your PG college',
+                        controller: _pgCollegeController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 40 : 32),
+
+                    // Sign Up Button
+                    Center(
+                      child: SizedBox(
+                        width: submitBtnWidth,
+                        height: submitBtnHeight,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _submitData,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00C2FF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(submitBtnRadius),
+                            ),
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
+                            alignment: Alignment.center,
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: isTablet ? 28 : 24,
+                                  height: isTablet ? 28 : 24,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0000D1)),
+                                  ),
+                                )
+                              : Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: submitBtnFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                    color: const Color(0xFF0000D1),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

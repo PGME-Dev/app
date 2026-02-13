@@ -51,17 +51,17 @@ class PromotionalBanner extends StatelessWidget {
             ),
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isTablet ? 28 : 16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
+                    blurRadius: isTablet ? 12 : 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isTablet ? 28 : 16),
                 child: CachedNetworkImage(
                   imageUrl: banner.imageUrl,
                   width: double.infinity,

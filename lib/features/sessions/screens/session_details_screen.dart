@@ -11,6 +11,7 @@ import 'package:pgme/core/services/session_purchase_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/zoom_service.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
   final String sessionId;
@@ -445,7 +446,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
-
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
@@ -503,250 +503,257 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     Color secondaryTextColor, Color cardBgColor, Color surfaceColor,
     Color iconColor, Color buttonColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final isFree = _session?.isFree ?? true;
     final price = _session?.price ?? 0;
 
     return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          SizedBox(height: topPadding),
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 16,
-                  child: GestureDetector(
-                    onTap: () => context.pop(),
-                    child: SizedBox(
-                      width: 24, height: 24,
-                      child: Icon(Icons.arrow_back, size: 24, color: textColor),
-                    ),
-                  ),
-                ),
-                Center(
-                  child: Text(
-                    'Session Details',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                      fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 17),
-
-          // Session Info Box
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              SizedBox(height: topPadding),
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Stack(
                   children: [
-                    // Thumbnail
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: _session?.thumbnailUrl != null
-                          ? Image.network(
-                              _session!.thumbnailUrl!,
-                              width: 203, height: 125, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
-                            )
-                          : _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                    Positioned(
+                      left: hPadding,
+                      child: GestureDetector(
+                        onTap: () => context.pop(),
+                        child: SizedBox(
+                          width: isTablet ? 30 : 24, height: isTablet ? 30 : 24,
+                          child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
-
-                    Opacity(
-                      opacity: 0.5,
+                    Center(
                       child: Text(
-                        'LIVE SESSION',
+                        'Session Details',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                          fontSize: 10, letterSpacing: 0.05, color: textColor,
+                          fontSize: isTablet ? 26 : 20, height: 1.0, letterSpacing: -0.5, color: textColor,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    Text(
-                      _session?.title ?? 'Loading...',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                        fontSize: 20, height: 1.2, letterSpacing: -0.5, color: textColor,
-                      ),
-                      maxLines: 2, overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 9),
-
-                    // Faculty
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 24, height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
-                          ),
-                          child: ClipOval(
-                            child: _session?.facultyPhotoUrl != null
-                                ? Image.network(
-                                    _session!.facultyPhotoUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
-                                  )
-                                : Icon(Icons.person, size: 16, color: secondaryTextColor),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _session?.facultyName ?? 'Faculty',
-                          style: TextStyle(
-                            fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                            fontSize: 14, color: textColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Badges
-                    Wrap(
-                      spacing: 12, runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _buildBadge(_getStatusText(), _getStatusColor(isDark)),
-                        _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
-                        if (!isFree)
-                          _buildBadge(
-                            _hasAccess ? 'PURCHASED' : _formatPrice(price),
-                            _hasAccess ? Colors.green : Colors.orange,
-                            icon: _hasAccess ? Icons.check_circle : Icons.lock,
-                          ),
-                      ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 24),
+              const SizedBox(height: 17),
 
-          // Pricing / Action Section
-          _buildPricingSection(isDark, textColor, secondaryTextColor, surfaceColor, iconColor, buttonColor),
+              // Session Info Box
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 24 : 16),
+                    child: Column(
+                      children: [
+                        // Thumbnail
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: _session?.thumbnailUrl != null
+                              ? Image.network(
+                                  _session!.thumbnailUrl!,
+                                  width: isTablet ? 300 : 203, height: isTablet ? 185 : 125, fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                                )
+                              : _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                        ),
+                        const SizedBox(height: 8),
 
-          const SizedBox(height: 24),
+                        Opacity(
+                          opacity: 0.5,
+                          child: Text(
+                            'LIVE SESSION',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 13 : 10, letterSpacing: 0.05, color: textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
 
-          // Description
-          if (_session?.description != null && _session!.description!.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Text(
-                'About This Session',
-                style: TextStyle(
-                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                  fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cardBgColor,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    _session!.description!,
-                    style: TextStyle(
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                      fontSize: 14, height: 1.5, color: textColor,
+                        Text(
+                          _session?.title ?? 'Loading...',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 26 : 20, height: 1.2, letterSpacing: -0.5, color: textColor,
+                          ),
+                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 9),
+
+                        // Faculty
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: isTablet ? 32 : 24, height: isTablet ? 32 : 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                              ),
+                              child: ClipOval(
+                                child: _session?.facultyPhotoUrl != null
+                                    ? Image.network(
+                                        _session!.facultyPhotoUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
+                                      )
+                                    : Icon(Icons.person, size: 16, color: secondaryTextColor),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _session?.facultyName ?? 'Faculty',
+                              style: TextStyle(
+                                fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                fontSize: isTablet ? 17 : 14, color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Badges
+                        Wrap(
+                          spacing: 12, runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _buildBadge(_getStatusText(), _getStatusColor(isDark)),
+                            _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
+                            if (!isFree)
+                              _buildBadge(
+                                _hasAccess ? 'PURCHASED' : _formatPrice(price),
+                                _hasAccess ? Colors.green : Colors.orange,
+                                icon: _hasAccess ? Icons.check_circle : Icons.lock,
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
 
-          // Meeting Instructions
-          Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Text(
-              'Meeting Instructions',
-              style: TextStyle(
-                fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    _buildInstructionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
-                    const SizedBox(height: 16),
-                    _buildInstructionItem('Mute your microphone upon entry to avoid echo.', textColor, iconColor),
-                    const SizedBox(height: 16),
-                    _buildInstructionItem('Q&A session will follow the primary content.', textColor, iconColor),
-                    const SizedBox(height: 16),
-                    _buildInstructionItem('Recording will be available 24 hours after the session.', textColor, iconColor),
-                  ],
+              const SizedBox(height: 24),
+
+              // Pricing / Action Section
+              _buildPricingSection(isDark, textColor, secondaryTextColor, surfaceColor, iconColor, buttonColor),
+
+              const SizedBox(height: 24),
+
+              // Description
+              if (_session?.description != null && _session!.description!.isNotEmpty) ...[
+                Padding(
+                  padding: EdgeInsets.only(left: hPadding),
+                  child: Text(
+                    'About This Session',
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                      fontSize: isTablet ? 26 : 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(isTablet ? 28 : 20),
+                      child: Text(
+                        _session!.description!,
+                        style: TextStyle(
+                          fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                          fontSize: isTablet ? 17 : 14, height: 1.5, color: textColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Meeting Instructions
+              Padding(
+                padding: EdgeInsets.only(left: hPadding),
+                child: Text(
+                  'Meeting Instructions',
+                  style: TextStyle(
+                    fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                    fontSize: isTablet ? 26 : 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+                  ),
                 ),
               ),
-            ),
-          ),
-
-          // Upcoming Sessions
-          if (_upcomingSessions.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Text(
-                'Upcoming Sessions',
-                style: TextStyle(
-                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                  fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+              const SizedBox(height: 12),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 28 : 20),
+                    child: Column(
+                      children: [
+                        _buildInstructionItem('Ensure your Student ID is visible in your profile name.', textColor, iconColor),
+                        const SizedBox(height: 16),
+                        _buildInstructionItem('Mute your microphone upon entry to avoid echo.', textColor, iconColor),
+                        const SizedBox(height: 16),
+                        _buildInstructionItem('Q&A session will follow the primary content.', textColor, iconColor),
+                        const SizedBox(height: 16),
+                        _buildInstructionItem('Recording will be available 24 hours after the session.', textColor, iconColor),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            ...(_upcomingSessions.map((session) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: _buildUpcomingSessionCard(session, isDark, textColor, secondaryTextColor, cardBgColor, iconColor),
-            ))),
-          ],
 
-          const SizedBox(height: 120),
-        ],
+              // Upcoming Sessions
+              if (_upcomingSessions.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Padding(
+                  padding: EdgeInsets.only(left: hPadding),
+                  child: Text(
+                    'Upcoming Sessions',
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                      fontSize: isTablet ? 26 : 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...(_upcomingSessions.map((session) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 4),
+                  child: _buildUpcomingSessionCard(session, isDark, textColor, secondaryTextColor, cardBgColor, iconColor),
+                ))),
+              ],
+
+              const SizedBox(height: 120),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -826,9 +833,10 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     IconData icon, String label, String value,
     Color iconColor, Color textColor, Color secondaryTextColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: iconColor),
+        Icon(icon, size: isTablet ? 26 : 20, color: iconColor),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -838,7 +846,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                 label,
                 style: TextStyle(
                   fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                  fontSize: 12, color: secondaryTextColor,
+                  fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
                 ),
               ),
               const SizedBox(height: 2),
@@ -846,7 +854,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                 value,
                 style: TextStyle(
                   fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                  fontSize: 14, color: textColor,
+                  fontSize: isTablet ? 17 : 14, color: textColor,
                 ),
               ),
             ],
@@ -864,6 +872,8 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     bool isDark, Color textColor, Color secondaryTextColor,
     Color surfaceColor, Color iconColor, Color buttonColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final isFree = _session?.isFree ?? true;
     final isUserEnrolled = _isEnrolled;
     final hasUserAccess = _hasAccess;
@@ -879,23 +889,23 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 16),
+          padding: EdgeInsets.only(left: hPadding),
           child: Text(
             sectionTitle,
             style: TextStyle(
               fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-              fontSize: 20, height: 1.0, letterSpacing: -0.5, color: textColor,
+              fontSize: isTablet ? 26 : 20, height: 1.0, letterSpacing: -0.5, color: textColor,
             ),
           ),
         ),
         const SizedBox(height: 12),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
               color: surfaceColor,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
               boxShadow: isDark
                   ? [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 6))]
                   : const [
@@ -904,7 +914,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isTablet ? 32 : 24),
               child: _buildPricingContent(isDark, textColor, secondaryTextColor, iconColor, buttonColor),
             ),
           ),
@@ -939,6 +949,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     bool isDark, Color textColor, Color secondaryTextColor,
     Color iconColor, Color buttonColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final bool isButtonEnabled = _canJoinNow;
 
     return Column(
@@ -953,7 +964,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 24),
+              Icon(Icons.check_circle, color: Colors.green, size: isTablet ? 30 : 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -963,7 +974,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                       _session?.isFree == true ? "You're Enrolled" : 'Access Granted',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w600,
-                        fontSize: 14, color: textColor,
+                        fontSize: isTablet ? 17 : 14, color: textColor,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -973,7 +984,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                           : 'You can join when the session starts',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                        fontSize: 12, color: secondaryTextColor,
+                        fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -991,24 +1002,24 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           onTap: (isButtonEnabled && !_isJoiningZoom) ? _launchMeeting : null,
           child: Container(
             width: double.infinity,
-            height: 48,
+            height: isTablet ? 60 : 48,
             decoration: BoxDecoration(
               color: _isJoiningZoom
                   ? Colors.grey
                   : (isButtonEnabled ? buttonColor : Colors.grey),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(isTablet ? 28 : 22),
             ),
             child: Center(
               child: _isJoiningZoom
-                  ? const SizedBox(
-                      width: 24, height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                  ? SizedBox(
+                      width: isTablet ? 30 : 24, height: isTablet ? 30 : 24,
+                      child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
                   : Text(
                       _canJoinNow ? 'JOIN LIVE' : 'JOIN LIVE (Not Started Yet)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                        fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                        fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
                       ),
                     ),
             ),
@@ -1021,6 +1032,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Widget _buildFreeEnrollContent(
     bool isDark, Color textColor, Color secondaryTextColor, Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1033,7 +1045,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.card_giftcard, color: iconColor, size: 24),
+              Icon(Icons.card_giftcard, color: iconColor, size: isTablet ? 30 : 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1043,7 +1055,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                       'This session is free!',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w600,
-                        fontSize: 14, color: textColor,
+                        fontSize: isTablet ? 17 : 14, color: textColor,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1051,7 +1063,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                       'Enroll now to secure your spot',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                        fontSize: 12, color: secondaryTextColor,
+                        fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -1069,22 +1081,22 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           onTap: _isEnrolling ? null : _enrollForFree,
           child: Container(
             width: double.infinity,
-            height: 48,
+            height: isTablet ? 60 : 48,
             decoration: BoxDecoration(
               color: _isEnrolling ? Colors.grey : Colors.green,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(isTablet ? 28 : 22),
             ),
             child: Center(
               child: _isEnrolling
-                  ? const SizedBox(
-                      width: 24, height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                  ? SizedBox(
+                      width: isTablet ? 30 : 24, height: isTablet ? 30 : 24,
+                      child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
-                  : const Text(
+                  : Text(
                       'ENROLL FOR FREE',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                        fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                        fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
                       ),
                     ),
             ),
@@ -1097,6 +1109,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Widget _buildPaidContent(
     bool isDark, Color textColor, Color secondaryTextColor, Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final price = _session?.price ?? 0;
     final compareAtPrice = _session?.compareAtPrice ?? _accessStatus?.compareAtPrice;
 
@@ -1110,7 +1123,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
               _formatPrice(price),
               style: TextStyle(
                 fontFamily: 'Poppins', fontWeight: FontWeight.w700,
-                fontSize: 28, color: textColor,
+                fontSize: isTablet ? 36 : 28, color: textColor,
               ),
             ),
             if (compareAtPrice != null && compareAtPrice > price) ...[
@@ -1121,7 +1134,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                   _formatPrice(compareAtPrice),
                   style: TextStyle(
                     fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                    fontSize: 18, color: secondaryTextColor,
+                    fontSize: isTablet ? 22 : 18, color: secondaryTextColor,
                     decoration: TextDecoration.lineThrough,
                     decorationColor: secondaryTextColor,
                   ),
@@ -1136,7 +1149,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           'Get access to this live session',
           style: TextStyle(
             fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-            fontSize: 14, color: secondaryTextColor,
+            fontSize: isTablet ? 17 : 14, color: secondaryTextColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -1148,16 +1161,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           onTap: (_isPurchasing || _isCheckingAccess) ? null : _initiatePayment,
           child: Container(
             width: double.infinity,
-            height: 48,
+            height: isTablet ? 60 : 48,
             decoration: BoxDecoration(
               color: (_isPurchasing || _isCheckingAccess) ? Colors.grey : Colors.orange,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(isTablet ? 28 : 22),
             ),
             child: Center(
               child: (_isPurchasing || _isCheckingAccess)
-                  ? const SizedBox(
-                      width: 24, height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                  ? SizedBox(
+                      width: isTablet ? 30 : 24, height: isTablet ? 30 : 24,
+                      child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1166,9 +1179,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                         const SizedBox(width: 8),
                         Text(
                           'BUY NOW - ${_formatPrice(price)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                            fontSize: 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
+                            fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
                           ),
                         ),
                       ],
@@ -1188,22 +1201,23 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     LiveSessionModel session, bool isDark, Color textColor,
     Color secondaryTextColor, Color cardBgColor, Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return GestureDetector(
       onTap: () => context.push('/session/${session.sessionId}'),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(isTablet ? 18 : 12),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
         ),
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               child: session.thumbnailUrl != null
                   ? Image.network(
                       session.thumbnailUrl!,
-                      width: 60, height: 60, fit: BoxFit.cover,
+                      width: isTablet ? 80 : 60, height: isTablet ? 80 : 60, fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _buildSmallPlaceholder(iconColor),
                     )
                   : _buildSmallPlaceholder(iconColor),
@@ -1217,7 +1231,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     session.title,
                     style: TextStyle(
                       fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                      fontSize: 14, color: textColor,
+                      fontSize: isTablet ? 17 : 14, color: textColor,
                     ),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
@@ -1226,7 +1240,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     session.facultyName ?? 'Faculty',
                     style: TextStyle(
                       fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                      fontSize: 12, color: secondaryTextColor,
+                      fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1234,7 +1248,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     _formatSessionDate(session.scheduledStartTime),
                     style: TextStyle(
                       fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                      fontSize: 11, color: iconColor,
+                      fontSize: isTablet ? 14 : 11, color: iconColor,
                     ),
                   ),
                 ],
@@ -1274,8 +1288,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   // ============================================================================
 
   Widget _buildBadge(String text, Color color, {IconData? icon}) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: 6),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(41),
@@ -1287,15 +1302,15 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             Icon(icon, size: 12, color: Colors.white)
           else
             Container(
-              width: 8, height: 8,
+              width: isTablet ? 10 : 8, height: isTablet ? 10 : 8,
               decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
             ),
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-              fontSize: 10, color: Colors.white,
+              fontSize: isTablet ? 13 : 10, color: Colors.white,
             ),
           ),
         ],
@@ -1304,8 +1319,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   }
 
   Widget _buildThumbnailPlaceholder(Color surfaceColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      width: 203, height: 125,
+      width: isTablet ? 300 : 203, height: isTablet ? 185 : 125,
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
@@ -1315,21 +1331,23 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   }
 
   Widget _buildSmallPlaceholder(Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      width: 60, height: 60,
+      width: isTablet ? 80 : 60, height: isTablet ? 80 : 60,
       decoration: BoxDecoration(
         color: iconColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
       ),
       child: Icon(Icons.play_circle_outline, size: 28, color: iconColor),
     );
   }
 
   Widget _buildInstructionItem(String text, Color textColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.check_circle_outline, size: 20, color: iconColor),
+        Icon(Icons.check_circle_outline, size: isTablet ? 26 : 20, color: iconColor),
         const SizedBox(width: 12),
         Expanded(
           child: Opacity(
@@ -1338,7 +1356,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
               text,
               style: TextStyle(
                 fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                fontSize: 14, height: 1.43, letterSpacing: -0.5, color: textColor,
+                fontSize: isTablet ? 17 : 14, height: 1.43, letterSpacing: -0.5, color: textColor,
               ),
             ),
           ),
@@ -1417,6 +1435,7 @@ class _ZoomErrorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isTablet = ResponsiveHelper.isTablet(context);
     final errorColor = _getErrorColor();
 
     return Dialog(
@@ -1434,15 +1453,15 @@ class _ZoomErrorDialog extends StatelessWidget {
           children: [
             // Error Icon
             Container(
-              width: 80,
-              height: 80,
+              width: isTablet ? 100 : 80,
+              height: isTablet ? 100 : 80,
               decoration: BoxDecoration(
-                color: errorColor.withOpacity(0.1),
+                color: errorColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _getErrorIcon(),
-                size: 40,
+                size: isTablet ? 50 : 40,
                 color: errorColor,
               ),
             ),
@@ -1453,7 +1472,7 @@ class _ZoomErrorDialog extends StatelessWidget {
               _getErrorTitle(),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 20,
+                fontSize: isTablet ? 26 : 20,
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white : AppColors.darkTextPrimary,
               ),
@@ -1466,7 +1485,7 @@ class _ZoomErrorDialog extends StatelessWidget {
               error.message,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 color: isDark ? Colors.white70 : Colors.black54,
                 height: 1.5,
               ),

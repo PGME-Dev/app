@@ -5,6 +5,7 @@ import 'package:pgme/core/models/book_order_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class BookOrderConfirmationScreen extends StatefulWidget {
   final String orderId;
@@ -53,10 +54,10 @@ class _BookOrderConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -65,6 +66,8 @@ class _BookOrderConfirmationScreenState
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final borderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
     final buttonColor = isDark ? const Color(0xFF1A1A4D) : const Color(0xFF000080);
+
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     if (_isLoading) {
       return Scaffold(
@@ -80,19 +83,19 @@ class _BookOrderConfirmationScreenState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+              SizedBox(height: isTablet ? 21 : 16),
               Text(
                 'Failed to load order',
-                style: TextStyle(fontSize: 16, color: textColor),
+                style: TextStyle(fontSize: isTablet ? 20 : 16, color: textColor),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: isTablet ? 10 : 8),
               Text(
                 _error!,
-                style: TextStyle(fontSize: 14, color: secondaryTextColor),
+                style: TextStyle(fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isTablet ? 21 : 16),
               ElevatedButton(
                 onPressed: () => context.go('/'),
                 child: const Text('Go Home'),
@@ -106,29 +109,32 @@ class _BookOrderConfirmationScreenState
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(isTablet ? 32 : 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    SizedBox(height: isTablet ? 52 : 40),
                     // Success Icon
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: isTablet ? 125 : 100,
+                      height: isTablet ? 125 : 100,
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.check_circle,
-                        size: 64,
+                        size: isTablet ? 80 : 64,
                         color: Colors.green,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: isTablet ? 31 : 24),
 
                     // Success Text
                     Text(
@@ -136,28 +142,28 @@ class _BookOrderConfirmationScreenState
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w700,
-                        fontSize: 24,
+                        fontSize: isTablet ? 30 : 24,
                         color: textColor,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isTablet ? 10 : 8),
                     Text(
                       'Your order has been placed successfully',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: isTablet ? 17 : 14,
                         color: secondaryTextColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: isTablet ? 42 : 32),
 
                     // Order Details Card
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(isTablet ? 26 : 20),
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
                         border: Border.all(color: borderColor),
                       ),
                       child: Column(
@@ -168,52 +174,56 @@ class _BookOrderConfirmationScreenState
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              fontSize: isTablet ? 20 : 16,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isTablet ? 21 : 16),
                           _buildDetailRow(
                             'Order Number',
                             _order?.orderNumber ?? '-',
                             textColor,
                             secondaryTextColor,
+                            isTablet: isTablet,
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: isTablet ? 16 : 12),
                           _buildDetailRow(
                             'Items',
                             '${_order?.itemsCount ?? 0} items',
                             textColor,
                             secondaryTextColor,
+                            isTablet: isTablet,
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: isTablet ? 16 : 12),
                           _buildDetailRow(
                             'Total Amount',
                             '\u{20B9}${_order?.totalAmount ?? 0}',
                             textColor,
                             secondaryTextColor,
+                            isTablet: isTablet,
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: isTablet ? 16 : 12),
                           _buildDetailRow(
                             'Status',
                             _order?.statusDisplayText ?? '-',
                             textColor,
                             secondaryTextColor,
+                            isTablet: isTablet,
                             isStatus: true,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: isTablet ? 21 : 16),
 
                     // Shipping Info Card
                     if (_order?.shippingAddress != null)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(isTablet ? 26 : 20),
                         decoration: BoxDecoration(
                           color: cardBgColor,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
                           border: Border.all(color: borderColor),
                         ),
                         child: Column(
@@ -224,29 +234,32 @@ class _BookOrderConfirmationScreenState
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w600,
-                                fontSize: 16,
+                                fontSize: isTablet ? 20 : 16,
                                 color: textColor,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: isTablet ? 16 : 12),
                             Text(
                               _order?.recipientName ?? '',
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 17 : 14,
                                 color: textColor,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: isTablet ? 5 : 4),
                             Text(
                               _order?.shippingPhone ?? '',
                               style: TextStyle(
+                                fontSize: isTablet ? 17 : 14,
                                 color: secondaryTextColor,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: isTablet ? 5 : 4),
                             Text(
                               _order?.shippingAddress ?? '',
                               style: TextStyle(
+                                fontSize: isTablet ? 17 : 14,
                                 color: secondaryTextColor,
                               ),
                             ),
@@ -260,41 +273,41 @@ class _BookOrderConfirmationScreenState
 
             // Bottom Buttons
             Container(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 80),
+              padding: EdgeInsets.fromLTRB(hPadding, isTablet ? 20 : 16, hPadding, bottomPadding + (isTablet ? 100 : 80)),
               child: Column(
                 children: [
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: isTablet ? 60 : 50,
                     child: ElevatedButton(
                       onPressed: () => context.push('/book-orders'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'View All Orders',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isTablet ? 16 : 12),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: isTablet ? 60 : 50,
                     child: OutlinedButton(
                       onPressed: () => context.go('/'),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: buttonColor),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                         ),
                       ),
                       child: Text(
@@ -302,7 +315,7 @@ class _BookOrderConfirmationScreenState
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                           color: buttonColor,
                         ),
                       ),
@@ -313,6 +326,8 @@ class _BookOrderConfirmationScreenState
             ),
           ],
         ),
+          ),
+        ),
       ),
     );
   }
@@ -322,6 +337,7 @@ class _BookOrderConfirmationScreenState
     String value,
     Color textColor,
     Color secondaryTextColor, {
+    bool isTablet = false,
     bool isStatus = false,
   }) {
     return Row(
@@ -330,21 +346,21 @@ class _BookOrderConfirmationScreenState
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: isTablet ? 17 : 14,
             color: secondaryTextColor,
           ),
         ),
         isStatus
             ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 5 : 4),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                 ),
                 child: Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: isTablet ? 17 : 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.green,
                   ),
@@ -353,7 +369,7 @@ class _BookOrderConfirmationScreenState
             : Text(
                 value,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: isTablet ? 17 : 14,
                   fontWeight: FontWeight.w500,
                   color: textColor,
                 ),

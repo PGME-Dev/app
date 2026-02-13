@@ -7,6 +7,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
@@ -82,6 +83,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -92,6 +94,19 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     final lessonAccessibleBg = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFE4F4FF);
     final lessonLockedBg = isDark ? AppColors.darkCardBackground : const Color(0xFFEFEFF8);
+
+    // Responsive sizes
+    final hPadding = isTablet ? 24.0 : 16.0;
+    final headerIconSize = isTablet ? 30.0 : 24.0;
+    final titleFontSize = isTablet ? 24.0 : 20.0;
+    final bannerHeight = isTablet ? 320.0 : 242.0;
+    final videoTitleSize = isTablet ? 22.0 : 18.0;
+    final descFontSize = isTablet ? 17.0 : 14.0;
+    final enrollBtnHeight = isTablet ? 68.0 : 54.0;
+    final enrollFontSize = isTablet ? 19.0 : 16.0;
+    final enrollBtnRadius = isTablet ? 28.0 : 22.0;
+    final moduleGap = isTablet ? 12.0 : 7.0;
+    final sectionGap = isTablet ? 28.0 : 23.0;
 
     return BackButtonListener(
       onBackButtonPressed: () async {
@@ -109,35 +124,40 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                  ),
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
                   Padding(
-                    padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16),
+                    padding: EdgeInsets.only(top: topPadding + (isTablet ? 16 : 12), left: hPadding, right: hPadding),
                     child: Row(
                       children: [
                         GestureDetector(
                           onTap: () => context.pop(),
                           child: SizedBox(
-                            width: 24,
-                            height: 24,
+                            width: headerIconSize,
+                            height: headerIconSize,
                             child: Icon(
                               Icons.arrow_back,
-                              size: 24,
+                              size: headerIconSize,
                               color: textColor,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 87),
+                        SizedBox(width: isTablet ? 16 : 12),
                         Expanded(
                           child: Text(
                             _series?.title ?? 'Course',
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.left,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
                               fontWeight: FontWeight.w500,
-                              fontSize: 20,
+                              fontSize: titleFontSize,
                               height: 1.0,
                               letterSpacing: -0.5,
                               color: textColor,
@@ -146,17 +166,16 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
                         GestureDetector(
                           onTap: () {
                             // More options
                           },
                           child: SizedBox(
-                            width: 24,
-                            height: 24,
+                            width: headerIconSize,
+                            height: headerIconSize,
                             child: Icon(
                               Icons.more_horiz,
-                              size: 24,
+                              size: headerIconSize,
                               color: textColor,
                             ),
                           ),
@@ -165,45 +184,54 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     ),
                   ),
 
-                  const SizedBox(height: 23),
+                  SizedBox(height: sectionGap),
 
                   // Course Banner Image
-                  SizedBox(
-                    width: double.infinity,
-                    height: 242,
-                    child: Image.asset(
-                      'assets/illustrations/course.png',
-                      width: double.infinity,
-                      height: 242,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: double.infinity,
-                          height: 242,
-                          color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                          child: Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 60,
-                              color: secondaryTextColor,
-                            ),
+                  ClipRRect(
+                    borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: bannerHeight,
+                        child: ClipRRect(
+                          borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
+                          child: Image.asset(
+                            'assets/illustrations/course.png',
+                            width: double.infinity,
+                            height: bannerHeight,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: double.infinity,
+                                height: bannerHeight,
+                                color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    size: isTablet ? 80 : 60,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 23),
+                  SizedBox(height: sectionGap),
 
                   // Video Title
                   Padding(
-                    padding: const EdgeInsets.only(left: 17, right: 17),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding + 4 : 17),
                     child: Text(
                       _getFirstVideoTitle() ?? _series?.title ?? 'Video Title',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: 18,
+                        fontSize: videoTitleSize,
                         height: 1.0,
                         letterSpacing: -0.5,
                         color: textColor,
@@ -211,17 +239,17 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     ),
                   ),
 
-                  const SizedBox(height: 13),
+                  SizedBox(height: isTablet ? 16 : 13),
 
                   // Description
                   Padding(
-                    padding: const EdgeInsets.only(left: 17, right: 17),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding + 4 : 17),
                     child: Text(
                       _series?.description ?? 'Course description',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: descFontSize,
                         height: 1.43,
                         letterSpacing: -0.5,
                         color: secondaryTextColor,
@@ -231,27 +259,30 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: isTablet ? 24 : 16),
 
                   // Dynamic Modules List
                   if (_isLoading)
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: 4,
-                        itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
+                    Padding(
+                      padding: EdgeInsets.all(hPadding),
+                      child: Column(
+                        children: List.generate(4, (index) => ShimmerWidgets.listItemShimmer(isDark: isDark)),
                       ),
                     )
                   else if (_error != null)
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0),
+                        padding: EdgeInsets.all(isTablet ? 48.0 : 32.0),
                         child: Column(
                           children: [
-                            Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                            const SizedBox(height: 16),
-                            Text('Failed to load modules', style: TextStyle(color: textColor)),
-                            const SizedBox(height: 16),
+                            Icon(Icons.error_outline, size: isTablet ? 60 : 48, color: secondaryTextColor),
+                            SizedBox(height: isTablet ? 20 : 16),
+                            Text('Failed to load modules', style: TextStyle(
+                              color: textColor,
+                              fontSize: isTablet ? 18 : 14,
+                              fontFamily: 'Poppins',
+                            )),
+                            SizedBox(height: isTablet ? 20 : 16),
                             ElevatedButton(
                               onPressed: _loadData,
                               child: const Text('Retry'),
@@ -263,8 +294,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   else if (_modules.isEmpty)
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Text('No modules available', style: TextStyle(color: secondaryTextColor)),
+                        padding: EdgeInsets.all(isTablet ? 48.0 : 32.0),
+                        child: Text('No modules available', style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: isTablet ? 18 : 14,
+                          fontFamily: 'Poppins',
+                        )),
                       ),
                     )
                   else
@@ -274,11 +309,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       final isExpanded = _expandedModules[module.moduleId] ?? false;
 
                       return Padding(
-                        padding: EdgeInsets.only(left: 16, right: 16, bottom: index < _modules.length - 1 ? 7 : 0),
+                        padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: index < _modules.length - 1 ? moduleGap : 0),
                         child: _buildModuleCard(
                           module: module,
                           isExpanded: isExpanded,
                           isDark: isDark,
+                          isTablet: isTablet,
                           textColor: textColor,
                           secondaryTextColor: secondaryTextColor,
                           cardBgColor: cardBgColor,
@@ -294,15 +330,15 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       );
                     }).toList(),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: isTablet ? 32 : 24),
 
                   // Enroll Now Button - Only show for unsubscribed users
                   if (!widget.isSubscribed)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: hPadding),
                       child: SizedBox(
                         width: double.infinity,
-                        height: 54,
+                        height: enrollBtnHeight,
                         child: ElevatedButton(
                           onPressed: () {
                             final params = <String>['packageType=${widget.packageType}'];
@@ -312,15 +348,15 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
+                              borderRadius: BorderRadius.circular(enrollBtnRadius),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
+                          child: Text(
                             'Enroll Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 16,
+                              fontSize: enrollFontSize,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
@@ -329,8 +365,10 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       ),
                     ),
 
-                  const SizedBox(height: 100), // Space for nav bar
+                  SizedBox(height: isTablet ? 120 : 100), // Space for nav bar
                 ],
+              ),
+                ),
               ),
             ),
           ),
@@ -347,6 +385,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     required String duration,
     required String instructor,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color iconColor,
     required Color lessonAccessibleBg,
@@ -356,124 +395,132 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final secondaryColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
     final lockBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 332,
-          height: 56,
-          decoration: BoxDecoration(
-            color: isAccessible ? lessonAccessibleBg : lessonLockedBg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              // Icon - Checkmark for accessible, Lock for locked
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isAccessible ? iconColor : lockBgColor,
-                ),
-                child: Center(
-                  child: isAccessible
-                      ? const Icon(
-                          Icons.check,
-                          size: 16,
-                          color: Colors.white,
-                        )
-                      : Icon(
-                          Icons.lock,
-                          size: 14,
-                          color: iconColor,
-                        ),
-                ),
+    final lessonHeight = isTablet ? 72.0 : 56.0;
+    final iconContainerSize = isTablet ? 36.0 : 28.0;
+    final checkSize = isTablet ? 20.0 : 16.0;
+    final lockSize = isTablet ? 18.0 : 14.0;
+    final titleSize = isTablet ? 15.0 : 12.0;
+    final metaSize = isTablet ? 13.0 : 10.0;
+    final clockSize = isTablet ? 15.0 : 12.0;
+    final avatarSize = isTablet ? 22.0 : 16.0;
+    final itemRadius = isTablet ? 16.0 : 12.0;
+    final itemHPadding = isTablet ? 16.0 : 12.0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: lessonHeight,
+        decoration: BoxDecoration(
+          color: isAccessible ? lessonAccessibleBg : lessonLockedBg,
+          borderRadius: BorderRadius.circular(itemRadius),
+        ),
+        child: Row(
+          children: [
+            SizedBox(width: itemHPadding),
+            // Icon - Checkmark for accessible, Lock for locked
+            Container(
+              width: iconContainerSize,
+              height: iconContainerSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isAccessible ? iconColor : lockBgColor,
               ),
-              const SizedBox(width: 12),
-              // Lesson details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                        height: 1.0,
-                        color: textColor,
+              child: Center(
+                child: isAccessible
+                    ? Icon(
+                        Icons.check,
+                        size: checkSize,
+                        color: Colors.white,
+                      )
+                    : Icon(
+                        Icons.lock,
+                        size: lockSize,
+                        color: iconColor,
                       ),
-                      overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(width: itemHPadding),
+            // Lesson details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w500,
+                      fontSize: titleSize,
+                      height: 1.0,
+                      color: textColor,
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 12,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: isTablet ? 8 : 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: clockSize,
+                        color: secondaryColor,
+                      ),
+                      SizedBox(width: isTablet ? 6 : 4),
+                      Text(
+                        duration,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: metaSize,
                           color: secondaryColor,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          duration,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 10,
-                            color: secondaryColor,
-                          ),
+                      ),
+                      SizedBox(width: isTablet ? 10 : 8),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          fontSize: metaSize,
+                          color: secondaryColor,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '•',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: secondaryColor,
-                          ),
+                      ),
+                      SizedBox(width: isTablet ? 10 : 8),
+                      // Doctor avatar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(avatarSize / 2),
+                        child: Image.asset(
+                          'assets/illustrations/doc.png',
+                          width: avatarSize,
+                          height: avatarSize,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: avatarSize,
+                              height: avatarSize,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        // Doctor avatar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset(
-                            'assets/illustrations/doc.png',
-                            width: 16,
-                            height: 16,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
-                                ),
-                              );
-                            },
-                          ),
+                      ),
+                      SizedBox(width: isTablet ? 6 : 4),
+                      Text(
+                        instructor,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: metaSize,
+                          color: secondaryColor,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          instructor,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 10,
-                            color: secondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -484,6 +531,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     required bool isExpanded,
     required VoidCallback onTap,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color secondaryTextColor,
     required Color cardBgColor,
@@ -494,30 +542,39 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final videoCount = module.videos.length;
     final completedCount = module.completedLessons;
 
+    final cardRadius = isTablet ? 16.0 : 12.0;
+    final headerPadding = isTablet ? 20.0 : 16.0;
+    final moduleNameSize = isTablet ? 15.0 : 12.0;
+    final moduleMetaSize = isTablet ? 14.0 : 11.0;
+    final arrowSize = isTablet ? 30.0 : 24.0;
+    final lessonPaddingH = isTablet ? 18.0 : 14.0;
+    final lessonGap = isTablet ? 10.0 : 8.0;
+    final lessonBottomPad = isTablet ? 20.0 : 16.0;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: isDark
             ? [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 8,
+                  blurRadius: isTablet ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),
               ]
-            : const [
+            : [
                 BoxShadow(
-                  color: Color(0x4D000000),
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
+                  color: const Color(0x4D000000),
+                  blurRadius: isTablet ? 4 : 3,
+                  offset: const Offset(0, 1),
                 ),
                 BoxShadow(
-                  color: Color(0x26000000),
-                  blurRadius: 8,
-                  spreadRadius: 3,
-                  offset: Offset(0, 4),
+                  color: const Color(0x26000000),
+                  blurRadius: isTablet ? 12 : 8,
+                  spreadRadius: isTablet ? 4 : 3,
+                  offset: const Offset(0, 4),
                 ),
               ],
       ),
@@ -530,7 +587,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
             GestureDetector(
               onTap: onTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: EdgeInsets.symmetric(horizontal: headerPadding, vertical: headerPadding),
                 child: Row(
                   children: [
                     Expanded(
@@ -542,19 +599,19 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              fontSize: moduleNameSize,
                               height: 1.0,
                               letterSpacing: -0.3,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: isTablet ? 8 : 6),
                           Text(
                             '$videoCount ${videoCount == 1 ? 'lesson' : 'lessons'}  •  $completedCount/$videoCount complete',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w400,
-                              fontSize: 11,
+                              fontSize: moduleMetaSize,
                               height: 1.0,
                               color: textColor.withValues(alpha: 0.5),
                             ),
@@ -568,7 +625,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       curve: Curves.easeInOut,
                       child: Icon(
                         Icons.keyboard_arrow_down,
-                        size: 24,
+                        size: arrowSize,
                         color: secondaryTextColor,
                       ),
                     ),
@@ -589,9 +646,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                     return Padding(
                       padding: EdgeInsets.only(
-                        left: 14,
-                        right: 14,
-                        bottom: index < module.videos.length - 1 ? 8 : 16,
+                        left: lessonPaddingH,
+                        right: lessonPaddingH,
+                        bottom: index < module.videos.length - 1 ? lessonGap : lessonBottomPad,
                       ),
                       child: _buildLessonItem(
                         isAccessible: isAccessible,
@@ -599,6 +656,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         duration: video.formattedDuration,
                         instructor: video.facultyName,
                         isDark: isDark,
+                        isTablet: isTablet,
                         textColor: textColor,
                         iconColor: iconColor,
                         lessonAccessibleBg: lessonAccessibleBg,
@@ -630,6 +688,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     required VoidCallback onTap,
     required bool isLocked,
     required bool isDark,
+    bool isTablet = false,
     required Color textColor,
     required Color cardBgColor,
     required Color iconColor,
@@ -750,6 +809,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
+                      isTablet: isTablet,
                       textColor: textColor,
                       iconColor: iconColor,
                       lessonAccessibleBg: lessonAccessibleBg,
@@ -763,6 +823,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
+                      isTablet: isTablet,
                       textColor: textColor,
                       iconColor: iconColor,
                       lessonAccessibleBg: lessonAccessibleBg,
@@ -776,6 +837,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
+                      isTablet: isTablet,
                       textColor: textColor,
                       iconColor: iconColor,
                       lessonAccessibleBg: lessonAccessibleBg,

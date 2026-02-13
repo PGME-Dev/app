@@ -84,8 +84,8 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
 
     final carouselHeight = ResponsiveHelper.carouselHeight(context);
     final isTablet = ResponsiveHelper.isTablet(context);
-    final dotSize = isTablet ? 10.0 : 8.0;
-    final activeDotWidth = isTablet ? 30.0 : 24.0;
+    final dotSize = isTablet ? 12.0 : 8.0;
+    final activeDotWidth = isTablet ? 36.0 : 24.0;
 
     // Single item - no carousel needed
     if (_totalItems == 1) {
@@ -106,7 +106,7 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
             itemBuilder: (context, index) => _buildCarouselItem(index),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 18 : 12),
 
         // Indicator dots
         Row(
@@ -114,7 +114,7 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
           children: List.generate(
             _totalItems,
             (index) => Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4),
               width: _currentPage == index ? activeDotWidth : dotSize,
               height: dotSize,
               decoration: BoxDecoration(

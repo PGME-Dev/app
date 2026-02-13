@@ -6,6 +6,7 @@ import 'package:pgme/core/models/book_order_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class BookOrdersScreen extends StatefulWidget {
   const BookOrdersScreen({super.key});
@@ -41,6 +42,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -49,18 +51,23 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final borderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
 
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.only(top: topPadding + 16, left: 16, right: 16),
+            padding: EdgeInsets.only(top: topPadding + (isTablet ? 21 : 16), left: hPadding, right: hPadding),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => context.pop(),
-                  child: Icon(Icons.arrow_back, size: 24, color: textColor),
+                  child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
                 ),
                 const Spacer(),
                 Text(
@@ -68,17 +75,17 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
+                    fontSize: isTablet ? 25 : 20,
                     color: textColor,
                   ),
                 ),
                 const Spacer(),
-                const SizedBox(width: 24),
+                SizedBox(width: isTablet ? 30 : 24),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isTablet ? 21 : 16),
 
           // Orders List
           Expanded(
@@ -93,14 +100,14 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: secondaryTextColor),
-                        const SizedBox(height: 16),
+                        Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           provider.ordersError!,
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(color: secondaryTextColor, fontSize: isTablet ? 17 : 14),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isTablet ? 21 : 16),
                         ElevatedButton(
                           onPressed: () => provider.loadOrders(refresh: true),
                           child: const Text('Retry'),
@@ -115,21 +122,21 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.receipt_long_outlined, size: 64, color: secondaryTextColor),
-                        const SizedBox(height: 16),
+                        Icon(Icons.receipt_long_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
+                        SizedBox(height: isTablet ? 21 : 16),
                         Text(
                           'No orders yet',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w500,
                             color: textColor,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: isTablet ? 10 : 8),
                         Text(
                           'Your book orders will appear here',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             color: secondaryTextColor,
                           ),
                         ),
@@ -141,7 +148,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                 return RefreshIndicator(
                   onRefresh: () => provider.loadOrders(refresh: true),
                   child: ListView.builder(
-                    padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomPadding + 100),
+                    padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 130 : 100)),
                     itemCount: provider.orders.length,
                     itemBuilder: (context, index) {
                       final order = provider.orders[index];
@@ -152,6 +159,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                         isExpanded: isExpanded,
                         onTap: () => _toggleExpanded(order.orderId),
                         isDark: isDark,
+                        isTablet: isTablet,
                         textColor: textColor,
                         secondaryTextColor: secondaryTextColor,
                         cardBgColor: cardBgColor,
@@ -165,6 +173,8 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -174,6 +184,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     required bool isExpanded,
     required VoidCallback onTap,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color secondaryTextColor,
     required Color cardBgColor,
@@ -208,11 +219,11 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
           border: Border.all(
             color: isExpanded ? statusColor.withValues(alpha: 0.5) : borderColor,
             width: isExpanded ? 1.5 : 1,
@@ -231,74 +242,74 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: isTablet ? 17 : 14,
                       color: textColor,
                     ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 5 : 4),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                   ),
                   child: Text(
                     order.statusDisplayText,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       fontWeight: FontWeight.w500,
                       color: statusColor,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: isTablet ? 10 : 8),
                 AnimatedRotation(
                   turns: isExpanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
                     Icons.keyboard_arrow_down,
-                    size: 24,
+                    size: isTablet ? 30 : 24,
                     color: secondaryTextColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isTablet ? 16 : 12),
 
             // Date and items
             Row(
               children: [
                 Icon(
                   Icons.calendar_today_outlined,
-                  size: 16,
+                  size: isTablet ? 20 : 16,
                   color: secondaryTextColor,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: isTablet ? 8 : 6),
                 Expanded(
                   child: Text(
                     formattedDate,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: isTablet ? 16 : 13,
                       color: secondaryTextColor,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.shopping_bag_outlined,
-                  size: 16,
+                  size: isTablet ? 20 : 16,
                   color: secondaryTextColor,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: isTablet ? 8 : 6),
                 Text(
                   '${order.itemsCount} items',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: isTablet ? 16 : 13,
                     color: secondaryTextColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isTablet ? 16 : 12),
 
             // Total and tracking
             Row(
@@ -309,7 +320,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: isTablet ? 20 : 16,
                     color: textColor,
                   ),
                 ),
@@ -318,14 +329,14 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                     children: [
                       Icon(
                         Icons.local_shipping_outlined,
-                        size: 16,
+                        size: isTablet ? 20 : 16,
                         color: secondaryTextColor,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: isTablet ? 5 : 4),
                       Text(
                         order.trackingNumber!,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: isTablet ? 15 : 12,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -340,6 +351,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
               secondChild: _buildExpandedDetails(
                 order: order,
                 isDark: isDark,
+                isTablet: isTablet,
                 textColor: textColor,
                 secondaryTextColor: secondaryTextColor,
                 borderColor: borderColor,
@@ -356,6 +368,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
   Widget _buildExpandedDetails({
     required BookOrderModel order,
     required bool isDark,
+    required bool isTablet,
     required Color textColor,
     required Color secondaryTextColor,
     required Color borderColor,
@@ -363,9 +376,9 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 21 : 16),
         Divider(color: borderColor, height: 1),
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 21 : 16),
 
         // Shipping Details Section
         Text(
@@ -373,11 +386,11 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: isTablet ? 16 : 13,
             color: textColor,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 16 : 12),
 
         // Recipient
         if (order.recipientName != null) ...[
@@ -387,8 +400,9 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
             value: order.recipientName!,
             textColor: textColor,
             secondaryTextColor: secondaryTextColor,
+            isTablet: isTablet,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
         ],
 
         // Phone
@@ -399,8 +413,9 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
             value: '+91 ${order.shippingPhone}',
             textColor: textColor,
             secondaryTextColor: secondaryTextColor,
+            isTablet: isTablet,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isTablet ? 10 : 8),
         ],
 
         // Address
@@ -411,13 +426,14 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
             value: order.shippingAddress!,
             textColor: textColor,
             secondaryTextColor: secondaryTextColor,
+            isTablet: isTablet,
             isMultiline: true,
           ),
         ],
 
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 21 : 16),
         Divider(color: borderColor, height: 1),
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 21 : 16),
 
         // Order Summary Section
         Text(
@@ -425,34 +441,34 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: isTablet ? 16 : 13,
             color: textColor,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 16 : 12),
 
         // Items list
         if (order.items != null && order.items!.isNotEmpty)
           ...order.items!.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: isTablet ? 10 : 8),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: isTablet ? 50 : 40,
+                      height: isTablet ? 50 : 40,
                       decoration: BoxDecoration(
                         color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                       ),
                       child: Center(
                         child: Icon(
                           Icons.menu_book,
-                          size: 20,
+                          size: isTablet ? 25 : 20,
                           color: secondaryTextColor,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: isTablet ? 16 : 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,7 +478,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w500,
-                              fontSize: 13,
+                              fontSize: isTablet ? 16 : 13,
                               color: textColor,
                             ),
                             maxLines: 1,
@@ -471,7 +487,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                           Text(
                             'Qty: ${item.quantity} × \u{20B9}${item.price}',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: isTablet ? 15 : 12,
                               color: secondaryTextColor,
                             ),
                           ),
@@ -483,7 +499,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: 13,
+                        fontSize: isTablet ? 16 : 13,
                         color: textColor,
                       ),
                     ),
@@ -491,15 +507,15 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                 ),
               )),
 
-        const SizedBox(height: 8),
+        SizedBox(height: isTablet ? 10 : 8),
         Divider(color: borderColor, height: 1),
-        const SizedBox(height: 8),
+        SizedBox(height: isTablet ? 10 : 8),
 
         // Subtotal, Shipping, Total
-        _buildPriceRow('Subtotal', '\u{20B9}${order.subtotal ?? (order.totalAmount - 50)}', secondaryTextColor),
-        const SizedBox(height: 4),
-        _buildPriceRow('Shipping', '\u{20B9}${order.shippingCost ?? 50}', secondaryTextColor),
-        const SizedBox(height: 8),
+        _buildPriceRow('Subtotal', '\u{20B9}${order.subtotal ?? (order.totalAmount - 50)}', secondaryTextColor, isTablet),
+        SizedBox(height: isTablet ? 5 : 4),
+        _buildPriceRow('Shipping', '\u{20B9}${order.shippingCost ?? 50}', secondaryTextColor, isTablet),
+        SizedBox(height: isTablet ? 10 : 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -508,7 +524,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 color: textColor,
               ),
             ),
@@ -517,7 +533,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 color: textColor,
               ),
             ),
@@ -533,17 +549,18 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     required String value,
     required Color textColor,
     required Color secondaryTextColor,
+    required bool isTablet,
     bool isMultiline = false,
   }) {
     return Row(
       crossAxisAlignment: isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 18, color: secondaryTextColor),
-        const SizedBox(width: 8),
+        Icon(icon, size: isTablet ? 22 : 18, color: secondaryTextColor),
+        SizedBox(width: isTablet ? 10 : 8),
         Text(
           '$label: ',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: isTablet ? 16 : 13,
             color: secondaryTextColor,
           ),
         ),
@@ -551,7 +568,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: isTablet ? 16 : 13,
               fontWeight: FontWeight.w500,
               color: textColor,
             ),
@@ -561,21 +578,21 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
     );
   }
 
-  Widget _buildPriceRow(String label, String value, Color color) {
+  Widget _buildPriceRow(String label, String value, Color color, bool isTablet) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: isTablet ? 16 : 13,
             color: color,
           ),
         ),
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: isTablet ? 16 : 13,
             color: color,
           ),
         ),

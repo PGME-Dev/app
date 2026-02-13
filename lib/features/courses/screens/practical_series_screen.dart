@@ -9,6 +9,7 @@ import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class PracticalSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -138,6 +139,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     final dashboardProvider = Provider.of<DashboardProvider>(context);
     // Use selected package's purchase status when viewing a specific package,
@@ -197,7 +200,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           children: [
             // App bar
             Padding(
-              padding: EdgeInsets.only(top: topPadding + 12, left: 16, right: 16, bottom: 12),
+              padding: EdgeInsets.only(top: topPadding + 12, left: hPadding, right: hPadding, bottom: 12),
               child: Row(
                 children: [
                   GestureDetector(
@@ -212,7 +215,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: Icon(Icons.arrow_back_rounded, size: 24, color: textColor),
+                      child: Icon(Icons.arrow_back_rounded, size: isTablet ? 30 : 24, color: textColor),
                     ),
                   ),
                   Expanded(
@@ -222,7 +225,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 20,
+                        fontSize: isTablet ? 26 : 20,
                         letterSpacing: -0.3,
                         color: textColor,
                       ),
@@ -233,7 +236,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   if (isOnLanding)
                     GestureDetector(
                       onTap: () {},
-                      child: Icon(Icons.more_horiz, size: 24, color: textColor),
+                      child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
                     ),
                 ],
               ),
@@ -263,121 +266,129 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   // ── Packages List View ───────────────────────────────────────────────────
 
   Widget _buildPackagesList(bool isDark, Color textColor, Color secondaryTextColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
 
-          // Live Sessions Section
-          if (_liveSessions.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Live Sessions',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  color: textColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _liveSessions.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildSessionCard(
-                    _liveSessions[index],
-                    isDark: isDark,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
+              // Live Sessions Section
+              if (_liveSessions.isNotEmpty) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: Text(
+                    'Live Sessions',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 24 : 18,
+                      color: textColor,
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // Practical Packages Section
-          if (_packages.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Practical Packages',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  color: textColor,
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _packages.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildPackageCard(
-                    _packages[index],
-                    isDark: isDark,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                    iconColor: iconColor,
+                const SizedBox(height: 12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  itemCount: _liveSessions.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildSessionCard(
+                        _liveSessions[index],
+                        isDark: isDark,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Practical Packages Section
+              if (_packages.isNotEmpty) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: Text(
+                    'Practical Packages',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 24 : 18,
+                      color: textColor,
+                    ),
                   ),
-                );
-              },
-            ),
-          ],
-
-          // Empty state
-          if (_liveSessions.isEmpty && _packages.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.science_outlined,
-                      size: 64,
-                      color: textColor.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No content available',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Check back later for live sessions and practical packages.',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        color: secondaryTextColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ),
-              ),
-            ),
-        ],
+                const SizedBox(height: 12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  itemCount: _packages.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildPackageCard(
+                        _packages[index],
+                        isDark: isDark,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        iconColor: iconColor,
+                      ),
+                    );
+                  },
+                ),
+              ],
+
+              // Empty state
+              if (_liveSessions.isEmpty && _packages.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 48 : 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.science_outlined,
+                          size: isTablet ? 80 : 64,
+                          color: textColor.withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No content available',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 22 : 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Check back later for live sessions and practical packages.',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 16 : 14,
+                            color: secondaryTextColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -392,6 +403,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final gradientStart = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFCDE5FF);
     final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
 
@@ -401,59 +414,64 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
 
-          // Two option cards
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildOptionCard(
-                    title: 'Watch\nVideo Lectures',
-                    subtitle: '$totalLectures Lectures',
-                    icon: Icons.play_circle_outline_rounded,
-                    imagePath: 'assets/illustrations/1.png',
-                    isDark: isDark,
-                    gradientStart: gradientStart,
-                    gradientEnd: gradientEnd,
-                    onTap: () => setState(() => _contentMode = 'videos'),
-                  ),
+              // Two option cards
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildOptionCard(
+                        title: 'Watch\nVideo Lectures',
+                        subtitle: '$totalLectures Lectures',
+                        icon: Icons.play_circle_outline_rounded,
+                        imagePath: 'assets/illustrations/1.png',
+                        isDark: isDark,
+                        gradientStart: gradientStart,
+                        gradientEnd: gradientEnd,
+                        onTap: () => setState(() => _contentMode = 'videos'),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 20 : 14),
+                    Expanded(
+                      child: _buildOptionCard(
+                        title: 'View\nLive Sessions',
+                        subtitle: '$packageSessions Sessions',
+                        icon: Icons.videocam_outlined,
+                        imagePath: 'assets/illustrations/2.png',
+                        isDark: isDark,
+                        gradientStart: gradientStart,
+                        gradientEnd: gradientEnd,
+                        onTap: () => setState(() => _contentMode = 'sessions'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _buildOptionCard(
-                    title: 'View\nLive Sessions',
-                    subtitle: '$packageSessions Sessions',
-                    icon: Icons.videocam_outlined,
-                    imagePath: 'assets/illustrations/2.png',
-                    isDark: isDark,
-                    gradientStart: gradientStart,
-                    gradientEnd: gradientEnd,
-                    onTap: () => setState(() => _contentMode = 'sessions'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-          // Package info section
-          _buildPackageInfoSection(
-            isDark,
-            textColor,
-            secondaryTextColor,
-            iconColor,
-            cardBgColor,
-            isSubscribed,
-            totalLectures,
-            packageSessions,
+              // Package info section
+              _buildPackageInfoSection(
+                isDark,
+                textColor,
+                secondaryTextColor,
+                iconColor,
+                cardBgColor,
+                isSubscribed,
+                totalLectures,
+                packageSessions,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -468,18 +486,21 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     Color cardBgColor,
     bool isSubscribed,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     if (_series.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open_outlined, size: 48, color: textColor.withValues(alpha: 0.5)),
+            Icon(Icons.folder_open_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
               'No series available',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -489,7 +510,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               'This package does not have any series yet.',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: isTablet ? 16 : 14,
                 color: secondaryTextColor,
               ),
               textAlign: TextAlign.center,
@@ -499,34 +520,39 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 100),
-      itemCount: _series.length,
-      itemBuilder: (context, index) {
-        final series = _series[index];
-        final isItemLocked = series.isLocked;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
+          itemCount: _series.length,
+          itemBuilder: (context, index) {
+            final series = _series[index];
+            final isItemLocked = series.isLocked;
 
-        return GestureDetector(
-          onTap: () {
-            if (isItemLocked) {
-              _showEnrollmentPopup();
-            } else if (series.seriesId.isNotEmpty && _selectedPackage != null) {
-              // Navigate directly to lecture/modules screen instead of series detail
-              context.push(
-                '/lecture/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical&packageId=${_selectedPackage!.packageId}',
-              );
-            }
+            return GestureDetector(
+              onTap: () {
+                if (isItemLocked) {
+                  _showEnrollmentPopup();
+                } else if (series.seriesId.isNotEmpty && _selectedPackage != null) {
+                  // Navigate directly to lecture/modules screen instead of series detail
+                  context.push(
+                    '/lecture/${series.seriesId}?subscribed=$isSubscribed&packageType=Practical&packageId=${_selectedPackage!.packageId}',
+                  );
+                }
+              },
+              child: _buildSeriesCard(
+                series,
+                isDark: isDark,
+                textColor: textColor,
+                cardBgColor: cardBgColor,
+                iconColor: iconColor,
+                isLocked: isItemLocked,
+              ),
+            );
           },
-          child: _buildSeriesCard(
-            series,
-            isDark: isDark,
-            textColor: textColor,
-            cardBgColor: cardBgColor,
-            iconColor: iconColor,
-            isLocked: isItemLocked,
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -538,28 +564,29 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     required Color iconColor,
     required bool isLocked,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: isTablet ? 18 : 14),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(isTablet ? 24 : 18),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: isTablet ? 60 : 44,
+              height: isTablet ? 60 : 44,
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               child: Center(
-                child: Icon(Icons.play_circle_outline_rounded, size: 22, color: iconColor),
+                child: Icon(Icons.play_circle_outline_rounded, size: isTablet ? 30 : 22, color: iconColor),
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: isTablet ? 18 : 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +596,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: isTablet ? 18 : 14,
                       height: 1.3,
                       color: textColor,
                     ),
@@ -582,7 +609,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,
-                      fontSize: 12,
+                      fontSize: isTablet ? 15 : 12,
                       color: textColor.withValues(alpha: 0.5),
                     ),
                   ),
@@ -592,16 +619,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             const SizedBox(width: 8),
             if (isLocked)
               Container(
-                width: 32,
-                height: 32,
+                width: isTablet ? 42 : 32,
+                height: isTablet ? 42 : 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDark ? AppColors.darkSurface : Colors.white,
                 ),
-                child: Center(child: Icon(Icons.lock_rounded, size: 16, color: iconColor)),
+                child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: iconColor)),
               )
             else
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: textColor.withValues(alpha: 0.4)),
+              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -616,18 +643,21 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     Color secondaryTextColor,
     Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
     if (_liveSessions.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.videocam_outlined, size: 48, color: textColor.withValues(alpha: 0.4)),
+            Icon(Icons.videocam_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text(
               'No live sessions available',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -637,7 +667,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               'Check back later for upcoming live sessions.',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: isTablet ? 16 : 14,
                 color: secondaryTextColor,
               ),
               textAlign: TextAlign.center,
@@ -647,20 +677,25 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(bottom: 100),
-      itemCount: _liveSessions.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildSessionCard(
-            _liveSessions[index],
-            isDark: isDark,
-            textColor: textColor,
-            secondaryTextColor: secondaryTextColor,
-          ),
-        );
-      },
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 8).copyWith(bottom: 100),
+          itemCount: _liveSessions.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildSessionCard(
+                _liveSessions[index],
+                isDark: isDark,
+                textColor: textColor,
+                secondaryTextColor: secondaryTextColor,
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -674,12 +709,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     required Color gradientEnd,
     required VoidCallback onTap,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 180,
+        height: isTablet ? 280 : 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
           gradient: LinearGradient(
             begin: const Alignment(-0.5, -0.5),
             end: const Alignment(0.5, 0.5),
@@ -689,7 +725,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -698,24 +734,24 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 22 : 16,
                       color: isDark ? Colors.white : const Color(0xFF000000),
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 14 : 10, vertical: isTablet ? 6 : 4),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
                     child: Text(
                       subtitle,
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: 11,
+                        fontSize: isTablet ? 15 : 11,
                         color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
                       ),
                     ),
@@ -728,23 +764,23 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               right: 0,
               bottom: 0,
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                borderRadius: BorderRadius.only(bottomRight: Radius.circular(isTablet ? 22 : 16)),
                 child: Image.asset(
                   imagePath,
-                  width: 110,
-                  height: 80,
+                  width: isTablet ? 200 : 110,
+                  height: isTablet ? 160 : 80,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: 110,
-                      height: 80,
+                      width: isTablet ? 200 : 110,
+                      height: isTablet ? 160 : 80,
                       decoration: BoxDecoration(
                         color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(bottomRight: Radius.circular(isTablet ? 22 : 16)),
                       ),
                       child: Icon(
                         icon,
-                        size: 36,
+                        size: isTablet ? 48 : 36,
                         color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
                       ),
                     );
@@ -768,11 +804,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     int totalLectures,
     int packageSessions,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
     final pkg = _selectedPackage!;
     final totalDuration = _getTotalDuration();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: hPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -782,7 +820,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: 18,
+              fontSize: isTablet ? 24 : 18,
               color: textColor,
             ),
           ),
@@ -793,7 +831,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w400,
-                fontSize: 14,
+                fontSize: isTablet ? 17 : 14,
                 height: 1.5,
                 color: secondaryTextColor,
               ),
@@ -804,10 +842,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
           // Stats row
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isTablet ? 22 : 16),
             decoration: BoxDecoration(
               color: cardBgColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
             ),
             child: Row(
               children: [
@@ -857,10 +895,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           // Price and enroll button (if not purchased)
           if (!pkg.isPurchased) ...[
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isTablet ? 28 : 20),
               decoration: BoxDecoration(
                 color: cardBgColor,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -873,7 +911,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w700,
-                            fontSize: 24,
+                            fontSize: isTablet ? 30 : 24,
                             color: textColor,
                           ),
                         ),
@@ -883,7 +921,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 16,
+                            fontSize: isTablet ? 18 : 16,
                             decoration: TextDecoration.lineThrough,
                             color: secondaryTextColor,
                           ),
@@ -894,7 +932,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w700,
-                            fontSize: 24,
+                            fontSize: isTablet ? 30 : 24,
                             color: textColor,
                           ),
                         ),
@@ -905,7 +943,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 12,
+                            fontSize: isTablet ? 14 : 12,
                             color: secondaryTextColor,
                           ),
                         ),
@@ -915,7 +953,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: isTablet ? 60 : 48,
                     child: ElevatedButton(
                       onPressed: () {
                         context.push('/purchase?packageId=${pkg.packageId}&packageType=Practical');
@@ -923,16 +961,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enroll Now',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 16,
+                          fontSize: isTablet ? 20 : 16,
                           color: Colors.white,
                         ),
                       ),
@@ -951,7 +989,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 color: textColor,
               ),
             ),
@@ -961,7 +999,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 18, color: iconColor),
+                      Icon(Icons.check_circle_rounded, size: isTablet ? 22 : 18, color: iconColor),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -969,7 +1007,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: 14,
+                            fontSize: isTablet ? 17 : 14,
                             height: 1.4,
                             color: textColor,
                           ),
@@ -988,7 +1026,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 color: textColor,
               ),
             ),
@@ -1014,17 +1052,18 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     required Color textColor,
     required Color secondaryColor,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, size: 20, color: iconColor),
+          Icon(icon, size: isTablet ? 26 : 20, color: iconColor),
           const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: isTablet ? 20 : 16,
               color: textColor,
             ),
           ),
@@ -1033,7 +1072,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w400,
-              fontSize: 11,
+              fontSize: isTablet ? 14 : 11,
               color: secondaryColor,
             ),
           ),
@@ -1043,9 +1082,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   }
 
   Widget _buildStatDivider(bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
       width: 1,
-      height: 40,
+      height: isTablet ? 52 : 40,
       color: isDark
           ? Colors.white.withValues(alpha: 0.1)
           : Colors.black.withValues(alpha: 0.1),
@@ -1059,12 +1099,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     Color secondaryTextColor,
     Color iconColor,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: EdgeInsets.only(bottom: isTablet ? 12 : 10),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 16 : 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.06)
@@ -1074,19 +1115,19 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: isTablet ? 48 : 36,
+            height: isTablet ? 48 : 36,
             decoration: BoxDecoration(
               color: isDark
                   ? AppColors.darkCardBackground
                   : const Color(0xFFE8F0FE),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(isTablet ? 12 : 10),
             ),
             child: Center(
-              child: Icon(Icons.science_outlined, size: 18, color: iconColor),
+              child: Icon(Icons.science_outlined, size: isTablet ? 22 : 18, color: iconColor),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isTablet ? 14 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,7 +1137,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                    fontSize: isTablet ? 16 : 13,
                     color: textColor,
                   ),
                   maxLines: 1,
@@ -1108,7 +1149,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 11,
+                    fontSize: isTablet ? 14 : 11,
                     color: secondaryTextColor,
                   ),
                 ),
@@ -1116,9 +1157,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             ),
           ),
           if (series.isLocked)
-            Icon(Icons.lock_rounded, size: 16, color: secondaryTextColor)
+            Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: secondaryTextColor)
           else
-            Icon(Icons.chevron_right_rounded, size: 20, color: secondaryTextColor),
+            Icon(Icons.chevron_right_rounded, size: isTablet ? 24 : 20, color: secondaryTextColor),
         ],
       ),
     );
@@ -1133,6 +1174,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     required Color secondaryTextColor,
     required Color iconColor,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final isPurchased = package.isPurchased;
     final gradientStart = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFCDE5FF);
     final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
@@ -1141,7 +1183,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       onTap: () => _selectPackage(package),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1149,7 +1191,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(isTablet ? 28 : 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1162,24 +1204,24 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 18,
+                        fontSize: isTablet ? 22 : 18,
                         color: isDark ? Colors.white : const Color(0xFF000000),
                       ),
                     ),
                   ),
                   if (isPurchased)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 14 : 10, vertical: isTablet ? 6 : 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CAF50),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Active',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 11,
+                          fontSize: isTablet ? 13 : 11,
                           color: Colors.white,
                         ),
                       ),
@@ -1194,7 +1236,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 13,
+                    fontSize: isTablet ? 16 : 13,
                     height: 1.4,
                     color: (isDark ? Colors.white : const Color(0xFF000000))
                         .withValues(alpha: 0.6),
@@ -1209,23 +1251,23 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               // Features chips
               if (package.features != null && package.features!.isNotEmpty)
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: isTablet ? 10 : 8,
+                  runSpacing: isTablet ? 10 : 8,
                   children: package.features!.take(3).map((feature) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 14 : 10, vertical: isTablet ? 7 : 5),
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.darkSurface.withValues(alpha: 0.7)
                             : Colors.white.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                       ),
                       child: Text(
                         feature,
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 11,
+                          fontSize: isTablet ? 13 : 11,
                           color: isDark ? Colors.white : const Color(0xFF333333),
                         ),
                       ),
@@ -1245,7 +1287,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w700,
-                          fontSize: 20,
+                          fontSize: isTablet ? 26 : 20,
                           color: isDark ? Colors.white : const Color(0xFF000000),
                         ),
                       ),
@@ -1255,7 +1297,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 13,
+                          fontSize: isTablet ? 15 : 13,
                           decoration: TextDecoration.lineThrough,
                           color: (isDark ? Colors.white : const Color(0xFF000000))
                               .withValues(alpha: 0.4),
@@ -1267,7 +1309,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w700,
-                          fontSize: 20,
+                          fontSize: isTablet ? 26 : 20,
                           color: isDark ? Colors.white : const Color(0xFF000000),
                         ),
                       ),
@@ -1278,7 +1320,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w400,
-                          fontSize: 12,
+                          fontSize: isTablet ? 14 : 12,
                           color: (isDark ? Colors.white : const Color(0xFF000000))
                               .withValues(alpha: 0.5),
                         ),
@@ -1287,10 +1329,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   ],
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16, vertical: isTablet ? 10 : 8),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1300,12 +1342,12 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w500,
-                            fontSize: 13,
+                            fontSize: isTablet ? 16 : 13,
                             color: iconColor,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_rounded, size: 16, color: iconColor),
+                        Icon(Icons.arrow_forward_rounded, size: isTablet ? 20 : 16, color: iconColor),
                       ],
                     ),
                   ),
@@ -1326,13 +1368,14 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     required Color textColor,
     required Color secondaryTextColor,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final isLive = session.status == 'live';
 
     return GestureDetector(
       onTap: () => context.push('/session/${session.sessionId}'),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(isTablet ? 24 : 18),
           gradient: LinearGradient(
             begin: const Alignment(-0.85, 0),
             end: const Alignment(0.85, 0),
@@ -1343,7 +1386,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(isTablet ? 24 : 18),
           child: Stack(
             children: [
               // Background illustration
@@ -1352,16 +1395,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 bottom: 5,
                 child: Image.asset(
                   'assets/illustrations/home.png',
-                  width: 130,
-                  height: 70,
+                  width: isTablet ? 180 : 130,
+                  height: isTablet ? 100 : 70,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(width: 130, height: 70),
+                  errorBuilder: (_, __, ___) => SizedBox(width: isTablet ? 180 : 130, height: isTablet ? 100 : 70),
                 ),
               ),
 
               // Content
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(isTablet ? 20 : 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1376,10 +1419,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       ),
                       child: Text(
                         isLive ? 'LIVE NOW' : 'LIVE CLASS',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 10,
+                          fontSize: isTablet ? 13 : 10,
                           color: Colors.white,
                         ),
                       ),
@@ -1390,10 +1433,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     // Title
                     Text(
                       session.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: isTablet ? 20 : 16,
                         color: Colors.white,
                       ),
                       maxLines: 2,
@@ -1408,7 +1451,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
-                        fontSize: 12,
+                        fontSize: isTablet ? 15 : 12,
                         color: Colors.white.withValues(alpha: 0.85),
                       ),
                     ),
@@ -1417,18 +1460,18 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
                     // View Details button
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 7 : 5),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
                       ),
-                      child: const Text(
+                      child: Text(
                         'View Details',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                          color: Color(0xFF1847A2),
+                          fontSize: isTablet ? 14 : 11,
+                          color: const Color(0xFF1847A2),
                         ),
                       ),
                     ),
@@ -1445,6 +1488,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   // ── Enrollment Dialog ────────────────────────────────────────────────────
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final pkg = _selectedPackage!;
     final dialogBgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -1455,13 +1499,36 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
     final displayPrice = pkg.isOnSale && pkg.salePrice != null ? pkg.salePrice! : pkg.price;
 
+    // Tablet-scaled dimensions
+    final dialogWidth = isTablet ? 500.0 : 356.0;
+    final dialogRadius = isTablet ? 28.0 : 20.8;
+    final closePad = isTablet ? 16.0 : 12.0;
+    final closeSize = isTablet ? 28.0 : 24.0;
+    final imgWidth = isTablet ? 260.0 : 180.0;
+    final imgHeight = isTablet ? 180.0 : 120.0;
+    final titleSize = isTablet ? 26.0 : 20.0;
+    final descSize = isTablet ? 16.0 : 14.0;
+    final descPadH = isTablet ? 36.0 : 24.0;
+    final boxMarginH = isTablet ? 32.0 : 20.0;
+    final boxPad = isTablet ? 24.0 : 16.0;
+    final boxRadius = isTablet ? 18.0 : 12.0;
+    final featureIconSize = isTablet ? 22.0 : 18.0;
+    final featureTextSize = isTablet ? 16.0 : 13.0;
+    final featureGap = isTablet ? 12.0 : 8.0;
+    final featureIconGap = isTablet ? 12.0 : 8.0;
+    final priceSize = isTablet ? 30.0 : 24.0;
+    final durationSize = isTablet ? 15.0 : 12.0;
+    final btnHeight = isTablet ? 56.0 : 40.0;
+    final btnFontSize = isTablet ? 19.0 : 16.0;
+    final btnRadius = isTablet ? 28.0 : 22.0;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      insetPadding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 24, vertical: isTablet ? 48 : 40),
       child: Container(
-        width: 356,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height - 80),
-        decoration: BoxDecoration(color: dialogBgColor, borderRadius: BorderRadius.circular(20.8)),
+        width: dialogWidth,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height - (isTablet ? 100 : 80)),
+        decoration: BoxDecoration(color: dialogBgColor, borderRadius: BorderRadius.circular(dialogRadius)),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1469,95 +1536,99 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               Align(
                 alignment: Alignment.topRight,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 12, right: 12),
+                  padding: EdgeInsets.only(top: closePad, right: closePad),
                   child: GestureDetector(
                     onTap: () => Navigator.of(dialogContext).pop(false),
-                    child: Icon(Icons.close, size: 24, color: secondaryTextColor),
+                    child: Icon(Icons.close, size: closeSize, color: secondaryTextColor),
                   ),
                 ),
               ),
               Image.asset(
                 'assets/illustrations/enroll.png',
-                width: 180,
-                height: 120,
+                width: imgWidth,
+                height: imgHeight,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    width: 180,
-                    height: 120,
+                    width: imgWidth,
+                    height: imgHeight,
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                     ),
-                    child: Icon(Icons.school_outlined, size: 60, color: iconColor),
+                    child: Icon(Icons.school_outlined, size: isTablet ? 80 : 60, color: iconColor),
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Get ${pkg.name}',
-                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 20, color: textColor),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
+              SizedBox(height: isTablet ? 20 : 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: descPadH),
                 child: Text(
-                  pkg.description ?? 'Unlock all series and get access to hands-on training materials.',
-                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 14, height: 1.4, color: secondaryTextColor),
+                  'Get ${pkg.name}',
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: titleSize, color: textColor),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isTablet ? 12 : 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: descPadH),
+                child: Text(
+                  pkg.description ?? 'Unlock all series and get access to hands-on training materials.',
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: descSize, height: 1.4, color: secondaryTextColor),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: isTablet ? 24 : 20),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: boxMarginH),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: boxBgColor, borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.all(boxPad),
+                  decoration: BoxDecoration(color: boxBgColor, borderRadius: BorderRadius.circular(boxRadius)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (pkg.features != null)
                         ...pkg.features!.map((f) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
+                              padding: EdgeInsets.only(bottom: featureGap),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.check_circle, size: 18, color: iconColor),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(f, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 13, color: textColor))),
+                                  Icon(Icons.check_circle, size: featureIconSize, color: iconColor),
+                                  SizedBox(width: featureIconGap),
+                                  Expanded(child: Text(f, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: featureTextSize, height: 1.3, color: textColor))),
                                 ],
                               ),
                             )),
-                      const SizedBox(height: 8),
+                      SizedBox(height: isTablet ? 12 : 8),
                       Row(
                         children: [
-                          Text('₹$displayPrice', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 24, color: textColor)),
+                          Text('₹$displayPrice', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: priceSize, color: textColor)),
                           if (pkg.durationDays != null) ...[
-                            const SizedBox(width: 8),
-                            Text('/ ${_formatDuration(pkg.durationDays!)}', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 12, color: secondaryTextColor)),
+                            SizedBox(width: isTablet ? 10 : 8),
+                            Text('/ ${_formatDuration(pkg.durationDays!)}', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: durationSize, color: secondaryTextColor)),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: isTablet ? 20 : 16),
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: btnHeight,
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(dialogContext).pop(true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(btnRadius)),
                             elevation: 0,
                           ),
-                          child: const Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white)),
+                          child: Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: btnFontSize, color: Colors.white)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: isTablet ? 48 : 40),
             ],
           ),
         ),
@@ -1568,126 +1639,145 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   // ── Loading Shimmer ──────────────────────────────────────────────────────
 
   Widget _buildLoadingShimmer(bool isDark) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+    final shimmerRadius = isTablet ? 20.0 : 12.0;
+
     // Show different shimmer based on current view mode
     if (_contentMode == 'videos') {
       // Series list shimmer
       return ShimmerWidgets.seriesListShimmer(isDark: isDark);
     } else if (_contentMode == 'sessions') {
       // Sessions list shimmer
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: 4,
-        itemBuilder: (context, index) => ShimmerWidgets.sessionCardShimmer(isDark: isDark),
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
+            itemCount: 4,
+            itemBuilder: (context, index) => ShimmerWidgets.sessionCardShimmer(isDark: isDark),
+          ),
+        ),
       );
     } else if (_selectedPackage != null) {
       // Package detail shimmer
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Two option cards
-            Row(
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(hPadding),
+            child: Column(
               children: [
-                Expanded(
-                  child: ShimmerWidgets.container(
-                    width: double.infinity,
-                    height: 120,
-                    borderRadius: 12,
-                    isDark: isDark,
-                  ),
+                // Two option cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: ShimmerWidgets.container(
+                        width: double.infinity,
+                        height: isTablet ? 160 : 120,
+                        borderRadius: shimmerRadius,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ShimmerWidgets.container(
+                        width: double.infinity,
+                        height: isTablet ? 160 : 120,
+                        borderRadius: shimmerRadius,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ShimmerWidgets.container(
-                    width: double.infinity,
-                    height: 120,
-                    borderRadius: 12,
-                    isDark: isDark,
-                  ),
+                const SizedBox(height: 24),
+                // Package info shimmer
+                ShimmerWidgets.container(
+                  width: double.infinity,
+                  height: isTablet ? 240 : 200,
+                  borderRadius: shimmerRadius,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                ShimmerWidgets.container(
+                  width: double.infinity,
+                  height: isTablet ? 180 : 150,
+                  borderRadius: shimmerRadius,
+                  isDark: isDark,
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            // Package info shimmer
-            ShimmerWidgets.container(
-              width: double.infinity,
-              height: 200,
-              borderRadius: 12,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 16),
-            ShimmerWidgets.container(
-              width: double.infinity,
-              height: 150,
-              borderRadius: 12,
-              isDark: isDark,
-            ),
-          ],
+          ),
         ),
       );
     } else {
       // Landing page shimmer (packages + sessions)
-      return SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Live Sessions section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ShimmerWidgets.container(
-                width: 150,
-                height: 20,
-                borderRadius: 4,
-                isDark: isDark,
-              ),
-            ),
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: 2,
-                itemBuilder: (context, index) => Padding(
-                  padding: EdgeInsets.only(right: index == 1 ? 0 : 12),
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Live Sessions section
+                Padding(
+                  padding: EdgeInsets.all(hPadding),
                   child: ShimmerWidgets.container(
-                    width: 300,
-                    height: 200,
-                    borderRadius: 16,
+                    width: 150,
+                    height: 20,
+                    borderRadius: 4,
                     isDark: isDark,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Practical Packages section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ShimmerWidgets.container(
-                width: 150,
-                height: 20,
-                borderRadius: 4,
-                isDark: isDark,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: List.generate(
-                  3,
-                  (index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ShimmerWidgets.container(
-                      width: double.infinity,
-                      height: 140,
-                      borderRadius: 12,
-                      isDark: isDark,
+                SizedBox(
+                  height: isTablet ? 240 : 200,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    itemCount: 2,
+                    itemBuilder: (context, index) => Padding(
+                      padding: EdgeInsets.only(right: index == 1 ? 0 : 12),
+                      child: ShimmerWidgets.container(
+                        width: isTablet ? 380 : 300,
+                        height: isTablet ? 240 : 200,
+                        borderRadius: isTablet ? 22.0 : 16.0,
+                        isDark: isDark,
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                // Practical Packages section
+                Padding(
+                  padding: EdgeInsets.all(hPadding),
+                  child: ShimmerWidgets.container(
+                    width: 150,
+                    height: 20,
+                    borderRadius: 4,
+                    isDark: isDark,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: Column(
+                    children: List.generate(
+                      3,
+                      (index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ShimmerWidgets.container(
+                          width: double.infinity,
+                          height: isTablet ? 170 : 140,
+                          borderRadius: shimmerRadius,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
@@ -1696,19 +1786,20 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   // ── Error View ───────────────────────────────────────────────────────────
 
   Widget _buildErrorView(Color textColor, Color secondaryTextColor, Color iconColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: textColor.withValues(alpha: 0.5)),
+            Icon(Icons.error_outline, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
               'Failed to load data',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 16,
+                fontSize: isTablet ? 20 : 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -1718,7 +1809,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               _error!.replaceAll('Exception: ', ''),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: isTablet ? 16 : 14,
                 color: secondaryTextColor,
               ),
               textAlign: TextAlign.center,
@@ -1726,8 +1817,14 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadData,
-              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
-              child: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: iconColor,
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 28 : 20, vertical: isTablet ? 14 : 10),
+              ),
+              child: Text(
+                'Retry',
+                style: TextStyle(fontSize: isTablet ? 16 : 14),
+              ),
             ),
           ],
         ),
