@@ -319,10 +319,8 @@ class DashboardProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('⚠ Error loading subscription status: $e');
-      // On error, default to no subscriptions - don't grant access incorrectly
-      _hasTheorySubscription = false;
-      _hasPracticalSubscription = false;
-      _activePurchases = [];
+      // On error, keep existing subscription values instead of locking content.
+      // The package list load (below) will also set these flags as a fallback.
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 
@@ -267,72 +268,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Support Channels Box
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      width: double.infinity,
-                      height: 81,
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(17),
-                        boxShadow: isDark
-                            ? null
-                            : const [
-                                BoxShadow(
-                                  color: Color(0x4D000000),
-                                  blurRadius: 3,
-                                  offset: Offset(0, 1),
-                                ),
-                                BoxShadow(
-                                  color: Color(0x26000000),
-                                  blurRadius: 8,
-                                  spreadRadius: 3,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: Row(
-                          children: [
-                            Image.asset(
-                              'assets/icons/whatsapp_logo.png',
-                              width: 30,
-                              height: 30,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Whatsapp Support',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16,
-                                      color: textColor,
-                                    ),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final whatsappUrl = Uri.parse('https://wa.me/918074220727');
+                        if (await canLaunchUrl(whatsappUrl)) {
+                          await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 81,
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(17),
+                          boxShadow: isDark
+                              ? null
+                              : const [
+                                  BoxShadow(
+                                    color: Color(0x4D000000),
+                                    blurRadius: 3,
+                                    offset: Offset(0, 1),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Message to get direct Assistance',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12,
-                                      color: secondaryTextColor,
-                                    ),
+                                  BoxShadow(
+                                    color: Color(0x26000000),
+                                    blurRadius: 8,
+                                    spreadRadius: 3,
+                                    offset: Offset(0, 4),
                                   ),
                                 ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Row(
+                            children: [
+                              Image.asset(
+                                'assets/icons/whatsapp_logo.png',
+                                width: 30,
+                                height: 30,
                               ),
-                            ),
-                            Icon(
-                              Icons.arrow_back_ios,
-                              size: 16,
-                              color: textColor,
-                              textDirection: TextDirection.rtl,
-                            ),
-                          ],
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Whatsapp Support',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Message to get direct Assistance',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                        color: secondaryTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_back_ios,
+                                size: 16,
+                                color: textColor,
+                                textDirection: TextDirection.rtl,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -439,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildLegalItem(
                             icon: Icons.description_outlined,
                             title: 'Terms And Conditions',
-                            onTap: () {},
+                            onTap: () => context.push('/terms-and-conditions'),
                             textColor: textColor,
                             iconColor: iconColor,
                           ),
@@ -455,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildLegalItem(
                             icon: Icons.security_outlined,
                             title: 'Privacy Policy',
-                            onTap: () {},
+                            onTap: () => context.push('/privacy-policy'),
                             textColor: textColor,
                             iconColor: iconColor,
                           ),
@@ -471,7 +480,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildLegalItem(
                             icon: Icons.refresh,
                             title: 'Refund Policy',
-                            onTap: () {},
+                            onTap: () => context.push('/refund-policy'),
                             textColor: textColor,
                             iconColor: iconColor,
                           ),

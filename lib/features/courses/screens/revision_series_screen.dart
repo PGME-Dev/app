@@ -286,8 +286,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     final isDark = themeProvider.isDarkMode;
 
     final dashboardProvider = Provider.of<DashboardProvider>(context);
-    final hasTheorySubscription = dashboardProvider.hasTheorySubscription;
-    final isSubscribed = hasTheorySubscription || widget.isSubscribed;
+    // Use the active theory package's purchase status when available,
+    // otherwise fall back to type-level subscription check
+    final isSubscribed = _theoryPackage?.isPurchased ?? (dashboardProvider.hasTheorySubscription || widget.isSubscribed);
 
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -302,18 +303,30 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             ? 'Video Lectures'
             : 'Study Documents';
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          if (_contentMode != null) {
-            setState(() => _contentMode = null);
-          } else {
-            context.go('/home');
-          }
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (_contentMode != null) {
+          setState(() => _contentMode = null);
+          return true;
         }
+        // On landing page — navigate to home
+        if (mounted) {
+          context.go('/home');
+        }
+        return true;
       },
-      child: Scaffold(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) {
+            if (_contentMode != null) {
+              setState(() => _contentMode = null);
+            } else {
+              context.go('/home');
+            }
+          }
+        },
+        child: Scaffold(
         backgroundColor: backgroundColor,
         body: Column(
           children: [
@@ -372,6 +385,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

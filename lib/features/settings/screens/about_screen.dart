@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 
@@ -10,13 +9,6 @@ class AboutScreen extends StatelessWidget {
 
   static const String _version = '1.0.0';
   static const String _buildNumber = '1';
-
-  Future<void> _launchUrl(String urlString) async {
-    final url = Uri.parse(urlString);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +272,7 @@ class AboutScreen extends StatelessWidget {
                       cardColor: cardColor,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
-                      onTap: () => _launchUrl('https://pgme.in/terms'),
+                      onTap: () => context.push('/terms-and-conditions'),
                     ),
                     const SizedBox(height: 8),
 
@@ -290,7 +282,7 @@ class AboutScreen extends StatelessWidget {
                       cardColor: cardColor,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
-                      onTap: () => _launchUrl('https://pgme.in/privacy'),
+                      onTap: () => context.push('/privacy-policy'),
                     ),
                     const SizedBox(height: 8),
 
@@ -300,7 +292,7 @@ class AboutScreen extends StatelessWidget {
                       cardColor: cardColor,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
-                      onTap: () => _launchUrl('https://pgme.in/refund'),
+                      onTap: () => context.push('/refund-policy'),
                     ),
 
                     const SizedBox(height: 24),

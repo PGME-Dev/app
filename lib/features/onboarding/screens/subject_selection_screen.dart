@@ -58,6 +58,12 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     }
   }
 
+  /// Check if we're changing subject (already onboarded) vs initial onboarding
+  bool get _isChangingSubject {
+    final dashboardProvider = context.read<DashboardProvider>();
+    return dashboardProvider.primarySubject != null;
+  }
+
   Future<void> _onContinue() async {
     final provider = context.read<OnboardingProvider>();
 
@@ -74,10 +80,18 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     try {
       final success = await provider.submitSubjectSelection();
       if (success && mounted) {
-        // Complete onboarding and navigate to home
-        await provider.completeOnboarding();
-        if (mounted) {
-          context.go('/home');
+        if (_isChangingSubject) {
+          // Changing subject from profile — refresh dashboard and pop back
+          context.read<DashboardProvider>().refresh();
+          if (mounted) {
+            context.pop();
+          }
+        } else {
+          // Initial onboarding — complete onboarding and navigate to home
+          await provider.completeOnboarding();
+          if (mounted) {
+            context.go('/home');
+          }
         }
       }
     } catch (e) {

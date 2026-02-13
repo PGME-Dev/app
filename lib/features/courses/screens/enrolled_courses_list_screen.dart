@@ -382,8 +382,12 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
   ) {
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to package details screen
-        // context.push('/package-details/${purchase.purchaseId}');
+        final packageType = purchase.package.type?.toLowerCase() ?? '';
+        if (packageType == 'theory') {
+          context.push('/revision-series?subscribed=${purchase.isActive}&packageId=${purchase.package.packageId}');
+        } else if (packageType == 'practical') {
+          context.push('/practical-series?subscribed=${purchase.isActive}&packageId=${purchase.package.packageId}');
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),

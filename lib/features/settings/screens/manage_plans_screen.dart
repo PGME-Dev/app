@@ -56,7 +56,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     final cardBgColor = isDark ? AppColors.darkCardBackground : Colors.white;
     final backButtonBgColor = isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
     final primaryColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
-    final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -142,7 +141,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                 }
 
                 final activePurchases = provider.activePurchases;
-                final expiredPurchases = provider.expiredPurchases;
 
                 return RefreshIndicator(
                   onRefresh: provider.refresh,
@@ -196,63 +194,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Subscription History Section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Subscription History',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: [
-                              if (activePurchases.isEmpty && expiredPurchases.isEmpty)
-                                _buildEmptyHistory(secondaryTextColor)
-                              else ...[
-                                // Active subscriptions
-                                ...activePurchases.map((purchase) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _buildHistoryItem(
-                                        purchase: purchase,
-                                        isActive: true,
-                                        isDark: isDark,
-                                        cardBgColor: cardBgColor,
-                                        textColor: textColor,
-                                        secondaryTextColor: secondaryTextColor,
-                                        primaryColor: primaryColor,
-                                        dividerColor: dividerColor,
-                                      ),
-                                    )),
-                                // Expired subscriptions
-                                ...expiredPurchases.map((purchase) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _buildHistoryItem(
-                                        purchase: purchase,
-                                        isActive: false,
-                                        isDark: isDark,
-                                        cardBgColor: cardBgColor,
-                                        textColor: textColor,
-                                        secondaryTextColor: secondaryTextColor,
-                                        primaryColor: primaryColor,
-                                        dividerColor: dividerColor,
-                                      ),
-                                    )),
-                              ],
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
                         // Actions Section
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -271,54 +212,18 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                         // Action Buttons
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: [
-                              _buildActionItem(
-                                icon: Icons.upgrade_outlined,
-                                title: provider.hasActiveSubscription ? 'Upgrade Plan' : 'Get a Plan',
-                                subtitle: provider.hasActiveSubscription
-                                    ? 'Get access to more features'
-                                    : 'Subscribe to unlock premium content',
-                                onTap: () {
-                                  context.push('/all-packages');
-                                },
-                                isDark: isDark,
-                                cardBgColor: cardBgColor,
-                                textColor: textColor,
-                                secondaryTextColor: secondaryTextColor,
-                                primaryColor: primaryColor,
-                              ),
-                              if (provider.hasActiveSubscription) ...[
-                                const SizedBox(height: 12),
-                                _buildActionItem(
-                                  icon: Icons.autorenew,
-                                  title: 'Renew Subscription',
-                                  subtitle: 'Extend your current plan',
-                                  onTap: () {
-                                    context.push('/all-packages');
-                                  },
-                                  isDark: isDark,
-                                  cardBgColor: cardBgColor,
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                  primaryColor: primaryColor,
-                                ),
-                                const SizedBox(height: 12),
-                                _buildActionItem(
-                                  icon: Icons.receipt_long_outlined,
-                                  title: 'View Invoices',
-                                  subtitle: 'Download payment receipts',
-                                  onTap: () {
-                                    _showInvoicesBottomSheet(provider.purchases);
-                                  },
-                                  isDark: isDark,
-                                  cardBgColor: cardBgColor,
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                  primaryColor: primaryColor,
-                                ),
-                              ],
-                            ],
+                          child: _buildActionItem(
+                            icon: Icons.card_giftcard_outlined,
+                            title: 'See more Plans',
+                            subtitle: 'Explore available plans',
+                            onTap: () {
+                              context.push('/all-packages');
+                            },
+                            isDark: isDark,
+                            cardBgColor: cardBgColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            primaryColor: primaryColor,
                           ),
                         ),
                       ],
@@ -571,153 +476,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildEmptyHistory(Color secondaryTextColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.history,
-              size: 40,
-              color: secondaryTextColor,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'No subscription history',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: secondaryTextColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryItem({
-    required PurchaseModel purchase,
-    required bool isActive,
-    required bool isDark,
-    required Color cardBgColor,
-    required Color textColor,
-    required Color secondaryTextColor,
-    required Color primaryColor,
-    required Color dividerColor,
-  }) {
-    final title = purchase.package.name;
-    final date = _formatDate(isActive ? purchase.expiresAt : purchase.purchasedAt);
-    final amount = _formatCurrency(purchase.amountPaid);
-    final status = isActive ? 'Active' : 'Expired';
-
-    final inactiveBgColor = isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5);
-    final inactiveColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF999999);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isActive ? primaryColor.withValues(alpha: 0.3) : dividerColor,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? primaryColor.withValues(alpha: 0.1)
-                  : inactiveBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.workspace_premium_outlined,
-                size: 22,
-                color: isActive ? primaryColor : inactiveColor,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isActive ? 'Expires: $date' : 'Purchased: $date',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: secondaryTextColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Amount and Status
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
-                      : (isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0).withValues(alpha: 0.5)),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? const Color(0xFF4CAF50) : inactiveColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionItem({
     required IconData icon,
     required String title,
@@ -809,160 +567,6 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showInvoicesBottomSheet(List<PurchaseModel> purchases) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDark = themeProvider.isDarkMode;
-    final sheetBgColor = isDark ? AppColors.darkSurface : Colors.white;
-    final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
-    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF000000).withValues(alpha: 0.5);
-    final itemBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFF5F7FA);
-    final primaryColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
-
-    // Filter completed purchases only for invoices
-    final completedPurchases = purchases
-        .where((p) => p.paymentStatus == 'completed')
-        .toList();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.6,
-        ),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: sheetBgColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Invoices',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (completedPurchases.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'No invoices available',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      color: secondaryTextColor,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: completedPurchases.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final purchase = completedPurchases[index];
-                    return _buildInvoiceItem(
-                      purchase.package.name,
-                      _formatDate(purchase.purchasedAt),
-                      _formatCurrency(purchase.amountPaid),
-                      isDark,
-                      textColor,
-                      secondaryTextColor,
-                      itemBgColor,
-                      primaryColor,
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceItem(String title, String date, String amount, bool isDark, Color textColor, Color secondaryTextColor, Color itemBgColor, Color primaryColor) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: itemBgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  date,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: secondaryTextColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            amount,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.receipt_outlined,
-                size: 16,
-                color: primaryColor,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

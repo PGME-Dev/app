@@ -808,8 +808,8 @@ class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
             ),
           ),
 
-          // Bottom safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          // Bottom padding to clear the floating nav bar (65h + 20 from bottom)
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 90),
         ],
       ),
     );

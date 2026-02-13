@@ -140,8 +140,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final isDark = themeProvider.isDarkMode;
 
     final dashboardProvider = Provider.of<DashboardProvider>(context);
-    final hasPracticalSubscription = dashboardProvider.hasPracticalSubscription;
-    final isSubscribed = hasPracticalSubscription || widget.isSubscribed;
+    // Use selected package's purchase status when viewing a specific package,
+    // otherwise fall back to type-level subscription check for the landing page
+    final isSubscribed = _selectedPackage?.isPurchased ?? (dashboardProvider.hasPracticalSubscription || widget.isSubscribed);
 
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -163,10 +164,25 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       title = 'Live Sessions';
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (_contentMode != null) {
+          _goBackToPackageDetail();
+          return true;
+        } else if (_selectedPackage != null) {
+          _goBackToList();
+          return true;
+        }
+        // On landing page — navigate to home
+        if (mounted) {
+          context.go('/home');
+        }
+        return true;
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
           if (_contentMode != null) {
             _goBackToPackageDetail();
           } else if (_selectedPackage != null) {
@@ -174,9 +190,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           } else {
             context.go('/home');
           }
-        }
-      },
-      child: Scaffold(
+        },
+        child: Scaffold(
         backgroundColor: backgroundColor,
         body: Column(
           children: [
@@ -240,6 +255,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

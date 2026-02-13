@@ -10,7 +10,6 @@ import 'package:pgme/core/services/auth_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
-import 'package:pgme/features/sessions/screens/live_session_test_screen.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -248,132 +247,154 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Profile picture on the left
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
-                              width: 2,
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? AppColors.darkSurface : Colors.white,
                             ),
-                            color: Colors.transparent,
-                            image: _user?.photoUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(_user!.photoUrl!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
+                            child: Icon(
+                              Icons.arrow_back,
+                              size: 20,
+                              color: textColor,
+                            ),
                           ),
-                          child: _user?.photoUrl == null
-                              ? Center(
-                                  child: Icon(
-                                    Icons.person_outline,
-                                    size: 36,
-                                    color: secondaryTextColor,
-                                  ),
-                                )
-                              : null,
                         ),
-                        const SizedBox(width: 16),
-                        // User details on the right
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Name
-                              Text(
-                                _user?.name ?? 'User',
-                                style: TextStyle(
-                                  fontFamily: 'SF Pro Display',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 18,
-                                  color: textColor,
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Profile picture on the left
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
+                                  width: 2,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                color: Colors.transparent,
+                                image: _user?.photoUrl != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(_user!.photoUrl!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
-                              const SizedBox(height: 4),
-                              // Phone number
-                              Row(
+                              child: _user?.photoUrl == null
+                                  ? Center(
+                                      child: Icon(
+                                        Icons.person_outline,
+                                        size: 36,
+                                        color: secondaryTextColor,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            // User details on the right
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.phone_outlined,
-                                    size: 14,
-                                    color: secondaryTextColor,
-                                  ),
-                                  const SizedBox(width: 4),
+                                  // Name
                                   Text(
-                                    _user?.phoneNumber ?? '',
+                                    _user?.name ?? 'User',
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Display',
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 13,
-                                      color: secondaryTextColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                      color: textColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Phone number
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.phone_outlined,
+                                        size: 14,
+                                        color: secondaryTextColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _user?.phoneNumber ?? '',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Display',
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 13,
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Subject selection - tappable
+                                  GestureDetector(
+                                    onTap: () {
+                                      context.push('/subject-selection');
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1A1A4D)
+                                            : const Color(0xFF0000D1).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isDark
+                                              ? const Color(0xFF3D3D8C)
+                                              : const Color(0xFF0000D1).withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.menu_book_outlined,
+                                            size: 14,
+                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              _selectedSubject?['subject_name'] ?? 'Select Subject',
+                                              style: TextStyle(
+                                                fontFamily: 'SF Pro Display',
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12,
+                                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.chevron_right,
+                                            size: 16,
+                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              // Subject selection - tappable
-                              GestureDetector(
-                                onTap: () {
-                                  context.push('/subject-selection');
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF1A1A4D)
-                                        : const Color(0xFF0000D1).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? const Color(0xFF3D3D8C)
-                                          : const Color(0xFF0000D1).withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.menu_book_outlined,
-                                        size: 14,
-                                        color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          _selectedSubject?['subject_name'] ?? 'Select Subject',
-                                          style: TextStyle(
-                                            fontFamily: 'SF Pro Display',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12,
-                                            color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        size: 16,
-                                        color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -718,13 +739,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    // My Orders
+                    // My Purchases
                     Expanded(
                       child: _buildQuickActionCard(
                         icon: Icons.shopping_bag_outlined,
-                        label: 'My Orders',
-                        subtitle: 'Track orders',
-                        onTap: () => context.push('/book-orders'),
+                        label: 'My Purchases',
+                        subtitle: 'View purchases',
+                        onTap: () => context.push('/my-purchases'),
                         cardColor: cardColor,
                         iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
                         iconColor: Colors.green,
@@ -839,55 +860,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // Test Screen Button (Development Only)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const LiveSessionTestScreen(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF2E7D32) : const Color(0xFF66BB6A),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.science_outlined,
-                          size: 20,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Live Session Test (Dev)',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 120), // Space for bottom nav
+              const SizedBox(height: 32),
             ],
           ),
         ),

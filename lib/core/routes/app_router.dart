@@ -37,6 +37,9 @@ import 'package:pgme/features/settings/screens/help_screen.dart';
 import 'package:pgme/features/settings/screens/about_screen.dart';
 import 'package:pgme/features/settings/screens/my_purchases_screen.dart';
 import 'package:pgme/features/settings/screens/careers_screen.dart';
+import 'package:pgme/features/settings/screens/terms_and_conditions_screen.dart';
+import 'package:pgme/features/settings/screens/privacy_policy_screen.dart';
+import 'package:pgme/features/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
@@ -305,6 +308,63 @@ class AppRouter {
         ),
       ),
 
+      // Terms and Conditions
+      GoRoute(
+        path: '/terms-and-conditions',
+        name: 'terms-and-conditions',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const TermsAndConditionsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Privacy Policy
+      GoRoute(
+        path: '/privacy-policy',
+        name: 'privacy-policy',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Refund Policy
+      GoRoute(
+        path: '/refund-policy',
+        name: 'refund-policy',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RefundPolicyScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            );
+          },
+        ),
+      ),
+
       GoRoute(
         path: '/manage-plans',
         name: 'manage-plans',
@@ -416,7 +476,12 @@ class AppRouter {
       // Shell Route - routes with persistent nav bar
       ShellRoute(
         builder: (context, state, child) {
-          final navIndex = _getNavIndex(state.uri.toString());
+          final location = state.uri.toString();
+
+          // Hide nav bar on profile screen
+          if (location.startsWith('/profile')) return child;
+
+          final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
           return AppScaffold(
             currentIndex: navIndex,
@@ -606,7 +671,7 @@ class AppRouter {
             ),
           ),
 
-          // Profile
+          // Profile (no nav bar - handled in shell builder)
           GoRoute(
             path: '/profile',
             name: 'profile',
