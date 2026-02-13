@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/banner_model.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/home/widgets/live_class_banner.dart';
 import 'package:pgme/features/home/widgets/promotional_banner.dart';
 
@@ -81,6 +82,11 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
       return const SizedBox.shrink();
     }
 
+    final carouselHeight = ResponsiveHelper.carouselHeight(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final dotSize = isTablet ? 10.0 : 8.0;
+    final activeDotWidth = isTablet ? 30.0 : 24.0;
+
     // Single item - no carousel needed
     if (_totalItems == 1) {
       return widget.sessions.isNotEmpty
@@ -92,7 +98,7 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 140,
+          height: carouselHeight,
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: _onPageChanged,
@@ -109,13 +115,13 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
             _totalItems,
             (index) => Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _currentPage == index ? 24 : 8,
-              height: 8,
+              width: _currentPage == index ? activeDotWidth : dotSize,
+              height: dotSize,
               decoration: BoxDecoration(
                 color: _currentPage == index
                     ? const Color(0xFF2470E4)
                     : const Color(0xFFD9D9D9),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(dotSize / 2),
               ),
             ),
           ),

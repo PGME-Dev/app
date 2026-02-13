@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget child;
@@ -20,15 +21,22 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     // Get screen dimensions and safe area insets
     final screenWidth = MediaQuery.of(context).size.width;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     // Calculate responsive navbar width
-    // Use 95% of screen width on small screens, max 361px on larger screens
-    final navBarWidth = screenWidth > 380 ? 361.0 : screenWidth * 0.95;
+    final navBarWidth = ResponsiveHelper.navBarWidth(context);
     final horizontalPadding = (screenWidth - navBarWidth) / 2;
+
+    // Tablet-responsive sizes
+    final navBarHeight = isTablet ? 72.0 : 65.0;
+    final navItemWidth = isTablet ? 80.0 : 64.0;
+    final navItemHeight = isTablet ? 64.0 : 56.0;
+    final navIconSize = isTablet ? 28.0 : 24.0;
+    final navLabelSize = isTablet ? 12.0 : 10.0;
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -47,10 +55,10 @@ class AppScaffold extends StatelessWidget {
             left: horizontalPadding,
             right: horizontalPadding,
             child: Container(
-              height: 65,
+              height: navBarHeight,
               decoration: BoxDecoration(
                 color: navBarColor,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
                 boxShadow: isDark
                     ? [
                         BoxShadow(
@@ -85,6 +93,10 @@ class AppScaffold extends StatelessWidget {
                     route: '/home',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
+                    itemWidth: navItemWidth,
+                    itemHeight: navItemHeight,
+                    iconSize: navIconSize,
+                    labelSize: navLabelSize,
                   ),
                   _buildNavItem(
                     context: context,
@@ -95,6 +107,10 @@ class AppScaffold extends StatelessWidget {
                     route: '/revision-series',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
+                    itemWidth: navItemWidth,
+                    itemHeight: navItemHeight,
+                    iconSize: navIconSize,
+                    labelSize: navLabelSize,
                   ),
                   _buildNavItem(
                     context: context,
@@ -105,6 +121,10 @@ class AppScaffold extends StatelessWidget {
                     route: '/practical-series',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
+                    itemWidth: navItemWidth,
+                    itemHeight: navItemHeight,
+                    iconSize: navIconSize,
+                    labelSize: navLabelSize,
                   ),
                   _buildNavItem(
                     context: context,
@@ -115,6 +135,10 @@ class AppScaffold extends StatelessWidget {
                     route: '/your-notes',
                     activeColor: activeIconColor,
                     inactiveColor: inactiveIconColor,
+                    itemWidth: navItemWidth,
+                    itemHeight: navItemHeight,
+                    iconSize: navIconSize,
+                    labelSize: navLabelSize,
                   ),
                 ],
               ),
@@ -134,6 +158,10 @@ class AppScaffold extends StatelessWidget {
     required String route,
     required Color activeColor,
     required Color inactiveColor,
+    required double itemWidth,
+    required double itemHeight,
+    required double iconSize,
+    required double labelSize,
   }) {
     final isActive = currentIndex == index;
     final currentLocation = GoRouterState.of(context).uri.toString();
@@ -147,15 +175,15 @@ class AppScaffold extends StatelessWidget {
       },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 64,
-        height: 56,
+        width: itemWidth,
+        height: itemHeight,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               isActive ? activeIcon : icon,
               color: isActive ? activeColor : inactiveColor,
-              size: 24,
+              size: iconSize,
             ),
             if (isActive) ...[
               const SizedBox(height: 2),
@@ -163,7 +191,7 @@ class AppScaffold extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 10,
+                  fontSize: labelSize,
                   fontWeight: FontWeight.w600,
                   color: activeColor,
                   height: 1.2,

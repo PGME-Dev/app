@@ -10,6 +10,7 @@ import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/for_you_section.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -55,73 +56,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   /// Build Order Physical Book Card
-  Widget _buildOrderBookCard(bool isDark, Color textColor) {
+  Widget _buildOrderBookCard(bool isDark, Color textColor, bool isTablet) {
+    final cardHeight = ResponsiveHelper.orderBookCardHeight(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 15,
+      ),
       child: GestureDetector(
         onTap: () => context.push('/order-physical-books'),
-        child: Container(
-          width: double.infinity,
-          height: 100,
-          clipBehavior: Clip.none,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: isDark
-                  ? [const Color(0xFF0D2A5C), const Color(0xFF1A3A5C)]
-                  : [const Color(0xFF0047CF), const Color(0xFFE4F4FF)],
-              stops: const [0.3654, 1.0],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
             ),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Text
-              const Positioned(
-                top: 13,
-                left: 12,
-                child: Opacity(
-                  opacity: 0.9,
-                  child: SizedBox(
-                    width: 139,
-                    child: Text(
-                      'Order Physical\nCopies',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        height: 20 / 18,
-                        letterSpacing: -0.5,
-                        color: Colors.white,
+            child: Container(
+              width: double.infinity,
+              height: cardHeight,
+              clipBehavior: Clip.none,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: isDark
+                      ? [const Color(0xFF0D2A5C), const Color(0xFF1A3A5C)]
+                      : [const Color(0xFF0047CF), const Color(0xFFE4F4FF)],
+                  stops: const [0.3654, 1.0],
+                ),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Text
+                  Positioned(
+                    top: isTablet ? 16 : 13,
+                    left: isTablet ? 16 : 12,
+                    child: Opacity(
+                      opacity: 0.9,
+                      child: SizedBox(
+                        width: isTablet ? 170 : 139,
+                        child: Text(
+                          'Order Physical\nCopies',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 20 : 18,
+                            height: 20 / 18,
+                            letterSpacing: -0.5,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              // Image
-              Positioned(
-                right: -130,
-                top: -120,
-                child: Transform.flip(
-                  flipX: true,
-                  child: Image.asset(
-                    'assets/illustrations/4.png',
-                    width: 350,
-                    height: 350,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 350,
-                        height: 350,
-                        color: Colors.transparent,
-                      );
-                    },
+                  // Image
+                  Positioned(
+                    right: -130,
+                    top: isTablet ? -140 : -120,
+                    child: Transform.flip(
+                      flipX: true,
+                      child: Image.asset(
+                        'assets/illustrations/4.png',
+                        width: isTablet ? 380 : 350,
+                        height: isTablet ? 380 : 350,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 350,
+                            height: 350,
+                            color: Colors.transparent,
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -133,10 +145,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final isLandscape = ResponsiveHelper.isLandscape(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+
+    // Responsive sizes
+    final avatarSize = ResponsiveHelper.profileAvatarSize(context);
+    final actionBtnSize = ResponsiveHelper.actionButtonSize(context);
+    final greetingFontSize = isTablet ? 24.0 : 20.0;
+    final subtitleFontSize = isTablet ? 15.0 : 13.0;
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 20.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -148,201 +169,224 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onRefresh: dashboardProvider.refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Section
-                  Padding(
-                    padding: EdgeInsets.only(top: topPadding + 20, left: 20, right: 20),
-                    child: Row(
-                      children: [
-                        // Profile Avatar
-                        GestureDetector(
-                          onTap: () => context.push('/profile'),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
-                              border: Border.all(
-                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                                width: 1.5,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: authProvider.user?.photoUrl != null && authProvider.user!.photoUrl!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: authProvider.user!.photoUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Icon(
-                                      Icons.person_rounded,
-                                      size: 24,
-                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                    ),
-                                    errorWidget: (context, url, error) => Icon(
-                                      Icons.person_rounded,
-                                      size: 24,
-                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.person_rounded,
-                                    size: 24,
-                                    color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        // Greeting
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hello, $userName!',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                  height: 1.2,
-                                  letterSpacing: -0.3,
-                                  color: textColor,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'What do you want to learn today?',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 13,
-                                  height: 1.3,
-                                  color: isDark ? AppColors.darkTextTertiary : const Color(0xFF999999),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Action buttons
-                        GestureDetector(
-                          onTap: _openWhatsApp,
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-                            ),
-                            child: Center(
-                              child: Image.asset(
-                                'assets/icons/whatsapp_logo.png',
-                                width: 20,
-                                height: 20,
-                                color: const Color(0xFF25D366),
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.chat_rounded,
-                                    size: 20,
-                                    color: Color(0xFF25D366),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => context.push('/notifications'),
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.notifications_outlined,
-                                size: 22,
-                                color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isTablet && isLandscape ? 900 : double.infinity,
                   ),
-
-                  const SizedBox(height: 25),
-
-                  // Live Class Carousel (auto-sliding with multiple sessions and banners)
-                  if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
-                    LiveClassCarousel(
-                      sessions: dashboardProvider.upcomingSessions,
-                      banners: dashboardProvider.banners,
-                    ),
-
-                  if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
-                    const SizedBox(height: 24),
-
-                  // Subject Section (if available)
-                  if (dashboardProvider.primarySubject != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.darkCardBackground
-                              : const Color(0xFFE3F2FD),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          dashboardProvider.primarySubject!.subjectName,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: textColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Section
+                      Padding(
+                        padding: EdgeInsets.only(top: topPadding + 20, left: hPadding, right: hPadding),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                            ),
+                            child: Row(
+                              children: [
+                                // Profile Avatar
+                                GestureDetector(
+                                  onTap: () => context.push('/profile'),
+                                  child: Container(
+                                    width: avatarSize,
+                                    height: avatarSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: authProvider.user?.photoUrl != null && authProvider.user!.photoUrl!.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: authProvider.user!.photoUrl!,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) => Icon(
+                                              Icons.person_rounded,
+                                              size: isTablet ? 28 : 24,
+                                              color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                            ),
+                                            errorWidget: (context, url, error) => Icon(
+                                              Icons.person_rounded,
+                                              size: isTablet ? 28 : 24,
+                                              color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.person_rounded,
+                                            size: isTablet ? 28 : 24,
+                                            color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                // Greeting
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Hello, $userName!',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: greetingFontSize,
+                                          height: 1.2,
+                                          letterSpacing: -0.3,
+                                          color: textColor,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'What do you want to learn today?',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: subtitleFontSize,
+                                          height: 1.3,
+                                          color: isDark ? AppColors.darkTextTertiary : const Color(0xFF999999),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Action buttons
+                                GestureDetector(
+                                  onTap: _openWhatsApp,
+                                  child: Container(
+                                    width: actionBtnSize,
+                                    height: actionBtnSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                                    ),
+                                    child: Center(
+                                      child: Image.asset(
+                                        'assets/icons/whatsapp_logo.png',
+                                        width: isTablet ? 24 : 20,
+                                        height: isTablet ? 24 : 20,
+                                        color: const Color(0xFF25D366),
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(
+                                            Icons.chat_rounded,
+                                            size: isTablet ? 24 : 20,
+                                            color: const Color(0xFF25D366),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => context.push('/notifications'),
+                                  child: Container(
+                                    width: actionBtnSize,
+                                    height: actionBtnSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.notifications_outlined,
+                                        size: isTablet ? 26 : 22,
+                                        color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                  if (dashboardProvider.primarySubject != null) const SizedBox(height: 24),
+                      const SizedBox(height: 25),
 
-                  // For You Section (enrolled users)
-                  if (dashboardProvider.hasActivePurchase == true)
-                    ForYouSection(
-                      lastWatched: dashboardProvider.lastWatchedVideo,
-                      isLoading: dashboardProvider.isLoadingContent,
-                      error: dashboardProvider.contentError,
-                      onRetry: dashboardProvider.retryContent,
-                      hasTheorySubscription: dashboardProvider.hasTheorySubscription,
-                      hasPracticalSubscription: dashboardProvider.hasPracticalSubscription,
-                    ),
+                      // Live Class Carousel (auto-sliding with multiple sessions and banners)
+                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                        LiveClassCarousel(
+                          sessions: dashboardProvider.upcomingSessions,
+                          banners: dashboardProvider.banners,
+                        ),
 
-                  if (dashboardProvider.hasActivePurchase == true) const SizedBox(height: 24),
+                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                        const SizedBox(height: 24),
 
-                  // Order Physical Book Card
-                  _buildOrderBookCard(isDark, textColor),
+                      // Subject Section (if available)
+                      if (dashboardProvider.primarySubject != null)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 16,
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.darkCardBackground
+                                      : const Color(0xFFE3F2FD),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  dashboardProvider.primarySubject!.subjectName,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: isTablet ? 16 : 14,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
 
-                  const SizedBox(height: 24),
+                      if (dashboardProvider.primarySubject != null) const SizedBox(height: 24),
 
-                  // Faculty List
-                  FacultyList(
-                    faculty: dashboardProvider.facultyList,
-                    isLoading: dashboardProvider.isLoadingFaculty,
-                    error: dashboardProvider.facultyError,
-                    onRetry: dashboardProvider.retryFaculty,
+                      // For You Section (enrolled users)
+                      if (dashboardProvider.hasActivePurchase == true)
+                        ForYouSection(
+                          lastWatched: dashboardProvider.lastWatchedVideo,
+                          isLoading: dashboardProvider.isLoadingContent,
+                          error: dashboardProvider.contentError,
+                          onRetry: dashboardProvider.retryContent,
+                          hasTheorySubscription: dashboardProvider.hasTheorySubscription,
+                          hasPracticalSubscription: dashboardProvider.hasPracticalSubscription,
+                        ),
+
+                      if (dashboardProvider.hasActivePurchase == true) const SizedBox(height: 24),
+
+                      // Order Physical Book Card
+                      _buildOrderBookCard(isDark, textColor, isTablet),
+
+                      const SizedBox(height: 24),
+
+                      // Faculty List
+                      FacultyList(
+                        faculty: dashboardProvider.facultyList,
+                        isLoading: dashboardProvider.isLoadingFaculty,
+                        error: dashboardProvider.facultyError,
+                        onRetry: dashboardProvider.retryFaculty,
+                      ),
+
+                      const SizedBox(height: 100), // Space for bottom nav
+                    ],
                   ),
-
-                  const SizedBox(height: 100), // Space for bottom nav
-                ],
+                ),
               ),
             ),
           );

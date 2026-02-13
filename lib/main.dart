@@ -29,11 +29,25 @@ Future<void> main() async {
     ),
   );
 
-  // Set preferred orientations
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // Detect if device is a tablet (shortestSide >= 600dp)
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
+  final isTablet = logicalShortestSide >= 600;
+
+  // Allow landscape on tablets, portrait-only on phones
+  if (isTablet) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  } else {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
 
   runApp(const MyApp());
 }

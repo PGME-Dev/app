@@ -6,12 +6,20 @@ class OTPInput extends StatefulWidget {
   final int length;
   final void Function(String)? onChanged;
   final void Function(String) onCompleted;
+  final double boxSize;
+  final double fontSize;
+  final double spacing;
+  final double borderRadius;
 
   const OTPInput({
     super.key,
     this.length = 4,
     this.onChanged,
     required this.onCompleted,
+    this.boxSize = 56,
+    this.fontSize = 24,
+    this.spacing = 16,
+    this.borderRadius = 24,
   });
 
   @override
@@ -126,10 +134,10 @@ class OTPInputState extends State<OTPInput> {
           final isFocused = _focusNodes[index].hasFocus;
 
           return Container(
-            margin: EdgeInsets.only(right: index < widget.length - 1 ? 16 : 0),
+            margin: EdgeInsets.only(right: index < widget.length - 1 ? widget.spacing : 0),
             child: SizedBox(
-              width: 56,
-              height: 56,
+              width: widget.boxSize,
+              height: widget.boxSize,
               child: KeyboardListener(
                 focusNode: FocusNode(),
                 onKeyEvent: (event) => _onKeyDown(event, index),
@@ -139,11 +147,11 @@ class OTPInputState extends State<OTPInput> {
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   maxLength: 1,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 24,
+                    fontSize: widget.fontSize,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0D0D26),
+                    color: const Color(0xFF0D0D26),
                   ),
                   decoration: InputDecoration(
                     counterText: '',
@@ -151,21 +159,21 @@ class OTPInputState extends State<OTPInput> {
                     fillColor: _backgroundColor,
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
                       borderSide: BorderSide(
                         color: hasValue ? _filledBorderColor : _emptyBorderColor,
                         width: 1,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
                       borderSide: BorderSide(
                         color: hasValue ? _filledBorderColor : _emptyBorderColor,
                         width: 1,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
                       borderSide: BorderSide(
                         color: isFocused ? _emptyBorderColor : (hasValue ? _filledBorderColor : _emptyBorderColor),
                         width: 1,

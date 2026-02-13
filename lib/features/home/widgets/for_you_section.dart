@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
 
 class ForYouSection extends StatelessWidget {
   final VideoModel? lastWatched;
@@ -28,20 +29,31 @@ class ForYouSection extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+    final isTablet = ResponsiveHelper.isTablet(context);
+
+    final sectionTitleSize = isTablet ? 24.0 : 20.0;
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'For You',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-              color: textColor,
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              ),
+              child: Text(
+                'For You',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: sectionTitleSize,
+                  color: textColor,
+                ),
+              ),
             ),
           ),
         ),
@@ -49,46 +61,63 @@ class ForYouSection extends StatelessWidget {
 
         // Content - Responsive layout
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth;
-              const gap = 9.0;
-              // Left card takes ~49% of available width, right column takes ~51%
-              final resumeCardWidth = (availableWidth - gap) * 0.49;
-              final rightColumnWidth = (availableWidth - gap) * 0.51;
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final availableWidth = constraints.maxWidth;
+                  const gap = 9.0;
+                  // Left card takes ~49% of available width, right column takes ~51%
+                  final resumeCardWidth = (availableWidth - gap) * 0.49;
+                  final rightColumnWidth = (availableWidth - gap) * 0.51;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Resume Card (Left - Tall)
-                  _buildResumeCard(isDark, textColor, lastWatched, resumeCardWidth),
-                  const SizedBox(width: gap),
+                  final resumeCardHeight = ResponsiveHelper.forYouCardHeight(context);
+                  final smallCardHeight = isTablet ? 164.0 : 137.0;
+                  final smallCardHeight2 = isTablet ? 162.0 : 135.0;
 
-                  // Right Column - Theory and Practical
-                  SizedBox(
-                    width: rightColumnWidth,
-                    child: Column(
-                      children: [
-                        _buildTheoryCard(context, isDark, textColor, rightColumnWidth),
-                        const SizedBox(height: 9),
-                        _buildPracticalCard(context, isDark, textColor, rightColumnWidth),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Resume Card (Left - Tall)
+                      _buildResumeCard(isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
+                      const SizedBox(width: gap),
+
+                      // Right Column - Theory and Practical
+                      SizedBox(
+                        width: rightColumnWidth,
+                        child: Column(
+                          children: [
+                            _buildTheoryCard(context, isDark, textColor, rightColumnWidth, smallCardHeight, isTablet),
+                            const SizedBox(height: 9),
+                            _buildPracticalCard(context, isDark, textColor, rightColumnWidth, smallCardHeight2, isTablet),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video, double cardWidth) {
+  Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video, double cardWidth, double cardHeight, bool isTablet) {
+    final labelSize = isTablet ? 14.0 : 12.0;
+    final titleSize = isTablet ? 20.0 : 18.0;
+    final subtitleSize = isTablet ? 16.0 : 14.0;
+    final timeSize = isTablet ? 16.0 : 14.0;
+    final playBtnSize = isTablet ? 38.0 : 32.0;
+
     return Container(
       width: cardWidth,
-      height: 281,
+      height: cardHeight,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         gradient: LinearGradient(
@@ -102,7 +131,7 @@ class ForYouSection extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isTablet ? 20 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,18 +140,18 @@ class ForYouSection extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,
-                    fontSize: 12,
+                    fontSize: labelSize,
                     color:
                         isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: isTablet ? 20 : 16),
                 Text(
                   'Continue where\nyou left off',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: titleSize,
                     height: 1.3,
                     color: isDark ? Colors.white : const Color(0xFF000000),
                   ),
@@ -133,7 +162,7 @@ class ForYouSection extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
-                    fontSize: 14,
+                    fontSize: subtitleSize,
                     height: 1.3,
                     color: isDark ? const Color(0xFF00BEFA) : AppColors.primaryBlue,
                   ),
@@ -145,30 +174,35 @@ class ForYouSection extends StatelessWidget {
           ),
           // Play button and time
           Positioned(
-            bottom: 16,
-            left: 16,
+            bottom: isTablet ? 20 : 16,
+            left: isTablet ? 20 : 16,
             child: Text(
               video != null ? '${video.remainingMinutes} Min Left' : '--',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: timeSize,
                 color: isDark ? Colors.white : const Color(0xFF000000),
               ),
             ),
           ),
           Positioned(
-            bottom: 12,
-            right: 16,
-            child: _buildPlayButton(isDark),
+            bottom: isTablet ? 16 : 12,
+            right: isTablet ? 20 : 16,
+            child: _buildPlayButton(isDark, playBtnSize),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTheoryCard(BuildContext context, bool isDark, Color textColor, double cardWidth) {
+  Widget _buildTheoryCard(BuildContext context, bool isDark, Color textColor, double cardWidth, double cardHeight, bool isTablet) {
     final isLocked = !hasTheorySubscription;
+    final labelSize = isTablet ? 14.0 : 12.0;
+    final titleSize = isTablet ? 18.0 : 16.0;
+    final imageWidth = isTablet ? 120.0 : 101.0;
+    final imageHeight = isTablet ? 92.0 : 78.0;
+    final btnSize = isTablet ? 38.0 : 32.0;
 
     return GestureDetector(
       onTap: () {
@@ -177,7 +211,7 @@ class ForYouSection extends StatelessWidget {
       },
       child: Container(
         width: cardWidth,
-        height: 137,
+        height: cardHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
@@ -201,18 +235,18 @@ class ForYouSection extends StatelessWidget {
                 ),
                 child: Image.asset(
                   'assets/illustrations/1.png',
-                  width: 101,
-                  height: 78,
+                  width: imageWidth,
+                  height: imageHeight,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(width: 101, height: 78);
+                    return SizedBox(width: imageWidth, height: imageHeight);
                   },
                 ),
               ),
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(isTablet ? 16 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -221,19 +255,19 @@ class ForYouSection extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                      fontSize: labelSize,
                       color: isDark
                           ? AppColors.darkTextSecondary
                           : const Color(0xFF666666),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: isTablet ? 10 : 8),
                   Text(
                     'View Classes',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: titleSize,
                       color: isDark ? Colors.white : const Color(0xFF000000),
                     ),
                   ),
@@ -242,9 +276,9 @@ class ForYouSection extends StatelessWidget {
             ),
             // Play button or lock button based on subscription
             Positioned(
-              bottom: 12,
-              right: 12,
-              child: isLocked ? _buildLockButton(isDark) : _buildPlayButton(isDark),
+              bottom: isTablet ? 16 : 12,
+              right: isTablet ? 16 : 12,
+              child: isLocked ? _buildLockButton(isDark, btnSize) : _buildPlayButton(isDark, btnSize),
             ),
           ],
         ),
@@ -252,8 +286,13 @@ class ForYouSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPracticalCard(BuildContext context, bool isDark, Color textColor, double cardWidth) {
+  Widget _buildPracticalCard(BuildContext context, bool isDark, Color textColor, double cardWidth, double cardHeight, bool isTablet) {
     final isLocked = !hasPracticalSubscription;
+    final labelSize = isTablet ? 14.0 : 12.0;
+    final titleSize = isTablet ? 18.0 : 16.0;
+    final imageWidth = isTablet ? 145.0 : 123.0;
+    final imageHeight = isTablet ? 100.0 : 85.0;
+    final btnSize = isTablet ? 38.0 : 32.0;
 
     return GestureDetector(
       onTap: () {
@@ -262,7 +301,7 @@ class ForYouSection extends StatelessWidget {
       },
       child: Container(
         width: cardWidth,
-        height: 135,
+        height: cardHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
@@ -286,18 +325,18 @@ class ForYouSection extends StatelessWidget {
                 ),
                 child: Image.asset(
                   'assets/illustrations/2.png',
-                  width: 123,
-                  height: 85,
+                  width: imageWidth,
+                  height: imageHeight,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(width: 123, height: 85);
+                    return SizedBox(width: imageWidth, height: imageHeight);
                   },
                 ),
               ),
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(isTablet ? 16 : 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -306,19 +345,19 @@ class ForYouSection extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                      fontSize: labelSize,
                       color: isDark
                           ? AppColors.darkTextSecondary
                           : const Color(0xFF666666),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: isTablet ? 10 : 8),
                   Text(
                     'View Classes',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: titleSize,
                       color: isDark ? Colors.white : const Color(0xFF000000),
                     ),
                   ),
@@ -327,9 +366,9 @@ class ForYouSection extends StatelessWidget {
             ),
             // Play button or lock button based on subscription
             Positioned(
-              bottom: 12,
-              right: 12,
-              child: isLocked ? _buildLockButton(isDark) : _buildPlayButton(isDark),
+              bottom: isTablet ? 16 : 12,
+              right: isTablet ? 16 : 12,
+              child: isLocked ? _buildLockButton(isDark, btnSize) : _buildPlayButton(isDark, btnSize),
             ),
           ],
         ),
@@ -337,10 +376,10 @@ class ForYouSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayButton(bool isDark) {
+  Widget _buildPlayButton(bool isDark, double size) {
     return Container(
-      width: 32,
-      height: 32,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         shape: BoxShape.circle,
@@ -352,18 +391,18 @@ class ForYouSection extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.play_arrow,
-          size: 18,
+          size: size * 0.56,
           color: isDark ? Colors.white : const Color(0xFF000000),
         ),
       ),
     );
   }
 
-  Widget _buildLockButton(bool isDark) {
+  Widget _buildLockButton(bool isDark, double size) {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
     return Container(
-      width: 32,
-      height: 32,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         shape: BoxShape.circle,
@@ -375,7 +414,7 @@ class ForYouSection extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.lock,
-          size: 16,
+          size: size * 0.5,
           color: iconColor,
         ),
       ),

@@ -88,6 +88,23 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
+    final shortestSide = screenSize.shortestSide;
+    final isTablet = shortestSide >= 600;
+    final isLandscape = screenSize.width > screenSize.height;
+
+    // Tablet: significantly bigger logo & text for the larger screen
+    final logoWidth = isTablet
+        ? (isLandscape ? shortestSide * 0.38 : shortestSide * 0.42)
+        : screenSize.width * 0.35;
+    final textWidth = isTablet
+        ? (isLandscape ? shortestSide * 0.48 : shortestSide * 0.55)
+        : screenSize.width * 0.45;
+    final versionFontSize = isTablet ? 18.0 : 14.0;
+    final logoTextGap = isTablet ? 36.0 : 20.0;
+    final logoLeftPadding = isTablet ? 16.0 : 12.0;
+    final versionBottom = isTablet
+        ? (isLandscape ? 32.0 : 48.0)
+        : (isLandscape ? 24.0 : 40.0);
 
     return Scaffold(
       backgroundColor: _darkBlue,
@@ -103,31 +120,31 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 // PGME logo in the center (slightly offset to the right)
                 Padding(
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: EdgeInsets.only(left: logoLeftPadding),
                   child: Image.asset(
                     'assets/illustrations/pgme.png',
-                    width: screenSize.width * 0.35,
+                    width: logoWidth,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
+                      return Icon(
                         Icons.medical_services,
-                        size: 100,
+                        size: isTablet ? 160 : 100,
                         color: Colors.white,
                       );
                     },
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: logoTextGap),
                 // PGME text below the logo
                 Image.asset(
                   'assets/illustrations/pgmetext.png',
-                  width: screenSize.width * 0.45,
+                  width: textWidth,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Text(
+                    return Text(
                       'PGME',
                       style: TextStyle(
-                        fontSize: 48,
+                        fontSize: isTablet ? 64 : 48,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -141,12 +158,12 @@ class _SplashScreenState extends State<SplashScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 40,
+            bottom: versionBottom,
             child: Center(
               child: Text(
                 'Ver 1.6.5',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: versionFontSize,
                   color: Colors.white.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w400,
                 ),

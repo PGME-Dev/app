@@ -7,7 +7,6 @@ import Foundation
 
 import device_info_plus
 import flutter_secure_storage_macos
-import flutter_zoom_meeting_sdk
 import geolocator_apple
 import package_info_plus
 import shared_preferences_foundation
@@ -19,7 +18,6 @@ import webview_flutter_wkwebview
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
   FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
-  FlutterZoomMeetingSdkPlugin.register(with: registry.registrar(forPlugin: "FlutterZoomMeetingSdkPlugin"))
   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
