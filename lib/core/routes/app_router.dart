@@ -47,9 +47,9 @@ class AppRouter {
   static int _getNavIndex(String location) {
     if (location.startsWith('/revision-series')) return 1;
     if (location.startsWith('/practical-series')) return 2;
+    if (location.startsWith('/available-notes')) return 1;
     if (location.startsWith('/your-notes') ||
-        location.startsWith('/notes') ||
-        location.startsWith('/available-notes')) return 3;
+        location.startsWith('/notes')) return 3;
 
     // Series sessions are always practical
     if (location.startsWith('/series-sessions')) return 2;

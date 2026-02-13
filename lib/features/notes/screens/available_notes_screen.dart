@@ -423,7 +423,17 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     final imagePlaceholderColor = isDark ? AppColors.darkSurface : const Color(0xFFD9D9D9);
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
-    return Scaffold(
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (mounted) context.pop();
+        return true;
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && mounted) context.pop();
+        },
+        child: Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
@@ -575,6 +585,8 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                           ),
           ),
         ],
+      ),
+    ),
       ),
     );
   }

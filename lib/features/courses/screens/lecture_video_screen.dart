@@ -93,7 +93,17 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final lessonAccessibleBg = isDark ? const Color(0xFF1A3A5C) : const Color(0xFFE4F4FF);
     final lessonLockedBg = isDark ? AppColors.darkCardBackground : const Color(0xFFEFEFF8);
 
-    return Scaffold(
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (mounted) context.pop();
+        return true;
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && mounted) context.pop();
+        },
+        child: Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
@@ -325,6 +335,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
             ),
           ),
         ],
+      ),
+    ),
       ),
     );
   }
