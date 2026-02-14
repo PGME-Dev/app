@@ -3,7 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConstants {
   // Base URL - Use deployed backend on Render
   // static const String baseUrl = 'http://192.168.29.105:5000/api/v1';
-  static const String baseUrl = 'https://pgme-backend.onrender.com/api/v1';
+  static const String baseUrl = 'https://d1po9pb0pflxq5.cloudfront.net/api/v1';
+//   static const String baseUrl = 'https://pgme-backend.onrender.com/api/v1';
 
   // Timeout
   static const int connectTimeout = 30000; // 30 seconds
