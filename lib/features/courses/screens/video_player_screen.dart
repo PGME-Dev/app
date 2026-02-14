@@ -62,7 +62,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _progressTimer?.cancel();
     _progressTimer = null;
     _playerController?.removeEventsListener(_onPlayerEvent);
-    // autoDispose is false, so we dispose manually
+    // Pause first to stop audio immediately, then dispose
+    _playerController?.pause();
     _playerController?.dispose();
     _playerController = null;
     // Restore orientation - allow landscape on tablets, portrait-only on phones
@@ -409,19 +410,41 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
+
+  void _stopAndGoBack() {
+    _playerController?.pause();
+    if (mounted) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // UI
   // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildPlayerArea(),
-            if (!_isLoading && _error == null) _buildVideoInfo(),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _stopAndGoBack();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildPlayerArea(),
+              if (!_isLoading && _error == null) _buildVideoInfo(),
+            ],
+          ),
         ),
       ),
     );
@@ -495,7 +518,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton.icon(
-                      onPressed: () => context.pop(),
+                      onPressed: _stopAndGoBack,
                       icon: const Icon(Icons.arrow_back,
                           color: Colors.white70, size: 18),
                       label: const Text('Go Back',
@@ -556,7 +579,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () => context.pop(),
+                    onTap: _stopAndGoBack,
                     child: const Padding(
                       padding: EdgeInsets.only(right: 12),
                       child: Icon(Icons.arrow_back,

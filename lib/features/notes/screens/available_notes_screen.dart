@@ -456,17 +456,17 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
-    return BackButtonListener(
-      onBackButtonPressed: () async {
-        if (mounted) context.pop();
-        return true;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
       },
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && mounted) context.pop();
-        },
-        child: Scaffold(
+      child: Scaffold(
       backgroundColor: backgroundColor,
       body: Center(
         child: ConstrainedBox(
@@ -480,7 +480,13 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
               children: [
                 // Back arrow
                 GestureDetector(
-                  onTap: () => context.pop(),
+                  onTap: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
                   child: SizedBox(
                     width: isTablet ? 30 : 24,
                     height: isTablet ? 30 : 24,
@@ -625,7 +631,6 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
         ),
       ),
     ),
-      ),
     );
   }
 

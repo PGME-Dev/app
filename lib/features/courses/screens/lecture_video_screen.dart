@@ -43,6 +43,14 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     _loadData();
   }
 
+  void _handleBack() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/home');
+    }
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -108,17 +116,13 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final moduleGap = isTablet ? 12.0 : 7.0;
     final sectionGap = isTablet ? 28.0 : 23.0;
 
-    return BackButtonListener(
-      onBackButtonPressed: () async {
-        if (mounted) context.pop();
-        return true;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBack();
       },
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && mounted) context.pop();
-        },
-        child: Scaffold(
+      child: Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
@@ -138,7 +142,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => context.pop(),
+                          onTap: _handleBack,
                           child: SizedBox(
                             width: headerIconSize,
                             height: headerIconSize,
@@ -375,14 +379,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         ],
       ),
     ),
-      ),
     );
   }
 
   Widget _buildLessonItem({
     required bool isAccessible,
     required String title,
-    required String duration,
     required String instructor,
     required bool isDark,
     required bool isTablet,
@@ -401,7 +403,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final lockSize = isTablet ? 18.0 : 14.0;
     final titleSize = isTablet ? 15.0 : 12.0;
     final metaSize = isTablet ? 13.0 : 10.0;
-    final clockSize = isTablet ? 15.0 : 12.0;
     final avatarSize = isTablet ? 22.0 : 16.0;
     final itemRadius = isTablet ? 16.0 : 12.0;
     final itemHPadding = isTablet ? 16.0 : 12.0;
@@ -461,30 +462,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   SizedBox(height: isTablet ? 8 : 6),
                   Row(
                     children: [
-                      Icon(
-                        Icons.access_time,
-                        size: clockSize,
-                        color: secondaryColor,
-                      ),
-                      SizedBox(width: isTablet ? 6 : 4),
-                      Text(
-                        duration,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: metaSize,
-                          color: secondaryColor,
-                        ),
-                      ),
-                      SizedBox(width: isTablet ? 10 : 8),
-                      Text(
-                        '•',
-                        style: TextStyle(
-                          fontSize: metaSize,
-                          color: secondaryColor,
-                        ),
-                      ),
-                      SizedBox(width: isTablet ? 10 : 8),
                       // Doctor avatar
                       ClipRRect(
                         borderRadius: BorderRadius.circular(avatarSize / 2),
@@ -653,7 +630,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       child: _buildLessonItem(
                         isAccessible: isAccessible,
                         title: video.title,
-                        duration: video.formattedDuration,
                         instructor: video.facultyName,
                         isDark: isDark,
                         isTablet: isTablet,
@@ -806,7 +782,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     _buildLessonItem(
                       isAccessible: !isLocked,
                       title: 'Introduction to Valvular Structures',
-                      duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
                       isTablet: isTablet,
@@ -820,7 +795,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     _buildLessonItem(
                       isAccessible: !isLocked,
                       title: 'Introduction to Valvular Structures',
-                      duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
                       isTablet: isTablet,
@@ -834,7 +808,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     _buildLessonItem(
                       isAccessible: !isLocked,
                       title: 'Introduction to Valvular Structures',
-                      duration: '12:45',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
                       isTablet: isTablet,

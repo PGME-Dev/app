@@ -454,27 +454,26 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
 
-    return BackButtonListener(
-      onBackButtonPressed: () async {
-        if (mounted) context.pop();
-        return true;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
       },
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && mounted) context.pop();
-        },
-        child: Scaffold(
-          backgroundColor: backgroundColor,
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? _buildErrorState(textColor, iconColor)
-                  : _buildContent(
-                      topPadding, isDark, backgroundColor, textColor,
-                      secondaryTextColor, cardBgColor, surfaceColor, iconColor, buttonColor,
-                    ),
-        ),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildErrorState(textColor, iconColor)
+                : _buildContent(
+                    topPadding, isDark, backgroundColor, textColor,
+                    secondaryTextColor, cardBgColor, surfaceColor, iconColor, buttonColor,
+                  ),
       ),
     );
   }
@@ -524,7 +523,13 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     Positioned(
                       left: hPadding,
                       child: GestureDetector(
-                        onTap: () => context.pop(),
+                        onTap: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/home');
+                          }
+                        },
                         child: SizedBox(
                           width: isTablet ? 30 : 24, height: isTablet ? 30 : 24,
                           child: Icon(Icons.arrow_back, size: isTablet ? 30 : 24, color: textColor),
