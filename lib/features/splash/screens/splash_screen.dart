@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/services/storage_service.dart';
 
@@ -34,6 +37,13 @@ class _SplashScreenState extends State<SplashScreen> {
     debugPrint('=== Splash Navigation ===');
 
     try {
+      // Initialize core services first
+      await dotenv.load(fileName: '.env');
+      await Firebase.initializeApp();
+      await PushNotificationService().initialize();
+
+      if (!mounted) return;
+
       final authProvider = context.read<AuthProvider>();
       final storageService = StorageService();
 

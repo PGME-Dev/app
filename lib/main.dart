@@ -18,22 +18,14 @@ import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
-
-  // Initialize Firebase
-  await Firebase.initializeApp();
-
-  // Initialize push notification handlers
-  await PushNotificationService().initialize();
-
-  // Set system UI overlay style
+  // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Color(0xFF0033CC),
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
@@ -45,6 +37,8 @@ Future<void> main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
+  // Run the app immediately — heavy initialization (Firebase, dotenv, etc.)
+  // happens inside the splash screen so it shows right away
   runApp(const MyApp());
 }
 
