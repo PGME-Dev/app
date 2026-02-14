@@ -456,17 +456,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: backgroundColor,
       body: Center(
         child: ConstrainedBox(
@@ -630,7 +620,6 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
       ),
         ),
       ),
-    ),
     );
   }
 

@@ -706,6 +706,12 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             const SizedBox(height: 16),
           ],
 
+          // Enroll Now button for non-subscribed users
+          if (!isSubscribed) ...[
+            _buildEnrollButton(isDark, isTablet),
+            const SizedBox(height: 24),
+          ],
+
           // Series overview
           Text(
             'Series',
@@ -719,6 +725,39 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
           const SizedBox(height: 12),
           ..._series.map((s) => _buildSeriesPreviewTile(s, isDark, textColor, secondaryTextColor, iconColor)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEnrollButton(bool isDark, bool isTablet) {
+    final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
+    final buttonHeight = isTablet ? 56.0 : 48.0;
+    final buttonRadius = isTablet ? 24.0 : 20.0;
+    final fontSize = isTablet ? 18.0 : 16.0;
+
+    return SizedBox(
+      width: double.infinity,
+      height: buttonHeight,
+      child: ElevatedButton(
+        onPressed: () {
+          context.push('/purchase?packageId=$_activePackageId&packageType=Theory');
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: buttonColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(buttonRadius),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          'Enroll Now',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

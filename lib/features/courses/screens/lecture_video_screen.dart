@@ -116,13 +116,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final moduleGap = isTablet ? 12.0 : 7.0;
     final sectionGap = isTablet ? 28.0 : 23.0;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _handleBack();
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
@@ -378,12 +372,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
           ),
         ],
       ),
-    ),
     );
   }
 
   Widget _buildLessonItem({
     required bool isAccessible,
+    required bool isWatched,
     required String title,
     required String instructor,
     required bool isDark,
@@ -399,13 +393,23 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
     final lessonHeight = isTablet ? 72.0 : 56.0;
     final iconContainerSize = isTablet ? 36.0 : 28.0;
-    final checkSize = isTablet ? 20.0 : 16.0;
+    final iconSize = isTablet ? 20.0 : 16.0;
     final lockSize = isTablet ? 18.0 : 14.0;
     final titleSize = isTablet ? 15.0 : 12.0;
     final metaSize = isTablet ? 13.0 : 10.0;
     final avatarSize = isTablet ? 22.0 : 16.0;
     final itemRadius = isTablet ? 16.0 : 12.0;
     final itemHPadding = isTablet ? 16.0 : 12.0;
+
+    // Determine which icon to show
+    IconData iconData;
+    if (!isAccessible) {
+      iconData = Icons.lock;
+    } else if (isWatched) {
+      iconData = Icons.check;
+    } else {
+      iconData = Icons.play_circle_outline;
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -419,7 +423,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         child: Row(
           children: [
             SizedBox(width: itemHPadding),
-            // Icon - Checkmark for accessible, Lock for locked
+            // Icon - Check for watched, Play for accessible unwatched, Lock for locked
             Container(
               width: iconContainerSize,
               height: iconContainerSize,
@@ -428,17 +432,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                 color: isAccessible ? iconColor : lockBgColor,
               ),
               child: Center(
-                child: isAccessible
-                    ? Icon(
-                        Icons.check,
-                        size: checkSize,
-                        color: Colors.white,
-                      )
-                    : Icon(
-                        Icons.lock,
-                        size: lockSize,
-                        color: iconColor,
-                      ),
+                child: Icon(
+                  iconData,
+                  size: !isAccessible ? lockSize : iconSize,
+                  color: isAccessible ? Colors.white : iconColor,
+                ),
               ),
             ),
             SizedBox(width: itemHPadding),
@@ -618,8 +616,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   ...module.videos.asMap().entries.map((entry) {
                     final index = entry.key;
                     final video = entry.value;
-                    // First video is always accessible, others require subscription
-                    final isAccessible = index == 0 || widget.isSubscribed;
+
+                    // Access logic: Free videos are always accessible, paid videos require subscription
+                    final isAccessible = video.isFree || widget.isSubscribed;
+
+                    // Check if video has been watched
+                    final isWatched = video.isCompleted;
 
                     return Padding(
                       padding: EdgeInsets.only(
@@ -629,6 +631,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       ),
                       child: _buildLessonItem(
                         isAccessible: isAccessible,
+                        isWatched: isWatched,
                         title: video.title,
                         instructor: video.facultyName,
                         isDark: isDark,
@@ -781,6 +784,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   children: [
                     _buildLessonItem(
                       isAccessible: !isLocked,
+                      isWatched: false,
                       title: 'Introduction to Valvular Structures',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
@@ -794,6 +798,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     const SizedBox(height: 8),
                     _buildLessonItem(
                       isAccessible: !isLocked,
+                      isWatched: false,
                       title: 'Introduction to Valvular Structures',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,
@@ -807,6 +812,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     const SizedBox(height: 8),
                     _buildLessonItem(
                       isAccessible: !isLocked,
+                      isWatched: false,
                       title: 'Introduction to Valvular Structures',
                       instructor: 'Dr. Aviraj',
                       isDark: isDark,

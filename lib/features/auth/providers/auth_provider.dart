@@ -6,6 +6,7 @@ import 'package:pgme/core/services/auth_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
 import 'package:pgme/core/services/push_notification_service.dart';
+import 'package:pgme/core/services/session_manager.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -356,6 +357,31 @@ class AuthProvider with ChangeNotifier {
       // If we get here, session might be invalid
       // The API interceptor will handle 401 and clear tokens
       return false;
+    }
+  }
+
+  /// Check if session was invalidated (logged out from another device)
+  bool get isSessionInvalidated => SessionManager().isSessionInvalidated;
+
+  /// Handle logout after session invalidation modal is dismissed
+  Future<void> handleSessionInvalidationLogout() async {
+    try {
+      // Clear the session invalidation flag
+      SessionManager().clearSessionInvalidation();
+
+      // Clear local state and storage
+      await PushNotificationService().cleanup();
+      await _storageService.clearAll();
+      _user = null;
+      _isAuthenticated = false;
+      _onboardingCompleted = false;
+      _msg91ReqId = null;
+      _activeSessions = [];
+      _hasMultipleSessions = false;
+      _currentSessionId = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Session invalidation logout error: $e');
     }
   }
 }

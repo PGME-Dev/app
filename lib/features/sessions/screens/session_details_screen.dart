@@ -454,17 +454,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: backgroundColor,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -474,7 +464,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     topPadding, isDark, backgroundColor, textColor,
                     secondaryTextColor, cardBgColor, surfaceColor, iconColor, buttonColor,
                   ),
-      ),
     );
   }
 

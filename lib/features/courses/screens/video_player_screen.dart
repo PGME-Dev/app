@@ -416,11 +416,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _stopAndGoBack() {
     _playerController?.pause();
     if (mounted) {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/home');
-      }
+      context.pop();
     }
   }
 
@@ -431,10 +427,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: true,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _stopAndGoBack();
+        if (didPop) {
+          // Pop already happened — pause audio immediately so it doesn't
+          // continue playing during the exit animation / before dispose runs.
+          _playerController?.pause();
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,

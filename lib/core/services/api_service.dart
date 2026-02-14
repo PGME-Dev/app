@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/storage_service.dart';
+import 'package:pgme/core/services/session_manager.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -56,9 +57,19 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) async {
-          // Handle 401 Unauthorized (token expired)
+          // Handle 401 Unauthorized (token expired or session terminated)
           if (error.response?.statusCode == 401) {
-            // Try to refresh the token
+            // Check if this is a SESSION_TERMINATED error (logged out from another device)
+            final errorCode = _getErrorCodeFromResponse(error.response?.data);
+
+            if (errorCode == 'SESSION_TERMINATED') {
+              // Session was terminated from another device - show modal immediately
+              SessionManager().markSessionInvalidated();
+              await _storageService.clearAll();
+              return handler.next(error);
+            }
+
+            // Normal token expiration - try to refresh
             final refreshed = await _refreshToken();
             if (refreshed) {
               // Retry the original request
@@ -73,7 +84,8 @@ class ApiService {
                 return handler.next(error);
               }
             } else {
-              // Refresh failed, logout user
+              // Refresh failed - mark session as invalidated
+              SessionManager().markSessionInvalidated();
               await _storageService.clearAll();
               return handler.next(error);
             }
@@ -197,6 +209,22 @@ class ApiService {
       }
     } else if (data is Map) {
       return data['message'] as String?;
+    }
+    return null;
+  }
+
+  /// Helper to extract error code from response data
+  String? _getErrorCodeFromResponse(dynamic data) {
+    if (data == null) return null;
+    if (data is String) {
+      try {
+        final parsed = jsonDecode(data) as Map<String, dynamic>;
+        return parsed['error_code'] as String?;
+      } catch (_) {
+        return null;
+      }
+    } else if (data is Map) {
+      return data['error_code'] as String?;
     }
     return null;
   }

@@ -29,6 +29,9 @@ class VideoModel {
   @JsonKey(name: 'last_accessed_at')
   final String? lastAccessedAt;
 
+  @JsonKey(name: 'is_free', defaultValue: false)
+  final bool isFree;
+
   VideoModel({
     required this.videoId,
     required this.title,
@@ -39,6 +42,7 @@ class VideoModel {
     required this.watchPercentage,
     required this.completed,
     this.lastAccessedAt,
+    required this.isFree,
   });
 
   factory VideoModel.fromJson(Map<String, dynamic> json) =>
@@ -62,6 +66,7 @@ class VideoModel {
     int? watchPercentage,
     bool? completed,
     String? lastAccessedAt,
+    bool? isFree,
   }) {
     return VideoModel(
       videoId: videoId ?? this.videoId,
@@ -73,6 +78,7 @@ class VideoModel {
       watchPercentage: watchPercentage ?? this.watchPercentage,
       completed: completed ?? this.completed,
       lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
+      isFree: isFree ?? this.isFree,
     );
   }
 }

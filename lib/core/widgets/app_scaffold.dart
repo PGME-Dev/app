@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
+import 'package:pgme/features/auth/widgets/session_invalidated_modal.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget child;
@@ -20,6 +22,7 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
 
@@ -144,6 +147,12 @@ class AppScaffold extends StatelessWidget {
               ),
             ),
           ),
+
+          // Session Invalidated Modal (blocks entire screen)
+          if (authProvider.isSessionInvalidated)
+            const Positioned.fill(
+              child: SessionInvalidatedModal(),
+            ),
         ],
       ),
     );

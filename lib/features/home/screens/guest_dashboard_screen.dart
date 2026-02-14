@@ -247,11 +247,14 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
                   SizedBox(height: isTablet ? 40 : 25),
 
-                  // Live Class Carousel (auto-sliding with multiple sessions)
-                  if (provider.upcomingSessions.isNotEmpty)
-                    LiveClassCarousel(sessions: provider.upcomingSessions),
+                  // Live Class Carousel (auto-sliding with multiple sessions and banners)
+                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty)
+                    LiveClassCarousel(
+                      sessions: provider.upcomingSessions,
+                      banners: provider.banners,
+                    ),
 
-                  if (provider.upcomingSessions.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
+                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Subject Section (if available)
                   if (provider.primarySubject != null)
