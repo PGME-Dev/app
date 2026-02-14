@@ -156,7 +156,7 @@ class _EnrolledCourseDetailScreenState
               : SingleChildScrollView(
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                      constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                       child: Padding(
                         padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
                         child: Column(

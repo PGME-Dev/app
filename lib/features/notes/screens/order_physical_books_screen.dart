@@ -76,7 +76,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
       backgroundColor: backgroundColor,
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

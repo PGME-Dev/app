@@ -43,7 +43,7 @@ class ForYouSection extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
               ),
               child: Text(
                 'For You',
@@ -65,7 +65,7 @@ class ForYouSection extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {

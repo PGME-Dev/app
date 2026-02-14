@@ -414,7 +414,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -881,7 +881,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
 
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
           itemCount: _series.length,
@@ -1035,7 +1035,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         padding: EdgeInsets.all(hPad),
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
             child: Column(
               children: [
                 // Two option cards
@@ -1086,7 +1086,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         padding: EdgeInsets.only(bottom: isTablet ? 120 : 100),
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

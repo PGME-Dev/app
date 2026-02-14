@@ -85,7 +85,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
       backgroundColor: backgroundColor,
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -120,7 +120,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                  maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                 ),
                 child: ListView.builder(
                   controller: _scrollController,
@@ -163,7 +163,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+          maxWidth: ResponsiveHelper.getMaxContentWidth(context),
         ),
         child: Padding(
           padding: EdgeInsets.all(isTablet ? 48 : 32),
@@ -223,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+          maxWidth: ResponsiveHelper.getMaxContentWidth(context),
         ),
         child: Padding(
           padding: EdgeInsets.all(isTablet ? 48 : 32),

@@ -82,13 +82,21 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
 
   @override
   void dispose() {
-    // Reset orientation when leaving
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    // Restore orientation - allow landscape on tablets, portrait-only on phones
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
+    final isTablet = logicalShortestSide >= 600;
+    SystemChrome.setPreferredOrientations(isTablet
+        ? [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]
+        : [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
 
     _playerController?.dispose();
     super.dispose();

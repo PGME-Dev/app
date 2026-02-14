@@ -719,7 +719,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           SingleChildScrollView(
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -959,7 +959,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                  constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                   child: Row(
                     children: [
                       // Price

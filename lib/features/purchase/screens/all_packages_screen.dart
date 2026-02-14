@@ -254,7 +254,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
           Expanded(
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                 child: ListView.builder(
                   padding: EdgeInsets.only(top: isTablet ? 26 : 20, left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 125 : 100)),
                   itemCount: _packages.length,
@@ -287,7 +287,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         child: Center(
           heightFactor: 1.0,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
             child: Row(
               children: [
                 // Selected package info

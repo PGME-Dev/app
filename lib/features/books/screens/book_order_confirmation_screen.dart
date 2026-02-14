@@ -111,7 +111,7 @@ class _BookOrderConfirmationScreenState
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+            constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
             child: Column(
           children: [
             Expanded(

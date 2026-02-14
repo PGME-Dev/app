@@ -5,6 +5,7 @@ import 'package:pgme/core/models/user_model.dart';
 import 'package:pgme/core/services/auth_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -66,6 +67,9 @@ class AuthProvider with ChangeNotifier {
 
         // Get current session ID from storage
         _currentSessionId = await _storageService.getSessionId();
+
+        // Re-register FCM token on app startup
+        PushNotificationService().registerToken();
 
         // Check for multiple active sessions
         try {
@@ -172,7 +176,10 @@ class AuthProvider with ChangeNotifier {
       _onboardingCompleted = authResponse.user.onboardingCompleted;
       _currentSessionId = authResponse.sessionId;
 
-      // Step 5: Check for other active sessions (using backend flag)
+      // Step 5: Register FCM token after successful authentication
+      PushNotificationService().registerToken();
+
+      // Step 6: Check for other active sessions (using backend flag)
       _hasMultipleSessions = authResponse.hasOtherActiveSessions;
 
       // If there are multiple sessions, fetch the list of sessions
@@ -251,6 +258,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Logout error: $e');
     } finally {
+      await PushNotificationService().cleanup();
       await _storageService.clearAll();
       _user = null;
       _isAuthenticated = false;
