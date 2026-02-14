@@ -1,59 +1,26 @@
 {
   "project_info": {
-    "project_number": "305276953357",
-    "project_id": "pgmeapp",
-    "storage_bucket": "pgmeapp.firebasestorage.app"
+    "project_number": "798190199864",
+    "project_id": "pgme-app-3a46c",
+    "storage_bucket": "pgme-app-3a46c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:305276953357:android:7bdb2d2b798d30bc220644",
+        "mobilesdk_app_id": "1:798190199864:android:cf06db1455843b0ce8f2cd",
         "android_client_info": {
-          "package_name": "com.pgmemedicalteaching.pgme_app"
+          "package_name": "com.example.pgme"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "305276953357-451l510av6hs4sfd4n6hblcknibohi7a.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.pgmemedicalteaching.pgme_app",
-            "certificate_hash": "7473f51db85c850d0f99507c16e2d227304e001d"
-          }
-        },
-        {
-          "client_id": "305276953357-tlaiptrmd5i4v2g813nn51tc8ibdnmo8.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.pgmemedicalteaching.pgme_app",
-            "certificate_hash": "cde75482e02d8567c2d68f2a001b0c49cfbf4353"
-          }
-        },
-        {
-          "client_id": "305276953357-n9qrkqh687hdgq9fs0svh9rtlt9veg47.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDK7UP57gf6FyiPbNVJptdc71xi0FFwfO0"
+          "current_key": "AIzaSyBEH-KIVl-iwK1xDJuNcz4Y_3l0eDk0gt8"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "305276953357-n9qrkqh687hdgq9fs0svh9rtlt9veg47.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "305276953357-hufb4s98cbq3f85ncb4k4ttqo1q5opap.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.pgmemedicalteaching.pgmeApp"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

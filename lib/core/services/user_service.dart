@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/user_model.dart';
 import 'package:pgme/core/services/api_service.dart';
@@ -111,9 +113,14 @@ class UserService {
   /// Update FCM token for push notifications
   Future<void> updateFCMToken(String fcmToken) async {
     try {
+      final deviceId = await _getDeviceId();
+
       final response = await _apiService.dio.post(
         ApiConstants.fcmToken,
-        data: {'fcm_token': fcmToken},
+        data: {
+          'fcm_token': fcmToken,
+          'device_id': deviceId,
+        },
       );
 
       if (response.statusCode != 200 || response.data['success'] != true) {
@@ -125,5 +132,22 @@ class UserService {
     } catch (e) {
       throw Exception('Failed to update FCM token: ${e.toString()}');
     }
+  }
+
+  /// Get device ID (same logic as auth_service)
+  Future<String> _getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return androidInfo.id;
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.identifierForVendor ?? 'unknown';
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return 'unknown';
   }
 }

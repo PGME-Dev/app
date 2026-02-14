@@ -13,6 +13,7 @@ import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
 import 'package:pgme/core/services/user_service.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 
 class DashboardProvider with ChangeNotifier {
   final DashboardService _dashboardService = DashboardService();
@@ -407,6 +408,9 @@ class DashboardProvider with ChangeNotifier {
         subjectId: subject.subjectId,
         isPrimary: true,
       );
+
+      // Subscribe to FCM topic for this subject
+      PushNotificationService().subscribeToSubject(subject.subjectId);
 
       // Update local state
       _primarySubject = SubjectSelectionModel(

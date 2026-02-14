@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/routes/app_router.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -18,6 +20,12 @@ Future<void> main() async {
 
   // Load environment variables
   await dotenv.load(fileName: '.env');
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
+  // Initialize push notification handlers
+  await PushNotificationService().initialize();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

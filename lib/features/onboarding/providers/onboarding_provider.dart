@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/services/onboarding_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 
 class OnboardingProvider with ChangeNotifier {
   final OnboardingService _onboardingService = OnboardingService();
@@ -107,6 +108,10 @@ class OnboardingProvider with ChangeNotifier {
       debugPrint('OnboardingProvider: Submitting subject selection');
       await _onboardingService.updateSubjectSelection(_selectedSubject!.subjectId);
       debugPrint('OnboardingProvider: Subject selection submitted successfully');
+
+      // Subscribe to FCM topic for this subject
+      PushNotificationService().subscribeToSubject(_selectedSubject!.subjectId);
+
       return true;
     } catch (e) {
       debugPrint('OnboardingProvider: Error submitting subject: $e');
