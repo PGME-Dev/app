@@ -153,7 +153,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                     padding: EdgeInsets.only(top: 20, bottom: bottomPadding + 20),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                        constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

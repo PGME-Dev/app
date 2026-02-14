@@ -9,6 +9,9 @@ class ResponsiveHelper {
   /// Max content width on tablets to prevent overly wide layouts
   static const double maxContentWidth = 780.0;
 
+  /// Max content width on tablets in landscape mode
+  static const double maxContentWidthLandscape = 1100.0;
+
   /// Check if the device is a tablet based on shortest side
   static bool isTablet(BuildContext context) {
     final shortestSide = MediaQuery.of(context).size.shortestSide;
@@ -38,8 +41,12 @@ class ResponsiveHelper {
   /// Responsive horizontal padding
   static double horizontalPadding(BuildContext context) {
     if (!isTablet(context)) return 16.0;
+    if (isLandscape(context)) {
+      // Landscape: minimal padding, let content take full width
+      return 24.0;
+    }
     final width = screenWidth(context);
-    // Center content with side margins on tablets
+    // Portrait: center content with side margins on tablets
     return ((width - maxContentWidth) / 2).clamp(24.0, double.infinity);
   }
 
@@ -58,11 +65,20 @@ class ResponsiveHelper {
     return isTablet(context) ? baseSpacing * 1.25 : baseSpacing;
   }
 
+  /// Get the appropriate max content width based on orientation
+  static double getMaxContentWidth(BuildContext context) {
+    if (!isTablet(context)) return double.infinity;
+    // Landscape: no constraint, let content take full width
+    if (isLandscape(context)) return double.infinity;
+    return maxContentWidth;
+  }
+
   /// Get constrained content width (prevents content from being too wide on tablets)
   static double contentWidth(BuildContext context) {
     final width = screenWidth(context);
     if (!isTablet(context)) return width;
-    return width.clamp(0, maxContentWidth);
+    final maxWidth = isLandscape(context) ? maxContentWidthLandscape : maxContentWidth;
+    return width.clamp(0, maxWidth);
   }
 
   /// Wraps a child widget with centered max-width constraint for tablets
@@ -93,7 +109,10 @@ class ResponsiveHelper {
     if (!isTablet(context)) {
       return width > 380 ? 361.0 : width * 0.95;
     }
-    // Tablet: full width nav bar with small side margins
+    // Tablet: constrain nav bar width in landscape
+    if (isLandscape(context)) {
+      return (maxContentWidthLandscape - 48).clamp(0, width - 48);
+    }
     return width - 48;
   }
 

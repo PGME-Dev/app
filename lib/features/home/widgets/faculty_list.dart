@@ -29,8 +29,8 @@ class FacultyList extends StatelessWidget {
       backgroundColor: Colors.transparent,
       useRootNavigator: true,
       constraints: isTablet
-          ? const BoxConstraints(
-              maxWidth: ResponsiveHelper.maxContentWidth + 48,
+          ? BoxConstraints(
+              maxWidth: ResponsiveHelper.getMaxContentWidth(context) + 48,
             )
           : null,
       builder: (context) => _FacultyDetailSheet(
@@ -80,7 +80,7 @@ class FacultyList extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -296,7 +296,7 @@ class _FacultyDetailSheet extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth + 48 : double.infinity,
+          maxWidth: isTablet ? ResponsiveHelper.getMaxContentWidth(context) + 48 : double.infinity,
         ),
         child: Container(
           constraints: BoxConstraints(

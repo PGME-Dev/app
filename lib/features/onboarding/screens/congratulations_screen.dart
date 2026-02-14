@@ -68,7 +68,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: isTablet ? 48 : 24),

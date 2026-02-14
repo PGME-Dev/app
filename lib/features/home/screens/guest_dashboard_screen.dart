@@ -118,7 +118,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     child: Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                          maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                         ),
                         child: Row(
                       children: [
@@ -260,7 +260,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                       child: Center(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                           ),
                           child: Column(
                             children: [
@@ -366,7 +366,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
               ),
               child: Text(
                 'What We Offer',
@@ -390,7 +390,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: ResponsiveHelper.maxContentWidth,
+                  maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                 ),
                 child: IntrinsicHeight(
                   child: Row(

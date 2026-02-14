@@ -239,7 +239,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       onRefresh: _loadData,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: packages.length,
@@ -394,7 +394,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       onRefresh: _loadData,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: books.length,
@@ -578,7 +578,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       onRefresh: _loadData,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: sessions.length,
@@ -738,7 +738,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       onRefresh: _loadData,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: invoices.length,

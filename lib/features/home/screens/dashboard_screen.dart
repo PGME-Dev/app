@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
             ),
             child: Container(
               width: double.infinity,
@@ -146,7 +146,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
-    final isLandscape = ResponsiveHelper.isLandscape(context);
 
     // Theme-aware colors
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
@@ -172,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: isTablet && isLandscape ? 900 : double.infinity,
+                    maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Center(
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                             ),
                             child: Row(
                               children: [
@@ -331,7 +330,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Center(
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+                                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                               ),
                               child: Container(
                                 padding: EdgeInsets.symmetric(

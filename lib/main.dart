@@ -29,31 +29,26 @@ Future<void> main() async {
     ),
   );
 
-  // Detect if device is a tablet (shortestSide >= 600dp)
-  final view = WidgetsBinding.instance.platformDispatcher.views.first;
-  final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
-  final isTablet = logicalShortestSide >= 600;
-
-  // Allow landscape on tablets, portrait-only on phones
-  if (isTablet) {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  } else {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-  }
+  // Allow all orientations initially, then lock based on device type after first frame
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _orientationSet = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +72,21 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             routerConfig: AppRouter.router,
+            builder: (context, child) {
+              // Lock orientation based on device type once MediaQuery is available
+              if (!_orientationSet) {
+                _orientationSet = true;
+                final shortestSide = MediaQuery.of(context).size.shortestSide;
+                final isTablet = shortestSide >= 600;
+                if (!isTablet) {
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.portraitUp,
+                    DeviceOrientation.portraitDown,
+                  ]);
+                }
+              }
+              return child!;
+            },
           );
         },
       ),

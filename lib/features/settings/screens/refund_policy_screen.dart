@@ -90,7 +90,7 @@ class RefundPolicyScreen extends StatelessWidget {
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                  constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(isTablet ? 26 : 20),

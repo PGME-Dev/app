@@ -240,7 +240,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                             onRefresh: _loadSessions,
                             child: Center(
                               child: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                                constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                                 child: ListView.builder(
                                   padding: EdgeInsets.symmetric(horizontal: hPadding),
                                   itemCount: _sessions.length,

@@ -273,7 +273,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -416,7 +416,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -522,7 +522,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
           itemCount: _series.length,
@@ -679,7 +679,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+        constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 8).copyWith(bottom: 100),
           itemCount: _liveSessions.length,
@@ -1651,7 +1651,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       // Sessions list shimmer
       return Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: hPadding),
             itemCount: 4,
@@ -1663,7 +1663,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       // Package detail shimmer
       return Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: SingleChildScrollView(
             padding: EdgeInsets.all(hPadding),
             child: Column(
@@ -1714,7 +1714,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       // Landing page shimmer (packages + sessions)
       return Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 100),
             child: Column(

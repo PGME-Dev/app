@@ -74,7 +74,7 @@ class AboutScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                    constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                     child: Column(
                       children: [
                         SizedBox(height: isTablet ? 20 : 16),

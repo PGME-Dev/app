@@ -47,7 +47,7 @@ class PromotionalBanner extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isTablet ? ResponsiveHelper.maxContentWidth : double.infinity,
+              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
             ),
             child: Container(
               decoration: BoxDecoration(

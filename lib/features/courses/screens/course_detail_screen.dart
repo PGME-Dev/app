@@ -139,7 +139,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               : SingleChildScrollView(
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: isTablet ? 900 : double.infinity),
+                      constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
