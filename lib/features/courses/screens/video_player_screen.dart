@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/core/models/progress_model.dart';
 
@@ -26,6 +27,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   BetterPlayerController? _playerController;
   Timer? _progressTimer;
+  Timer? _fullscreenCheckTimer;
 
   // Video metadata from API
   String? _videoUrl;
@@ -43,9 +45,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   String? _error;
   bool _isDisposed = false;
   bool _isPlayerInitialized = false;
+  bool _isLocalFile = false;
 
   // Existing progress for resume
   ProgressModel? _existingProgress;
+
+  // Fullscreen overlay
+  OverlayEntry? _fullscreenBackButtonOverlay;
+  bool _isFullscreen = false;
+  bool _controlsVisible = true;
+  Timer? _controlsHideTimer;
 
   @override
   void initState() {
@@ -61,6 +70,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _saveProgressOnExit();
     _progressTimer?.cancel();
     _progressTimer = null;
+    _fullscreenCheckTimer?.cancel();
+    _fullscreenCheckTimer = null;
+    _controlsHideTimer?.cancel();
+    _controlsHideTimer = null;
+    _removeFullscreenOverlay();
     _playerController?.removeEventsListener(_onPlayerEvent);
     // Pause first to stop audio immediately, then dispose
     _playerController?.pause();
@@ -100,6 +114,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     try {
       // Load existing progress for resume position
       _loadExistingProgress();
+
+      // Check for locally downloaded video first
+      final downloadedPath = await DownloadService().getDownloadedPath('video_${widget.videoId}.mp4');
+      if (downloadedPath != null) {
+        debugPrint('VideoPlayer: using local file at $downloadedPath');
+        _videoUrl = downloadedPath;
+        _videoTitle = 'Downloaded Video';
+        _isLocalFile = true;
+        _initializePlayer();
+        return;
+      }
 
       final videoData =
           await _dashboardService.getVideoPlaybackData(widget.videoId);
@@ -183,13 +208,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     debugPrint('VideoPlayer: initializing, resume at ${resumePositionSeconds}s');
 
-    final dataSource = BetterPlayerDataSource.network(
-      _videoUrl!,
-      videoFormat: BetterPlayerVideoFormat.hls,
-      useAsmsTracks: true,
-      useAsmsSubtitles: true,
-      useAsmsAudioTracks: true,
-    );
+    final BetterPlayerDataSource dataSource;
+    if (_isLocalFile) {
+      dataSource = BetterPlayerDataSource.file(_videoUrl!);
+    } else {
+      dataSource = BetterPlayerDataSource.network(
+        _videoUrl!,
+        videoFormat: BetterPlayerVideoFormat.hls,
+        useAsmsTracks: true,
+        useAsmsSubtitles: true,
+        useAsmsAudioTracks: true,
+      );
+    }
 
     _playerController = BetterPlayerController(
       BetterPlayerConfiguration(
@@ -246,6 +276,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
 
     _startProgressTimer();
+    _startFullscreenMonitoring();
   }
 
   // ---------------------------------------------------------------------------
@@ -421,18 +452,142 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   // ---------------------------------------------------------------------------
+  // Fullscreen Overlay Management
+  // ---------------------------------------------------------------------------
+
+  void _startFullscreenMonitoring() {
+    _fullscreenCheckTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
+      if (_isDisposed || !mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final isFullscreen = _playerController?.isFullScreen ?? false;
+      if (isFullscreen != _isFullscreen) {
+        _isFullscreen = isFullscreen;
+        if (isFullscreen) {
+          _showFullscreenOverlay();
+        } else {
+          _removeFullscreenOverlay();
+        }
+      }
+    });
+  }
+
+  void _showFullscreenOverlay() {
+    if (_fullscreenBackButtonOverlay != null) return;
+
+    _fullscreenBackButtonOverlay = OverlayEntry(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          // Start auto-hide timer initially
+          _startControlsHideTimer(() {
+            if (mounted && _fullscreenBackButtonOverlay != null) {
+              setState(() {
+                _controlsVisible = false;
+              });
+            }
+          });
+
+          return Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              // Show controls on tap
+              setState(() {
+                _controlsVisible = true;
+              });
+              // Restart hide timer
+              _startControlsHideTimer(() {
+                if (mounted && _fullscreenBackButtonOverlay != null) {
+                  setState(() {
+                    _controlsVisible = false;
+                  });
+                }
+              });
+            },
+            child: Stack(
+              children: [
+                // Back button - synced with control visibility
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: SafeArea(
+                    child: AnimatedOpacity(
+                      opacity: _controlsVisible ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: IgnorePointer(
+                        ignoring: !_controlsVisible,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              _playerController?.exitFullScreen();
+                            },
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    Overlay.of(context).insert(_fullscreenBackButtonOverlay!);
+  }
+
+  void _startControlsHideTimer(VoidCallback onHide) {
+    _controlsHideTimer?.cancel();
+    _controlsHideTimer = Timer(const Duration(seconds: 3), onHide);
+  }
+
+  void _removeFullscreenOverlay() {
+    _controlsHideTimer?.cancel();
+    _controlsHideTimer = null;
+    _fullscreenBackButtonOverlay?.remove();
+    _fullscreenBackButtonOverlay = null;
+    _controlsVisible = true; // Reset for next session
+  }
+
+  // ---------------------------------------------------------------------------
   // UI
   // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) {
-          // Pop already happened — pause audio immediately so it doesn't
-          // continue playing during the exit animation / before dispose runs.
-          _playerController?.pause();
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+
+        // Check if player is in fullscreen mode
+        final isFullscreen = _playerController?.isFullScreen ?? false;
+        if (isFullscreen) {
+          // Exit fullscreen first, don't close the screen
+          _playerController?.exitFullScreen();
+          return;
+        }
+
+        // Pause and navigate back
+        _playerController?.pause();
+        if (mounted) {
+          Navigator.of(context).pop();
         }
       },
       child: Scaffold(

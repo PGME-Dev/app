@@ -102,10 +102,33 @@ class ApiConstants {
 
   // Video Playback Endpoints
   static String videoPlayback(String videoId) => '/videos/$videoId/playback';
+  static String videoDownloadUrl(String videoId) =>
+      '/videos/$videoId/download-url';
 
   // Document Endpoints
   static String documentViewUrl(String documentId) =>
       '/documents/$documentId/view-url';
+
+  // Document Highlight Endpoints
+  static const String documentHighlights = '/users/document-highlights';
+  static String documentHighlight(String highlightId) =>
+      '/users/document-highlights/$highlightId';
+  static String documentHighlightNote(String highlightId) =>
+      '/users/document-highlights/$highlightId/note';
+
+  // Document Bookmark Endpoints
+  static const String documentBookmarks = '/users/document-bookmarks';
+  static String documentBookmark(String bookmarkId) =>
+      '/users/document-bookmarks/$bookmarkId';
+  static String documentBookmarkNote(String bookmarkId) =>
+      '/users/document-bookmarks/$bookmarkId/note';
+
+  // Document Progress Endpoints
+  static String documentProgress(String documentId) =>
+      '/users/progress/document/$documentId';
+
+  // Career Application Endpoints
+  static const String careerApplications = '/career-applications';
 
   // Library Endpoints (additional)
   static const String library = '/users/library';
@@ -128,6 +151,12 @@ class ApiConstants {
   static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
   static String cancelBookOrder(String orderId) =>
       '/book-orders/$orderId/cancel';
+
+  // Ebook Order Endpoints
+  static const String ebookOrders = '/ebook-orders';
+  static const String createEbookOrder = '/ebook-orders/create-order';
+  static const String verifyEbookPayment = '/ebook-orders/verify-payment';
+  static String ebookViewUrl(String bookId) => '/ebook-orders/$bookId/view-url';
 
   // Payment Endpoints (Zoho)
   static const String createPaymentOrder =

@@ -208,7 +208,7 @@ class _EnrolledCourseDetailScreenState
                                       : _buildQuickAccessCard(
                                           context,
                                           widget.isSubscribed
-                                              ? 'Read\nDocuments'
+                                              ? 'Read\nNotes'
                                               : 'Free Sample\nPDF',
                                           widget.isSubscribed ? 'Open' : 'View',
                                           'assets/illustrations/2.png',

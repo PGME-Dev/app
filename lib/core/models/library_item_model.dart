@@ -61,6 +61,24 @@ class LibraryItemModel {
 
   Map<String, dynamic> toJson() => _$LibraryItemModelToJson(this);
 
+  LibraryItemModel copyWith({bool? isBookmarked}) {
+    return LibraryItemModel(
+      libraryId: libraryId,
+      documentId: documentId,
+      title: title,
+      description: description,
+      fileFormat: fileFormat,
+      fileUrl: fileUrl,
+      pageCount: pageCount,
+      previewUrl: previewUrl,
+      fileSizeMb: fileSizeMb,
+      addedAt: addedAt,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
+      notes: notes,
+      lastOpenedAt: lastOpenedAt,
+    );
+  }
+
   // Computed property for formatted file size
   String get formattedFileSize {
     if (fileSizeMb == null) return 'N/A';

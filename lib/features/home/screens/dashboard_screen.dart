@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
@@ -20,30 +20,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Future<void> _openWhatsApp() async {
-    const phoneNumber = '+918074220727';
-    const message = 'Hi, I need help with PGME app';
-    final whatsappUrl = 'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}';
-
-    try {
-      final uri = Uri.parse(whatsappUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw Exception('Could not launch WhatsApp');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to open WhatsApp: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
   /// Get display name (first name only)
   String _getDisplayName(AuthProvider authProvider) {
     final fullName = authProvider.user?.name;
@@ -55,83 +31,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return firstName.isNotEmpty ? firstName : 'User';
   }
 
-  /// Build Order Physical Book Card
-  Widget _buildOrderBookCard(bool isDark, Color textColor, bool isTablet) {
+  /// Build Books Section — two side-by-side cards
+  Widget _buildBooksSection(bool isDark, Color textColor, bool isTablet) {
     final cardHeight = ResponsiveHelper.orderBookCardHeight(context);
+    final hPad = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 15,
-      ),
-      child: GestureDetector(
-        onTap: () => context.push('/order-physical-books'),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-            ),
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+          ),
+          child: GestureDetector(
+            onTap: () => context.push('/your-notes'),
             child: Container(
               width: double.infinity,
               height: cardHeight,
-              clipBehavior: Clip.none,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
                 gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: isDark
-                      ? [const Color(0xFF0D2A5C), const Color(0xFF1A3A5C)]
-                      : [const Color(0xFF0047CF), const Color(0xFFE4F4FF)],
-                  stops: const [0.3654, 1.0],
+                      ? [const Color(0xFF1A3A2E), const Color(0xFF0D2A1C)]
+                      : [const Color(0xFF00875A), const Color(0xFF00C853)],
                 ),
               ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Text
-                  Positioned(
-                    top: isTablet ? 28 : 13,
-                    left: isTablet ? 28 : 12,
-                    child: Opacity(
-                      opacity: 0.9,
-                      child: SizedBox(
-                        width: isTablet ? 260 : 139,
-                        child: Text(
-                          'Order Physical\nCopies',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 28 : 18,
-                            height: 20 / 18,
-                            letterSpacing: -0.5,
-                            color: Colors.white,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 24 : 16,
+                  vertical: isTablet ? 20 : 14,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: isTablet ? 52 : 40,
+                      height: isTablet ? 52 : 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                      ),
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: isTablet ? 28 : 22,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 16 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Buy E-Books',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 22 : 16,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: isTablet ? 4 : 2),
+                          Text(
+                            'Browse and purchase study materials',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: isTablet ? 15 : 12,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  // Image
-                  Positioned(
-                    right: -130,
-                    top: isTablet ? -150 : -120,
-                    child: Transform.flip(
-                      flipX: true,
-                      child: Image.asset(
-                        'assets/illustrations/4.png',
-                        width: isTablet ? 420 : 350,
-                        height: isTablet ? 420 : 350,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 350,
-                            height: 350,
-                            color: Colors.transparent,
-                          );
-                        },
-                      ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: isTablet ? 22 : 16,
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -152,11 +133,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
 
     // Responsive sizes
-    final avatarSize = ResponsiveHelper.profileAvatarSize(context);
     final actionBtnSize = ResponsiveHelper.actionButtonSize(context);
     final greetingFontSize = isTablet ? 30.0 : 20.0;
     final subtitleFontSize = isTablet ? 18.0 : 13.0;
-    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 20.0;
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -186,44 +166,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             child: Row(
                               children: [
-                                // Profile Avatar
+                                // Profile Icon
                                 GestureDetector(
                                   onTap: () => context.push('/profile'),
-                                  child: Container(
-                                    width: avatarSize,
-                                    height: avatarSize,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
-                                      border: Border.all(
-                                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: authProvider.user?.photoUrl != null && authProvider.user!.photoUrl!.isNotEmpty
-                                        ? CachedNetworkImage(
-                                            imageUrl: authProvider.user!.photoUrl!,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) => Icon(
-                                              Icons.person_rounded,
-                                              size: isTablet ? 40 : 24,
-                                              color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                            ),
-                                            errorWidget: (context, url, error) => Icon(
-                                              Icons.person_rounded,
-                                              size: isTablet ? 40 : 24,
-                                              color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                            ),
-                                          )
-                                        : Icon(
-                                            Icons.person_rounded,
-                                            size: isTablet ? 40 : 24,
-                                            color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                          ),
+                                  child: Icon(
+                                    Icons.person_outline_rounded,
+                                    size: isTablet ? 34 : 28,
+                                    color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
                                   ),
                                 ),
-                                SizedBox(width: isTablet ? 22 : 14),
+                                SizedBox(width: isTablet ? 16 : 10),
                                 // Greeting
                                 Expanded(
                                   child: Column(
@@ -257,29 +209,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                // Action buttons
+                                // Theme toggle
                                 GestureDetector(
-                                  onTap: _openWhatsApp,
+                                  onTap: () => themeProvider.toggleDarkMode(),
                                   child: Container(
-                                    width: actionBtnSize,
-                                    height: actionBtnSize,
+                                    width: isTablet ? 66 : 54,
+                                    height: isTablet ? 30 : 26,
                                     decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                                      color: isDark
+                                          ? const Color(0xFF1A1A2E)
+                                          : const Color(0xFFE4F4FF),
+                                      borderRadius: BorderRadius.circular(44),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF00BEFA).withValues(alpha: 0.3)
+                                            : const Color(0xFF0000C8).withValues(alpha: 0.15),
+                                        width: 1.5,
+                                      ),
                                     ),
-                                    child: Center(
-                                      child: Image.asset(
-                                        'assets/icons/whatsapp_logo.png',
-                                        width: isTablet ? 32 : 20,
-                                        height: isTablet ? 32 : 20,
-                                        color: const Color(0xFF25D366),
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Icon(
-                                            Icons.chat_rounded,
-                                            size: isTablet ? 32 : 20,
-                                            color: const Color(0xFF25D366),
-                                          );
-                                        },
+                                    child: AnimatedAlign(
+                                      duration: const Duration(milliseconds: 200),
+                                      alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
+                                      child: Container(
+                                        width: isTablet ? 24 : 20,
+                                        height: isTablet ? 24 : 20,
+                                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+                                        ),
+                                        child: Icon(
+                                          isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                                          size: isTablet ? 15 : 13,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -359,8 +322,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       if (dashboardProvider.primarySubject != null) SizedBox(height: isTablet ? 36 : 24),
 
+                      // Content Coming Soon (when subject has no packages)
+                      if (!dashboardProvider.isLoadingContent &&
+                          dashboardProvider.packages.isEmpty &&
+                          dashboardProvider.primarySubject != null)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 16,
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isTablet ? 48 : 36,
+                                  horizontal: isTablet ? 32 : 24,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.darkCardBackground
+                                      : const Color(0xFFF5F8FF),
+                                  borderRadius: BorderRadius.circular(isTablet ? 24 : 16),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: isTablet ? 56 : 44,
+                                      color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+                                    ),
+                                    SizedBox(height: isTablet ? 16 : 12),
+                                    Text(
+                                      'We will be live soon',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 22 : 17,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    SizedBox(height: isTablet ? 14 : 10),
+                                    GestureDetector(
+                                      onTap: () => context.push('/careers'),
+                                      child: Text.rich(
+                                        TextSpan(
+                                          text: 'You can ',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: isTablet ? 16 : 13,
+                                            color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: 'Join the PGME Team',
+                                              style: TextStyle(
+                                                fontFamily: 'Poppins',
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: isTablet ? 16 : 13,
+                                                color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+                                                decoration: TextDecoration.underline,
+                                                decorationColor: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      if (!dashboardProvider.isLoadingContent &&
+                          dashboardProvider.packages.isEmpty &&
+                          dashboardProvider.primarySubject != null)
+                        SizedBox(height: isTablet ? 36 : 24),
+
                       // For You Section (enrolled users)
-                      if (dashboardProvider.hasActivePurchase == true)
+                      if (dashboardProvider.hasActivePurchase == true &&
+                          dashboardProvider.packages.isNotEmpty)
                         ForYouSection(
                           lastWatched: dashboardProvider.lastWatchedVideo,
                           isLoading: dashboardProvider.isLoadingContent,
@@ -370,10 +417,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           hasPracticalSubscription: dashboardProvider.hasPracticalSubscription,
                         ),
 
-                      if (dashboardProvider.hasActivePurchase == true) SizedBox(height: isTablet ? 36 : 24),
+                      if (dashboardProvider.hasActivePurchase == true &&
+                          dashboardProvider.packages.isNotEmpty)
+                        SizedBox(height: isTablet ? 36 : 24),
 
-                      // Order Physical Book Card
-                      _buildOrderBookCard(isDark, textColor, isTablet),
+                      // Books Section (E-Books + Physical Copies)
+                      _buildBooksSection(isDark, textColor, isTablet),
 
                       SizedBox(height: isTablet ? 36 : 24),
 

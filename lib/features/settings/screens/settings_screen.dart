@@ -385,10 +385,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // My Purchases
+                              // My Orders
                               _buildLegalItem(
                                 icon: Icons.shopping_bag_outlined,
-                                title: 'My Purchases',
+                                title: 'My Orders',
                                 onTap: () {
                                   context.push('/my-purchases');
                                 },

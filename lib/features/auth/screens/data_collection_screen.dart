@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
-import 'package:pgme/core/services/location_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class DataCollectionScreen extends StatefulWidget {
@@ -23,13 +22,11 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _ugCollegeController = TextEditingController();
   final TextEditingController _pgCollegeController = TextEditingController();
+  final TextEditingController _organisationController = TextEditingController();
+  final TextEditingController _designationController = TextEditingController();
   DateTime? _selectedDob;
   String? _selectedGender;
   bool _isLoading = false;
-  bool _isAddressFocused = false;
-  bool _isAutoFetchingAddress = false;
-  final LocationService _locationService = LocationService();
-  final FocusNode _addressFocusNode = FocusNode();
 
   // Colors
   static const Color _darkBlue = Color(0xFF0000D1);
@@ -41,9 +38,6 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
   @override
   void initState() {
     super.initState();
-    _addressFocusNode.addListener(() {
-      setState(() => _isAddressFocused = _addressFocusNode.hasFocus);
-    });
   }
 
   @override
@@ -55,7 +49,8 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     _addressController.dispose();
     _ugCollegeController.dispose();
     _pgCollegeController.dispose();
-    _addressFocusNode.dispose();
+    _organisationController.dispose();
+    _designationController.dispose();
     super.dispose();
   }
 
@@ -201,52 +196,40 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     }
   }
 
-  Future<void> _autoFetchAddress() async {
-    setState(() => _isAutoFetchingAddress = true);
-
-    try {
-      debugPrint('Auto-fetching address...');
-      final address = await _locationService.getAddressFromCurrentLocation();
-
-      if (address != null && address.isNotEmpty) {
-        setState(() {
-          _addressController.text = address;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Address fetched successfully'),
-              backgroundColor: Color(0xFF4CD964),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } else {
-        throw Exception('Could not fetch address from location');
-      }
-    } catch (e) {
-      debugPrint('Error auto-fetching address: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceAll('Exception: ', ''),
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isAutoFetchingAddress = false);
-      }
+  Future<void> _openMapPicker() async {
+    final result = await context.push<String>('/map-address-picker');
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _addressController.text = result;
+      });
     }
   }
 
   Future<void> _submitData() async {
     if (!_formKey.currentState!.validate()) {
       debugPrint('Form validation failed');
+      return;
+    }
+
+    // Validate fields not covered by form validators
+    final errors = <String>[];
+    if (_selectedDob == null) {
+      errors.add('Date of Birth');
+    }
+    if (_selectedGender == null) {
+      errors.add('Gender');
+    }
+    if (_addressController.text.trim().isEmpty) {
+      errors.add('Address');
+    }
+
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill in: ${errors.join(', ')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -259,19 +242,13 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
       await provider.updateProfile(
         name: '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
         email: _emailController.text.trim(),
-        dateOfBirth: _selectedDob != null
-            ? DateFormat('yyyy-MM-dd').format(_selectedDob!)
-            : null,
-        gender: _selectedGender?.toLowerCase(),
-        address: _addressController.text.trim().isNotEmpty
-            ? _addressController.text.trim()
-            : null,
-        ugCollege: _ugCollegeController.text.trim().isNotEmpty
-            ? _ugCollegeController.text.trim()
-            : null,
-        pgCollege: _pgCollegeController.text.trim().isNotEmpty
-            ? _pgCollegeController.text.trim()
-            : null,
+        dateOfBirth: DateFormat('yyyy-MM-dd').format(_selectedDob!),
+        gender: _selectedGender!.toLowerCase(),
+        address: _addressController.text.trim(),
+        ugCollege: _ugCollegeController.text.trim(),
+        pgCollege: _pgCollegeController.text.trim(),
+        affiliatedOrganisation: _organisationController.text.trim(),
+        currentDesignation: _designationController.text.trim(),
       );
 
       debugPrint('Profile updated successfully, showing dialog');
@@ -816,64 +793,68 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
 
                     SizedBox(height: fieldGap),
 
-                    // Address
+                    // Address (tap to open map picker)
                     Center(
-                      child: _buildTextField(
-                        label: 'Address',
-                        hint: 'Enter your address',
-                        controller: _addressController,
-                        isTablet: isTablet,
-                        fieldWidth: fieldWidth,
-                        fieldHeight: fieldHeight,
-                        labelSize: labelSize,
-                        inputSize: inputSize,
-                        hintSize: hintSize,
-                        fieldRadius: fieldRadius,
-                        focusNode: _addressFocusNode,
-                        trailingWidget: _isAddressFocused
-                            ? Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: SizedBox(
-                                  height: isTablet ? 40 : 34,
-                                  child: ElevatedButton(
-                                    onPressed: _isAutoFetchingAddress
-                                        ? null
-                                        : _autoFetchAddress,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0000C8),
-                                      disabledBackgroundColor:
-                                          const Color(0xFF0000C8).withValues(alpha: 0.5),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: isTablet ? 16 : 12, vertical: 0),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    child: _isAutoFetchingAddress
-                                        ? SizedBox(
-                                            width: isTablet ? 18 : 16,
-                                            height: isTablet ? 18 : 16,
-                                            child: const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                      Colors.white),
-                                            ),
-                                          )
-                                        : Text(
-                                            'Auto Fetch',
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: isTablet ? 14 : 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                      child: GestureDetector(
+                        onTap: _openMapPicker,
+                        child: SizedBox(
+                          width: fieldWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Address',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: labelSize,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.57,
+                                  letterSpacing: 0.07,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: isTablet ? 10 : 8),
+                              Container(
+                                height: fieldHeight,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 16 : 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(fieldRadius),
+                                  border: Border.all(
+                                    color: const Color(0xFFE0E0E0),
                                   ),
                                 ),
-                              )
-                            : null,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _addressController.text.isEmpty
+                                            ? 'Tap to pick your address'
+                                            : _addressController.text,
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: inputSize,
+                                          color: _addressController.text.isEmpty
+                                              ? _hintColor
+                                              : Colors.black87,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.location_on_outlined,
+                                      size: isTablet ? 22 : 18,
+                                      color: const Color(0xFF0000C8),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
 
@@ -892,6 +873,12 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                         inputSize: inputSize,
                         hintSize: hintSize,
                         fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
                       ),
                     ),
 
@@ -910,6 +897,60 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
                         inputSize: inputSize,
                         hintSize: hintSize,
                         fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Current Affiliated Organisation
+                    Center(
+                      child: _buildTextField(
+                        label: 'Current Affiliated Organisation',
+                        hint: 'Enter your organisation',
+                        controller: _organisationController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: fieldGap),
+
+                    // Current Designation
+                    Center(
+                      child: _buildTextField(
+                        label: 'Current Designation',
+                        hint: 'Enter your designation',
+                        controller: _designationController,
+                        isTablet: isTablet,
+                        fieldWidth: fieldWidth,
+                        fieldHeight: fieldHeight,
+                        labelSize: labelSize,
+                        inputSize: inputSize,
+                        hintSize: hintSize,
+                        fieldRadius: fieldRadius,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
                       ),
                     ),
 

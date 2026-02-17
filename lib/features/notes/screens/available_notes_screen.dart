@@ -13,11 +13,13 @@ import 'package:pgme/core/utils/responsive_helper.dart';
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
   final bool isSubscribed;
+  final String? packageId;
 
   const AvailableNotesScreen({
     super.key,
     required this.seriesId,
     this.isSubscribed = false,
+    this.packageId,
   });
 
   @override
@@ -59,13 +61,30 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
       final series = results[0] as SeriesModel;
       final documents = results[1] as List<SeriesDocumentModel>;
 
-      // Fetch packages for the series subject if available
+      // Fetch package for enrollment dialog
       PackageModel? package;
-      if (series.subject?.subjectId != null) {
+      if (widget.packageId != null) {
+        // If packageId was passed (e.g. from practical series), fetch and match it
         try {
+          final packages = await _dashboardService.getPackages(forceRefresh: true);
+          final matching = packages.where((p) => p.packageId == widget.packageId);
+          if (matching.isNotEmpty) {
+            package = matching.first;
+          }
+        } catch (e) {
+          debugPrint('Failed to load package by ID: $e');
+        }
+      } else if (series.subject?.subjectId != null) {
+        // Fallback: determine package from series subject and type
+        try {
+          final seriesType = series.type;
+          final packageType = seriesType != null
+              ? '${seriesType[0].toUpperCase()}${seriesType.substring(1).toLowerCase()}'
+              : null;
+
           final packages = await _dashboardService.getPackages(
             subjectId: series.subject!.subjectId,
-            packageType: 'Theory',
+            packageType: packageType,
           );
           if (packages.isNotEmpty) {
             package = packages.first;
@@ -104,7 +123,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      context.push('/purchase?packageType=Theory');
+      if (_package != null) {
+        context.push('/purchase?packageId=${_package!.packageId}&packageType=${_package!.type ?? 'Theory'}');
+      } else {
+        final seriesType = _series?.type;
+        final packageType = seriesType != null
+            ? '${seriesType[0].toUpperCase()}${seriesType.substring(1).toLowerCase()}'
+            : 'Theory';
+        context.push('/purchase?packageType=$packageType');
+      }
     }
   }
 
@@ -200,7 +227,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
             // Title
             Text(
-              _package != null ? 'Get the\n${_package!.name}' : 'Get the Theory\nPackage',
+              _package != null ? 'Get the\n${_package!.name}' : 'Get the\nPackage',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
@@ -218,7 +245,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: descPadH),
               child: Text(
-                _package?.description ?? 'Access theory modules, recorded lectures, and expert study resources',
+                _package?.description ?? 'Access all modules, recorded lectures, and expert study resources',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
@@ -249,7 +276,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _package?.name ?? 'Theory Package',
+                    _package?.name ?? 'Package',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -265,11 +292,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             child: _buildFeatureItem(feature, isDark, isTablet, textColor, iconColor, featureBgColor),
                           ))
                       : [
-                          _buildFeatureItem('Full access to theory content', isDark, isTablet, textColor, iconColor, featureBgColor),
+                          _buildFeatureItem('Full access to all content', isDark, isTablet, textColor, iconColor, featureBgColor),
                           SizedBox(height: isTablet ? 10 : 8),
                           _buildFeatureItem('Downloadable study materials', isDark, isTablet, textColor, iconColor, featureBgColor),
                           SizedBox(height: isTablet ? 10 : 8),
-                          _buildFeatureItem('MCQ practice sets', isDark, isTablet, textColor, iconColor, featureBgColor),
+                          _buildFeatureItem('Expert-curated resources', isDark, isTablet, textColor, iconColor, featureBgColor),
                         ]),
                   SizedBox(height: isTablet ? 10 : 8),
                   Divider(height: 1, color: borderColor),
@@ -492,7 +519,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                 SizedBox(
                   width: isTablet ? 240 : 180,
                   child: Text(
-                    widget.isSubscribed ? 'Series Documents' : 'Available notes',
+                    widget.isSubscribed ? 'Series Notes' : 'Available Notes',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
@@ -853,7 +880,57 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         children: [
                           SizedBox(height: isTablet ? 20 : 16),
                           // Show different buttons based on subscription status
-                          if (widget.isSubscribed && !isAlreadyAdded)
+                          if (widget.isSubscribed && isAlreadyAdded)
+                            // Subscribed + already in library: Show "View PDF" button
+                            SizedBox(
+                              width: double.infinity,
+                              height: isTablet ? 54 : 44,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  context.pushNamed(
+                                    'pdf-viewer',
+                                    queryParameters: {
+                                      'documentId': document.documentId,
+                                      'title': document.title,
+                                    },
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: buttonColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(isTablet ? 27 : 22),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.picture_as_pdf,
+                                      size: isTablet ? 25 : 20,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: isTablet ? 10 : 8),
+                                    Flexible(
+                                      child: Text(
+                                        'View PDF',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 17 : 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else if (widget.isSubscribed && !isAlreadyAdded)
                             // Subscribed + not yet in library: Show "Add to Notes" button
                             SizedBox(
                               width: double.infinity,

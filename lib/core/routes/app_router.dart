@@ -18,6 +18,7 @@ import 'package:pgme/features/notes/screens/available_notes_screen.dart';
 import 'package:pgme/features/notes/screens/your_notes_screen.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/features/settings/screens/profile_screen.dart';
+import 'package:pgme/features/settings/screens/edit_profile_screen.dart';
 import 'package:pgme/features/settings/screens/manage_plans_screen.dart';
 import 'package:pgme/features/purchase/screens/purchase_screen.dart';
 import 'package:pgme/features/purchase/screens/congratulations_screen.dart';
@@ -25,6 +26,7 @@ import 'package:pgme/features/purchase/screens/all_packages_screen.dart';
 import 'package:pgme/features/sessions/screens/session_details_screen.dart';
 import 'package:pgme/features/sessions/screens/series_sessions_screen.dart';
 import 'package:pgme/features/notes/screens/order_physical_books_screen.dart';
+import 'package:pgme/features/notes/screens/ebook_list_screen.dart';
 import 'package:pgme/features/books/screens/book_cart_screen.dart';
 import 'package:pgme/features/books/screens/book_checkout_screen.dart';
 import 'package:pgme/features/books/screens/book_order_confirmation_screen.dart';
@@ -41,6 +43,7 @@ import 'package:pgme/features/settings/screens/terms_and_conditions_screen.dart'
 import 'package:pgme/features/settings/screens/privacy_policy_screen.dart';
 import 'package:pgme/features/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/features/auth/screens/map_address_picker_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -479,8 +482,11 @@ class AppRouter {
           final location = state.uri.toString();
           final path = state.uri.path;
 
-          // Hide nav bar on profile and pdf-viewer screens
-          if (path.startsWith('/profile') || path.startsWith('/pdf-viewer')) return child;
+          // Hide nav bar on profile, edit-profile, map-address-picker, and pdf-viewer screens
+          if (path.startsWith('/profile') ||
+              path.startsWith('/edit-profile') ||
+              path.startsWith('/map-address-picker') ||
+              path.startsWith('/pdf-viewer')) return child;
 
           final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
@@ -613,9 +619,10 @@ class AppRouter {
             pageBuilder: (context, state) {
               final seriesId = state.uri.queryParameters['seriesId'] ?? '';
               final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: AvailableNotesScreen(seriesId: seriesId, isSubscribed: isSubscribed),
+                child: AvailableNotesScreen(seriesId: seriesId, isSubscribed: isSubscribed, packageId: packageId),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
@@ -683,6 +690,47 @@ class AppRouter {
                 return SlideTransition(
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Edit Profile
+          GoRoute(
+            path: '/edit-profile',
+            name: 'edit-profile',
+            pageBuilder: (context, state) {
+              final user = state.extra as dynamic;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EditProfileScreen(user: user),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Map Address Picker
+          GoRoute(
+            path: '/map-address-picker',
+            name: 'map-address-picker',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const MapAddressPickerScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 1),
                     end: Offset.zero,
                   ).animate(animation),
                   child: child,
@@ -765,6 +813,25 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const OrderPhysicalBooksScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // eBook Store
+          GoRoute(
+            path: '/ebook-store',
+            name: 'ebook-store',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const EbookListScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(

@@ -38,7 +38,7 @@ class AppScaffold extends StatelessWidget {
     final navBarHeight = isTablet ? 82.0 : 65.0;
     final navItemWidth = isTablet ? 96.0 : 64.0;
     final navItemHeight = isTablet ? 72.0 : 56.0;
-    final navIconSize = isTablet ? 32.0 : 24.0;
+    final navIconSize = isTablet ? 36.0 : 28.0;
     final navLabelSize = isTablet ? 14.0 : 10.0;
 
     // Theme-aware colors

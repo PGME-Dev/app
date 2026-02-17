@@ -479,7 +479,7 @@ class DashboardService {
   }
 
   /// Get series for a specific package
-  Future<List<SeriesModel>> getPackageSeries(String packageId) async {
+  Future<({List<SeriesModel> series, bool isPurchased})> getPackageSeries(String packageId) async {
     try {
       debugPrint('=== DashboardService: Getting package series ===');
       debugPrint('Package ID: $packageId');
@@ -491,15 +491,18 @@ class DashboardService {
       if (response.statusCode == 200 && response.data['success'] == true) {
         debugPrint('Raw series response: ${response.data}');
 
-        final seriesData = response.data['data']['series'] as List;
+        final data = response.data['data'];
+        final isPurchased = data['is_purchased'] == true;
+        final seriesData = data['series'] as List;
         debugPrint('Series data list: $seriesData');
+        debugPrint('Is purchased: $isPurchased');
 
         final series = seriesData
             .map((json) => SeriesModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
         debugPrint('√ ${series.length} series retrieved');
-        return series;
+        return (series: series, isPurchased: isPurchased);
       } else {
         debugPrint('✗ Failed to retrieve series');
         throw Exception('Failed to retrieve series');
@@ -696,6 +699,24 @@ class DashboardService {
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Toggle bookmark status for a library item
+  Future<bool> toggleBookmark(String libraryId, bool isBookmarked) async {
+    try {
+      final response = await _apiService.dio.put(
+        ApiConstants.libraryBookmark(libraryId),
+        data: {'is_bookmarked': isBookmarked},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      debugPrint('Toggle bookmark error: $e');
+      throw Exception(_apiService.getErrorMessage(e));
     }
   }
 

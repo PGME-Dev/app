@@ -91,9 +91,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     });
 
     try {
-      final series = await _dashboardService.getPackageSeries(package.packageId);
+      final result = await _dashboardService.getPackageSeries(package.packageId);
       setState(() {
-        _series = series;
+        _series = result.series;
+        // Update purchase status from fresh backend check
+        if (result.isPurchased && !package.isPurchased) {
+          _selectedPackage = package.copyWith(isPurchased: true);
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -145,7 +149,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final dashboardProvider = Provider.of<DashboardProvider>(context);
     // Use selected package's purchase status when viewing a specific package,
     // otherwise fall back to type-level subscription check for the landing page
-    final isSubscribed = _selectedPackage?.isPurchased ?? (dashboardProvider.hasPracticalSubscription || widget.isSubscribed);
+    final isSubscribed = (_selectedPackage?.isPurchased ?? false) || dashboardProvider.hasPracticalSubscription || widget.isSubscribed;
 
     final backgroundColor = isDark ? AppColors.darkBackground : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
@@ -163,6 +167,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
       title = _selectedPackage!.name;
     } else if (_contentMode == 'videos') {
       title = 'Video Series';
+    } else if (_contentMode == 'notes') {
+      title = 'Study Notes';
     } else {
       title = 'Live Sessions';
     }
@@ -254,7 +260,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                               ? _buildSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
                               : _contentMode == 'sessions'
                                   ? _buildSessionsListView(isDark, textColor, secondaryTextColor, iconColor)
-                                  : _buildPackageDetailView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+                                  : _contentMode == 'notes'
+                                      ? _buildNotesSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
+                                      : _buildPackageDetailView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
             ),
           ],
         ),
@@ -364,23 +372,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No content available',
+                          'Content Coming Soon',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Check back later for live sessions and practical packages.',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: isTablet ? 16 : 14,
-                            color: secondaryTextColor,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -411,6 +409,47 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final totalLectures = _series.fold<int>(0, (sum, s) => sum + (s.totalLectures ?? 0));
     // Count all live sessions since sessions aren't directly linked to packages
     final packageSessions = _liveSessions.length;
+    final totalDocuments = _series.fold<int>(0, (sum, s) => sum + (s.totalDocuments ?? 0));
+
+    // Build option cards conditionally based on available content
+    final cardGap = isTablet ? 20.0 : 14.0;
+    final cards = <Widget>[];
+    if (totalLectures > 0) {
+      cards.add(_buildOptionCard(
+        title: 'Watch\nVideo Lectures',
+        subtitle: '$totalLectures Lectures',
+        icon: Icons.play_circle_outline_rounded,
+        imagePath: 'assets/illustrations/1.png',
+        isDark: isDark,
+        gradientStart: gradientStart,
+        gradientEnd: gradientEnd,
+        onTap: () => setState(() => _contentMode = 'videos'),
+      ));
+    }
+    if (packageSessions > 0) {
+      cards.add(_buildOptionCard(
+        title: 'View\nLive Sessions',
+        subtitle: '$packageSessions Sessions',
+        icon: Icons.videocam_outlined,
+        imagePath: 'assets/illustrations/2.png',
+        isDark: isDark,
+        gradientStart: gradientStart,
+        gradientEnd: gradientEnd,
+        onTap: () => setState(() => _contentMode = 'sessions'),
+      ));
+    }
+    if (totalDocuments > 0) {
+      cards.add(_buildOptionCard(
+        title: 'Read\nNotes',
+        subtitle: '$totalDocuments Notes',
+        icon: Icons.description_outlined,
+        imagePath: 'assets/illustrations/3.png',
+        isDark: isDark,
+        gradientStart: gradientStart,
+        gradientEnd: gradientEnd,
+        onTap: () => setState(() => _contentMode = 'notes'),
+      ));
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
@@ -422,39 +461,12 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             children: [
               const SizedBox(height: 8),
 
-              // Two option cards
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: hPadding),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildOptionCard(
-                        title: 'Watch\nVideo Lectures',
-                        subtitle: '$totalLectures Lectures',
-                        icon: Icons.play_circle_outline_rounded,
-                        imagePath: 'assets/illustrations/1.png',
-                        isDark: isDark,
-                        gradientStart: gradientStart,
-                        gradientEnd: gradientEnd,
-                        onTap: () => setState(() => _contentMode = 'videos'),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 20 : 14),
-                    Expanded(
-                      child: _buildOptionCard(
-                        title: 'View\nLive Sessions',
-                        subtitle: '$packageSessions Sessions',
-                        icon: Icons.videocam_outlined,
-                        imagePath: 'assets/illustrations/2.png',
-                        isDark: isDark,
-                        gradientStart: gradientStart,
-                        gradientEnd: gradientEnd,
-                        onTap: () => setState(() => _contentMode = 'sessions'),
-                      ),
-                    ),
-                  ],
+              // Option cards — conditional layout based on count
+              if (cards.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: _buildOptionCardsLayout(cards, cardGap),
                 ),
-              ),
 
               const SizedBox(height: 28),
 
@@ -468,6 +480,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 isSubscribed,
                 totalLectures,
                 packageSessions,
+                totalDocuments,
               ),
             ],
           ),
@@ -494,26 +507,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
+            Icon(Icons.video_library_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
-              'No series available',
+              'Series Coming Soon',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: isTablet ? 20 : 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This package does not have any series yet.',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: isTablet ? 16 : 14,
-                color: secondaryTextColor,
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -528,7 +531,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
           itemCount: _series.length,
           itemBuilder: (context, index) {
             final series = _series[index];
-            final isItemLocked = series.isLocked;
+            final isItemLocked = isSubscribed ? false : series.isLocked;
 
             return GestureDetector(
               onTap: () {
@@ -654,23 +657,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             Icon(Icons.videocam_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text(
-              'No live sessions available',
+              'Sessions Coming Soon',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: isTablet ? 20 : 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check back later for upcoming live sessions.',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: isTablet ? 16 : 14,
-                color: secondaryTextColor,
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -794,6 +787,193 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
   }
 
+  Widget _buildOptionCardsLayout(List<Widget> cards, double gap) {
+    if (cards.length == 1) {
+      return Row(
+        children: [
+          Expanded(child: cards[0]),
+          SizedBox(width: gap),
+          const Expanded(child: SizedBox()),
+        ],
+      );
+    }
+    if (cards.length == 2) {
+      return Row(
+        children: [
+          Expanded(child: cards[0]),
+          SizedBox(width: gap),
+          Expanded(child: cards[1]),
+        ],
+      );
+    }
+    // 3 cards: first two in a row, third below at half width
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: cards[0]),
+            SizedBox(width: gap),
+            Expanded(child: cards[1]),
+          ],
+        ),
+        SizedBox(height: gap),
+        Row(
+          children: [
+            Expanded(child: cards[2]),
+            SizedBox(width: gap),
+            const Expanded(child: SizedBox()),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Notes Series List View ───────────────────────────────────────────────
+
+  Widget _buildNotesSeriesListView(
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+    Color iconColor,
+    Color cardBgColor,
+    bool isSubscribed,
+  ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
+    if (_series.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.description_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
+            const SizedBox(height: 16),
+            Text(
+              'Notes Coming Soon',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: isTablet ? 20 : 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
+          itemCount: _series.length,
+          itemBuilder: (context, index) {
+            final series = _series[index];
+            final isItemLocked = isSubscribed ? false : series.isLocked;
+
+            return GestureDetector(
+              onTap: () {
+                if (isItemLocked) {
+                  _showEnrollmentPopup();
+                } else if (series.seriesId.isNotEmpty) {
+                  context.push('/available-notes?seriesId=${series.seriesId}&subscribed=$isSubscribed&packageId=${_selectedPackage!.packageId}');
+                }
+              },
+              child: _buildNotesSeriesCard(
+                series,
+                isDark: isDark,
+                textColor: textColor,
+                cardBgColor: cardBgColor,
+                iconColor: iconColor,
+                isLocked: isItemLocked,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotesSeriesCard(
+    SeriesModel series, {
+    required bool isDark,
+    required Color textColor,
+    required Color cardBgColor,
+    required Color iconColor,
+    required bool isLocked,
+  }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    return Container(
+      margin: EdgeInsets.only(bottom: isTablet ? 18 : 14),
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 24 : 18),
+        child: Row(
+          children: [
+            Container(
+              width: isTablet ? 60 : 44,
+              height: isTablet ? 60 : 44,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+              ),
+              child: Center(
+                child: Icon(Icons.description_outlined, size: isTablet ? 30 : 22, color: iconColor),
+              ),
+            ),
+            SizedBox(width: isTablet ? 18 : 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    series.title,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 18 : 14,
+                      height: 1.3,
+                      color: textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${series.totalDocuments ?? 0} Documents',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontSize: isTablet ? 15 : 12,
+                      color: textColor.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (isLocked)
+              Container(
+                width: isTablet ? 42 : 32,
+                height: isTablet ? 42 : 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                ),
+                child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: iconColor)),
+              )
+            else
+              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPackageInfoSection(
     bool isDark,
     Color textColor,
@@ -803,6 +983,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     bool isSubscribed,
     int totalLectures,
     int packageSessions,
+    int totalDocuments,
   ) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
@@ -875,6 +1056,17 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   textColor: textColor,
                   secondaryColor: secondaryTextColor,
                 ),
+                if (totalDocuments > 0) ...[
+                  _buildStatDivider(isDark),
+                  _buildStatItem(
+                    icon: Icons.description_outlined,
+                    value: '$totalDocuments',
+                    label: 'Notes',
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    secondaryColor: secondaryTextColor,
+                  ),
+                ],
                 if (totalDuration.isNotEmpty) ...[
                   _buildStatDivider(isDark),
                   _buildStatItem(
@@ -1644,7 +1836,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     final shimmerRadius = isTablet ? 20.0 : 12.0;
 
     // Show different shimmer based on current view mode
-    if (_contentMode == 'videos') {
+    if (_contentMode == 'videos' || _contentMode == 'notes') {
       // Series list shimmer
       return ShimmerWidgets.seriesListShimmer(isDark: isDark);
     } else if (_contentMode == 'sessions') {

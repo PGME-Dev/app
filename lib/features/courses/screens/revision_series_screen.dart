@@ -64,9 +64,17 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         subjectId: primarySubjectId,
       );
 
+      if (packages.isEmpty) {
+        setState(() {
+          _error = 'no_content';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final theoryPackage = packages.firstWhere(
         (pkg) => pkg.name.toLowerCase().contains('theory'),
-        orElse: () => packages.isNotEmpty ? packages.first : throw Exception('No Theory package found'),
+        orElse: () => packages.first,
       );
 
       _activePackageId = theoryPackage.packageId;
@@ -109,10 +117,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         }
       }
 
-      final series = await _dashboardService.getPackageSeries(_activePackageId!);
+      final result = await _dashboardService.getPackageSeries(_activePackageId!);
 
       setState(() {
-        _series = series;
+        _series = result.series;
         _isLoading = false;
       });
     } catch (e) {
@@ -306,7 +314,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         ? 'Theory Packages'
         : _contentMode == 'lectures'
             ? 'Video Lectures'
-            : 'Study Documents';
+            : 'Study Notes';
 
     return BackButtonListener(
       onBackButtonPressed: () async {
@@ -382,11 +390,13 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             Expanded(
               child: _isLoading
                   ? _buildLoadingShimmer(isDark)
-                  : _error != null
-                      ? _buildErrorView(textColor, secondaryTextColor, iconColor)
-                      : isOnLanding
-                          ? _buildLandingView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
-                          : _buildSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+                  : _error == 'no_content'
+                      ? _buildComingSoonView(isDark, textColor, secondaryTextColor)
+                      : _error != null
+                          ? _buildErrorView(textColor, secondaryTextColor, iconColor)
+                          : isOnLanding
+                              ? _buildLandingView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
+                              : _buildSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
             ),
           ],
         ),
@@ -440,8 +450,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                     SizedBox(width: isTablet ? 20 : 14),
                     Expanded(
                       child: _buildOptionCard(
-                        title: 'Read\nDocuments',
-                        subtitle: '${_getTotalDocuments()} Documents',
+                        title: 'Read\nNotes',
+                        subtitle: '${_getTotalDocuments()} Notes',
                         icon: Icons.description_outlined,
                         imagePath: 'assets/illustrations/2.png',
                         isDark: isDark,
@@ -647,7 +657,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                 _buildStatItem(
                   icon: Icons.description_outlined,
                   value: '$totalDocs',
-                  label: 'Documents',
+                  label: 'Notes',
                   iconColor: iconColor,
                   textColor: textColor,
                   secondaryColor: secondaryTextColor,
@@ -901,17 +911,11 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open_outlined, size: isTablet ? 64 : 48, color: textColor.withValues(alpha: 0.5)),
+            Icon(Icons.video_library_outlined, size: isTablet ? 64 : 48, color: textColor.withValues(alpha: 0.5)),
             SizedBox(height: isTablet ? 20 : 16),
             Text(
-              'No series available',
+              'Series Coming Soon',
               style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 20 : 16, fontWeight: FontWeight.w600, color: textColor),
-            ),
-            SizedBox(height: isTablet ? 12 : 8),
-            Text(
-              'This package does not have any series yet.',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 17 : 14, color: secondaryTextColor),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -1161,6 +1165,37 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         ),
       );
     }
+  }
+
+  // ── Coming Soon View ──────────────────────────────────────────────────
+
+  Widget _buildComingSoonView(bool isDark, Color textColor, Color secondaryTextColor) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 32.0 : 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: isTablet ? 64 : 52,
+              color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+            ),
+            SizedBox(height: isTablet ? 20 : 16),
+            Text(
+              'Content Coming Soon',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: isTablet ? 22 : 18,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── Error View ────────────────────────────────────────────────────────

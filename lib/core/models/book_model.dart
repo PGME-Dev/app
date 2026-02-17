@@ -56,6 +56,15 @@ class BookModel {
 
   final BookSubject? subject;
 
+  @JsonKey(name: 'ebook', defaultValue: false)
+  final bool ebook;
+
+  @JsonKey(name: 'ebook_file_format')
+  final String? ebookFileFormat;
+
+  @JsonKey(name: 'ebook_file_size_mb')
+  final double? ebookFileSizeMb;
+
   BookModel({
     required this.bookId,
     required this.title,
@@ -79,6 +88,9 @@ class BookModel {
     this.publicationYear,
     this.pages,
     this.subject,
+    this.ebook = false,
+    this.ebookFileFormat,
+    this.ebookFileSizeMb,
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) =>
@@ -128,6 +140,9 @@ class BookModel {
     int? publicationYear,
     int? pages,
     BookSubject? subject,
+    bool? ebook,
+    String? ebookFileFormat,
+    double? ebookFileSizeMb,
   }) {
     return BookModel(
       bookId: bookId ?? this.bookId,
@@ -152,6 +167,9 @@ class BookModel {
       publicationYear: publicationYear ?? this.publicationYear,
       pages: pages ?? this.pages,
       subject: subject ?? this.subject,
+      ebook: ebook ?? this.ebook,
+      ebookFileFormat: ebookFileFormat ?? this.ebookFileFormat,
+      ebookFileSizeMb: ebookFileSizeMb ?? this.ebookFileSizeMb,
     );
   }
 }

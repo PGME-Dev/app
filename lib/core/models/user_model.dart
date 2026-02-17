@@ -42,6 +42,12 @@ class UserModel {
   @JsonKey(name: 'pg_college')
   final String? pgCollege;
 
+  @JsonKey(name: 'affiliated_organisation')
+  final String? affiliatedOrganisation;
+
+  @JsonKey(name: 'current_designation')
+  final String? currentDesignation;
+
   @JsonKey(name: 'created_at')
   final String? createdAt;
 
@@ -63,6 +69,8 @@ class UserModel {
     this.studentId,
     this.ugCollege,
     this.pgCollege,
+    this.affiliatedOrganisation,
+    this.currentDesignation,
     this.createdAt,
     this.updatedAt,
   });
@@ -87,6 +95,8 @@ class UserModel {
     String? studentId,
     String? ugCollege,
     String? pgCollege,
+    String? affiliatedOrganisation,
+    String? currentDesignation,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -106,6 +116,8 @@ class UserModel {
       studentId: studentId ?? this.studentId,
       ugCollege: ugCollege ?? this.ugCollege,
       pgCollege: pgCollege ?? this.pgCollege,
+      affiliatedOrganisation: affiliatedOrganisation ?? this.affiliatedOrganisation,
+      currentDesignation: currentDesignation ?? this.currentDesignation,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -4,7 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/library_item_model.dart';
+import 'package:pgme/core/constants/api_constants.dart';
+import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/services/download_service.dart';
+import 'package:pgme/core/services/ebook_order_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class YourNotesScreen extends StatefulWidget {
@@ -16,23 +20,66 @@ class YourNotesScreen extends StatefulWidget {
 
 class _YourNotesScreenState extends State<YourNotesScreen> {
   final DashboardService _dashboardService = DashboardService();
+  final EbookOrderService _ebookOrderService = EbookOrderService();
+  final DownloadService _downloadService = DownloadService();
   List<LibraryItemModel> _libraryItems = [];
+  List<LibraryItemModel> _purchasedEbookItems = [];
   bool _isLoading = true;
   String? _error;
-  bool _showBookmarkedOnly = true;
+  bool _showBookmarkedOnly = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  // Download tracking
+  final Set<String> _downloadedDocIds = {};
+  final Map<String, double> _downloadingDocs = {}; // itemId → progress 0.0-1.0
 
   @override
   void initState() {
     super.initState();
     _loadLibrary();
+    _loadPurchasedEbooks();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleBookmark(LibraryItemModel item) async {
+    final newBookmarkState = !item.isBookmarked;
+    final index = _libraryItems.indexWhere((i) => i.libraryId == item.libraryId);
+    if (index == -1) return;
+
+    // Optimistic update
+    setState(() {
+      _libraryItems[index] = item.copyWith(isBookmarked: newBookmarkState);
+    });
+
+    try {
+      await _dashboardService.toggleBookmark(item.libraryId, newBookmarkState);
+
+      // If on "Bookmarked" tab and we just unbookmarked, remove from list
+      if (_showBookmarkedOnly && !newBookmarkState && mounted) {
+        setState(() {
+          _libraryItems.removeAt(index);
+        });
+      }
+    } catch (e) {
+      // Revert on failure
+      if (mounted) {
+        setState(() {
+          _libraryItems[index] = item;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update bookmark'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadLibrary() async {
@@ -51,6 +98,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
           _libraryItems = items;
           _isLoading = false;
         });
+        _checkDownloadedDocs();
       }
     } catch (e) {
       if (mounted) {
@@ -62,9 +110,146 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
     }
   }
 
+  Future<void> _loadPurchasedEbooks() async {
+    try {
+      final ebooks = await _ebookOrderService.getUserPurchasedEbooks();
+      if (mounted) {
+        setState(() {
+          _purchasedEbookItems = ebooks.map((ebook) => LibraryItemModel(
+            libraryId: 'ebook_${ebook.purchaseId}',
+            documentId: ebook.bookId,
+            title: ebook.title,
+            description: ebook.author,
+            fileFormat: ebook.ebookFileFormat ?? 'pdf',
+            pageCount: ebook.pages,
+            fileSizeMb: ebook.ebookFileSizeMb,
+            addedAt: ebook.purchasedAt,
+            isBookmarked: false,
+          )).toList();
+        });
+        _checkDownloadedDocs();
+      }
+    } catch (e) {
+      debugPrint('Error loading purchased ebooks: $e');
+    }
+  }
+
+  /// Check which documents are already downloaded
+  Future<void> _checkDownloadedDocs() async {
+    for (final item in _libraryItems) {
+      final fileName = 'doc_${item.documentId}.pdf';
+      final downloaded = await _downloadService.isDownloaded(fileName);
+      if (downloaded) _downloadedDocIds.add(item.documentId);
+    }
+    for (final item in _purchasedEbookItems) {
+      final fileName = 'ebook_${item.documentId}.pdf';
+      final downloaded = await _downloadService.isDownloaded(fileName);
+      if (downloaded) _downloadedDocIds.add(item.documentId);
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Download a document (library item or ebook)
+  Future<void> _downloadDocument(LibraryItemModel item) async {
+    final docId = item.documentId;
+    if (_downloadingDocs.containsKey(docId) || _downloadedDocIds.contains(docId)) return;
+
+    setState(() {
+      _downloadingDocs[docId] = 0.0;
+    });
+
+    try {
+      String url;
+      String fileName;
+
+      if (_isEbookItem(item)) {
+        final data = await _ebookOrderService.getEbookViewUrl(docId);
+        url = data['url'] as String;
+        fileName = 'ebook_$docId.pdf';
+      } else {
+        final response = await ApiService().dio.get(
+          ApiConstants.documentViewUrl(docId),
+        );
+        url = response.data['data']['url'] as String;
+        fileName = 'doc_$docId.pdf';
+      }
+
+      await _downloadService.downloadFile(
+        url: url,
+        fileName: fileName,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _downloadingDocs[docId] = progress;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _downloadingDocs.remove(docId);
+          _downloadedDocIds.add(docId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Document downloaded successfully'), duration: Duration(seconds: 2)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _downloadingDocs.remove(docId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: ${e.toString().replaceAll('Exception: ', '')}'), duration: const Duration(seconds: 3)),
+        );
+      }
+    }
+  }
+
+  bool _isEbookItem(LibraryItemModel item) {
+    return item.libraryId.startsWith('ebook_');
+  }
+
+  Future<void> _openEbook(LibraryItemModel item) async {
+    try {
+      final data = await _ebookOrderService.getEbookViewUrl(item.documentId);
+      if (mounted) {
+        final url = data['url'] as String?;
+        final title = data['title'] as String? ?? item.title;
+        if (url != null) {
+          context.pushNamed(
+            'pdf-viewer',
+            queryParameters: {
+              'pdfUrl': url,
+              'title': title,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open eBook: ${e.toString().replaceAll("Exception: ", "")}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   List<LibraryItemModel> get _filteredItems {
-    if (_searchQuery.isEmpty) return _libraryItems;
-    return _libraryItems.where((item) {
+    // Merge purchased ebooks at top (only in All Notes tab, not bookmarked)
+    final List<LibraryItemModel> merged = [];
+    if (!_showBookmarkedOnly) {
+      merged.addAll(_purchasedEbookItems);
+    }
+    merged.addAll(_libraryItems);
+
+    if (_searchQuery.isEmpty) return merged;
+    return merged.where((item) {
       final titleMatch = item.title.toLowerCase().contains(_searchQuery.toLowerCase());
       final descMatch = item.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
       return titleMatch || descMatch;
@@ -120,7 +305,10 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                 const Spacer(),
                 // Refresh button
                 GestureDetector(
-                  onTap: _loadLibrary,
+                  onTap: () {
+                    _loadLibrary();
+                    _loadPurchasedEbooks();
+                  },
                   child: SizedBox(
                     width: isTablet ? 30 : 24,
                     height: isTablet ? 30 : 24,
@@ -206,35 +394,6 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      _showBookmarkedOnly = true;
-                    });
-                    _loadLibrary();
-                  },
-                  child: Container(
-                    height: isTablet ? 42 : 36,
-                    decoration: BoxDecoration(
-                      color: _showBookmarkedOnly ? badgeColor : Colors.transparent,
-                      borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                      border: _showBookmarkedOnly ? null : Border.all(color: badgeColor),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 15 : 11, vertical: isTablet ? 10 : 8),
-                    child: Text(
-                      'Bookmarked',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: isTablet ? 15 : 12,
-                        height: 20 / 12,
-                        letterSpacing: -0.5,
-                        color: _showBookmarkedOnly ? Colors.white : badgeColor,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: isTablet ? 13 : 10),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
                       _showBookmarkedOnly = false;
                     });
                     _loadLibrary();
@@ -260,105 +419,114 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                     ),
                   ),
                 ),
+                SizedBox(width: isTablet ? 13 : 10),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showBookmarkedOnly = true;
+                    });
+                    _loadLibrary();
+                  },
+                  child: Container(
+                    height: isTablet ? 42 : 36,
+                    decoration: BoxDecoration(
+                      color: _showBookmarkedOnly ? badgeColor : Colors.transparent,
+                      borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                      border: _showBookmarkedOnly ? null : Border.all(color: badgeColor),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 15 : 11, vertical: isTablet ? 10 : 8),
+                    child: Text(
+                      'Bookmarked',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: isTablet ? 15 : 12,
+                        height: 20 / 12,
+                        letterSpacing: -0.5,
+                        color: _showBookmarkedOnly ? Colors.white : badgeColor,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
 
           SizedBox(height: isTablet ? 23 : 18),
 
-          // Order Physical Copies Banner
+          // eBook & Physical Cards
           Padding(
             padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 15),
             child: GestureDetector(
-              onTap: () {
-                context.push('/order-physical-books');
-              },
+              onTap: () => context.push('/ebook-store'),
               child: Container(
                 width: double.infinity,
-                height: isTablet ? 150 : 100,
-                clipBehavior: Clip.none,
+                height: ResponsiveHelper.orderBookCardHeight(context),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                  borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
                   gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: isDark
-                        ? [const Color(0xFF0D2A5C), const Color(0xFF1A3A5C)]
-                        : [const Color(0xFF0047CF), const Color(0xFFE4F4FF)],
-                    stops: const [0.3654, 1.0],
+                        ? [const Color(0xFF1A3A2E), const Color(0xFF0D2A1C)]
+                        : [const Color(0xFF00875A), const Color(0xFF00C853)],
                   ),
                 ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Text
-                    Positioned(
-                      top: isTablet ? 24 : 13,
-                      left: isTablet ? 24 : 12,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Opacity(
-                            opacity: 0.9,
-                            child: Text(
-                              'Order Physical\nCopies',
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 24 : 16,
+                    vertical: isTablet ? 20 : 14,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: isTablet ? 52 : 40,
+                        height: isTablet ? 52 : 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                        ),
+                        child: Icon(
+                          Icons.menu_book_rounded,
+                          size: isTablet ? 28 : 22,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: isTablet ? 16 : 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Buy E-Books',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w600,
-                                fontSize: isTablet ? 26 : 18,
-                                height: isTablet ? 1.2 : 20 / 18,
-                                letterSpacing: -0.5,
+                                fontSize: isTablet ? 22 : 16,
                                 color: Colors.white,
                               ),
                             ),
-                          ),
-                          if (isTablet) ...[
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Text(
-                                  'Get printed study materials',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 14,
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 16,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ],
+                            SizedBox(height: isTablet ? 4 : 2),
+                            Text(
+                              'Browse and purchase study materials',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
+                                fontSize: isTablet ? 15 : 12,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
                             ),
                           ],
-                        ],
-                      ),
-                    ),
-                    // Image
-                    Positioned(
-                      right: isTablet ? -80 : -130,
-                      top: isTablet ? -120 : -120,
-                      child: Transform.flip(
-                        flipX: true,
-                        child: Image.asset(
-                          'assets/illustrations/4.png',
-                          width: isTablet ? 400 : 350,
-                          height: isTablet ? 400 : 350,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: isTablet ? 400 : 350,
-                              height: isTablet ? 400 : 350,
-                              color: Colors.transparent,
-                            );
-                          },
                         ),
                       ),
-                    ),
-                  ],
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: isTablet ? 22 : 16,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -430,7 +598,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                                 ),
                                 SizedBox(height: isTablet ? 10 : 8),
                                 Text(
-                                  'Add documents to your library from series',
+                                  'Add notes to your library from series',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: isTablet ? 17 : 14,
@@ -523,20 +691,24 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
     final metaIconSize = isTablet ? 16.0 : 16.0;
     final badgeHeight = isTablet ? 22.0 : 20.0;
     final badgeFontSize = isTablet ? 11.0 : 10.0;
-    final bookmarkSize = isTablet ? 22.0 : 20.0;
+    final bookmarkSize = isTablet ? 28.0 : 24.0;
     final cardRadius = isTablet ? 22.0 : 20.0;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: inGrid ? 0 : (isTablet ? hPadding : 15)),
       child: GestureDetector(
         onTap: () {
-          context.pushNamed(
-            'pdf-viewer',
-            queryParameters: {
-              'documentId': item.documentId,
-              'title': item.title,
-            },
-          );
+          if (_isEbookItem(item)) {
+            _openEbook(item);
+          } else {
+            context.pushNamed(
+              'pdf-viewer',
+              queryParameters: {
+                'documentId': item.documentId,
+                'title': item.title,
+              },
+            );
+          }
         },
         child: Container(
           width: double.infinity,
@@ -592,14 +764,48 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                       ),
                     ),
                   ),
-                  if (item.isBookmarked) ...[
+                  if (!_isEbookItem(item)) ...[
                     const SizedBox(width: 6),
-                    Icon(
-                      Icons.bookmark,
-                      size: bookmarkSize,
-                      color: iconColor,
+                    GestureDetector(
+                      onTap: () => _toggleBookmark(item),
+                      child: Icon(
+                        item.isBookmarked
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
+                        size: bookmarkSize,
+                        color: iconColor,
+                      ),
                     ),
                   ],
+                  // Download button
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () {
+                      if (!_downloadingDocs.containsKey(item.documentId) &&
+                          !_downloadedDocIds.contains(item.documentId)) {
+                        _downloadDocument(item);
+                      }
+                    },
+                    child: _downloadingDocs.containsKey(item.documentId)
+                        ? SizedBox(
+                            width: isTablet ? 22.0 : 20.0,
+                            height: isTablet ? 22.0 : 20.0,
+                            child: CircularProgressIndicator(
+                              value: _downloadingDocs[item.documentId],
+                              strokeWidth: 2,
+                              color: iconColor,
+                            ),
+                          )
+                        : Icon(
+                            _downloadedDocIds.contains(item.documentId)
+                                ? Icons.download_done
+                                : Icons.download_outlined,
+                            size: bookmarkSize,
+                            color: _downloadedDocIds.contains(item.documentId)
+                                ? AppColors.success
+                                : secondaryTextColor,
+                          ),
+                  ),
                 ],
               ),
 

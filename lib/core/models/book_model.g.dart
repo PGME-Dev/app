@@ -32,6 +32,9 @@ BookModel _$BookModelFromJson(Map<String, dynamic> json) => BookModel(
       subject: json['subject'] == null
           ? null
           : BookSubject.fromJson(json['subject'] as Map<String, dynamic>),
+      ebook: json['ebook'] as bool? ?? false,
+      ebookFileFormat: json['ebook_file_format'] as String?,
+      ebookFileSizeMb: (json['ebook_file_size_mb'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$BookModelToJson(BookModel instance) => <String, dynamic>{
@@ -57,6 +60,9 @@ Map<String, dynamic> _$BookModelToJson(BookModel instance) => <String, dynamic>{
       'publication_year': instance.publicationYear,
       'pages': instance.pages,
       'subject': instance.subject,
+      'ebook': instance.ebook,
+      'ebook_file_format': instance.ebookFileFormat,
+      'ebook_file_size_mb': instance.ebookFileSizeMb,
     };
 
 BookSubject _$BookSubjectFromJson(Map<String, dynamic> json) => BookSubject(

@@ -21,18 +21,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingData> _pages = [
     OnboardingData(
-      title: 'Secure Access\nLearning Sessions',
-      subtitle: 'Secured Log In ensures that the content is only\navailable for registered Learners',
+      title: 'Postgraduate Medical\nExcellence',
+      subtitle: 'Access structured residency courses specifically designed for MD/DNB candidates and faculty. The curriculum focuses on mastery of core medical concepts through expert-led modules.',
       illustration: 'assets/illustrations/1.png',
     ),
     OnboardingData(
-      title: 'Theory and Practical\nPreparations',
-      subtitle: 'Get access to structured theory and practical\nmock lessons and tests.',
+      title: 'Interactive Training\n& Resources',
+      subtitle: 'Join interactive live sessions or access high-yield recorded lectures at any time. Detailed revision notes and study materials are provided to ensure a comprehensive preparation experience.',
       illustration: 'assets/illustrations/2.png',
     ),
     OnboardingData(
-      title: 'Get Revision Notes and\nAccess to Live Classes',
-      subtitle: 'Register for Live Sessions and Access\nRecordings. Access dedicated notes to ace\nyour examinations',
+      title: 'Redefining Medical\nEducation',
+      subtitle: 'PGME serves as a comprehensive learning companion for postgraduate medical training. The platform empowers medical professionals with realistic assessment scenarios and up-to-date content to excel in clinical careers.',
       illustration: 'assets/illustrations/3.png',
     ),
   ];
@@ -293,8 +293,8 @@ class _OnboardingPage extends StatelessWidget {
     // On tablet portrait, base circle on shortestSide for bigger display
     final circleSize = isTablet ? shortestSide * 0.62 : screenWidth * 0.85;
 
-    final titleSize = isTablet ? (index == 2 ? 42.0 : 48.0) : (index == 2 ? 29.0 : 33.0);
-    final subtitleSize = isTablet ? 19.0 : 12.0;
+    final titleSize = isTablet ? 46.0 : 32.0;
+    final subtitleSize = isTablet ? 17.0 : 12.0;
     final titleWidth = isTablet ? 560.0 : 355.0;
     final subtitleWidth = isTablet ? 540.0 : 341.0;
     final hPadding = isTablet ? 32.0 : 24.0;
@@ -353,7 +353,7 @@ class _OnboardingPage extends StatelessWidget {
                       fontFamily: 'Sora',
                       fontSize: subtitleSize,
                       fontWeight: FontWeight.w400,
-                      height: 1.57,
+                      height: 1.6,
                       letterSpacing: 0,
                       color: const Color(0xFF00C2FF),
                     ),
@@ -403,9 +403,9 @@ class _OnboardingPage extends StatelessWidget {
                     child: Text(
                       data.title,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: index == 2 ? 34.0 : titleSize,
+                        fontSize: titleSize,
                         fontWeight: FontWeight.w700,
                         height: 1.1,
                         letterSpacing: 0,
@@ -426,7 +426,7 @@ class _OnboardingPage extends StatelessWidget {
                         fontFamily: 'Sora',
                         fontSize: subtitleSize,
                         fontWeight: FontWeight.w400,
-                        height: 1.57,
+                        height: 1.6,
                         letterSpacing: 0,
                         color: Color(0xFF00C2FF),
                       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -28,30 +28,6 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     // Return first name only
     final firstName = fullName.split(' ').first;
     return firstName.isNotEmpty ? firstName : 'User';
-  }
-
-  Future<void> _openWhatsApp() async {
-    const phoneNumber = '+918074220727';
-    const message = 'Hi, I need help with PGME app';
-    final whatsappUrl = 'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}';
-
-    try {
-      final uri = Uri.parse(whatsappUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw Exception('Could not launch WhatsApp');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to open WhatsApp: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _showSubjectPicker() async {
@@ -88,11 +64,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
 
     // Responsive sizes
-    final avatarSize = ResponsiveHelper.profileAvatarSize(context);
     final actionBtnSize = ResponsiveHelper.actionButtonSize(context);
     final greetingFontSize = isTablet ? 30.0 : 20.0;
     final subtitleFontSize = isTablet ? 18.0 : 13.0;
-    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 20.0;
+    final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -122,44 +97,16 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         ),
                         child: Row(
                       children: [
-                        // Profile Avatar
+                        // Profile Icon
                         GestureDetector(
                           onTap: () => context.push('/profile'),
-                          child: Container(
-                            width: avatarSize,
-                            height: avatarSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFF0F0F0),
-                              border: Border.all(
-                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                                width: 1.5,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: authProvider.user?.photoUrl != null && authProvider.user!.photoUrl!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: authProvider.user!.photoUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Icon(
-                                      Icons.person_rounded,
-                                      size: isTablet ? 40 : 24,
-                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                    ),
-                                    errorWidget: (context, url, error) => Icon(
-                                      Icons.person_rounded,
-                                      size: isTablet ? 40 : 24,
-                                      color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.person_rounded,
-                                    size: isTablet ? 40 : 24,
-                                    color: isDark ? AppColors.darkTextTertiary : const Color(0xFFAAAAAA),
-                                  ),
+                          child: Icon(
+                            Icons.person_outline_rounded,
+                            size: isTablet ? 34 : 28,
+                            color: isDark ? AppColors.darkTextSecondary : const Color(0xFF555555),
                           ),
                         ),
-                        SizedBox(width: isTablet ? 22 : 14),
+                        SizedBox(width: isTablet ? 16 : 10),
                         // Greeting
                         Expanded(
                           child: Column(
@@ -193,29 +140,40 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Action buttons
+                        // Theme toggle
                         GestureDetector(
-                          onTap: _openWhatsApp,
+                          onTap: () => themeProvider.toggleDarkMode(),
                           child: Container(
-                            width: actionBtnSize,
-                            height: actionBtnSize,
+                            width: isTablet ? 66 : 54,
+                            height: isTablet ? 30 : 26,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+                              color: isDark
+                                  ? const Color(0xFF1A1A2E)
+                                  : const Color(0xFFE4F4FF),
+                              borderRadius: BorderRadius.circular(44),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF00BEFA).withValues(alpha: 0.3)
+                                    : const Color(0xFF0000C8).withValues(alpha: 0.15),
+                                width: 1.5,
+                              ),
                             ),
-                            child: Center(
-                              child: Image.asset(
-                                'assets/icons/whatsapp_logo.png',
-                                width: isTablet ? 32 : 20,
-                                height: isTablet ? 32 : 20,
-                                color: const Color(0xFF25D366),
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.chat_rounded,
-                                    size: isTablet ? 32 : 20,
-                                    color: const Color(0xFF25D366),
-                                  );
-                                },
+                            child: AnimatedAlign(
+                              duration: const Duration(milliseconds: 200),
+                              alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                width: isTablet ? 24 : 20,
+                                height: isTablet ? 24 : 20,
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF0000C8),
+                                ),
+                                child: Icon(
+                                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                                  size: isTablet ? 15 : 13,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -327,11 +285,17 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   if (provider.primarySubject != null) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // What We Offer Section (guest users - no purchase)
-                  if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
+                  // Only show Theory and Practical package types
+                  if (provider.hasActivePurchase == false && provider.packageTypes.any((t) => t.name == 'Theory' || t.name == 'Practical'))
                     _buildWhatWeOfferSection(context, provider, isDark, textColor, isTablet),
 
-                  if (provider.hasActivePurchase == false && provider.packageTypes.isNotEmpty)
+                  if (provider.hasActivePurchase == false && provider.packageTypes.any((t) => t.name == 'Theory' || t.name == 'Practical'))
                     SizedBox(height: isTablet ? 36.0 : 24.0),
+
+                  // Books Section
+                  _buildBooksSection(context, isDark, textColor, isTablet),
+
+                  SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Faculty List
                   FacultyList(
@@ -353,6 +317,95 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     );
   }
 
+  Widget _buildBooksSection(BuildContext context, bool isDark, Color textColor, bool isTablet) {
+    final cardHeight = ResponsiveHelper.orderBookCardHeight(context);
+    final hPad = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+          ),
+          child: GestureDetector(
+            onTap: () => context.push('/your-notes'),
+            child: Container(
+              width: double.infinity,
+              height: cardHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [const Color(0xFF1A3A2E), const Color(0xFF0D2A1C)]
+                      : [const Color(0xFF00875A), const Color(0xFF00C853)],
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 24 : 16,
+                  vertical: isTablet ? 20 : 14,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: isTablet ? 52 : 40,
+                      height: isTablet ? 52 : 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                      ),
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: isTablet ? 28 : 22,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 16 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Buy E-Books',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 22 : 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: isTablet ? 4 : 2),
+                          Text(
+                            'Browse and purchase study materials',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: isTablet ? 15 : 12,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: isTablet ? 22 : 16,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWhatWeOfferSection(
     BuildContext context,
     DashboardProvider provider,
@@ -360,6 +413,11 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     Color textColor,
     bool isTablet,
   ) {
+    // Filter to only show Theory and Practical package types
+    final filteredTypes = provider.packageTypes
+        .where((t) => t.name == 'Theory' || t.name == 'Practical')
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -399,11 +457,11 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (int i = 0; i < provider.packageTypes.length; i++) ...[
+                      for (int i = 0; i < filteredTypes.length; i++) ...[
                         if (i > 0) const SizedBox(width: 20),
                         Expanded(
                           child: _buildPackageTypeCard(
-                            provider.packageTypes[i], isDark, textColor, isTablet,
+                            filteredTypes[i], isDark, textColor, isTablet,
                           ),
                         ),
                       ],
@@ -425,10 +483,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  itemCount: provider.packageTypes.length,
+                  itemCount: filteredTypes.length,
                   itemBuilder: (context, index) {
-                    final packageType = provider.packageTypes[index];
-                    final isLast = index == provider.packageTypes.length - 1;
+                    final packageType = filteredTypes[index];
+                    final isLast = index == filteredTypes.length - 1;
                     return Padding(
                       padding: EdgeInsets.only(right: isLast ? 0 : 16.0),
                       child: SizedBox(

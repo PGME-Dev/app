@@ -19,6 +19,9 @@ class SubjectModel {
   @JsonKey(name: 'display_order')
   final int displayOrder;
 
+  @JsonKey(name: 'whatsapp_community_link')
+  final String? whatsappCommunityLink;
+
   @JsonKey(name: 'is_active')
   final bool isActive;
 
@@ -34,6 +37,7 @@ class SubjectModel {
     required this.name,
     required this.description,
     this.iconUrl,
+    this.whatsappCommunityLink,
     required this.displayOrder,
     required this.isActive,
     this.createdAt,

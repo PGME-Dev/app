@@ -22,6 +22,8 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       studentId: json['student_id'] as String?,
       ugCollege: json['ug_college'] as String?,
       pgCollege: json['pg_college'] as String?,
+      affiliatedOrganisation: json['affiliated_organisation'] as String?,
+      currentDesignation: json['current_designation'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
     );
@@ -41,6 +43,8 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'student_id': instance.studentId,
       'ug_college': instance.ugCollege,
       'pg_college': instance.pgCollege,
+      'affiliated_organisation': instance.affiliatedOrganisation,
+      'current_designation': instance.currentDesignation,
       'created_at': instance.createdAt,
       'updated_at': instance.updatedAt,
     };

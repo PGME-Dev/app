@@ -4,6 +4,11 @@ import 'package:flutter/services.dart';
 class ThemeProvider extends ChangeNotifier {
   bool _isDarkMode = false;
 
+  ThemeProvider() {
+    // Initialize system UI on app start
+    _updateSystemUI();
+  }
+
   bool get isDarkMode => _isDarkMode;
 
   void toggleDarkMode() {

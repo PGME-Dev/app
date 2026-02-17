@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
@@ -29,6 +30,7 @@ class LectureVideoScreen extends StatefulWidget {
 
 class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProviderStateMixin {
   final DashboardService _dashboardService = DashboardService();
+  final DownloadService _downloadService = DownloadService();
 
   SeriesModel? _series;
   List<ModuleModel> _modules = [];
@@ -37,10 +39,72 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
   Map<String, bool> _expandedModules = {};
 
+  // Download tracking
+  final Set<String> _downloadedVideoIds = {};
+  final Map<String, double> _downloadingVideos = {}; // videoId → progress 0.0-1.0
+
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  /// Check which videos are already downloaded
+  Future<void> _checkDownloadedVideos() async {
+    for (final module in _modules) {
+      for (final video in module.videos) {
+        final downloaded = await _downloadService.isDownloaded('video_${video.videoId}.mp4');
+        if (downloaded) {
+          _downloadedVideoIds.add(video.videoId);
+        }
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Download a video
+  Future<void> _downloadVideo(String videoId) async {
+    if (_downloadingVideos.containsKey(videoId) || _downloadedVideoIds.contains(videoId)) return;
+
+    setState(() {
+      _downloadingVideos[videoId] = 0.0;
+    });
+
+    try {
+      final data = await _downloadService.getVideoDownloadUrl(videoId);
+      final url = data['download_url'] as String;
+
+      await _downloadService.downloadFile(
+        url: url,
+        fileName: 'video_$videoId.mp4',
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _downloadingVideos[videoId] = progress;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _downloadingVideos.remove(videoId);
+          _downloadedVideoIds.add(videoId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video downloaded successfully'), duration: Duration(seconds: 2)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _downloadingVideos.remove(videoId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: ${e.toString().replaceAll('Exception: ', '')}'), duration: const Duration(seconds: 3)),
+        );
+      }
+    }
   }
 
   void _handleBack() {
@@ -75,6 +139,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
             _expandedModules[_modules[0].moduleId] = true;
           }
         });
+        _checkDownloadedVideos();
       }
     } catch (e) {
       if (mounted) {
@@ -293,11 +358,36 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     Center(
                       child: Padding(
                         padding: EdgeInsets.all(isTablet ? 48.0 : 32.0),
-                        child: Text('No modules available', style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: isTablet ? 18 : 14,
-                          fontFamily: 'Poppins',
-                        )),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.video_library_outlined,
+                              size: isTablet ? 64 : 48,
+                              color: secondaryTextColor.withValues(alpha: 0.5),
+                            ),
+                            SizedBox(height: isTablet ? 20 : 16),
+                            Text(
+                              'Content Coming Soon',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 20 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                            SizedBox(height: isTablet ? 10 : 8),
+                            Text(
+                              'We\'re preparing the lessons for this series.\nThey\'ll be available shortly!',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 16 : 13,
+                                color: secondaryTextColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   else
@@ -387,6 +477,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     required Color lessonAccessibleBg,
     required Color lessonLockedBg,
     VoidCallback? onTap,
+    bool isDownloaded = false,
+    double? downloadProgress,
+    VoidCallback? onDownload,
   }) {
     final secondaryColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
     final lockBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
@@ -495,6 +588,30 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                 ],
               ),
             ),
+            // Download button
+            if (isAccessible && onDownload != null)
+              GestureDetector(
+                onTap: downloadProgress == null && !isDownloaded ? onDownload : null,
+                child: Padding(
+                  padding: EdgeInsets.all(isTablet ? 8.0 : 6.0),
+                  child: downloadProgress != null
+                      ? SizedBox(
+                          width: isTablet ? 22.0 : 18.0,
+                          height: isTablet ? 22.0 : 18.0,
+                          child: CircularProgressIndicator(
+                            value: downloadProgress,
+                            strokeWidth: 2,
+                            color: iconColor,
+                          ),
+                        )
+                      : Icon(
+                          isDownloaded ? Icons.download_done : Icons.download_outlined,
+                          size: isTablet ? 22.0 : 18.0,
+                          color: isDownloaded ? AppColors.success : secondaryColor,
+                        ),
+                ),
+              ),
+            SizedBox(width: isTablet ? 4 : 2),
           ],
         ),
       ),
@@ -611,7 +728,33 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
             // Videos list
             AnimatedCrossFade(
-              firstChild: Column(
+              firstChild: module.videos.isEmpty
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: lessonPaddingH, vertical: isTablet ? 20 : 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.upcoming_outlined,
+                            size: isTablet ? 22 : 18,
+                            color: iconColor.withValues(alpha: 0.6),
+                          ),
+                          SizedBox(width: isTablet ? 12 : 10),
+                          Expanded(
+                            child: Text(
+                              'Lecture will be live soon',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 14 : 12,
+                                fontWeight: FontWeight.w400,
+                                fontStyle: FontStyle.italic,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
                 children: [
                   ...module.videos.asMap().entries.map((entry) {
                     final index = entry.key;
@@ -641,6 +784,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         lessonAccessibleBg: lessonAccessibleBg,
                         lessonLockedBg: lessonLockedBg,
                         onTap: isAccessible ? () => context.push('/video/${video.videoId}') : null,
+                        isDownloaded: _downloadedVideoIds.contains(video.videoId),
+                        downloadProgress: _downloadingVideos[video.videoId],
+                        onDownload: isAccessible ? () => _downloadVideo(video.videoId) : null,
                       ),
                     );
                   }).toList(),

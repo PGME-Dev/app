@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/user_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -534,23 +536,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            // Navigate to edit profile
+                          onTap: () async {
+                            if (_user != null) {
+                              final result = await context.push('/edit-profile', extra: _user);
+                              if (result == true && mounted) {
+                                // Profile was updated, reload data
+                                _loadData();
+                              }
+                            }
                           },
-                          child: Opacity(
-                            opacity: 0.4,
-                            child: Text(
-                              'Edit',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w500,
-                                fontSize: isTablet ? 15 : 12,
-                                height: 20 / 12,
-                                letterSpacing: -0.5,
-                                color: textColor,
-                              ),
-                              textAlign: TextAlign.right,
+                          child: Text(
+                            'Edit',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 15 : 12,
+                              height: 20 / 12,
+                              letterSpacing: -0.5,
+                              color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
                             ),
+                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -652,23 +657,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              // Navigate to edit address
+                            onTap: () async {
+                              if (_user != null) {
+                                final result = await context.push('/edit-profile', extra: _user);
+                                if (result == true && mounted) {
+                                  // Profile was updated, reload data
+                                  _loadData();
+                                }
+                              }
                             },
-                            child: Opacity(
-                              opacity: 0.4,
-                              child: Text(
-                                'Edit',
-                                style: TextStyle(
-                                  fontFamily: 'SF Pro Display',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: isTablet ? 15 : 12,
-                                  height: 20 / 12,
-                                  letterSpacing: -0.5,
-                                  color: textColor,
-                                ),
-                                textAlign: TextAlign.right,
+                            child: Text(
+                              'Edit',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 15 : 12,
+                                height: 20 / 12,
+                                letterSpacing: -0.5,
+                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
                               ),
+                              textAlign: TextAlign.right,
                             ),
                           ),
                         ],
@@ -751,12 +759,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: EdgeInsets.symmetric(horizontal: hPadding),
                     child: Row(
                       children: [
-                        // My Purchases
+                        // My Orders
                         Expanded(
                           child: _buildQuickActionCard(
                             icon: Icons.shopping_bag_outlined,
-                            label: 'My Purchases',
-                            subtitle: 'View purchases',
+                            label: 'My Orders',
+                            subtitle: 'View orders',
                             onTap: () => context.push('/my-purchases'),
                             cardColor: cardColor,
                             iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
@@ -828,6 +836,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondaryTextColor: secondaryTextColor,
                             isTablet: isTablet,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 16 : 12),
+
+                  // Join PGME Row
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.work_outline,
+                            label: 'Join PGME',
+                            subtitle: 'Apply to our team',
+                            onTap: () => context.push('/careers'),
+                            cardColor: cardColor,
+                            iconBgColor: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
+                            iconColor: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFE53935),
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            isTablet: isTablet,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 12),
+                        // Community links 2x2 grid
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 28 : 22,
+                              vertical: isTablet ? 24 : 20,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkCardBackground : Colors.white,
+                              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildCommunityIcon(
+                                      icon: FontAwesomeIcons.instagram,
+                                      color: const Color(0xFFE1306C),
+                                      url: 'https://www.instagram.com/pgmemedical?igsh=MTh2d2E5dTB2NnJqZQ==',
+                                      isTablet: isTablet,
+                                    ),
+                                    _buildCommunityIcon(
+                                      icon: FontAwesomeIcons.youtube,
+                                      color: const Color(0xFFFF0000),
+                                      url: 'https://youtube.com/@pgmeessentials?si=SsmIf4otndfiGfiS',
+                                      isTablet: isTablet,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: isTablet ? 28 : 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildCommunityIcon(
+                                      icon: FontAwesomeIcons.xTwitter,
+                                      color: isDark ? Colors.white : const Color(0xFF000000),
+                                      url: 'https://x.com/PGME_Medical',
+                                      isTablet: isTablet,
+                                    ),
+                                    if (_selectedSubject?['whatsapp_community_link'] != null)
+                                      _buildCommunityIcon(
+                                        icon: FontAwesomeIcons.whatsapp,
+                                        color: const Color(0xFF25D366),
+                                        url: _selectedSubject!['whatsapp_community_link'],
+                                        isTablet: isTablet,
+                                      )
+                                    else
+                                      SizedBox(width: isTablet ? 38 : 32),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1190,6 +1280,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCommunityIcon({
+    required IconData icon,
+    required Color color,
+    required String url,
+    required bool isTablet,
+  }) {
+    final iconSize = isTablet ? 38.0 : 32.0;
+
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: FaIcon(icon, size: iconSize, color: color),
     );
   }
 }

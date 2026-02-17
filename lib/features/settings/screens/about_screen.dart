@@ -186,7 +186,7 @@ class AboutScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                           ),
                           child: Text(
-                            'PGME is your comprehensive learning companion for postgraduate medical education. We provide high-quality video lectures, study materials, and live sessions to help you excel in your medical career.\n\nOur platform is designed by medical professionals to deliver the best learning experience with expert faculty and up-to-date content.',
+                            'PGME provides specialized postgraduate residency courses featuring high-yield theory revision packages and national level online mock practical Examinations. Tailored for MD/DNB residents and faculty, the curriculum focuses on core concept mastery and clinical skill evaluation. The platform offers interactive live sessions and recorded lectures, empowering candidates to strengthen both theoretical and practical aspects of medical training.',
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
                               fontSize: isTablet ? 17 : 14,
@@ -198,9 +198,9 @@ class AboutScreen extends StatelessWidget {
 
                         SizedBox(height: isTablet ? 30 : 24),
 
-                        // Features
+                        // Key Offerings
                         Text(
-                          'Features',
+                          'What We Offer',
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
                             fontWeight: FontWeight.w500,
@@ -212,9 +212,22 @@ class AboutScreen extends StatelessWidget {
                         SizedBox(height: isTablet ? 16 : 12),
 
                         _buildFeatureItem(
-                          icon: Icons.play_circle_outline,
-                          title: 'Video Lectures',
-                          subtitle: 'High-quality recorded lectures',
+                          icon: Icons.book_outlined,
+                          title: 'Theory Revision Packages',
+                          subtitle: 'High-yield content for core concepts',
+                          cardColor: cardColor,
+                          iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
+                          iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          isTablet: isTablet,
+                        ),
+                        SizedBox(height: isTablet ? 10 : 8),
+
+                        _buildFeatureItem(
+                          icon: Icons.assignment_outlined,
+                          title: 'Mock Practical Exams',
+                          subtitle: 'National level clinical evaluation',
                           cardColor: cardColor,
                           iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
                           iconColor: Colors.green,
@@ -226,8 +239,8 @@ class AboutScreen extends StatelessWidget {
 
                         _buildFeatureItem(
                           icon: Icons.live_tv_outlined,
-                          title: 'Live Sessions',
-                          subtitle: 'Interactive live classes',
+                          title: 'Interactive Live Sessions',
+                          subtitle: 'Real-time learning with expert faculty',
                           cardColor: cardColor,
                           iconBgColor: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
                           iconColor: Colors.red,
@@ -238,12 +251,12 @@ class AboutScreen extends StatelessWidget {
                         SizedBox(height: isTablet ? 10 : 8),
 
                         _buildFeatureItem(
-                          icon: Icons.menu_book_outlined,
-                          title: 'Study Materials',
-                          subtitle: 'Comprehensive notes and PDFs',
+                          icon: Icons.play_circle_outline,
+                          title: 'Recorded Lectures',
+                          subtitle: 'Learn at your own pace, anytime',
                           cardColor: cardColor,
-                          iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
-                          iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
+                          iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
+                          iconColor: Colors.orange,
                           textColor: textColor,
                           secondaryTextColor: secondaryTextColor,
                           isTablet: isTablet,
@@ -251,12 +264,12 @@ class AboutScreen extends StatelessWidget {
                         SizedBox(height: isTablet ? 10 : 8),
 
                         _buildFeatureItem(
-                          icon: Icons.download_outlined,
-                          title: 'Offline Access',
-                          subtitle: 'Download and learn anywhere',
+                          icon: Icons.school_outlined,
+                          title: 'For MD/DNB Residents',
+                          subtitle: 'Curriculum designed by experts',
                           cardColor: cardColor,
-                          iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
-                          iconColor: Colors.orange,
+                          iconBgColor: isDark ? const Color(0xFF2D1A4D) : const Color(0xFFF3E5F5),
+                          iconColor: Colors.purple,
                           textColor: textColor,
                           secondaryTextColor: secondaryTextColor,
                           isTablet: isTablet,
@@ -313,17 +326,7 @@ class AboutScreen extends StatelessWidget {
 
                         // Copyright
                         Text(
-                          '\u00A9 ${DateTime.now().year} PGME. All rights reserved.',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: isTablet ? 15 : 12,
-                            color: secondaryTextColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: isTablet ? 10 : 8),
-                        Text(
-                          'Made with \u2764\uFE0F in India',
+                          '\u00A9 ${DateTime.now().year} PGME MEDICAL EDUCATION LLP. All rights reserved.',
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
                             fontSize: isTablet ? 15 : 12,

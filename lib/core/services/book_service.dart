@@ -15,6 +15,7 @@ class BookService {
     int page = 1,
     int limit = 20,
     String? sort,
+    bool? ebook,
   }) async {
     try {
       debugPrint('=== BookService: Getting books ===');
@@ -26,6 +27,7 @@ class BookService {
       queryParams['page'] = page;
       queryParams['limit'] = limit;
       if (sort != null) queryParams['sort'] = sort;
+      if (ebook != null) queryParams['ebook'] = ebook;
 
       final response = await _apiService.dio.get(
         ApiConstants.books,

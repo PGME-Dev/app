@@ -50,8 +50,6 @@ class HelpScreen extends StatelessWidget {
     final cardColor = isDark ? AppColors.darkCardBackground : const Color(0xFFF5F5F5);
     final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF888888);
-    final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
-
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return Scaffold(
@@ -160,76 +158,6 @@ class HelpScreen extends StatelessWidget {
                           textColor: textColor,
                           secondaryTextColor: secondaryTextColor,
                           onTap: _launchPhone,
-                          isTablet: isTablet,
-                        ),
-
-                        SizedBox(height: isTablet ? 30 : 24),
-
-                        // FAQ Section
-                        Text(
-                          'Frequently Asked Questions',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 20 : 16,
-                            letterSpacing: -0.5,
-                            color: textColor,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 16 : 12),
-
-                        _buildFaqItem(
-                          question: 'How do I purchase a course?',
-                          answer: 'Go to the Home tab, browse available packages, and tap on any package to view details and purchase options.',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          dividerColor: dividerColor,
-                          isDark: isDark,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildFaqItem(
-                          question: 'How do I access my purchased content?',
-                          answer: 'After purchase, go to the Courses tab to access your video lectures, notes, and study materials.',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          dividerColor: dividerColor,
-                          isDark: isDark,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildFaqItem(
-                          question: 'Can I download videos for offline viewing?',
-                          answer: 'Yes, you can download videos within the app for offline access. Look for the download icon on each video.',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          dividerColor: dividerColor,
-                          isDark: isDark,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildFaqItem(
-                          question: 'How do I change my selected subject?',
-                          answer: 'Go to your Profile, tap on the subject badge next to your name, and select a new subject from the list.',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          dividerColor: dividerColor,
-                          isDark: isDark,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildFaqItem(
-                          question: 'What payment methods are accepted?',
-                          answer: 'We accept all major payment methods including UPI, Credit/Debit cards, Net Banking, and popular wallets.',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          dividerColor: dividerColor,
-                          isDark: isDark,
                           isTablet: isTablet,
                         ),
 
@@ -377,55 +305,4 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqItem({
-    required String question,
-    required String answer,
-    required Color cardColor,
-    required Color textColor,
-    required Color secondaryTextColor,
-    required Color dividerColor,
-    required bool isDark,
-    bool isTablet = false,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 10 : 8),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-      ),
-      child: Theme(
-        data: ThemeData(
-          dividerColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          tilePadding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16, vertical: isTablet ? 6 : 4),
-          childrenPadding: EdgeInsets.fromLTRB(isTablet ? 20 : 16, 0, isTablet ? 20 : 16, isTablet ? 20 : 16),
-          iconColor: secondaryTextColor,
-          collapsedIconColor: secondaryTextColor,
-          title: Text(
-            question,
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontWeight: FontWeight.w500,
-              fontSize: isTablet ? 17 : 14,
-              color: textColor,
-            ),
-          ),
-          children: [
-            Text(
-              answer,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: isTablet ? 16 : 13,
-                height: 1.5,
-                color: secondaryTextColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

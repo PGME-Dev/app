@@ -103,7 +103,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       ),
                       const Spacer(),
                       Text(
-                        'My Purchases',
+                        'My Orders',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,

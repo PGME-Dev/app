@@ -147,11 +147,13 @@ class ShimmerWidgets {
       child: Column(
         children: [
           // Top profile card shimmer
-          Container(
-            padding: EdgeInsets.all(isTablet ? 24 : 20),
-            child: shimmer(
-              isDark: isDark,
-              child: Row(
+          SafeArea(
+            bottom: false,
+            child: Container(
+              padding: EdgeInsets.all(isTablet ? 24 : 20),
+              child: shimmer(
+                isDark: isDark,
+                child: Row(
                 children: [
                   // Profile picture
                   Container(
@@ -199,6 +201,7 @@ class ShimmerWidgets {
                   ),
                 ],
               ),
+            ),
             ),
           ),
           SizedBox(height: isTablet ? 24 : 20),

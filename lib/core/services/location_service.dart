@@ -124,6 +124,58 @@ class LocationService {
     }
   }
 
+  /// Fetch structured address components from coordinates
+  Future<Map<String, String>?> getStructuredAddressFromCoordinates(
+      double latitude, double longitude) async {
+    try {
+      final response = await _dio.get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {
+          'format': 'json',
+          'lat': latitude,
+          'lon': longitude,
+          'zoom': 18,
+          'addressdetails': 1,
+        },
+        options: Options(
+          headers: {
+            'User-Agent': 'PGMEApp/1.0',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        final address = data['address'] as Map<String, dynamic>?;
+
+        if (address != null) {
+          return {
+            'houseNumber': address['house_number']?.toString() ?? '',
+            'road': address['road']?.toString() ?? '',
+            'suburb': address['suburb']?.toString() ??
+                address['neighbourhood']?.toString() ??
+                address['county']?.toString() ??
+                '',
+            'city': address['city']?.toString() ??
+                address['town']?.toString() ??
+                address['village']?.toString() ??
+                '',
+            'state': address['state']?.toString() ?? '',
+            'postcode': address['postcode']?.toString() ?? '',
+          };
+        }
+      }
+
+      return null;
+    } on DioException catch (e) {
+      debugPrint('Network error fetching structured address: $e');
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching structured address: $e');
+      return null;
+    }
+  }
+
   /// Complete method: get location and fetch address
   Future<String?> getAddressFromCurrentLocation() async {
     try {
