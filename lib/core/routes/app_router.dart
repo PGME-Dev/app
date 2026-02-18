@@ -42,6 +42,7 @@ import 'package:pgme/features/settings/screens/careers_screen.dart';
 import 'package:pgme/features/settings/screens/terms_and_conditions_screen.dart';
 import 'package:pgme/features/settings/screens/privacy_policy_screen.dart';
 import 'package:pgme/features/settings/screens/refund_policy_screen.dart';
+import 'package:pgme/features/settings/screens/downloads_screen.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/features/auth/screens/map_address_picker_screen.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
@@ -486,7 +487,8 @@ class AppRouter {
           if (path.startsWith('/profile') ||
               path.startsWith('/edit-profile') ||
               path.startsWith('/map-address-picker') ||
-              path.startsWith('/pdf-viewer')) return child;
+              path.startsWith('/pdf-viewer') ||
+              path.startsWith('/downloads')) return child;
 
           final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
@@ -686,6 +688,25 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const ProfileScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Downloads (no nav bar)
+          GoRoute(
+            path: '/downloads',
+            name: 'downloads',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const DownloadsScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(

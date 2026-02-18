@@ -29,7 +29,7 @@ class SessionPurchaseModel {
   final String? facultyPhoto;
 
   @JsonKey(name: 'amount_paid')
-  final int amountPaid;
+  final num amountPaid;
 
   final String currency;
 
@@ -72,7 +72,7 @@ class SessionPurchaseModel {
     String? scheduledStartTime,
     String? facultyName,
     String? facultyPhoto,
-    int? amountPaid,
+    num? amountPaid,
     String? currency,
     String? paymentStatus,
     String? purchasedAt,
@@ -105,10 +105,10 @@ class SessionAccessStatus {
   @JsonKey(name: 'is_free')
   final bool isFree;
 
-  final int price;
+  final num price;
 
   @JsonKey(name: 'compare_at_price')
-  final int? compareAtPrice;
+  final num? compareAtPrice;
 
   @JsonKey(name: 'purchase_id')
   final String? purchaseId;
@@ -137,7 +137,7 @@ class SessionOrderResponse {
   @JsonKey(name: 'order_id')
   final String orderId;
 
-  final int amount;
+  final num amount;
 
   final String currency;
 

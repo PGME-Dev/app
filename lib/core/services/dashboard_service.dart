@@ -756,10 +756,18 @@ class DashboardService {
   // ============================================================================
 
   /// Create Zoho payment session for package purchase
-  Future<ZohoPaymentSession> createPackagePaymentSession(String packageId) async {
+  Future<ZohoPaymentSession> createPackagePaymentSession(
+    String packageId, {
+    Map<String, dynamic>? billingAddress,
+    int? tierIndex,
+  }) async {
     return await _zohoPaymentService.createPaymentSession(
       endpoint: ApiConstants.createPaymentOrder,
-      data: {'package_id': packageId},
+      data: {
+        'package_id': packageId,
+        if (billingAddress != null) 'billing_address': billingAddress,
+        if (tierIndex != null) 'tier_index': tierIndex,
+      },
     );
   }
 
@@ -771,6 +779,75 @@ class DashboardService {
   }) async {
     return await _zohoPaymentService.verifyPayment(
       endpoint: ApiConstants.verifyPayment,
+      paymentSessionId: paymentSessionId,
+      paymentId: paymentId,
+      signature: signature,
+    );
+  }
+
+  /// Calculate upgrade price preview (pro-rata credit)
+  Future<Map<String, dynamic>> calculateUpgradePrice(
+    String packageId,
+    int targetTierIndex,
+  ) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.calculateUpgrade,
+        data: {
+          'package_id': packageId,
+          'target_tier_index': targetTierIndex,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(response.data['message'] ?? 'Failed to calculate upgrade price');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
+  /// Create upgrade payment order (or instant free upgrade)
+  Future<Map<String, dynamic>> createUpgradeOrder(
+    String packageId,
+    int targetTierIndex, {
+    Map<String, dynamic>? billingAddress,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.createUpgradeOrder,
+        data: {
+          'package_id': packageId,
+          'target_tier_index': targetTierIndex,
+          if (billingAddress != null) 'billing_address': billingAddress,
+        },
+      );
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(response.data['message'] ?? 'Failed to create upgrade order');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
+  /// Verify upgrade payment
+  Future<ZohoVerificationResponse> verifyUpgradePayment({
+    required String paymentSessionId,
+    required String paymentId,
+    String? signature,
+  }) async {
+    return await _zohoPaymentService.verifyPayment(
+      endpoint: ApiConstants.verifyUpgradePayment,
       paymentSessionId: paymentSessionId,
       paymentId: paymentId,
       signature: signature,

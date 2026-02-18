@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/download_service.dart';
+import 'package:pgme/core/services/offline_storage_service.dart';
+import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/core/models/progress_model.dart';
 
@@ -115,15 +117,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Load existing progress for resume position
       _loadExistingProgress();
 
-      // Check for locally downloaded video first
-      final downloadedPath = await DownloadService().getDownloadedPath('video_${widget.videoId}.mp4');
-      if (downloadedPath != null) {
-        debugPrint('VideoPlayer: using local file at $downloadedPath');
-        _videoUrl = downloadedPath;
-        _videoTitle = 'Downloaded Video';
-        _isLocalFile = true;
-        _initializePlayer();
-        return;
+      // Check for locally downloaded video first, but NOT if it's still downloading
+      final isCurrentlyDownloading = Provider.of<DownloadProvider>(context, listen: false)
+          .isDownloading(widget.videoId);
+      if (!isCurrentlyDownloading) {
+        final downloadedPath = await DownloadService().getDownloadedPath('video_${widget.videoId}.mp4');
+        if (downloadedPath != null) {
+          // Load persisted metadata for proper title/duration display
+          final offlineVideo = await OfflineStorageService().getOfflineVideo(widget.videoId);
+          if (offlineVideo != null) {
+            debugPrint('VideoPlayer: using local file at $downloadedPath');
+            _videoUrl = downloadedPath;
+            _isLocalFile = true;
+            _videoTitle = offlineVideo.title;
+            _videoDurationSeconds = offlineVideo.durationSeconds;
+            _initializePlayer();
+            return;
+          }
+          // File exists but no metadata = orphaned partial file, ignore it
+          debugPrint('VideoPlayer: local file found but no metadata, streaming instead');
+        }
+      } else {
+        debugPrint('VideoPlayer: download in progress, streaming instead');
       }
 
       final videoData =

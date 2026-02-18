@@ -17,7 +17,7 @@ SessionPurchaseModel _$SessionPurchaseModelFromJson(
       scheduledStartTime: json['scheduled_start_time'] as String,
       facultyName: json['faculty_name'] as String?,
       facultyPhoto: json['faculty_photo'] as String?,
-      amountPaid: (json['amount_paid'] as num).toInt(),
+      amountPaid: json['amount_paid'] as num,
       currency: json['currency'] as String,
       paymentStatus: json['payment_status'] as String,
       purchasedAt: json['purchased_at'] as String?,
@@ -46,8 +46,8 @@ SessionAccessStatus _$SessionAccessStatusFromJson(Map<String, dynamic> json) =>
     SessionAccessStatus(
       hasAccess: json['has_access'] as bool,
       isFree: json['is_free'] as bool,
-      price: (json['price'] as num).toInt(),
-      compareAtPrice: (json['compare_at_price'] as num?)?.toInt(),
+      price: json['price'] as num,
+      compareAtPrice: json['compare_at_price'] as num?,
       purchaseId: json['purchase_id'] as String?,
       purchasedAt: json['purchased_at'] as String?,
     );
@@ -67,7 +67,7 @@ SessionOrderResponse _$SessionOrderResponseFromJson(
         Map<String, dynamic> json) =>
     SessionOrderResponse(
       orderId: json['order_id'] as String,
-      amount: (json['amount'] as num).toInt(),
+      amount: json['amount'] as num,
       currency: json['currency'] as String,
       session:
           SessionOrderDetails.fromJson(json['session'] as Map<String, dynamic>),

@@ -21,6 +21,58 @@ List<String>? _featuresFromJson(dynamic value) {
 }
 
 @JsonSerializable()
+class PackageTier {
+  final int index;
+  final String name;
+  @JsonKey(name: 'duration_days')
+  final int durationDays;
+  final int price;
+  @JsonKey(name: 'effective_price')
+  final int effectivePrice;
+  @JsonKey(name: 'display_order', defaultValue: 0)
+  final int displayOrder;
+
+  PackageTier({
+    required this.index,
+    required this.name,
+    required this.durationDays,
+    required this.price,
+    required this.effectivePrice,
+    required this.displayOrder,
+  });
+
+  factory PackageTier.fromJson(Map<String, dynamic> json) =>
+      _$PackageTierFromJson(json);
+  Map<String, dynamic> toJson() => _$PackageTierToJson(this);
+}
+
+@JsonSerializable()
+class CurrentTierInfo {
+  @JsonKey(name: 'tier_index')
+  final int? tierIndex;
+  @JsonKey(name: 'tier_name')
+  final String? tierName;
+  @JsonKey(name: 'expires_at')
+  final String? expiresAt;
+  @JsonKey(name: 'days_remaining')
+  final int? daysRemaining;
+  @JsonKey(name: 'purchase_id')
+  final String? purchaseId;
+
+  CurrentTierInfo({
+    this.tierIndex,
+    this.tierName,
+    this.expiresAt,
+    this.daysRemaining,
+    this.purchaseId,
+  });
+
+  factory CurrentTierInfo.fromJson(Map<String, dynamic> json) =>
+      _$CurrentTierInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$CurrentTierInfoToJson(this);
+}
+
+@JsonSerializable()
 class PackageModel {
   @JsonKey(name: 'package_id')
   final String packageId;
@@ -46,6 +98,9 @@ class PackageModel {
   @JsonKey(name: 'sale_end_date')
   final String? saleEndDate;
 
+  @JsonKey(name: 'sale_discount_percent')
+  final int? saleDiscountPercent;
+
   @JsonKey(name: 'duration_days')
   final int? durationDays;
 
@@ -67,6 +122,24 @@ class PackageModel {
   @JsonKey(name: 'expires_at')
   final String? expiresAt;
 
+  // Tier fields
+  @JsonKey(name: 'has_tiers', defaultValue: false)
+  final bool hasTiers;
+
+  final List<PackageTier>? tiers;
+
+  @JsonKey(name: 'starting_price')
+  final int? startingPrice;
+
+  @JsonKey(name: 'current_tier_index')
+  final int? currentTierIndex;
+
+  @JsonKey(name: 'current_tier_name')
+  final String? currentTierName;
+
+  @JsonKey(name: 'current_tier')
+  final CurrentTierInfo? currentTier;
+
   PackageModel({
     required this.packageId,
     required this.name,
@@ -77,6 +150,7 @@ class PackageModel {
     required this.isOnSale,
     this.salePrice,
     this.saleEndDate,
+    this.saleDiscountPercent,
     this.durationDays,
     this.thumbnailUrl,
     this.trailerVideoUrl,
@@ -84,12 +158,27 @@ class PackageModel {
     required this.displayOrder,
     required this.isPurchased,
     this.expiresAt,
+    required this.hasTiers,
+    this.tiers,
+    this.startingPrice,
+    this.currentTierIndex,
+    this.currentTierName,
+    this.currentTier,
   });
 
   factory PackageModel.fromJson(Map<String, dynamic> json) =>
       _$PackageModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PackageModelToJson(this);
+
+  /// Get the display price (first tier effective price or sale price or regular price)
+  int get displayPrice {
+    if (hasTiers && tiers != null && tiers!.isNotEmpty) {
+      return tiers!.first.effectivePrice;
+    }
+    if (isOnSale && salePrice != null) return salePrice!;
+    return price;
+  }
 
   PackageModel copyWith({
     String? packageId,
@@ -101,6 +190,7 @@ class PackageModel {
     bool? isOnSale,
     int? salePrice,
     String? saleEndDate,
+    int? saleDiscountPercent,
     int? durationDays,
     String? thumbnailUrl,
     String? trailerVideoUrl,
@@ -108,6 +198,12 @@ class PackageModel {
     int? displayOrder,
     bool? isPurchased,
     String? expiresAt,
+    bool? hasTiers,
+    List<PackageTier>? tiers,
+    int? startingPrice,
+    int? currentTierIndex,
+    String? currentTierName,
+    CurrentTierInfo? currentTier,
   }) {
     return PackageModel(
       packageId: packageId ?? this.packageId,
@@ -119,6 +215,7 @@ class PackageModel {
       isOnSale: isOnSale ?? this.isOnSale,
       salePrice: salePrice ?? this.salePrice,
       saleEndDate: saleEndDate ?? this.saleEndDate,
+      saleDiscountPercent: saleDiscountPercent ?? this.saleDiscountPercent,
       durationDays: durationDays ?? this.durationDays,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       trailerVideoUrl: trailerVideoUrl ?? this.trailerVideoUrl,
@@ -126,6 +223,12 @@ class PackageModel {
       displayOrder: displayOrder ?? this.displayOrder,
       isPurchased: isPurchased ?? this.isPurchased,
       expiresAt: expiresAt ?? this.expiresAt,
+      hasTiers: hasTiers ?? this.hasTiers,
+      tiers: tiers ?? this.tiers,
+      startingPrice: startingPrice ?? this.startingPrice,
+      currentTierIndex: currentTierIndex ?? this.currentTierIndex,
+      currentTierName: currentTierName ?? this.currentTierName,
+      currentTier: currentTier ?? this.currentTier,
     );
   }
 }

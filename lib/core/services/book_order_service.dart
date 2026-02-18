@@ -222,6 +222,8 @@ class BookOrderService {
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
+    Map<String, dynamic>? billingAddress,
+    Map<String, dynamic>? shippingAddressStructured,
   }) async {
     return await _zohoPaymentService.createPaymentSession(
       endpoint: ApiConstants.createBookOrder,
@@ -230,6 +232,8 @@ class BookOrderService {
         'recipient_name': recipientName,
         'shipping_phone': shippingPhone,
         'shipping_address': shippingAddress,
+        if (billingAddress != null) 'billing_address': billingAddress,
+        if (shippingAddressStructured != null) 'shipping_address_structured': shippingAddressStructured,
       },
     );
   }

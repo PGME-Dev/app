@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
-import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
@@ -30,7 +30,6 @@ class LectureVideoScreen extends StatefulWidget {
 
 class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProviderStateMixin {
   final DashboardService _dashboardService = DashboardService();
-  final DownloadService _downloadService = DownloadService();
 
   SeriesModel? _series;
   List<ModuleModel> _modules = [];
@@ -39,69 +38,72 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
   Map<String, bool> _expandedModules = {};
 
-  // Download tracking
-  final Set<String> _downloadedVideoIds = {};
-  final Map<String, double> _downloadingVideos = {}; // videoId → progress 0.0-1.0
-
   @override
   void initState() {
     super.initState();
     _loadData();
-  }
-
-  /// Check which videos are already downloaded
-  Future<void> _checkDownloadedVideos() async {
-    for (final module in _modules) {
-      for (final video in module.videos) {
-        final downloaded = await _downloadService.isDownloaded('video_${video.videoId}.mp4');
-        if (downloaded) {
-          _downloadedVideoIds.add(video.videoId);
-        }
-      }
-    }
-    if (mounted) setState(() {});
-  }
-
-  /// Download a video
-  Future<void> _downloadVideo(String videoId) async {
-    if (_downloadingVideos.containsKey(videoId) || _downloadedVideoIds.contains(videoId)) return;
-
-    setState(() {
-      _downloadingVideos[videoId] = 0.0;
+    // Ensure download provider is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DownloadProvider>(context, listen: false).loadDownloads();
     });
+  }
+
+  /// Download a video via the global DownloadProvider
+  Future<void> _handleDownload(ModuleVideoModel video, ModuleModel module) async {
+    final provider = Provider.of<DownloadProvider>(context, listen: false);
+    if (provider.isDownloading(video.videoId) || provider.isDownloaded(video.videoId)) return;
 
     try {
-      final data = await _downloadService.getVideoDownloadUrl(videoId);
-      final url = data['download_url'] as String;
-
-      await _downloadService.downloadFile(
-        url: url,
-        fileName: 'video_$videoId.mp4',
-        onProgress: (progress) {
-          if (mounted) {
-            setState(() {
-              _downloadingVideos[videoId] = progress;
-            });
-          }
-        },
+      await provider.startDownload(
+        videoId: video.videoId,
+        title: video.title,
+        facultyName: video.facultyName,
+        durationSeconds: video.durationSeconds,
+        moduleName: module.name,
+        seriesName: _series?.title,
       );
-
       if (mounted) {
-        setState(() {
-          _downloadingVideos.remove(videoId);
-          _downloadedVideoIds.add(videoId);
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Video downloaded successfully'), duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _downloadingVideos.remove(videoId);
-        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: ${e.toString().replaceAll('Exception: ', '')}'), duration: const Duration(seconds: 3)),
+          SnackBar(
+            content: Text('Download failed: ${e.toString().replaceAll("Exception: ", "")}'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () => _retryDownload(video.videoId),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Retry a failed download
+  Future<void> _retryDownload(String videoId) async {
+    final provider = Provider.of<DownloadProvider>(context, listen: false);
+    try {
+      await provider.retryDownload(videoId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video downloaded successfully'), duration: Duration(seconds: 2)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: ${e.toString().replaceAll("Exception: ", "")}'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () => _retryDownload(videoId),
+            ),
+          ),
         );
       }
     }
@@ -139,7 +141,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
             _expandedModules[_modules[0].moduleId] = true;
           }
         });
-        _checkDownloadedVideos();
+        // Download status is now managed by DownloadProvider
       }
     } catch (e) {
       if (mounted) {
@@ -478,8 +480,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     required Color lessonLockedBg,
     VoidCallback? onTap,
     bool isDownloaded = false,
+    bool isFailed = false,
     double? downloadProgress,
     VoidCallback? onDownload,
+    VoidCallback? onRetry,
+    VoidCallback? onCancel,
   }) {
     final secondaryColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
     final lockBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7);
@@ -493,6 +498,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final avatarSize = isTablet ? 22.0 : 16.0;
     final itemRadius = isTablet ? 16.0 : 12.0;
     final itemHPadding = isTablet ? 16.0 : 12.0;
+    final downloadIconSize = isTablet ? 22.0 : 18.0;
 
     // Determine which icon to show
     IconData iconData;
@@ -504,11 +510,43 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
       iconData = Icons.play_circle_outline;
     }
 
+    // Determine download status text and color
+    String? downloadStatusText;
+    Color? downloadStatusColor;
+    IconData? downloadStatusIcon;
+    VoidCallback? downloadStatusTap;
+
+    if (isAccessible && onDownload != null) {
+      if (downloadProgress != null) {
+        final pct = (downloadProgress * 100).round();
+        downloadStatusText = downloadProgress > 0 ? 'Downloading $pct%' : 'Preparing...';
+        downloadStatusColor = iconColor;
+        downloadStatusIcon = Icons.downloading;
+      } else if (isFailed) {
+        downloadStatusText = 'Failed - Tap to retry';
+        downloadStatusColor = Colors.red.shade400;
+        downloadStatusIcon = Icons.error_outline;
+        downloadStatusTap = onRetry;
+      } else if (isDownloaded) {
+        downloadStatusText = 'Downloaded';
+        downloadStatusColor = AppColors.success;
+        downloadStatusIcon = Icons.download_done;
+      }
+    }
+
+    // Show download button only when not downloaded and not downloading
+    final showDownloadButton = isAccessible &&
+        onDownload != null &&
+        downloadProgress == null &&
+        !isFailed &&
+        !isDownloaded;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: lessonHeight,
+        constraints: BoxConstraints(minHeight: lessonHeight),
+        padding: EdgeInsets.symmetric(vertical: isTablet ? 10 : 8),
         decoration: BoxDecoration(
           color: isAccessible ? lessonAccessibleBg : lessonLockedBg,
           borderRadius: BorderRadius.circular(itemRadius),
@@ -550,7 +588,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: isTablet ? 8 : 6),
+                  SizedBox(height: isTablet ? 6 : 4),
                   Row(
                     children: [
                       // Doctor avatar
@@ -574,41 +612,85 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         ),
                       ),
                       SizedBox(width: isTablet ? 6 : 4),
-                      Text(
-                        instructor,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: metaSize,
-                          color: secondaryColor,
+                      Expanded(
+                        child: Text(
+                          instructor,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: metaSize,
+                            color: secondaryColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
+                  // Download status label
+                  if (downloadStatusText != null) ...[
+                    SizedBox(height: isTablet ? 6 : 4),
+                    GestureDetector(
+                      onTap: downloadStatusTap,
+                      child: Row(
+                        children: [
+                          if (downloadProgress != null && downloadProgress > 0)
+                            // Small progress indicator for downloading state
+                            SizedBox(
+                              width: isTablet ? 14.0 : 11.0,
+                              height: isTablet ? 14.0 : 11.0,
+                              child: CircularProgressIndicator(
+                                value: downloadProgress,
+                                strokeWidth: 1.5,
+                                color: downloadStatusColor,
+                              ),
+                            )
+                          else
+                            Icon(
+                              downloadStatusIcon,
+                              size: isTablet ? 14.0 : 11.0,
+                              color: downloadStatusColor,
+                            ),
+                          SizedBox(width: isTablet ? 5 : 4),
+                          Text(
+                            downloadStatusText,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 11.0 : 9.0,
+                              color: downloadStatusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            // Download button
-            if (isAccessible && onDownload != null)
+            // Cancel button when downloading
+            if (downloadProgress != null && onCancel != null)
               GestureDetector(
-                onTap: downloadProgress == null && !isDownloaded ? onDownload : null,
+                onTap: onCancel,
                 child: Padding(
                   padding: EdgeInsets.all(isTablet ? 8.0 : 6.0),
-                  child: downloadProgress != null
-                      ? SizedBox(
-                          width: isTablet ? 22.0 : 18.0,
-                          height: isTablet ? 22.0 : 18.0,
-                          child: CircularProgressIndicator(
-                            value: downloadProgress,
-                            strokeWidth: 2,
-                            color: iconColor,
-                          ),
-                        )
-                      : Icon(
-                          isDownloaded ? Icons.download_done : Icons.download_outlined,
-                          size: isTablet ? 22.0 : 18.0,
-                          color: isDownloaded ? AppColors.success : secondaryColor,
-                        ),
+                  child: Icon(
+                    Icons.close,
+                    size: downloadIconSize,
+                    color: secondaryColor,
+                  ),
+                ),
+              )
+            // Download button (only when not downloading/downloaded/failed)
+            else if (showDownloadButton)
+              GestureDetector(
+                onTap: onDownload,
+                child: Padding(
+                  padding: EdgeInsets.all(isTablet ? 8.0 : 6.0),
+                  child: Icon(
+                    Icons.download_outlined,
+                    size: downloadIconSize,
+                    color: secondaryColor,
+                  ),
                 ),
               ),
             SizedBox(width: isTablet ? 4 : 2),
@@ -772,21 +854,29 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         right: lessonPaddingH,
                         bottom: index < module.videos.length - 1 ? lessonGap : lessonBottomPad,
                       ),
-                      child: _buildLessonItem(
-                        isAccessible: isAccessible,
-                        isWatched: isWatched,
-                        title: video.title,
-                        instructor: video.facultyName,
-                        isDark: isDark,
-                        isTablet: isTablet,
-                        textColor: textColor,
-                        iconColor: iconColor,
-                        lessonAccessibleBg: lessonAccessibleBg,
-                        lessonLockedBg: lessonLockedBg,
-                        onTap: isAccessible ? () => context.push('/video/${video.videoId}') : null,
-                        isDownloaded: _downloadedVideoIds.contains(video.videoId),
-                        downloadProgress: _downloadingVideos[video.videoId],
-                        onDownload: isAccessible ? () => _downloadVideo(video.videoId) : null,
+                      child: Builder(
+                        builder: (context) {
+                          final dp = context.watch<DownloadProvider>();
+                          return _buildLessonItem(
+                            isAccessible: isAccessible,
+                            isWatched: isWatched,
+                            title: video.title,
+                            instructor: video.facultyName,
+                            isDark: isDark,
+                            isTablet: isTablet,
+                            textColor: textColor,
+                            iconColor: iconColor,
+                            lessonAccessibleBg: lessonAccessibleBg,
+                            lessonLockedBg: lessonLockedBg,
+                            onTap: isAccessible ? () => context.push('/video/${video.videoId}') : null,
+                            isDownloaded: dp.isDownloaded(video.videoId),
+                            isFailed: dp.hasFailed(video.videoId),
+                            downloadProgress: dp.getProgress(video.videoId),
+                            onDownload: isAccessible ? () => _handleDownload(video, module) : null,
+                            onRetry: () => _retryDownload(video.videoId),
+                            onCancel: () => Provider.of<DownloadProvider>(context, listen: false).cancelDownload(video.videoId),
+                          );
+                        },
                       ),
                     );
                   }).toList(),

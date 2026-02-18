@@ -9,13 +9,19 @@ class EbookOrderService {
   final ApiService _apiService = ApiService();
 
   /// Create a Zoho payment session for ebook purchase
-  Future<ZohoPaymentSession> createPaymentSession(String bookId) async {
+  Future<ZohoPaymentSession> createPaymentSession(
+    String bookId, {
+    Map<String, dynamic>? billingAddress,
+  }) async {
     try {
       debugPrint('=== EbookOrderService: Creating payment session for book $bookId ===');
 
       final response = await _apiService.dio.post(
         ApiConstants.createEbookOrder,
-        data: {'book_id': bookId},
+        data: {
+          'book_id': bookId,
+          if (billingAddress != null) 'billing_address': billingAddress,
+        },
       );
 
       if (response.statusCode == 201 && response.data['success'] == true) {

@@ -163,6 +163,11 @@ class ApiConstants {
       '/payments/create-order'; // For packages
   static const String verifyPayment = '/payments/verify'; // For packages
 
+  // Upgrade Endpoints
+  static const String calculateUpgrade = '/payments/upgrade/calculate';
+  static const String createUpgradeOrder = '/payments/upgrade/create-order';
+  static const String verifyUpgradePayment = '/payments/upgrade/verify';
+
   // Zoho Payments Configuration
   static const String zohoScriptUrl =
       'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
@@ -171,6 +176,9 @@ class ApiConstants {
   static String get zohoAccountId =>
       dotenv.env['ZOHO_PAYMENTS_ACCOUNT_ID'] ?? '';
   static String get zohoApiKey => dotenv.env['ZOHO_PAYMENTS_API_KEY'] ?? '';
+
+  // Invoice Endpoints
+  static String invoicePdf(String invoiceId) => '/invoices/$invoiceId/pdf';
 
   // Notification Endpoints
   static const String notifications = '/users/notifications';

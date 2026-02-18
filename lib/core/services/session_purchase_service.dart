@@ -234,9 +234,13 @@ class SessionPurchaseService {
   // ============================================================================
 
   /// Create Zoho payment session for session purchase
-  Future<ZohoPaymentSession> createPaymentSession(String sessionId) async {
+  Future<ZohoPaymentSession> createPaymentSession(
+    String sessionId, {
+    Map<String, dynamic>? billingAddress,
+  }) async {
     return await _zohoPaymentService.createPaymentSession(
       endpoint: ApiConstants.sessionCreateOrder(sessionId),
+      data: billingAddress != null ? {'billing_address': billingAddress} : null,
     );
   }
 

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
@@ -8,6 +11,7 @@ import 'package:pgme/core/services/subscription_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
@@ -312,11 +316,13 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (pkg.packageType != null)
-                      Text(
-                        pkg.packageType!,
-                        style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
-                      ),
+                    Text(
+                      [
+                        if (pkg.packageType != null) pkg.packageType!,
+                        if (pkg.tierName != null) pkg.tierName!,
+                      ].join(' - '),
+                      style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor),
+                    ),
                   ],
                 ),
               ),
@@ -364,14 +370,49 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               children: [
                 Icon(Icons.timer_outlined, size: isTablet ? 18 : 14, color: accentColor),
                 SizedBox(width: isTablet ? 8 : 6),
-                Text(
-                  '${pkg.daysRemaining} days remaining',
-                  style: TextStyle(
-                    fontSize: isTablet ? 16 : 13,
-                    fontWeight: FontWeight.w500,
-                    color: accentColor,
+                Expanded(
+                  child: Text(
+                    '${pkg.daysRemaining} days remaining',
+                    style: TextStyle(
+                      fontSize: isTablet ? 16 : 13,
+                      fontWeight: FontWeight.w500,
+                      color: accentColor,
+                    ),
                   ),
                 ),
+                if (pkg.tierName != null)
+                  GestureDetector(
+                    onTap: () {
+                      context.push('/purchase?packageId=${pkg.packageId}');
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 14 : 10,
+                        vertical: isTablet ? 6 : 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.upgrade, size: isTablet ? 16 : 14, color: accentColor),
+                          SizedBox(width: isTablet ? 6 : 4),
+                          Text(
+                            'Upgrade',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isTablet ? 14 : 12,
+                              fontWeight: FontWeight.w600,
+                              color: accentColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -786,6 +827,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         typeIcon = Icons.menu_book;
         typeColor = Colors.orange;
         break;
+      case 'ebook':
+        typeLabel = 'eBook';
+        typeIcon = Icons.auto_stories_outlined;
+        typeColor = Colors.teal;
+        break;
       default:
         typeLabel = 'Package';
         typeIcon = Icons.school_outlined;
@@ -865,7 +911,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                   style: TextStyle(fontSize: isTablet ? 16 : 13, color: secondaryTextColor)),
               const Spacer(),
               Text(
-                '\u{20B9}${(invoice.amount + invoice.gstAmount).toStringAsFixed(0)}',
+                '\u{20B9}${(invoice.amount).toStringAsFixed(2)}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
@@ -875,31 +921,107 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
-          if (invoice.invoiceUrl != null) ...[
+          if (invoice.invoiceId.isNotEmpty) ...[
             SizedBox(height: isTablet ? 13 : 10),
-            GestureDetector(
-              onTap: () async {
-                final uri = Uri.parse(invoice.invoiceUrl!);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              child: Row(
-                children: [
-                  Icon(Icons.download_outlined, size: isTablet ? 20 : 16, color: accentColor),
-                  SizedBox(width: isTablet ? 8 : 6),
-                  Text(
-                    'Download Invoice',
-                    style: TextStyle(
-                      fontSize: isTablet ? 16 : 13,
-                      fontWeight: FontWeight.w500,
-                      color: accentColor,
-                    ),
-                  ),
-                ],
-              ),
+            _InvoiceDownloadButton(
+              invoice: invoice,
+              subscriptionService: _subscriptionService,
+              accentColor: accentColor,
+              isTablet: isTablet,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Stateful button that handles invoice PDF download with loading state
+class _InvoiceDownloadButton extends StatefulWidget {
+  final InvoiceItem invoice;
+  final SubscriptionService subscriptionService;
+  final Color accentColor;
+  final bool isTablet;
+
+  const _InvoiceDownloadButton({
+    required this.invoice,
+    required this.subscriptionService,
+    required this.accentColor,
+    required this.isTablet,
+  });
+
+  @override
+  State<_InvoiceDownloadButton> createState() => _InvoiceDownloadButtonState();
+}
+
+class _InvoiceDownloadButtonState extends State<_InvoiceDownloadButton> {
+  bool _isDownloading = false;
+
+  Future<void> _downloadAndOpenPdf() async {
+    if (_isDownloading) return;
+    setState(() => _isDownloading = true);
+
+    try {
+      final pdfBytes = await widget.subscriptionService.downloadInvoicePdf(
+        widget.invoice.invoiceId,
+      );
+
+      // Save to temp directory
+      final dir = await getTemporaryDirectory();
+      final fileName = '${widget.invoice.invoiceNumber}.pdf';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(pdfBytes);
+
+      if (!mounted) return;
+
+      // Open in the in-app PDF viewer
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(
+            filePath: file.path,
+            title: widget.invoice.invoiceNumber,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to download invoice: ${e.toString().replaceAll('Exception: ', '')}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _isDownloading ? null : _downloadAndOpenPdf,
+      child: Row(
+        children: [
+          if (_isDownloading)
+            SizedBox(
+              width: widget.isTablet ? 20 : 16,
+              height: widget.isTablet ? 20 : 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: widget.accentColor,
+              ),
+            )
+          else
+            Icon(Icons.download_outlined, size: widget.isTablet ? 20 : 16, color: widget.accentColor),
+          SizedBox(width: widget.isTablet ? 8 : 6),
+          Text(
+            _isDownloading ? 'Downloading...' : 'Download Invoice',
+            style: TextStyle(
+              fontSize: widget.isTablet ? 16 : 13,
+              fontWeight: FontWeight.w500,
+              color: widget.accentColor,
+            ),
+          ),
         ],
       ),
     );

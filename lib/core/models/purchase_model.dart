@@ -33,6 +33,15 @@ class PurchaseModel {
   @JsonKey(name: 'days_remaining')
   final int daysRemaining;
 
+  @JsonKey(name: 'tier_index')
+  final int? tierIndex;
+
+  @JsonKey(name: 'tier_name')
+  final String? tierName;
+
+  @JsonKey(name: 'is_upgrade', defaultValue: false)
+  final bool isUpgrade;
+
   @JsonKey(name: 'createdAt')
   final String? createdAt;
 
@@ -50,6 +59,9 @@ class PurchaseModel {
     required this.isActive,
     required this.autoRenewalEnabled,
     required this.daysRemaining,
+    this.tierIndex,
+    this.tierName,
+    required this.isUpgrade,
     this.createdAt,
     this.updatedAt,
   });
@@ -70,6 +82,9 @@ class PurchaseModel {
     bool? isActive,
     bool? autoRenewalEnabled,
     int? daysRemaining,
+    int? tierIndex,
+    String? tierName,
+    bool? isUpgrade,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -84,6 +99,9 @@ class PurchaseModel {
       isActive: isActive ?? this.isActive,
       autoRenewalEnabled: autoRenewalEnabled ?? this.autoRenewalEnabled,
       daysRemaining: daysRemaining ?? this.daysRemaining,
+      tierIndex: tierIndex ?? this.tierIndex,
+      tierName: tierName ?? this.tierName,
+      isUpgrade: isUpgrade ?? this.isUpgrade,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

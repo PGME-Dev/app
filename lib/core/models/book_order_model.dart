@@ -14,7 +14,7 @@ class BookOrderModel {
   final int itemsCount;
 
   @JsonKey(name: 'total_amount')
-  final int totalAmount;
+  final num totalAmount;
 
   @JsonKey(name: 'payment_status')
   final String paymentStatus;
@@ -43,10 +43,10 @@ class BookOrderModel {
   @JsonKey(name: 'shipping_address')
   final String? shippingAddress;
 
-  final int? subtotal;
+  final num? subtotal;
 
   @JsonKey(name: 'shipping_cost')
-  final int? shippingCost;
+  final num? shippingCost;
 
   @JsonKey(name: 'shipped_at')
   final String? shippedAt;
@@ -136,7 +136,7 @@ class OrderItemModel {
   final String? thumbnailUrl;
 
   final int quantity;
-  final int price;
+  final num price;
 
   OrderItemModel({
     required this.bookId,
@@ -153,7 +153,7 @@ class OrderItemModel {
   Map<String, dynamic> toJson() => _$OrderItemModelToJson(this);
 
   /// Get total price for this item
-  int get totalPrice => price * quantity;
+  num get totalPrice => price * quantity;
 }
 
 @JsonSerializable()
@@ -164,7 +164,7 @@ class BookOrderResponse {
   @JsonKey(name: 'razorpay_order_id')
   final String razorpayOrderId;
 
-  final int amount;
+  final num amount;
   final String currency;
 
   @JsonKey(name: 'order_summary')
@@ -187,12 +187,12 @@ class BookOrderResponse {
 @JsonSerializable()
 class OrderSummary {
   final List<OrderSummaryItem> items;
-  final int subtotal;
+  final num subtotal;
 
   @JsonKey(name: 'shipping_cost')
-  final int shippingCost;
+  final num shippingCost;
 
-  final int total;
+  final num total;
 
   OrderSummary({
     required this.items,
@@ -214,7 +214,7 @@ class OrderSummaryItem {
 
   final String title;
   final int quantity;
-  final int price;
+  final num price;
 
   OrderSummaryItem({
     required this.bookId,
@@ -264,7 +264,7 @@ class CartItem {
   final String title;
   final String? author;
   final String? thumbnailUrl;
-  final int price;
+  final num price;
   int quantity;
 
   CartItem({
@@ -276,7 +276,7 @@ class CartItem {
     this.quantity = 1,
   });
 
-  int get totalPrice => price * quantity;
+  num get totalPrice => price * quantity;
 
   Map<String, dynamic> toOrderItem() {
     return {

@@ -48,15 +48,15 @@ class BookProvider extends ChangeNotifier {
   String? get shippingCostError => _shippingCostError;
 
   /// Calculate cart subtotal
-  int get cartSubtotal {
-    return _cart.values.fold(0, (sum, item) => sum + item.totalPrice);
+  num get cartSubtotal {
+    return _cart.values.fold<num>(0, (sum, item) => sum + item.totalPrice);
   }
 
   /// Calculate shipping cost (uses value from backend)
   int get shippingCost => _cart.isNotEmpty ? _shippingCostValue : 0;
 
   /// Calculate cart total
-  int get cartTotal => cartSubtotal + shippingCost;
+  num get cartTotal => cartSubtotal + shippingCost;
 
   /// Load books from API
   Future<void> loadBooks({
@@ -278,6 +278,8 @@ class BookProvider extends ChangeNotifier {
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
+    Map<String, dynamic>? billingAddress,
+    Map<String, dynamic>? shippingAddressStructured,
   }) async {
     final items = getCartAsOrderItems();
     return await _bookOrderService.createPaymentSession(
@@ -285,6 +287,8 @@ class BookProvider extends ChangeNotifier {
       recipientName: recipientName,
       shippingPhone: shippingPhone,
       shippingAddress: shippingAddress,
+      billingAddress: billingAddress,
+      shippingAddressStructured: shippingAddressStructured,
     );
   }
 

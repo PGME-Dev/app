@@ -9,6 +9,9 @@ import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/book_service.dart';
 import 'package:pgme/core/services/ebook_order_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
+import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class EbookListScreen extends StatefulWidget {
@@ -137,11 +140,33 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
     if (shouldBuy != true || !mounted) return;
 
+    // Show billing address bottom sheet before payment
+    BillingAddress? savedAddress;
+    try {
+      final user = await UserService().getProfile();
+      if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
+        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final addressResult = await showBillingAddressSheet(
+      context,
+      initialAddress: savedAddress,
+    );
+
+    if (addressResult == null || !mounted) return;
+    final billingAddress = addressResult['billing']!;
+
     setState(() => _isPurchasing = true);
 
     try {
       // Step 1: Create payment session
-      final paymentSession = await _ebookOrderService.createPaymentSession(book.bookId);
+      final paymentSession = await _ebookOrderService.createPaymentSession(
+        book.bookId,
+        billingAddress: billingAddress.toJson(),
+      );
 
       if (!mounted) return;
 

@@ -3,7 +3,7 @@
 
 class ZohoPaymentSession {
   final String paymentSessionId;
-  final int amount;
+  final num amount;
   final String currency;
   final String referenceNumber;
   final Map<String, dynamic>? metadata; // package/session/order details
@@ -23,7 +23,7 @@ class ZohoPaymentSession {
   factory ZohoPaymentSession.fromJson(Map<String, dynamic> json) {
     return ZohoPaymentSession(
       paymentSessionId: json['payment_session_id'] as String,
-      amount: json['amount'] as int,
+      amount: json['amount'] as num,
       currency: json['currency'] as String,
       referenceNumber: json['reference_number'] as String,
       metadata: json['package'] ?? json['session'] ?? json['order_summary'],

@@ -7,8 +7,12 @@ import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/models/zoho_payment_models.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
+import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/features/purchase/widgets/upgrade_bottom_sheet.dart';
 
 class PurchaseScreen extends StatefulWidget {
   final String? packageId;
@@ -25,6 +29,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   bool _isLoading = true;
   PackageModel? _package;
   String? _error;
+  int _selectedTierIndex = 0;
   final DashboardService _dashboardService = DashboardService();
 
   @override
@@ -40,6 +45,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       if (dashboardProvider.packages.isNotEmpty) {
         setState(() {
           _package = dashboardProvider.packages.first;
+          _selectedTierIndex = 0;
           _isLoading = false;
         });
         return;
@@ -81,6 +87,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
         setState(() {
           _package = foundPackage;
+          _selectedTierIndex = 0;
           _isLoading = false;
         });
       }
@@ -145,9 +152,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final featureBgColor = isDark ? AppColors.darkCardBackground : const Color(0xFFE8F4FF);
 
     final package = _package!;
-    final displayPrice = package.isOnSale && package.salePrice != null
-        ? package.salePrice!
-        : package.price;
+    final hasTiers = package.hasTiers && package.tiers != null && package.tiers!.isNotEmpty;
 
     // Tablet-scaled dimensions
     final dialogWidth = isTablet ? 560.0 : 356.0;
@@ -392,50 +397,145 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         isTablet: isTablet, iconSize: featureIconSize, checkSize: featureCheckSize, textSize: featureTextSize, iconGap: featureIconGap),
                     ],
                     SizedBox(height: isTablet ? 24 : 16),
-                    Divider(height: 1, thickness: 1, color: borderColor),
-                    SizedBox(height: isTablet ? 24 : 16),
-                    // Price
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          _formatPrice(displayPrice),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: priceSize,
-                            height: 1.0,
-                            letterSpacing: -0.18,
-                            color: textColor,
-                          ),
-                        ),
-                        if (package.durationDays != null) ...[
-                          SizedBox(width: isTablet ? 12 : 8),
-                          Text(
-                            '/ ${_formatDuration(package.durationDays)}',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w400,
-                              fontSize: durationSize,
-                              color: textColor.withValues(alpha: 0.5),
+                    // Tier selector + price (wrapped in StatefulBuilder so price updates on tier change)
+                    StatefulBuilder(
+                      builder: (context, setDialogState) {
+                        final selectedTier = hasTiers ? package.tiers![_selectedTierIndex] : null;
+                        final dialogDisplayPrice = hasTiers
+                            ? selectedTier!.effectivePrice
+                            : (package.isOnSale && package.salePrice != null ? package.salePrice! : package.price);
+                        final dialogDisplayDuration = hasTiers ? selectedTier!.durationDays : package.durationDays;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (hasTiers) ...[
+                              Divider(height: 1, thickness: 1, color: borderColor),
+                              SizedBox(height: isTablet ? 16 : 12),
+                              Text(
+                                'Select Duration',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTablet ? 16 : 13,
+                                  color: textColor,
+                                ),
+                              ),
+                              SizedBox(height: isTablet ? 12 : 8),
+                              Wrap(
+                                spacing: isTablet ? 10 : 8,
+                                runSpacing: isTablet ? 10 : 8,
+                                children: List.generate(package.tiers!.length, (i) {
+                                  final tier = package.tiers![i];
+                                  final isSelected = _selectedTierIndex == i;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() => _selectedTierIndex = i);
+                                      setDialogState(() {});
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 16 : 12,
+                                        vertical: isTablet ? 10 : 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? buttonColor : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
+                                        border: Border.all(
+                                          color: isSelected ? buttonColor : borderColor,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            tier.name,
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: isTablet ? 14 : 11,
+                                              color: isSelected ? Colors.white : textColor,
+                                            ),
+                                          ),
+                                          SizedBox(height: isTablet ? 4 : 2),
+                                          Text(
+                                            _formatPrice(tier.effectivePrice),
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: isTablet ? 13 : 10,
+                                              color: isSelected ? Colors.white70 : secondaryTextColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
+                              SizedBox(height: isTablet ? 16 : 12),
+                            ],
+                            Divider(height: 1, thickness: 1, color: borderColor),
+                            SizedBox(height: isTablet ? 24 : 16),
+                            // Price
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  _formatPrice(dialogDisplayPrice),
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: priceSize,
+                                    height: 1.0,
+                                    letterSpacing: -0.18,
+                                    color: textColor,
+                                  ),
+                                ),
+                                if (dialogDisplayDuration != null) ...[
+                                  SizedBox(width: isTablet ? 12 : 8),
+                                  Text(
+                                    '/ ${_formatDuration(dialogDisplayDuration)}',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: durationSize,
+                                      color: textColor.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ),
-                        ],
-                      ],
+                            if (hasTiers && selectedTier!.price > selectedTier.effectivePrice) ...[
+                              SizedBox(height: isTablet ? 4 : 2),
+                              Text(
+                                '${_formatPrice(selectedTier.price)} (${package.saleDiscountPercent}% off)',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: saleSize,
+                                  color: const Color(0xFF4CAF50),
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: secondaryTextColor,
+                                ),
+                              ),
+                            ] else if (package.isOnSale) ...[
+                              SizedBox(height: isTablet ? 8 : 4),
+                              Text(
+                                'Limited Time Offer',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: saleSize,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
                     ),
-                    if (package.isOnSale) ...[
-                      SizedBox(height: isTablet ? 8 : 4),
-                      Text(
-                        'Limited Time Offer',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: saleSize,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
                     SizedBox(height: isTablet ? 28 : 16),
                     // Enroll Now button
                     SizedBox(
@@ -565,12 +665,34 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   Future<void> _processPayment() async {
     if (_package == null) return;
 
+    // Show billing address bottom sheet before payment
+    BillingAddress? savedAddress;
+    try {
+      final user = await UserService().getProfile();
+      if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
+        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final addressResult = await showBillingAddressSheet(
+      context,
+      initialAddress: savedAddress,
+    );
+
+    if (addressResult == null || !mounted) return;
+    final billingAddress = addressResult['billing']!;
+
     setState(() => _isProcessing = true);
 
     try {
       // Step 1: Create Zoho payment session
+      final hasTiers = _package!.hasTiers && _package!.tiers != null && _package!.tiers!.isNotEmpty;
       final paymentSession = await _dashboardService.createPackagePaymentSession(
         _package!.packageId,
+        billingAddress: billingAddress.toJson(),
+        tierIndex: hasTiers ? _selectedTierIndex : null,
       );
 
       if (!mounted) return;
@@ -645,6 +767,22 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     );
   }
 
+  void _showUpgradeSheet(PackageModel package) async {
+    final currentIdx = package.currentTier?.tierIndex ?? package.currentTierIndex;
+    if (currentIdx == null) return;
+
+    final result = await showUpgradeBottomSheet(
+      context,
+      package: package,
+      currentTierIndex: currentIdx,
+    );
+
+    if (result == true && mounted) {
+      // Reload package data to reflect the upgrade
+      _loadPackageData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -706,10 +844,14 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
 
     final package = _package!;
-    final displayPrice = package.isOnSale && package.salePrice != null
-        ? package.salePrice!
-        : package.price;
-    final discount = _calculateDiscount(displayPrice, package.originalPrice);
+    final hasTiers = package.hasTiers && package.tiers != null && package.tiers!.isNotEmpty;
+    final selectedTier = hasTiers ? package.tiers![_selectedTierIndex] : null;
+    final displayPrice = hasTiers
+        ? selectedTier!.effectivePrice
+        : (package.isOnSale && package.salePrice != null ? package.salePrice! : package.price);
+    final displayDuration = hasTiers ? selectedTier!.durationDays : package.durationDays;
+    final originalForDiscount = hasTiers ? selectedTier!.price : package.originalPrice;
+    final discount = _calculateDiscount(displayPrice, originalForDiscount);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -834,11 +976,11 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   const Spacer(),
                                   Row(
                                     children: [
-                                      if (package.durationDays != null) ...[
+                                      if (displayDuration != null) ...[
                                         Icon(Icons.access_time, size: isTablet ? 20 : 16, color: Colors.white70),
                                         SizedBox(width: isTablet ? 8 : 6),
                                         Text(
-                                          '${_formatDuration(package.durationDays)} Access',
+                                          '${_formatDuration(displayDuration)} Access',
                                           style: TextStyle(
                                             fontFamily: 'Poppins',
                                             fontSize: isTablet ? 16 : 13,
@@ -857,6 +999,91 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                     ),
 
                     SizedBox(height: isTablet ? 30 : 24),
+
+                    // Tier Selector (if package has tiers)
+                    if (hasTiers) ...[
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: Text(
+                          'Select Duration',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 22 : 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 16 : 12),
+                      SizedBox(
+                        height: isTablet ? 110 : 90,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(horizontal: hPadding),
+                          itemCount: package.tiers!.length,
+                          itemBuilder: (context, i) {
+                            final tier = package.tiers![i];
+                            final isSelected = _selectedTierIndex == i;
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedTierIndex = i),
+                              child: Container(
+                                width: isTablet ? 160 : 130,
+                                margin: EdgeInsets.only(right: isTablet ? 14 : 10),
+                                padding: EdgeInsets.all(isTablet ? 16 : 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? buttonColor : surfaceColor,
+                                  borderRadius: BorderRadius.circular(isTablet ? 18 : 14),
+                                  border: Border.all(
+                                    color: isSelected ? buttonColor : borderColor,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      tier.name,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: isTablet ? 16 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected ? Colors.white : textColor,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    SizedBox(height: isTablet ? 6 : 4),
+                                    Text(
+                                      _formatPrice(tier.effectivePrice),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: isTablet ? 18 : 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected ? Colors.white : priceColor,
+                                      ),
+                                    ),
+                                    if (tier.price > tier.effectivePrice) ...[
+                                      SizedBox(height: isTablet ? 2 : 1),
+                                      Text(
+                                        _formatPrice(tier.price),
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 13 : 11,
+                                          color: isSelected ? Colors.white54 : secondaryTextColor,
+                                          decoration: TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 30 : 24),
+                    ],
 
                     // Course Overview
                     Padding(
@@ -979,12 +1206,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   color: priceColor,
                                 ),
                               ),
-                              if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
+                              if (originalForDiscount != null && originalForDiscount > displayPrice) ...[
                                 SizedBox(width: isTablet ? 10 : 8),
                                 Padding(
                                   padding: EdgeInsets.only(bottom: isTablet ? 6 : 4),
                                   child: Text(
-                                    _formatPrice(package.originalPrice!),
+                                    _formatPrice(originalForDiscount),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: isTablet ? 20 : 16,
@@ -1019,35 +1246,73 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         ],
                       ),
                       const Spacer(),
-                      // Buy Button
-                      GestureDetector(
-                        onTap: _isProcessing ? null : _showPaymentPopup,
-                        child: Container(
-                          width: isTablet ? 200 : 160,
-                          height: isTablet ? 66 : 54,
-                          decoration: BoxDecoration(
-                            color: buttonColor,
-                            borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: buttonColor.withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                      // Buy / Upgrade Button
+                      Builder(
+                        builder: (context) {
+                          final currentIdx = package.currentTier?.tierIndex ?? package.currentTierIndex;
+                          final canUpgrade = hasTiers &&
+                              currentIdx != null &&
+                              _selectedTierIndex > currentIdx;
+                          final isCurrentTier = hasTiers &&
+                              currentIdx != null &&
+                              _selectedTierIndex == currentIdx;
+
+                          if (isCurrentTier) {
+                            return Container(
+                              width: isTablet ? 200 : 160,
+                              height: isTablet ? 66 : 54,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50),
+                                borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
                               ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Buy Now',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: isTablet ? 22 : 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                              child: Center(
+                                child: Text(
+                                  'Current Plan',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isTablet ? 20 : 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return GestureDetector(
+                            onTap: _isProcessing
+                                ? null
+                                : canUpgrade
+                                    ? () => _showUpgradeSheet(package)
+                                    : _showPaymentPopup,
+                            child: Container(
+                              width: isTablet ? 200 : 160,
+                              height: isTablet ? 66 : 54,
+                              decoration: BoxDecoration(
+                                color: buttonColor,
+                                borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: buttonColor.withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  canUpgrade ? 'Upgrade' : 'Buy Now',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isTablet ? 22 : 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),

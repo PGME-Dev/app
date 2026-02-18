@@ -309,9 +309,13 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                       ),
                       SizedBox(height: isTablet ? 3 : 2),
                       Text(
-                        _formatPrice(_packages[_selectedIndex].isOnSale && _packages[_selectedIndex].salePrice != null
-                            ? _packages[_selectedIndex].salePrice!
-                            : _packages[_selectedIndex].price),
+                        _formatPrice(
+                          _packages[_selectedIndex].hasTiers && _packages[_selectedIndex].tiers != null && _packages[_selectedIndex].tiers!.isNotEmpty
+                              ? _packages[_selectedIndex].startingPrice ?? _packages[_selectedIndex].tiers!.first.effectivePrice
+                              : (_packages[_selectedIndex].isOnSale && _packages[_selectedIndex].salePrice != null
+                                  ? _packages[_selectedIndex].salePrice!
+                                  : _packages[_selectedIndex].price),
+                        ),
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: isTablet ? 30 : 24,
@@ -371,8 +375,11 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     final featureTextColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF333333);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFEEEEEE);
     final gradientColors = _getGradientColors(package.type, isDark);
-    final displayPrice = package.isOnSale && package.salePrice != null ? package.salePrice! : package.price;
-    final discount = _calculateDiscount(displayPrice, package.originalPrice);
+    final hasTiers = package.hasTiers && package.tiers != null && package.tiers!.isNotEmpty;
+    final displayPrice = hasTiers
+        ? package.startingPrice ?? package.tiers!.first.effectivePrice
+        : (package.isOnSale && package.salePrice != null ? package.salePrice! : package.price);
+    final discount = hasTiers ? 0 : _calculateDiscount(displayPrice, package.originalPrice);
 
     return GestureDetector(
       onTap: () => _selectPackage(index),
@@ -594,6 +601,17 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      if (hasTiers) ...[
+                        Text(
+                          'From ',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 17 : 14,
+                            fontWeight: FontWeight.w400,
+                            color: textColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                       Text(
                         _formatPrice(displayPrice),
                         style: TextStyle(
@@ -603,7 +621,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                           color: isDark ? gradientColors[1] : gradientColors[0],
                         ),
                       ),
-                      if (package.originalPrice != null && package.originalPrice! > displayPrice) ...[
+                      if (!hasTiers && package.originalPrice != null && package.originalPrice! > displayPrice) ...[
                         SizedBox(width: isTablet ? 10 : 8),
                         Padding(
                           padding: EdgeInsets.only(bottom: isTablet ? 6 : 4),
@@ -639,7 +657,17 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                         ),
                       ],
                       const Spacer(),
-                      if (package.durationDays != null)
+                      if (hasTiers) ...[
+                        Text(
+                          '${_formatDuration(package.tiers!.first.durationDays)} - ${_formatDuration(package.tiers!.last.durationDays)}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 15 : 12,
+                            fontWeight: FontWeight.w400,
+                            color: textColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ] else if (package.durationDays != null) ...[
                         Text(
                           '/ ${_formatDuration(package.durationDays)}',
                           style: TextStyle(
@@ -649,6 +677,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                             color: textColor.withValues(alpha: 0.5),
                           ),
                         ),
+                      ],
                     ],
                   ),
 

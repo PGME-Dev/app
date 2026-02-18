@@ -9,6 +9,9 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/session_purchase_service.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
+import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/zoom_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
@@ -196,11 +199,31 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Future<void> _initiatePayment() async {
     if (_session == null) return;
 
+    // Show billing address bottom sheet before payment
+    BillingAddress? savedAddress;
+    try {
+      final user = await UserService().getProfile();
+      if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
+        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final addressResult = await showBillingAddressSheet(
+      context,
+      initialAddress: savedAddress,
+    );
+
+    if (addressResult == null || !mounted) return;
+    final billingAddress = addressResult['billing']!;
+
     setState(() => _isPurchasing = true);
 
     try {
       final paymentSession = await _purchaseService.createPaymentSession(
         widget.sessionId,
+        billingAddress: billingAddress.toJson(),
       );
 
       if (!mounted) return;
@@ -413,8 +436,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
   }
 
-  String _formatPrice(int price) {
-    return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+  String _formatPrice(num price) {
+    final priceInt = price.toInt();
+    return '₹${priceInt.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 
   String _formatSessionDate(String dateStr) {

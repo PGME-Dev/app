@@ -14,6 +14,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/features/courses/providers/download_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -748,6 +749,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 20 / 16,
                         letterSpacing: -0.5,
                         color: textColor,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 16 : 12),
+
+                  // Downloads Card
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: GestureDetector(
+                      onTap: () => context.push('/downloads'),
+                      child: Consumer<DownloadProvider>(
+                        builder: (context, downloadProvider, _) {
+                          return Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(isTablet ? 20 : 16),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: isTablet ? 55 : 44,
+                                  height: isTablet ? 55 : 44,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF1A4D3D) : const Color(0xFFE0F2F1),
+                                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.download_done_rounded,
+                                      size: isTablet ? 27 : 22,
+                                      color: isDark ? const Color(0xFF80CBC4) : const Color(0xFF00796B),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: isTablet ? 16 : 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Downloads',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Display',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: isTablet ? 17 : 14,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      SizedBox(height: isTablet ? 4 : 2),
+                                      Text(
+                                        downloadProvider.hasActiveDownloads
+                                            ? '${downloadProvider.activeDownloads.length} downloading${downloadProvider.downloadedCount > 0 ? '  •  ${downloadProvider.downloadedCount} saved' : ''}'
+                                            : downloadProvider.downloadedCount > 0
+                                                ? '${downloadProvider.downloadedCount} videos  •  ${downloadProvider.formattedTotalStorage}'
+                                                : 'No offline videos',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Display',
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: isTablet ? 14 : 12,
+                                          color: downloadProvider.hasActiveDownloads
+                                              ? (isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4))
+                                              : secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: isTablet ? 24 : 20,
+                                  color: secondaryTextColor,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),

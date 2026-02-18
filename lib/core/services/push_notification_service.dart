@@ -115,9 +115,13 @@ class PushNotificationService {
   /// Handle foreground message (app is open and in focus)
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('Foreground FCM: ${message.notification?.title}');
+    if (message.notification?.android?.imageUrl != null) {
+      debugPrint('FCM image: ${message.notification?.android?.imageUrl}');
+    }
     // Foreground messages are shown as system notifications via
     // setForegroundNotificationPresentationOptions (iOS) and
     // the notification channel (Android).
+    // Images are handled natively by FCM via imageUrl in the notification payload.
   }
 
   /// Handle notification tap (app launched from background/terminated)

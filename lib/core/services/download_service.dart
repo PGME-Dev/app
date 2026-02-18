@@ -18,6 +18,11 @@ class DownloadService {
     if (!await downloadsDir.exists()) {
       await downloadsDir.create(recursive: true);
     }
+    // Create .nomedia file to hide from device media scanner / file browser
+    final nomediaFile = File('${downloadsDir.path}/.nomedia');
+    if (!await nomediaFile.exists()) {
+      await nomediaFile.create();
+    }
     return downloadsDir;
   }
 
@@ -40,11 +45,12 @@ class DownloadService {
     }
   }
 
-  /// Download a file with progress tracking
+  /// Download a file with progress tracking and optional cancellation
   Future<String> downloadFile({
     required String url,
     required String fileName,
     required Function(double) onProgress,
+    CancelToken? cancelToken,
   }) async {
     final dir = await _getDownloadsDir();
     final filePath = '${dir.path}/$fileName';
@@ -56,6 +62,7 @@ class DownloadService {
     await downloadDio.download(
       url,
       filePath,
+      cancelToken: cancelToken,
       onReceiveProgress: (received, total) {
         if (total > 0) {
           onProgress(received / total);

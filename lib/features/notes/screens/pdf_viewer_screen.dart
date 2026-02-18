@@ -26,14 +26,19 @@ class PdfViewerScreen extends StatefulWidget {
   /// If provided, skips the backend API call.
   final String? pdfUrl;
 
+  /// Local file path — used when the PDF is already downloaded to disk.
+  /// If provided, skips both the backend API call and the download step.
+  final String? filePath;
+
   final String title;
 
   const PdfViewerScreen({
     super.key,
     this.documentId,
     this.pdfUrl,
+    this.filePath,
     this.title = 'PDF Viewer',
-  }) : assert(documentId != null || pdfUrl != null);
+  }) : assert(documentId != null || pdfUrl != null || filePath != null);
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -131,6 +136,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Future<void> _loadPdf() async {
     try {
+      // If a local file path is provided, use it directly (e.g. invoice PDF)
+      if (widget.filePath != null) {
+        if (mounted) {
+          setState(() {
+            _localPath = widget.filePath;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
       // Check for permanently downloaded file first
       if (widget.documentId != null) {
         final docFileName = 'doc_${widget.documentId}.pdf';

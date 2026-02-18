@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/services/api_service.dart';
@@ -52,6 +55,23 @@ class SubscriptionService {
       throw Exception('Failed to load purchases');
     } catch (e) {
       throw Exception('Failed to load purchases: $e');
+    }
+  }
+
+  /// Download invoice PDF as bytes
+  Future<Uint8List> downloadInvoicePdf(String invoiceId) async {
+    try {
+      final response = await _apiService.dio.get(
+        ApiConstants.invoicePdf(invoiceId),
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      if (response.statusCode == 200) {
+        return Uint8List.fromList(response.data);
+      }
+      throw Exception('Failed to download invoice PDF');
+    } catch (e) {
+      throw Exception('Failed to download invoice PDF: $e');
     }
   }
 
@@ -117,6 +137,8 @@ class ActivePackageInfo {
   final String packageName;
   final String expiresAt;
   final int daysRemaining;
+  final int? tierIndex;
+  final String? tierName;
 
   ActivePackageInfo({
     required this.purchaseId,
@@ -124,6 +146,8 @@ class ActivePackageInfo {
     required this.packageName,
     required this.expiresAt,
     required this.daysRemaining,
+    this.tierIndex,
+    this.tierName,
   });
 
   factory ActivePackageInfo.fromJson(Map<String, dynamic> json) {
@@ -133,6 +157,8 @@ class ActivePackageInfo {
       packageName: json['package_name'] ?? '',
       expiresAt: json['expires_at'] ?? '',
       daysRemaining: json['days_remaining'] ?? 0,
+      tierIndex: json['tier_index'],
+      tierName: json['tier_name'],
     );
   }
 }
@@ -180,6 +206,7 @@ class AllPurchasesData {
 
 class PackagePurchaseItem {
   final String purchaseId;
+  final String packageId;
   final String name;
   final String? packageType;
   final String? thumbnailUrl;
@@ -189,9 +216,13 @@ class PackagePurchaseItem {
   final String? expiresAt;
   final bool isActive;
   final int daysRemaining;
+  final int? tierIndex;
+  final String? tierName;
+  final bool isUpgrade;
 
   PackagePurchaseItem({
     required this.purchaseId,
+    required this.packageId,
     required this.name,
     this.packageType,
     this.thumbnailUrl,
@@ -201,11 +232,15 @@ class PackagePurchaseItem {
     this.expiresAt,
     required this.isActive,
     required this.daysRemaining,
+    this.tierIndex,
+    this.tierName,
+    this.isUpgrade = false,
   });
 
   factory PackagePurchaseItem.fromJson(Map<String, dynamic> json) {
     return PackagePurchaseItem(
       purchaseId: json['purchase_id'] ?? '',
+      packageId: json['package_id'] ?? '',
       name: json['name'] ?? '',
       packageType: json['package_type'],
       thumbnailUrl: json['thumbnail_url'],
@@ -215,6 +250,9 @@ class PackagePurchaseItem {
       expiresAt: json['expires_at'],
       isActive: json['is_active'] ?? false,
       daysRemaining: json['days_remaining'] ?? 0,
+      tierIndex: json['tier_index'],
+      tierName: json['tier_name'],
+      isUpgrade: json['is_upgrade'] ?? false,
     );
   }
 }

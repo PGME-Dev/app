@@ -14,6 +14,7 @@ import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/features/settings/providers/subscription_provider.dart';
 import 'package:pgme/features/notifications/providers/notification_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
+import 'package:pgme/features/courses/providers/download_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => EnrolledCoursesProvider()),
+        ChangeNotifierProvider(create: (_) => DownloadProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

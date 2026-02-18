@@ -33,6 +33,9 @@ class UserModel {
 
   final String? address;
 
+  @JsonKey(name: 'billing_address')
+  final Map<String, dynamic>? billingAddress;
+
   @JsonKey(name: 'student_id')
   final String? studentId;
 
@@ -66,6 +69,7 @@ class UserModel {
     this.dateOfBirth,
     this.gender,
     this.address,
+    this.billingAddress,
     this.studentId,
     this.ugCollege,
     this.pgCollege,
@@ -92,6 +96,7 @@ class UserModel {
     String? dateOfBirth,
     String? gender,
     String? address,
+    Map<String, dynamic>? billingAddress,
     String? studentId,
     String? ugCollege,
     String? pgCollege,
@@ -113,6 +118,7 @@ class UserModel {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       address: address ?? this.address,
+      billingAddress: billingAddress ?? this.billingAddress,
       studentId: studentId ?? this.studentId,
       ugCollege: ugCollege ?? this.ugCollege,
       pgCollege: pgCollege ?? this.pgCollege,

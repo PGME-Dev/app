@@ -11,7 +11,7 @@ BookOrderModel _$BookOrderModelFromJson(Map<String, dynamic> json) =>
       orderId: json['order_id'] as String,
       orderNumber: json['order_number'] as String,
       itemsCount: (json['items_count'] as num).toInt(),
-      totalAmount: (json['total_amount'] as num).toInt(),
+      totalAmount: json['total_amount'] as num,
       paymentStatus: json['payment_status'] as String,
       orderStatus: json['order_status'] as String,
       trackingNumber: json['tracking_number'] as String?,
@@ -23,8 +23,8 @@ BookOrderModel _$BookOrderModelFromJson(Map<String, dynamic> json) =>
       recipientName: json['recipient_name'] as String?,
       shippingPhone: json['shipping_phone'] as String?,
       shippingAddress: json['shipping_address'] as String?,
-      subtotal: (json['subtotal'] as num?)?.toInt(),
-      shippingCost: (json['shipping_cost'] as num?)?.toInt(),
+      subtotal: json['subtotal'] as num?,
+      shippingCost: json['shipping_cost'] as num?,
       shippedAt: json['shipped_at'] as String?,
       deliveredAt: json['delivered_at'] as String?,
       notes: json['notes'] as String?,
@@ -59,7 +59,7 @@ OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
       author: json['author'] as String?,
       thumbnailUrl: json['thumbnail_url'] as String?,
       quantity: (json['quantity'] as num).toInt(),
-      price: (json['price'] as num).toInt(),
+      price: json['price'] as num,
     );
 
 Map<String, dynamic> _$OrderItemModelToJson(OrderItemModel instance) =>
@@ -76,7 +76,7 @@ BookOrderResponse _$BookOrderResponseFromJson(Map<String, dynamic> json) =>
     BookOrderResponse(
       orderId: json['order_id'] as String,
       razorpayOrderId: json['razorpay_order_id'] as String,
-      amount: (json['amount'] as num).toInt(),
+      amount: json['amount'] as num,
       currency: json['currency'] as String,
       orderSummary:
           OrderSummary.fromJson(json['order_summary'] as Map<String, dynamic>),
@@ -95,9 +95,9 @@ OrderSummary _$OrderSummaryFromJson(Map<String, dynamic> json) => OrderSummary(
       items: (json['items'] as List<dynamic>)
           .map((e) => OrderSummaryItem.fromJson(e as Map<String, dynamic>))
           .toList(),
-      subtotal: (json['subtotal'] as num).toInt(),
-      shippingCost: (json['shipping_cost'] as num).toInt(),
-      total: (json['total'] as num).toInt(),
+      subtotal: json['subtotal'] as num,
+      shippingCost: json['shipping_cost'] as num,
+      total: json['total'] as num,
     );
 
 Map<String, dynamic> _$OrderSummaryToJson(OrderSummary instance) =>
@@ -113,7 +113,7 @@ OrderSummaryItem _$OrderSummaryItemFromJson(Map<String, dynamic> json) =>
       bookId: json['book_id'] as String,
       title: json['title'] as String,
       quantity: (json['quantity'] as num).toInt(),
-      price: (json['price'] as num).toInt(),
+      price: json['price'] as num,
     );
 
 Map<String, dynamic> _$OrderSummaryItemToJson(OrderSummaryItem instance) =>

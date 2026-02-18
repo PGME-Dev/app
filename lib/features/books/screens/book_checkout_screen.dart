@@ -6,6 +6,8 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
+import 'package:pgme/core/models/billing_address_model.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
@@ -62,6 +64,28 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
   Future<void> _processOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Show billing address bottom sheet before payment
+    BillingAddress? savedAddress;
+    try {
+      final userService = UserService();
+      final user = await userService.getProfile();
+      if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
+        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final addressResult = await showBillingAddressSheet(
+      context,
+      initialAddress: savedAddress,
+      showShippingOption: true,
+    );
+
+    if (addressResult == null || !mounted) return;
+    final billingAddress = addressResult['billing']!;
+    final shippingAddressStructured = addressResult['shipping'];
+
     final provider = Provider.of<BookProvider>(context, listen: false);
 
     setState(() => _isLoading = true);
@@ -72,6 +96,8 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
         recipientName: _recipientNameController.text.trim(),
         shippingPhone: _phoneController.text.trim(),
         shippingAddress: _addressController.text.trim(),
+        billingAddress: billingAddress.toJson(),
+        shippingAddressStructured: shippingAddressStructured?.toJson(),
       );
 
       if (!mounted) return;
