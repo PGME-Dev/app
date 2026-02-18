@@ -17,7 +17,8 @@
       "Bash(flutter --version:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(flutter pub run build_runner build:*)"
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
