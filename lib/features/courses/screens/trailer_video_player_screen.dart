@@ -52,13 +52,22 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
         looping: false,
         fullScreenByDefault: false,
         fit: BoxFit.contain,
-        controlsConfiguration: const BetterPlayerControlsConfiguration(
+        controlsConfiguration: BetterPlayerControlsConfiguration(
           enableProgressText: true,
           enableFullscreen: true,
           enablePlayPause: true,
           enableMute: true,
           enableSkips: false,
           enableProgressBar: true,
+          enablePlaybackSpeed: false,
+          enableOverflowMenu: true,
+          overflowMenuCustomItems: [
+            BetterPlayerOverflowMenuItem(
+              Icons.speed,
+              'Playback speed',
+              _showSpeedChooser,
+            ),
+          ],
         ),
       );
 
@@ -78,6 +87,60 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
         });
       }
     }
+  }
+
+  void _showSpeedChooser() {
+    final currentSpeed =
+        _playerController?.videoPlayerController?.value.speed ?? 1.0;
+    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Playback Speed',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ...speeds.map((speed) {
+                final isSelected = (currentSpeed - speed).abs() < 0.01;
+                return ListTile(
+                  leading: isSelected
+                      ? const Icon(Icons.check, color: Colors.white)
+                      : const SizedBox(width: 24),
+                  title: Text(
+                    '${speed}x',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _playerController?.setSpeed(speed);
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override

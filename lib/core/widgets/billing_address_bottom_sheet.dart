@@ -68,24 +68,48 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
   bool _isLoadingLocation = false;
   bool _isLoadingShipPincode = false;
   bool _sameAsShipping = true;
+  bool _useSavedAddress = false;
+
+  bool get _hasSavedAddress =>
+      widget.initialAddress != null && widget.initialAddress!.isValid;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialAddress != null) {
-      final addr = widget.initialAddress!;
-      _pincodeController.text = addr.pincode;
-      _cityController.text = addr.city;
-      _streetController.text = addr.street;
-      _street2Controller.text = addr.street2;
-      if (addr.stateCode.isNotEmpty) {
-        _selectedStateCode = addr.stateCode;
-        _selectedState = getStateName(addr.stateCode) ?? addr.state;
-      } else if (addr.state.isNotEmpty) {
-        _selectedState = addr.state;
-        _selectedStateCode = getStateCode(addr.state);
-      }
+    if (_hasSavedAddress) {
+      _useSavedAddress = true;
+      _applySavedAddress();
     }
+  }
+
+  /// Fill form fields from saved address and run pincode lookup
+  /// to ensure state/state_code are derived consistently.
+  void _applySavedAddress() {
+    final addr = widget.initialAddress!;
+    _pincodeController.text = addr.pincode;
+    _cityController.text = addr.city;
+    _streetController.text = addr.street;
+    _street2Controller.text = addr.street2;
+    if (addr.stateCode.isNotEmpty) {
+      _selectedStateCode = addr.stateCode;
+      _selectedState = getStateName(addr.stateCode) ?? addr.state;
+    } else if (addr.state.isNotEmpty) {
+      _selectedState = addr.state;
+      _selectedStateCode = getStateCode(addr.state);
+    }
+    // Re-derive state from pincode to ensure consistency
+    if (addr.pincode.isNotEmpty) {
+      _onPincodeChanged(addr.pincode);
+    }
+  }
+
+  void _clearAddressFields() {
+    _pincodeController.clear();
+    _cityController.clear();
+    _streetController.clear();
+    _street2Controller.clear();
+    _selectedState = null;
+    _selectedStateCode = null;
   }
 
   @override
@@ -330,6 +354,56 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // "Use saved address" toggle
+                      if (_hasSavedAddress) ...[
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _useSavedAddress,
+                                onChanged: (v) {
+                                  setState(() {
+                                    _useSavedAddress = v ?? false;
+                                    if (_useSavedAddress) {
+                                      _applySavedAddress();
+                                    } else {
+                                      _clearAddressFields();
+                                    }
+                                  });
+                                },
+                                activeColor: accentColor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _useSavedAddress = !_useSavedAddress;
+                                    if (_useSavedAddress) {
+                                      _applySavedAddress();
+                                    } else {
+                                      _clearAddressFields();
+                                    }
+                                  });
+                                },
+                                child: Text(
+                                  'Use saved address as billing address',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: fieldFontSize,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                      ],
+
                       // Pincode
                       _buildTextField(
                         controller: _pincodeController,
