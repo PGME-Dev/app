@@ -87,6 +87,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   // Feature 3: PDF content dark mode
   bool _isPdfDarkMode = false;
 
+  // Quick action buttons visibility (hide briefly during page scroll)
+  bool _showQuickActions = true;
+  Timer? _quickActionsTimer;
+
   static const Map<String, Color> highlightColors = {
     'yellow': Color(0x80FFEB3B),
     'green': Color(0x8066BB6A),
@@ -123,6 +127,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   void dispose() {
     _contextMenuOverlay?.remove();
+    _quickActionsTimer?.cancel();
     // Save final progress before disposing
     _progressDebounceTimer?.cancel();
     if (widget.documentId != null && _currentPage.value > 0) {
@@ -512,10 +517,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _contextMenuOverlay = null;
   }
 
-  /// Highlight the currently selected text
-  Future<void> _highlightSelectedText(String color) async {
+  /// Highlight the currently selected text; returns the created annotation.
+  Future<Annotation?> _highlightSelectedText(String color) async {
     final textLines = _pdfViewerKey.currentState?.getSelectedTextLines();
-    if (textLines == null || textLines.isEmpty) return;
+    if (textLines == null || textLines.isEmpty) return null;
 
     final highlightColor =
         highlightColors[color] ?? highlightColors['yellow']!;
@@ -581,6 +586,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
     // Clear selection
     _pdfController.clearSelection();
+    return annotation;
+  }
+
+  /// Highlight selected text in yellow then immediately open the note dialog.
+  Future<void> _quickHighlightAndNote() async {
+    final textLines = _pdfViewerKey.currentState?.getSelectedTextLines();
+    if (textLines == null || textLines.isEmpty) return;
+    final annotation = await _highlightSelectedText('yellow');
+    if (annotation != null && mounted) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (mounted) _showNoteDialog(annotation);
+    }
   }
 
   // ── Feature 4: Underline Text ─────────────────────────────────────
@@ -1360,6 +1377,73 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         ),
                       ],
                     ),
+                    // Quick action buttons (left side, hide during page scroll)
+                    if (_isPdfReady)
+                      Positioned(
+                        left: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          ignoring: !_showQuickActions,
+                          child: AnimatedOpacity(
+                            opacity: _showQuickActions ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.black.withValues(alpha: 0.55)
+                                      : Colors.white.withValues(alpha: 0.88),
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.18),
+                                      blurRadius: 8,
+                                      offset: const Offset(1, 2),
+                                    ),
+                                  ],
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isTablet ? 10 : 8,
+                                  horizontal: isTablet ? 6 : 4,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildQuickActionButton(
+                                      icon: Icons.highlight,
+                                      color: const Color(0xFFFFEB3B),
+                                      tooltip: 'Highlight',
+                                      onTap: () => _highlightSelectedText('yellow'),
+                                      isDark: isDark,
+                                      isTablet: isTablet,
+                                    ),
+                                    SizedBox(height: isTablet ? 8 : 6),
+                                    _buildQuickActionButton(
+                                      icon: Icons.format_underlined,
+                                      color: const Color(0xFF1565C0),
+                                      tooltip: 'Underline',
+                                      onTap: _underlineSelectedText,
+                                      isDark: isDark,
+                                      isTablet: isTablet,
+                                    ),
+                                    SizedBox(height: isTablet ? 8 : 6),
+                                    _buildQuickActionButton(
+                                      icon: Icons.note_add_outlined,
+                                      color: const Color(0xFF43A047),
+                                      tooltip: 'Add Note',
+                                      onTap: _quickHighlightAndNote,
+                                      isDark: isDark,
+                                      isTablet: isTablet,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     // Loading overlay while PDF is parsing
                     if (!_isPdfReady)
                       Positioned.fill(
@@ -1398,6 +1482,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       onPageChanged: (PdfPageChangedDetails details) {
         _currentPage.value = details.newPageNumber;
         _debouncedSaveProgress(details.newPageNumber);
+        // Hide quick actions briefly while scrolling to a new page
+        if (mounted) setState(() => _showQuickActions = false);
+        _quickActionsTimer?.cancel();
+        _quickActionsTimer = Timer(const Duration(milliseconds: 900), () {
+          if (mounted) setState(() => _showQuickActions = true);
+        });
       },
       onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
         if (details.selectedText != null &&
@@ -1653,6 +1743,34 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+    required bool isDark,
+    required bool isTablet,
+  }) {
+    final size = isTablet ? 44.0 : 36.0;
+    final iconSize = isTablet ? 22.0 : 18.0;
+    return Tooltip(
+      message: tooltip,
+      preferBelow: false,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isDark ? 0.22 : 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: iconSize, color: color),
+        ),
+      ),
     );
   }
 

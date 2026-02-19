@@ -58,6 +58,32 @@ class SubscriptionService {
     }
   }
 
+  /// Get invoice details by purchase ID
+  Future<InvoiceItem> getInvoiceByPurchaseId(String purchaseId) async {
+    try {
+      final response = await _apiService.dio.get(
+        ApiConstants.invoiceByPurchase(purchaseId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final inv = response.data['data']['invoice'];
+        return InvoiceItem(
+          invoiceId: inv['invoice_id'] ?? '',
+          invoiceNumber: inv['invoice_number'] ?? '',
+          purchaseType: 'package',
+          invoiceUrl: inv['invoice_url'],
+          amount: inv['amount'] ?? 0,
+          gstAmount: inv['gst_amount'] ?? 0,
+          paymentStatus: 'paid',
+          createdAt: inv['created_at'],
+        );
+      }
+      throw Exception('Invoice not found');
+    } catch (e) {
+      throw Exception('Failed to load invoice: $e');
+    }
+  }
+
   /// Download invoice PDF as bytes
   Future<Uint8List> downloadInvoicePdf(String invoiceId) async {
     try {

@@ -106,11 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: isTablet ? 22 : 16,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
                   ],
                 ),
               ),

@@ -532,21 +532,21 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                   ),
                 ),
                 const Spacer(),
-                // Three dots menu
-                GestureDetector(
-                  onTap: () {
-                    // Menu options
-                  },
-                  child: SizedBox(
-                    width: isTablet ? 30 : 24,
-                    height: isTablet ? 30 : 24,
-                    child: Icon(
-                      Icons.more_horiz,
-                      size: isTablet ? 30 : 24,
-                      color: textColor,
-                    ),
-                  ),
-                ),
+                // // Three dots menu
+                // GestureDetector(
+                //   onTap: () {
+                //     // Menu options
+                //   },
+                //   child: SizedBox(
+                //     width: isTablet ? 30 : 24,
+                //     height: isTablet ? 30 : 24,
+                //     child: Icon(
+                //       Icons.more_horiz,
+                //       size: isTablet ? 30 : 24,
+                //       color: textColor,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),

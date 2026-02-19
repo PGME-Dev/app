@@ -178,6 +178,7 @@ class ApiConstants {
   static String get zohoApiKey => dotenv.env['ZOHO_PAYMENTS_API_KEY'] ?? '';
 
   // Invoice Endpoints
+  static String invoiceByPurchase(String purchaseId) => '/invoices/$purchaseId';
   static String invoicePdf(String invoiceId) => '/invoices/$invoiceId/pdf';
 
   // Notification Endpoints

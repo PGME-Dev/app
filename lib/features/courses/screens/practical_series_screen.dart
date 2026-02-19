@@ -239,11 +239,11 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isOnLanding)
-                    GestureDetector(
-                      onTap: () {},
-                      child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
-                    ),
+                  // if (isOnLanding)
+                  //   GestureDetector(
+                  //     onTap: () {},
+                  //     child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
+                  //   ),
                 ],
               ),
             ),

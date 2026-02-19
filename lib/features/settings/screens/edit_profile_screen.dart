@@ -274,7 +274,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Email Field
                       Text(
-                        'Email (Optional)',
+                        'Email',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
@@ -380,7 +380,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Address Field (tap to open map picker)
                       Text(
-                        'Address (Optional)',
+                        'Address',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
@@ -441,7 +441,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Affiliated Organisation Field
                       Text(
-                        'Affiliated Organisation (Optional)',
+                        'Affiliated Organisation',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
@@ -481,7 +481,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Current Designation Field
                       Text(
-                        'Current Designation (Optional)',
+                        'Current Designation',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,

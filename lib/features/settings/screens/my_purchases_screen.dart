@@ -28,6 +28,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   AllPurchasesData? _data;
   bool _isLoading = true;
   String? _error;
+  final Set<String> _loadingPackageInvoices = {};
 
   final List<String> _tabs = [
     'Packages',
@@ -65,6 +66,43 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         _error = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _openPackageInvoice(String purchaseId) async {
+    if (_loadingPackageInvoices.contains(purchaseId)) return;
+    setState(() => _loadingPackageInvoices.add(purchaseId));
+
+    try {
+      final invoice =
+          await _subscriptionService.getInvoiceByPurchaseId(purchaseId);
+      final pdfBytes =
+          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(
+            filePath: file.path,
+            title: invoice.invoiceNumber,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Failed to open invoice: ${e.toString().replaceAll('Exception: ', '')}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loadingPackageInvoices.remove(purchaseId));
     }
   }
 
@@ -278,7 +316,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       }
     } catch (_) {}
 
-    return Container(
+    final isLoadingInvoice = _loadingPackageInvoices.contains(pkg.purchaseId);
+
+    return GestureDetector(
+      onTap: () => _openPackageInvoice(pkg.purchaseId),
+      child: Container(
       margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
       padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
@@ -416,8 +458,32 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ],
             ),
           ],
+          if (isLoadingInvoice) ...[
+            SizedBox(height: isTablet ? 10 : 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: isTablet ? 16 : 14,
+                  height: isTablet ? 16 : 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: accentColor,
+                  ),
+                ),
+                SizedBox(width: isTablet ? 8 : 6),
+                Text(
+                  'Opening invoice...',
+                  style: TextStyle(
+                    fontSize: isTablet ? 15 : 12,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
+    ),
     );
   }
 

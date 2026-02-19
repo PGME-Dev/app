@@ -231,20 +231,20 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            // More options
-                          },
-                          child: SizedBox(
-                            width: headerIconSize,
-                            height: headerIconSize,
-                            child: Icon(
-                              Icons.more_horiz,
-                              size: headerIconSize,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
+                        // GestureDetector(
+                        //   onTap: () {
+                        //     // More options
+                        //   },
+                        //   child: SizedBox(
+                        //     width: headerIconSize,
+                        //     height: headerIconSize,
+                        //     child: Icon(
+                        //       Icons.more_horiz,
+                        //       size: headerIconSize,
+                        //       color: textColor,
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),

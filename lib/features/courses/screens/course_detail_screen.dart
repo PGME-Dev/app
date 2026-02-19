@@ -103,12 +103,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             color: textColor,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: textColor, size: isTablet ? 28 : 24),
-            onPressed: () {},
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.more_horiz, color: textColor, size: isTablet ? 28 : 24),
+        //     onPressed: () {},
+        //   ),
+        // ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: iconColor))

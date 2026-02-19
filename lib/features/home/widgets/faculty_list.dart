@@ -20,26 +20,6 @@ class FacultyList extends StatelessWidget {
     this.onRetry,
   });
 
-  void _showFacultyDetails(BuildContext context, FacultyModel member, bool isDark) {
-    final isTablet = ResponsiveHelper.isTablet(context);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      useRootNavigator: true,
-      constraints: isTablet
-          ? BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context) + 48,
-            )
-          : null,
-      builder: (context) => _FacultyDetailSheet(
-        faculty: member,
-        isDark: isDark,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -51,7 +31,6 @@ class FacultyList extends StatelessWidget {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     final sectionTitleSize = isTablet ? 30.0 : 20.0;
-    final browseAllSize = isTablet ? 18.0 : 14.0;
     final hPadding = isTablet ? 24.0 : 16.0;
 
     // On tablet: calculate card width to fit exactly 3 cards on screen
@@ -82,28 +61,14 @@ class FacultyList extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: ResponsiveHelper.getMaxContentWidth(context),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Your Faculty',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                      fontSize: sectionTitleSize,
-                      color: textColor,
-                    ),
-                  ),
-                  Text(
-                    'Browse All',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: browseAllSize,
-                      color: secondaryTextColor,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Your Faculty',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: sectionTitleSize,
+                  color: textColor,
+                ),
               ),
             ),
           ),
@@ -130,18 +95,15 @@ class FacultyList extends StatelessWidget {
                   itemCount: faculty.length,
                   itemBuilder: (context, index) {
                     final member = faculty[index];
-                    return GestureDetector(
-                      onTap: () => _showFacultyDetails(context, member, isDark),
-                      child: _buildFacultyCard(
-                        member,
-                        isDark,
-                        textColor,
-                        cardBgColor,
-                        cardWidth,
-                        cardHeight,
-                        photoSize,
-                        isTablet,
-                      ),
+                    return _buildFacultyCard(
+                      member,
+                      isDark,
+                      textColor,
+                      cardBgColor,
+                      cardWidth,
+                      cardHeight,
+                      photoSize,
+                      isTablet,
                     );
                   },
                 ),

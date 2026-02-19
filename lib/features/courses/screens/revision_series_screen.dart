@@ -376,12 +376,12 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                       ),
                     ),
                   ),
-                  // Menu icon (only on landing)
-                  if (isOnLanding)
-                    GestureDetector(
-                      onTap: () {},
-                      child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
-                    ),
+                  // // Menu icon (only on landing)
+                  // if (isOnLanding)
+                  //   GestureDetector(
+                  //     onTap: () {},
+                  //     child: Icon(Icons.more_horiz, size: isTablet ? 30 : 24, color: textColor),
+                  //   ),
                 ],
               ),
             ),
