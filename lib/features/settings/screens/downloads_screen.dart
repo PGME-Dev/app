@@ -120,6 +120,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           final grouped = dp.downloadsBySeriesGroup;
           final activeDownloads = dp.activeDownloads;
           final failedDownloads = dp.failedDownloads;
+          // Split paused (background-interrupted) from truly failed
+          final pausedIds = failedDownloads.keys.where((id) => dp.isPaused(id)).toList();
+          final trulyFailedIds = failedDownloads.keys.where((id) => dp.hasFailed(id)).toList();
           final hasContent = downloads.isNotEmpty ||
               activeDownloads.isNotEmpty ||
               failedDownloads.isNotEmpty;
@@ -197,10 +200,25 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                     iconColor: iconColor,
                                   ),
 
-                                // Failed downloads section
-                                if (failedDownloads.isNotEmpty)
+                                // Paused downloads section (backgrounded)
+                                if (pausedIds.isNotEmpty)
+                                  _buildPausedDownloadsSection(
+                                    dp: dp,
+                                    pausedIds: pausedIds,
+                                    isDark: isDark,
+                                    isTablet: isTablet,
+                                    hPadding: hPadding,
+                                    cardColor: cardColor,
+                                    textColor: textColor,
+                                    secondaryTextColor: secondaryTextColor,
+                                    iconColor: iconColor,
+                                  ),
+
+                                // Failed downloads section (real errors only)
+                                if (trulyFailedIds.isNotEmpty)
                                   _buildFailedDownloadsSection(
                                     dp: dp,
+                                    failedIds: trulyFailedIds,
                                     isDark: isDark,
                                     isTablet: isTablet,
                                     hPadding: hPadding,
@@ -377,8 +395,142 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     );
   }
 
+  Widget _buildPausedDownloadsSection({
+    required DownloadProvider dp,
+    required List<String> pausedIds,
+    required bool isDark,
+    required bool isTablet,
+    required double hPadding,
+    required Color cardColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color iconColor,
+  }) {
+    final pauseColor = Colors.orange.shade400;
+    final titleSize = isTablet ? 15.0 : 13.0;
+    final cardRadius = isTablet ? 16.0 : 12.0;
+    final cardPadding = isTablet ? 14.0 : 10.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: hPadding, vertical: isTablet ? 12 : 8),
+          child: Text(
+            'Paused',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: isTablet ? 16 : 13,
+              letterSpacing: -0.3,
+              color: pauseColor,
+            ),
+          ),
+        ),
+        ...pausedIds.map((videoId) {
+          final title = dp.getActiveDownloadTitle(videoId) ?? 'Unknown video';
+          return Padding(
+            padding: EdgeInsets.only(
+                left: hPadding, right: hPadding, bottom: isTablet ? 10 : 8),
+            child: Container(
+              padding: EdgeInsets.all(cardPadding),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(cardRadius),
+                border: Border.all(
+                  color: pauseColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.pause_circle_outline,
+                    size: isTablet ? 22.0 : 18.0,
+                    color: pauseColor,
+                  ),
+                  SizedBox(width: isTablet ? 14 : 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: titleSize,
+                            color: textColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Will resume automatically when you return',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 12 : 10,
+                            color: pauseColor.withValues(alpha: 0.8),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Resume now button
+                  GestureDetector(
+                    onTap: () async {
+                      try {
+                        await dp.retryDownload(videoId);
+                      } catch (_) {}
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 14 : 10,
+                        vertical: isTablet ? 8 : 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: pauseColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                      ),
+                      child: Text(
+                        'Resume',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 13 : 11,
+                          fontWeight: FontWeight.w600,
+                          color: pauseColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isTablet ? 8 : 4),
+                  GestureDetector(
+                    onTap: () => dp.clearFailure(videoId),
+                    child: Padding(
+                      padding: EdgeInsets.all(isTablet ? 6.0 : 4.0),
+                      child: Icon(
+                        Icons.close,
+                        size: isTablet ? 20 : 16,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        SizedBox(height: isTablet ? 16 : 12),
+      ],
+    );
+  }
+
   Widget _buildFailedDownloadsSection({
     required DownloadProvider dp,
+    required List<String> failedIds,
     required bool isDark,
     required bool isTablet,
     required double hPadding,
@@ -410,9 +562,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             ),
           ),
         ),
-        ...failedDownloads.entries.map((entry) {
-          final videoId = entry.key;
-          final errorMsg = entry.value;
+        ...failedIds.map((videoId) {
+          final errorMsg = failedDownloads[videoId] ?? 'Download failed';
           final title = dp.getActiveDownloadTitle(videoId) ?? 'Unknown video';
 
           return Padding(

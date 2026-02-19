@@ -481,6 +481,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     VoidCallback? onTap,
     bool isDownloaded = false,
     bool isFailed = false,
+    bool isPaused = false,
     double? downloadProgress,
     VoidCallback? onDownload,
     VoidCallback? onRetry,
@@ -522,6 +523,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         downloadStatusText = downloadProgress > 0 ? 'Downloading $pct%' : 'Preparing...';
         downloadStatusColor = iconColor;
         downloadStatusIcon = Icons.downloading;
+      } else if (isPaused) {
+        downloadStatusText = 'Paused - will resume';
+        downloadStatusColor = Colors.orange.shade400;
+        downloadStatusIcon = Icons.pause_circle_outline;
+        downloadStatusTap = onRetry;
       } else if (isFailed) {
         downloadStatusText = 'Failed - Tap to retry';
         downloadStatusColor = Colors.red.shade400;
@@ -539,6 +545,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         onDownload != null &&
         downloadProgress == null &&
         !isFailed &&
+        !isPaused &&
         !isDownloaded;
 
     return GestureDetector(
@@ -871,6 +878,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             onTap: isAccessible ? () => context.push('/video/${video.videoId}') : null,
                             isDownloaded: dp.isDownloaded(video.videoId),
                             isFailed: dp.hasFailed(video.videoId),
+                            isPaused: dp.isPaused(video.videoId),
                             downloadProgress: dp.getProgress(video.videoId),
                             onDownload: isAccessible ? () => _handleDownload(video, module) : null,
                             onRetry: () => _retryDownload(video.videoId),

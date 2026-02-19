@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pgme/core/models/offline_video_model.dart';
 import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/download_notification_service.dart';
@@ -27,7 +28,7 @@ class _DownloadParams {
   });
 }
 
-class DownloadProvider with ChangeNotifier {
+class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   final DownloadService _downloadService = DownloadService();
   final OfflineStorageService _offlineStorage = OfflineStorageService();
   final DownloadNotificationService _notificationService =
@@ -39,9 +40,11 @@ class DownloadProvider with ChangeNotifier {
   final Map<String, String> _failedDownloads = {}; // videoId -> error message
   final Map<String, _DownloadParams> _downloadParams = {}; // for retry
   final Map<String, CancelToken> _cancelTokens = {}; // for cancellation
+  final Set<String> _backgroundPaused = {}; // downloads interrupted by app backgrounding
   double _totalStorageUsedMb = 0;
   bool _isLoaded = false;
   bool _isInitializing = false;
+  bool _lifecycleObserverAdded = false;
 
   // Getters
   List<OfflineVideoModel> get downloadedVideos => _downloadedVideos;
@@ -51,6 +54,7 @@ class DownloadProvider with ChangeNotifier {
   bool get isLoaded => _isLoaded;
   int get downloadedCount => _downloadedVideos.length;
   bool get hasActiveDownloads => _activeDownloads.isNotEmpty;
+  bool get hasPausedDownloads => _backgroundPaused.isNotEmpty;
 
   String get formattedTotalStorage {
     if (_totalStorageUsedMb >= 1024) {
@@ -59,10 +63,40 @@ class DownloadProvider with ChangeNotifier {
     return '${_totalStorageUsedMb.toStringAsFixed(1)} MB';
   }
 
+  @override
+  void dispose() {
+    if (_lifecycleObserverAdded) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _backgroundPaused.isNotEmpty) {
+      _resumeBackgroundPausedDownloads();
+    }
+  }
+
+  void _resumeBackgroundPausedDownloads() {
+    final toResume = List<String>.from(_backgroundPaused);
+    _backgroundPaused.clear();
+    debugPrint('DownloadProvider: Auto-resuming ${toResume.length} paused download(s) after foreground');
+    for (final videoId in toResume) {
+      retryDownload(videoId);
+    }
+  }
+
   /// Initialize: load persisted metadata and verify files still exist
   Future<void> loadDownloads() async {
     if (_isLoaded || _isInitializing) return;
     _isInitializing = true;
+
+    // Register lifecycle observer so we can auto-resume background-paused downloads
+    if (!_lifecycleObserverAdded) {
+      WidgetsBinding.instance.addObserver(this);
+      _lifecycleObserverAdded = true;
+    }
 
     try {
       debugPrint('DownloadProvider: Loading downloads');
@@ -102,9 +136,14 @@ class DownloadProvider with ChangeNotifier {
     return _activeDownloads.containsKey(videoId);
   }
 
-  /// Check if a video download failed
+  /// Check if a video download failed (real failure, not background pause)
   bool hasFailed(String videoId) {
-    return _failedDownloads.containsKey(videoId);
+    return _failedDownloads.containsKey(videoId) && !_backgroundPaused.contains(videoId);
+  }
+
+  /// Check if a video download was paused because the app was backgrounded
+  bool isPaused(String videoId) {
+    return _backgroundPaused.contains(videoId);
   }
 
   /// Get failure error message
@@ -253,17 +292,29 @@ class DownloadProvider with ChangeNotifier {
         notifyListeners();
         await _notificationService.cancel(videoId);
       } else {
-        _failedDownloads[videoId] =
-            e.message ?? 'Download failed';
+        // Detect if the connection was dropped because the app went to background
+        final errorStr = e.error?.toString() ?? e.message ?? '';
+        final isBackgroundInterruption = e.type == DioExceptionType.unknown &&
+            errorStr.contains('HttpConnection closed');
+
+        if (isBackgroundInterruption) {
+          debugPrint('DownloadProvider: Download paused (app backgrounded) for $videoId');
+          _backgroundPaused.add(videoId);
+          _failedDownloads[videoId] = 'Paused';
+          await _notificationService.cancel(videoId);
+        } else {
+          _failedDownloads[videoId] = e.message ?? 'Download failed';
+          debugPrint('DownloadProvider: Download failed for $videoId: $e');
+          await _notificationService.showFailed(
+              videoId: videoId, title: _downloadParams[videoId]?.title ?? 'Video');
+        }
         notifyListeners();
-        debugPrint('DownloadProvider: Download failed for $videoId: $e');
-        await _notificationService.showFailed(
-            videoId: videoId, title: _downloadParams[videoId]?.title ?? 'Video');
       }
 
       // Clean up partial file
       await _downloadService.deleteDownload('video_$videoId.mp4');
-      if (e.type != DioExceptionType.cancel) rethrow;
+      // Don't rethrow for cancel or background pause - those are not errors
+      if (e.type != DioExceptionType.cancel && !_backgroundPaused.contains(videoId)) rethrow;
     } catch (e) {
       _activeDownloads.remove(videoId);
       _cancelTokens.remove(videoId);
@@ -318,9 +369,10 @@ class DownloadProvider with ChangeNotifier {
     );
   }
 
-  /// Clear a failed download entry (dismiss error)
+  /// Clear a failed/paused download entry (dismiss)
   void clearFailure(String videoId) {
     _failedDownloads.remove(videoId);
+    _backgroundPaused.remove(videoId);
     _downloadParams.remove(videoId);
     notifyListeners();
   }
