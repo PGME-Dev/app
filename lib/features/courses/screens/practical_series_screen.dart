@@ -619,8 +619,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (isLocked)
+            // Lock icon for locked series
+            if (isLocked) ...[
+              const SizedBox(width: 8),
               Container(
                 width: isTablet ? 42 : 32,
                 height: isTablet ? 42 : 32,
@@ -629,9 +630,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   color: isDark ? AppColors.darkSurface : Colors.white,
                 ),
                 child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: iconColor)),
-              )
-            else
-              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
+              ),
+            ],
           ],
         ),
       ),
@@ -955,8 +955,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (isLocked)
+            // Lock icon for locked series
+            if (isLocked) ...[
+              const SizedBox(width: 8),
               Container(
                 width: isTablet ? 42 : 32,
                 height: isTablet ? 42 : 32,
@@ -965,9 +966,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                   color: isDark ? AppColors.darkSurface : Colors.white,
                 ),
                 child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: iconColor)),
-              )
-            else
-              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
+              ),
+            ],
           ],
         ),
       ),

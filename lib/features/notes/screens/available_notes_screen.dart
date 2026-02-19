@@ -9,6 +9,7 @@ import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
@@ -668,13 +669,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
           _isAddingToLibrary = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${document.title} added to Your Notes'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAppDialog(context, message: '${document.title} added to Your Notes', type: AppDialogType.success);
       }
     } catch (e) {
       if (mounted) {
@@ -682,13 +677,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
           _isAddingToLibrary = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }

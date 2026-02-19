@@ -504,10 +504,9 @@ packages:
   flutter_zoom_meeting_sdk:
     dependency: "direct main"
     description:
-      name: flutter_zoom_meeting_sdk
-      sha256: bb594834502a0fc99bc94a5353f0a2f0d3873e1eff8f7dd37809918f0a87d734
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/flutter_zoom_meeting_sdk"
+      relative: true
+    source: path
     version: "0.0.11"
   font_awesome_flutter:
     dependency: "direct main"

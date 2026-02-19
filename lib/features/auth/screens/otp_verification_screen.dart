@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/core/widgets/otp_input.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
@@ -22,12 +23,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Future<void> _verifyOTP() async {
     if (_otp.length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the complete OTP'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showAppDialog(context, message: 'Please enter the complete OTP');
       return;
     }
 
@@ -55,12 +51,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) {

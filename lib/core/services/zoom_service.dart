@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_zoom_meeting_sdk/flutter_zoom_meeting_sdk.dart';
 import 'package:flutter_zoom_meeting_sdk/enums/status_meeting_status.dart';
+import 'package:flutter_zoom_meeting_sdk/enums/status_zoom_error.dart';
 import 'package:flutter_zoom_meeting_sdk/models/zoom_meeting_sdk_request.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/api_service.dart';
@@ -150,10 +151,30 @@ class ZoomMeetingService {
         );
       }
 
-      debugPrint('Zoom SDK authenticated successfully');
+      debugPrint('Zoom SDK auth request sent, waiting for completion...');
 
-      // Brief delay to let the SDK fully settle after authentication
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Wait for the actual authentication to complete via event stream.
+      // authZoom() only sends the request — the real result arrives on
+      // onAuthenticationReturn. Without this, joinMeeting() fires before
+      // the SDK is ready, causing the first-click failure.
+      final authEvent = await _zoomSdk.onAuthenticationReturn.first.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw ZoomJoinException(
+          type: ZoomErrorType.authenticationFailed,
+          message: 'Zoom authentication timed out. Please try again.',
+        ),
+      );
+
+      final authStatus = authEvent.params?.statusEnum;
+      if (authStatus != StatusZoomError.success) {
+        throw ZoomJoinException(
+          type: ZoomErrorType.authenticationFailed,
+          message: 'Zoom authentication failed. Please try again.',
+          technicalDetails: 'Auth status: $authStatus',
+        );
+      }
+
+      debugPrint('Zoom SDK authentication confirmed via event');
 
       // Create meeting config
       final meetingConfig = ZoomMeetingSdkRequest(

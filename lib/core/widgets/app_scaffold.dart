@@ -49,12 +49,14 @@ class AppScaffold extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: backgroundColor,
+      extendBody: true,
       body: Stack(
+        clipBehavior: Clip.none,
         children: [
           child,
           // Persistent Bottom Navigation Bar
           Positioned(
-            bottom: bottomPadding + 20,
+            bottom: bottomPadding + 12,
             left: horizontalPadding,
             right: horizontalPadding,
             child: Container(

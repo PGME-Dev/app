@@ -13,6 +13,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/purchase/widgets/upgrade_bottom_sheet.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class PurchaseScreen extends StatefulWidget {
   final String? packageId;
@@ -746,25 +747,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message.replaceAll('Exception: ', '')),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message.replaceAll('Exception: ', ''), type: AppDialogType.info);
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   void _showUpgradeSheet(PackageModel package) async {

@@ -15,6 +15,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/zoom_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
   final String sessionId;
@@ -182,12 +183,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           _checkEnrollmentStatus(),
           _checkAccessStatus(),
         ]);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Successfully enrolled!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showAppDialog(context, message: 'Successfully enrolled!', type: AppDialogType.success);
       }
     } catch (e) {
       if (mounted) _showError('Failed to enroll: $e');
@@ -274,12 +270,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             _checkAccessStatus(),
             _checkEnrollmentStatus(),
           ]);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment successful! You can now join the session.'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showAppDialog(context, message: 'Payment successful! You can now join the session.', type: AppDialogType.success);
         } else {
           _showError('Payment verification failed. Please contact support.');
         }
@@ -291,32 +282,19 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message.replaceAll('Exception: ', '')),
-        backgroundColor: AppColors.error,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message.replaceAll('Exception: ', ''));
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   Future<void> _launchMeeting() async {
     if (_session == null) return;
 
     if (!_hasAccess && !_isEnrolled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please purchase or enroll in this session to join'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showAppDialog(context, message: 'Please purchase or enroll in this session to join');
       return;
     }
 

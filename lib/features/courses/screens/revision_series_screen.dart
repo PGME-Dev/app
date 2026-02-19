@@ -885,9 +885,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             ),
           ),
           if (series.isLocked)
-            Icon(Icons.lock_rounded, size: isTablet ? 22 : 16, color: secondaryTextColor)
-          else
-            Icon(Icons.chevron_right_rounded, size: isTablet ? 24 : 20, color: secondaryTextColor),
+            Icon(Icons.lock_rounded, size: isTablet ? 22 : 16, color: secondaryTextColor),
         ],
       ),
     );
@@ -1040,9 +1038,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                 ],
               ),
             ),
-            SizedBox(width: isTablet ? 12 : 8),
-            // Lock or arrow
-            if (isLocked)
+            // Lock icon for locked series
+            if (isLocked) ...[
+              SizedBox(width: isTablet ? 12 : 8),
               Container(
                 width: lockBoxSize,
                 height: lockBoxSize,
@@ -1051,9 +1049,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                   color: isDark ? AppColors.darkSurface : Colors.white,
                 ),
                 child: Center(child: Icon(Icons.lock_rounded, size: isTablet ? 22 : 16, color: iconColor)),
-              )
-            else
-              Icon(Icons.arrow_forward_ios_rounded, size: isTablet ? 20 : 16, color: textColor.withValues(alpha: 0.4)),
+              ),
+            ],
           ],
         ),
       ),

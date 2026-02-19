@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
@@ -69,13 +70,47 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     }
   }
 
-  Future<void> _openPackageInvoice(String purchaseId) async {
-    if (_loadingPackageInvoices.contains(purchaseId)) return;
-    setState(() => _loadingPackageInvoices.add(purchaseId));
+  Future<void> _openPackageInvoice(PackagePurchaseItem pkg) async {
+    if (_loadingPackageInvoices.contains(pkg.purchaseId)) return;
+
+    // Find matching invoice from already-loaded data
+    // Match by purchase_type == 'package' and closest created_at to purchased_at
+    final invoices = _data?.invoices ?? [];
+    final packageInvoices =
+        invoices.where((inv) => inv.purchaseType == 'package').toList();
+
+    InvoiceItem? invoice;
+    if (packageInvoices.length == 1) {
+      invoice = packageInvoices.first;
+    } else if (packageInvoices.length > 1 && pkg.purchasedAt != null) {
+      // Match by closest date
+      final purchaseDate = DateTime.tryParse(pkg.purchasedAt!);
+      if (purchaseDate != null) {
+        packageInvoices.sort((a, b) {
+          final aDate = DateTime.tryParse(a.createdAt ?? '');
+          final bDate = DateTime.tryParse(b.createdAt ?? '');
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          final aDiff = aDate.difference(purchaseDate).abs();
+          final bDiff = bDate.difference(purchaseDate).abs();
+          return aDiff.compareTo(bDiff);
+        });
+        invoice = packageInvoices.first;
+      }
+    }
+
+    if (invoice == null || invoice.invoiceId.isEmpty) {
+      if (!mounted) return;
+      showAppDialog(context,
+          message: 'Invoice not available for this purchase yet',
+          type: AppDialogType.info);
+      return;
+    }
+
+    setState(() => _loadingPackageInvoices.add(pkg.purchaseId));
 
     try {
-      final invoice =
-          await _subscriptionService.getInvoiceByPurchaseId(purchaseId);
       final pdfBytes =
           await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
 
@@ -84,25 +119,21 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       await file.writeAsBytes(pdfBytes);
 
       if (!mounted) return;
-      Navigator.of(context).push(
+      Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           builder: (_) => PdfViewerScreen(
             filePath: file.path,
-            title: invoice.invoiceNumber,
+            title: invoice!.invoiceNumber,
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Failed to open invoice: ${e.toString().replaceAll('Exception: ', '')}'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAppDialog(context,
+          message: 'Failed to download invoice',
+          type: AppDialogType.info);
     } finally {
-      if (mounted) setState(() => _loadingPackageInvoices.remove(purchaseId));
+      if (mounted) setState(() => _loadingPackageInvoices.remove(pkg.purchaseId));
     }
   }
 
@@ -319,7 +350,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     final isLoadingInvoice = _loadingPackageInvoices.contains(pkg.purchaseId);
 
     return GestureDetector(
-      onTap: () => _openPackageInvoice(pkg.purchaseId),
+      onTap: () => _openPackageInvoice(pkg),
       child: Container(
       margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
       padding: EdgeInsets.all(isTablet ? 20 : 16),
@@ -1041,7 +1072,7 @@ class _InvoiceDownloadButtonState extends State<_InvoiceDownloadButton> {
       if (!mounted) return;
 
       // Open in the in-app PDF viewer
-      Navigator.of(context).push(
+      Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           builder: (_) => PdfViewerScreen(
             filePath: file.path,
@@ -1051,12 +1082,7 @@ class _InvoiceDownloadButtonState extends State<_InvoiceDownloadButton> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to download invoice: ${e.toString().replaceAll('Exception: ', '')}'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAppDialog(context, message: 'Failed to download invoice: ${e.toString().replaceAll('Exception: ', '')}', type: AppDialogType.info);
     } finally {
       if (mounted) setState(() => _isDownloading = false);
     }

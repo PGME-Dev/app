@@ -6,6 +6,8 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -112,12 +114,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _userService.updateProfile(updateData);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Refresh AuthProvider so dashboard and other screens show updated name
+        context.read<AuthProvider>().refreshUser();
+        showAppDialog(context, message: 'Profile updated successfully', type: AppDialogType.info);
         context.pop(true); // Return true to indicate profile was updated
       }
     } catch (e) {

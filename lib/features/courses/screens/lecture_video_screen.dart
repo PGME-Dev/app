@@ -9,6 +9,7 @@ import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
@@ -63,22 +64,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         seriesName: _series?.title,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Video downloaded successfully'), duration: Duration(seconds: 2)),
-        );
+        showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.info);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download failed: ${e.toString().replaceAll("Exception: ", "")}'),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _retryDownload(video.videoId),
-            ),
-          ),
-        );
+        showAppDialog(context, message: 'Download failed: ${e.toString().replaceAll("Exception: ", "")}', type: AppDialogType.info, actionLabel: 'Retry', onAction: () => _retryDownload(video.videoId));
       }
     }
   }
@@ -89,22 +79,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     try {
       await provider.retryDownload(videoId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Video downloaded successfully'), duration: Duration(seconds: 2)),
-        );
+        showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.info);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download failed: ${e.toString().replaceAll("Exception: ", "")}'),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _retryDownload(videoId),
-            ),
-          ),
-        );
+        showAppDialog(context, message: 'Download failed: ${e.toString().replaceAll("Exception: ", "")}', type: AppDialogType.info, actionLabel: 'Retry', onAction: () => _retryDownload(videoId));
       }
     }
   }

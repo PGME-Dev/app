@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -727,19 +728,9 @@ class _SubjectPickerSheetState extends State<_SubjectPickerSheet> {
     if (mounted) {
       Navigator.pop(context);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Subject changed to ${subject.name}'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showAppDialog(context, message: 'Subject changed to ${subject.name}', type: AppDialogType.success);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to change subject'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showAppDialog(context, message: 'Failed to change subject');
       }
     }
   }

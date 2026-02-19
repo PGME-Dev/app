@@ -10,6 +10,7 @@ import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
 import 'package:pgme/core/models/billing_address_model.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class BookCheckoutScreen extends StatefulWidget {
   const BookCheckoutScreen({super.key});
@@ -149,25 +150,12 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message.replaceAll('Exception: ', '')),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message.replaceAll('Exception: ', ''), type: AppDialogType.info);
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   @override

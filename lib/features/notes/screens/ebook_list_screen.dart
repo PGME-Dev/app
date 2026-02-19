@@ -13,6 +13,7 @@ import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
 import 'package:pgme/core/models/billing_address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class EbookListScreen extends StatefulWidget {
   const EbookListScreen({super.key});
@@ -243,34 +244,17 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message);
   }
 
   void _showSuccess(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF4CAF50),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.success);
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   Widget _buildBuyDialog(BuildContext dialogContext, BookModel book, bool isDark) {
@@ -604,11 +588,9 @@ class _EbookListScreenState extends State<EbookListScreen> {
                                 _searchQuery = '';
                                 _loadEbooks();
                               },
-                              child: Padding(
-                                padding: EdgeInsets.only(right: isTablet ? 16 : 12),
-                                child: Icon(Icons.clear, size: isTablet ? 24 : 20, color: secondaryTextColor),
-                              ),
+                              child: Icon(Icons.clear, size: isTablet ? 24 : 20, color: secondaryTextColor),
                             ),
+                          SizedBox(width: isTablet ? 20 : 16),
                         ],
                       ),
                     ),

@@ -7,6 +7,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/offline_video_model.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -48,11 +49,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     if (confirmed == true) {
       await provider.deleteAllDownloads();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('All downloads deleted'),
-              duration: Duration(seconds: 2)),
-        );
+        showAppDialog(context, message: 'All downloads deleted', type: AppDialogType.info);
       }
     }
   }
@@ -81,11 +78,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     if (confirmed == true) {
       await provider.deleteDownload(video.videoId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('${video.title} deleted'),
-              duration: const Duration(seconds: 2)),
-        );
+        showAppDialog(context, message: '${video.title} deleted', type: AppDialogType.info);
       }
     }
   }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pgme/core/services/location_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class MapAddressPickerScreen extends StatefulWidget {
   const MapAddressPickerScreen({super.key});
@@ -121,12 +122,7 @@ class _MapAddressPickerScreenState extends State<MapAddressPickerScreen> {
   void _onConfirm() {
     final address = _buildCombinedAddress();
     if (address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a location on the map'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showAppDialog(context, message: 'Please select a location on the map');
       return;
     }
     context.pop(address);

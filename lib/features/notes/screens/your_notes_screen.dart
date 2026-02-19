@@ -10,6 +10,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/ebook_order_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class YourNotesScreen extends StatefulWidget {
   const YourNotesScreen({super.key});
@@ -72,12 +73,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
         setState(() {
           _libraryItems[index] = item;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update bookmark'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showAppDialog(context, message: 'Failed to update bookmark', type: AppDialogType.info);
       }
     }
   }
@@ -191,18 +187,14 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
           _downloadingDocs.remove(docId);
           _downloadedDocIds.add(docId);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Document downloaded successfully'), duration: Duration(seconds: 2)),
-        );
+        showAppDialog(context, message: 'Document downloaded successfully', type: AppDialogType.info);
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _downloadingDocs.remove(docId);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: ${e.toString().replaceAll('Exception: ', '')}'), duration: const Duration(seconds: 3)),
-        );
+        showAppDialog(context, message: 'Download failed: ${e.toString().replaceAll('Exception: ', '')}', type: AppDialogType.info);
       }
     }
   }
@@ -229,13 +221,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to open eBook: ${e.toString().replaceAll("Exception: ", "")}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        showAppDialog(context, message: 'Failed to open eBook: ${e.toString().replaceAll("Exception: ", "")}');
       }
     }
   }
@@ -379,6 +365,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                       ),
                     ),
                   ),
+                  SizedBox(width: isTablet ? 20 : 16),
                 ],
               ),
             ),

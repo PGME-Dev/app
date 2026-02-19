@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 
@@ -44,17 +45,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: _fetchSubjects,
-            ),
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''), actionLabel: 'Retry', onAction: _fetchSubjects);
       }
     }
   }
@@ -69,12 +60,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     final provider = context.read<OnboardingProvider>();
 
     if (!provider.hasSelectedSubject) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a subject to continue'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showAppDialog(context, message: 'Please select a subject to continue');
       return;
     }
 
@@ -101,12 +87,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }

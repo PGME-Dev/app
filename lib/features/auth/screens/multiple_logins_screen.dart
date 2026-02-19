@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
@@ -52,21 +53,11 @@ class _MultipleLoginsScreenState extends State<MultipleLoginsScreen>
     try {
       await context.read<AuthProvider>().logoutDeviceSession(sessionId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Device logged out successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showAppDialog(context, message: 'Device logged out successfully', type: AppDialogType.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) {

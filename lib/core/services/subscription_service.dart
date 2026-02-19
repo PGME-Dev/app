@@ -385,6 +385,7 @@ class InvoiceItem {
   final String invoiceId;
   final String invoiceNumber;
   final String purchaseType;
+  final String? purchaseId;
   final String? invoiceUrl;
   final num amount;
   final num gstAmount;
@@ -395,6 +396,7 @@ class InvoiceItem {
     required this.invoiceId,
     required this.invoiceNumber,
     required this.purchaseType,
+    this.purchaseId,
     this.invoiceUrl,
     required this.amount,
     required this.gstAmount,
@@ -407,6 +409,7 @@ class InvoiceItem {
       invoiceId: json['invoice_id'] ?? '',
       invoiceNumber: json['invoice_number'] ?? '',
       purchaseType: json['purchase_type'] ?? 'package',
+      purchaseId: json['purchase_id'],
       invoiceUrl: json['invoice_url'],
       amount: json['amount'] ?? 0,
       gstAmount: json['gst_amount'] ?? 0,

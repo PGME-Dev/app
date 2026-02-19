@@ -11,6 +11,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 /// Shows an upgrade bottom sheet for a tiered package.
 ///
@@ -159,12 +160,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
         setState(() => _isProcessing = false);
         if (mounted) {
           Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Upgrade successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showAppDialog(context, message: 'Upgrade successful!', type: AppDialogType.info);
         }
         return;
       }
@@ -219,16 +215,12 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   @override

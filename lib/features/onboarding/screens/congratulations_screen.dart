@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
@@ -42,17 +43,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
       setState(() => _isCompleting = false);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-            action: SnackBarAction(
-              label: 'Try Again',
-              textColor: Colors.white,
-              onPressed: _completeToDashboard,
-            ),
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''), actionLabel: 'Try Again', onAction: _completeToDashboard);
       }
     }
   }

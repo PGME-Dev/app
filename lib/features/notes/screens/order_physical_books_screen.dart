@@ -6,6 +6,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 class OrderPhysicalBooksScreen extends StatefulWidget {
   const OrderPhysicalBooksScreen({super.key});
@@ -217,15 +218,13 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                         _searchController.clear();
                         _onSearch('');
                       },
-                      child: Padding(
-                        padding: EdgeInsets.only(right: isTablet ? 20 : 16),
-                        child: Icon(
-                          Icons.close,
-                          size: isTablet ? 25 : 20,
-                          color: secondaryTextColor,
-                        ),
+                      child: Icon(
+                        Icons.close,
+                        size: isTablet ? 25 : 20,
+                        color: secondaryTextColor,
                       ),
                     ),
+                  SizedBox(width: isTablet ? 20 : 16),
                 ],
               ),
             ),
@@ -503,16 +502,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                       onTap: () {
                         if (!isInCart) {
                           provider.addToCart(book);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${book.title} added to cart'),
-                              duration: const Duration(seconds: 1),
-                              action: SnackBarAction(
-                                label: 'View Cart',
-                                onPressed: () => context.push('/book-cart'),
-                              ),
-                            ),
-                          );
+                          showAppDialog(context, message: '${book.title} added to cart', type: AppDialogType.info, actionLabel: 'View Cart', onAction: () => context.push('/book-cart'));
                         } else {
                           context.push('/book-cart');
                         }

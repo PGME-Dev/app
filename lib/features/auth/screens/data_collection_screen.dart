@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
@@ -224,12 +225,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     }
 
     if (errors.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill in: ${errors.join(', ')}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showAppDialog(context, message: 'Please fill in: ${errors.join(', ')}');
       return;
     }
 
@@ -260,12 +256,7 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
       debugPrint('Error updating profile: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }

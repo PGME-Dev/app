@@ -10,6 +10,7 @@ import 'package:pgme/core/services/session_purchase_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/zoom_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/core/widgets/zoho_payment_widget.dart';
 
 // Enrollment status model
@@ -225,12 +226,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
     if (enrollmentMode == 'disabled') {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This session is private and not open for enrollment'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppDialog(context, message: 'This session is private and not open for enrollment');
       }
       return;
     }
@@ -238,12 +234,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
     if (enrollmentMode == 'open') {
       // For open sessions, no enrollment needed - just join
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This is an open session - no enrollment needed, just join!'),
-            backgroundColor: Colors.blue,
-          ),
-        );
+        showAppDialog(context, message: 'This is an open session - no enrollment needed, just join!', type: AppDialogType.info);
       }
       return;
     }
@@ -268,24 +259,14 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
         await _loadEnrollmentStatus(session.sessionId);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully enrolled in ${session.title}'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showAppDialog(context, message: 'Successfully enrolled in ${session.title}', type: AppDialogType.success);
         }
       }
     } catch (e) {
       debugPrint('[TEST] Error enrolling: $e');
       if (mounted) {
         final errorMsg = e.toString().replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppDialog(context, message: errorMsg);
       }
     }
   }
@@ -407,37 +388,17 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message);
   }
 
   void _showSuccess(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.success);
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showAppDialog(context, message: message, type: AppDialogType.info);
   }
 
   bool _canJoinSession(LiveSessionModel session) {
@@ -503,12 +464,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
       final status = _enrollmentStatuses[session.sessionId];
       if (status == null || !status.isEnrolled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You must enroll in this session first'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          showAppDialog(context, message: 'You must enroll in this session first');
         }
         return;
       }
@@ -519,12 +475,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
       final status = _enrollmentStatuses[session.sessionId];
       if (status == null || !status.hasPaid) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment required for this session'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          showAppDialog(context, message: 'Payment required for this session');
         }
         return;
       }
@@ -547,22 +498,12 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
       debugPrint('[TEST] Successfully joined session');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Joined session successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showAppDialog(context, message: 'Joined session successfully', type: AppDialogType.success);
       }
     } catch (e) {
       debugPrint('[TEST] Error joining session: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to join: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppDialog(context, message: 'Failed to join: ${e.toString().replaceAll('Exception: ', '')}');
       }
     } finally {
       if (mounted) {

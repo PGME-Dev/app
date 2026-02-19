@@ -8,6 +8,7 @@ import 'package:pgme/core/services/location_service.dart';
 import 'package:pgme/core/services/pincode_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 /// Shows a billing address bottom sheet and returns a [BillingAddress] or null if dismissed.
 ///
@@ -167,9 +168,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
       final hasPermission = await _locationService.requestLocationPermission();
       if (!hasPermission) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
-          );
+          showAppDialog(context, message: 'Location permission denied', type: AppDialogType.info);
         }
         setState(() => _isLoadingLocation = false);
         return;
@@ -221,9 +220,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedStateCode == null || _selectedStateCode!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a state')),
-      );
+      showAppDialog(context, message: 'Please select a state', type: AppDialogType.info);
       return;
     }
 
@@ -243,9 +240,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
         result['shipping'] = billing;
       } else {
         if (_shipSelectedStateCode == null || _shipSelectedStateCode!.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select a state for shipping address')),
-          );
+          showAppDialog(context, message: 'Please select a state for shipping address', type: AppDialogType.info);
           return;
         }
         result['shipping'] = BillingAddress(

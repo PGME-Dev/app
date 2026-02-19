@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
@@ -38,12 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _sendOTP() async {
     if (_phoneController.text.length != 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid 10-digit mobile number'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showAppDialog(context, message: 'Please enter a valid 10-digit mobile number');
       return;
     }
 
@@ -61,22 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
         context.push('/otp-verification');
       } else if (mounted) {
         debugPrint('OTP sending failed: success = false');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to send OTP. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showAppDialog(context, message: 'Failed to send OTP. Please try again.');
       }
     } catch (e) {
       debugPrint('OTP sending error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showAppDialog(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) {

@@ -6,6 +6,7 @@ import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/models/notification_model.dart';
 import 'package:pgme/features/notifications/providers/notification_provider.dart';
+import 'package:pgme/core/widgets/app_dialog.dart';
 
 String _formatTimeAgo(DateTime dateTime) {
   final now = DateTime.now();
@@ -275,18 +276,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _onNotificationDismiss(NotificationModel notification, NotificationProvider provider) {
     provider.deleteNotification(notification.notificationId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Notification deleted'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {
-            // Reload to restore
-            provider.refresh();
-          },
-        ),
-      ),
-    );
+    showAppDialog(context, message: 'Notification deleted', type: AppDialogType.info, actionLabel: 'Undo', onAction: () {
+      // Reload to restore
+      provider.refresh();
+    });
   }
 }
 

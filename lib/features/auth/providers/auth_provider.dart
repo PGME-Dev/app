@@ -368,6 +368,16 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Refresh user profile from server and notify listeners
+  Future<void> refreshUser() async {
+    try {
+      _user = await _userService.getProfile();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Refresh user error: $e');
+    }
+  }
+
   /// Check if session was invalidated (logged out from another device)
   bool get isSessionInvalidated => SessionManager().isSessionInvalidated;
 
