@@ -23,6 +23,7 @@ Future<Map<String, BillingAddress>?> showBillingAddressSheet(
   return showModalBottomSheet<Map<String, BillingAddress>>(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => _BillingAddressSheet(
       initialAddress: initialAddress,
@@ -263,6 +264,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
     final isDark = themeProvider.isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     final screenHeight = MediaQuery.of(context).size.height;
 
     final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
@@ -343,7 +345,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
             // Form
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(hPadding, spacing, hPadding, hPadding),
+                padding: EdgeInsets.fromLTRB(hPadding, spacing, hPadding, hPadding + bottomSafeArea),
                 child: Form(
                   key: _formKey,
                   child: Column(

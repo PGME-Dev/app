@@ -30,6 +30,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   bool _isLoading = true;
   String? _error;
   final Set<String> _loadingPackageInvoices = {};
+  final Set<String> _loadingBookInvoices = {};
+  final Set<String> _loadingSessionInvoices = {};
 
   final List<String> _tabs = [
     'Packages',
@@ -298,6 +300,134 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     );
   }
 
+  Future<void> _openBookInvoice(BookOrderItem book) async {
+    if (_loadingBookInvoices.contains(book.orderId)) return;
+
+    final invoices = _data?.invoices ?? [];
+    final bookInvoices = invoices
+        .where((inv) => inv.purchaseType == 'book' || inv.purchaseType == 'ebook')
+        .toList();
+
+    InvoiceItem? invoice;
+    if (bookInvoices.length == 1) {
+      invoice = bookInvoices.first;
+    } else if (bookInvoices.length > 1 && book.purchasedAt != null) {
+      final purchaseDate = DateTime.tryParse(book.purchasedAt!);
+      if (purchaseDate != null) {
+        bookInvoices.sort((a, b) {
+          final aDate = DateTime.tryParse(a.createdAt ?? '');
+          final bDate = DateTime.tryParse(b.createdAt ?? '');
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          final aDiff = aDate.difference(purchaseDate).abs();
+          final bDiff = bDate.difference(purchaseDate).abs();
+          return aDiff.compareTo(bDiff);
+        });
+        invoice = bookInvoices.first;
+      }
+    }
+
+    if (invoice == null || invoice.invoiceId.isEmpty) {
+      if (!mounted) return;
+      showAppDialog(context,
+          message: 'Invoice not available for this order yet',
+          type: AppDialogType.info);
+      return;
+    }
+
+    setState(() => _loadingBookInvoices.add(book.orderId));
+
+    try {
+      final pdfBytes =
+          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(
+            filePath: file.path,
+            title: invoice!.invoiceNumber,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppDialog(context,
+          message: 'Failed to download invoice',
+          type: AppDialogType.info);
+    } finally {
+      if (mounted) setState(() => _loadingBookInvoices.remove(book.orderId));
+    }
+  }
+
+  Future<void> _openSessionInvoice(SessionPurchaseItem session) async {
+    if (_loadingSessionInvoices.contains(session.purchaseId)) return;
+
+    final invoices = _data?.invoices ?? [];
+    final sessionInvoices =
+        invoices.where((inv) => inv.purchaseType == 'session').toList();
+
+    InvoiceItem? invoice;
+    if (sessionInvoices.length == 1) {
+      invoice = sessionInvoices.first;
+    } else if (sessionInvoices.length > 1 && session.purchasedAt != null) {
+      final purchaseDate = DateTime.tryParse(session.purchasedAt!);
+      if (purchaseDate != null) {
+        sessionInvoices.sort((a, b) {
+          final aDate = DateTime.tryParse(a.createdAt ?? '');
+          final bDate = DateTime.tryParse(b.createdAt ?? '');
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          final aDiff = aDate.difference(purchaseDate).abs();
+          final bDiff = bDate.difference(purchaseDate).abs();
+          return aDiff.compareTo(bDiff);
+        });
+        invoice = sessionInvoices.first;
+      }
+    }
+
+    if (invoice == null || invoice.invoiceId.isEmpty) {
+      if (!mounted) return;
+      showAppDialog(context,
+          message: 'Invoice not available for this session yet',
+          type: AppDialogType.info);
+      return;
+    }
+
+    setState(() => _loadingSessionInvoices.add(session.purchaseId));
+
+    try {
+      final pdfBytes =
+          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(
+            filePath: file.path,
+            title: invoice!.invoiceNumber,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppDialog(context,
+          message: 'Failed to download invoice',
+          type: AppDialogType.info);
+    } finally {
+      if (mounted)
+        setState(() => _loadingSessionInvoices.remove(session.purchaseId));
+    }
+  }
+
   // ── Packages Tab ──
 
   Widget _buildPackagesTab(bool isDark, Color textColor,
@@ -539,7 +669,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
             itemBuilder: (context, index) {
               final book = books[index];
               return _buildBookCard(book, isDark, textColor, secondaryTextColor,
-                  cardColor, borderColor, isTablet);
+                  cardColor, borderColor, accentColor, isTablet);
             },
           ),
         ),
@@ -554,6 +684,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       Color secondaryTextColor,
       Color cardColor,
       Color borderColor,
+      Color accentColor,
       bool isTablet) {
     Color statusColor;
     switch (book.orderStatus) {
@@ -580,7 +711,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       }
     } catch (_) {}
 
-    return Container(
+    final isLoadingInvoice = _loadingBookInvoices.contains(book.orderId);
+
+    return GestureDetector(
+      onTap: () => _openBookInvoice(book),
+      child: Container(
       margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
       padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
@@ -697,7 +832,25 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ],
             ),
           ],
+          if (isLoadingInvoice) ...[
+            SizedBox(height: isTablet ? 10 : 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: isTablet ? 16 : 14,
+                  height: isTablet ? 16 : 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: accentColor),
+                ),
+                SizedBox(width: isTablet ? 8 : 6),
+                Text(
+                  'Opening invoice...',
+                  style: TextStyle(fontSize: isTablet ? 15 : 12, color: accentColor),
+                ),
+              ],
+            ),
+          ],
         ],
+      ),
       ),
     );
   }
@@ -766,7 +919,11 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       }
     } catch (_) {}
 
-    return Container(
+    final isLoadingInvoice = _loadingSessionInvoices.contains(session.purchaseId);
+
+    return GestureDetector(
+      onTap: () => _openSessionInvoice(session),
+      child: Container(
       margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
       padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
@@ -857,7 +1014,25 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               ),
             ],
           ),
+          if (isLoadingInvoice) ...[
+            SizedBox(height: isTablet ? 10 : 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: isTablet ? 16 : 14,
+                  height: isTablet ? 16 : 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: accentColor),
+                ),
+                SizedBox(width: isTablet ? 8 : 6),
+                Text(
+                  'Opening invoice...',
+                  style: TextStyle(fontSize: isTablet ? 15 : 12, color: accentColor),
+                ),
+              ],
+            ),
+          ],
         ],
+      ),
       ),
     );
   }

@@ -32,7 +32,9 @@ class CongratulationsScreen extends StatelessWidget {
     final buttonFontSize = isTablet ? 21.0 : 15.0;
     final hPadding = isTablet ? 40.0 : 28.0;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
         child: Center(
@@ -141,6 +143,7 @@ class CongratulationsScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

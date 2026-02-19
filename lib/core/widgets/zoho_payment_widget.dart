@@ -133,13 +133,7 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
           style: TextStyle(fontSize: isTablet ? 20 : null),
         ),
         toolbarHeight: isTablet ? 64 : null,
-        leading: IconButton(
-          icon: Icon(Icons.close, size: isTablet ? 28 : 24),
-          onPressed: () {
-            widget.onCancel?.call();
-            Navigator.of(context).pop();
-          },
-        ),
+        automaticallyImplyLeading: false,
         elevation: 0,
       ),
       body: Stack(

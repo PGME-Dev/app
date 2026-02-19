@@ -269,200 +269,239 @@ class _EbookListScreenState extends State<EbookListScreen> {
     final titleSize = isTablet ? 22.0 : 18.0;
     final descSize = isTablet ? 15.0 : 13.0;
     final priceSize = isTablet ? 28.0 : 22.0;
-    final btnHeight = isTablet ? 52.0 : 44.0;
     final btnFontSize = isTablet ? 18.0 : 15.0;
     final btnRadius = isTablet ? 14.0 : 10.0;
+    final hPad = isTablet ? 28.0 : 20.0;
+    final imgWidth = isTablet ? 120.0 : 90.0;
+    final imgHeight = isTablet ? 160.0 : 120.0;
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.symmetric(horizontal: isTablet ? 80 : 32),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 80 : 32,
+        vertical: isTablet ? 40 : 24,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: dialogBgColor,
           borderRadius: BorderRadius.circular(dialogRadius),
-        ),
-        padding: EdgeInsets.all(isTablet ? 28 : 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Close button
-            Align(
-              alignment: Alignment.topRight,
-              child: GestureDetector(
-                onTap: () => Navigator.of(dialogContext).pop(false),
-                child: Icon(Icons.close, size: isTablet ? 28 : 22, color: secondaryTextColor),
-              ),
-            ),
-
-            // Book thumbnail
-            if (book.thumbnailUrl != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
-                child: CachedNetworkImage(
-                  imageUrl: book.thumbnailUrl!,
-                  width: isTablet ? 120 : 90,
-                  height: isTablet ? 160 : 120,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: isTablet ? 120 : 90,
-                    height: isTablet ? 160 : 120,
-                    color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
-                    child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: isTablet ? 120 : 90,
-                    height: isTablet ? 160 : 120,
-                    color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
-                    child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: isTablet ? 120 : 90,
-                height: isTablet ? 160 : 120,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
-                  borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
-                ),
-                child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
-              ),
-
-            SizedBox(height: isTablet ? 18 : 14),
-
-            // Title
-            Text(
-              book.title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: titleSize,
-                color: textColor,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: isTablet ? 6 : 4),
-
-            // Author
-            Text(
-              book.author,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w400,
-                fontSize: descSize,
-                color: secondaryTextColor,
-              ),
-            ),
-
-            SizedBox(height: isTablet ? 16 : 12),
-
-            Divider(height: 1, color: borderColor),
-
-            SizedBox(height: isTablet ? 16 : 12),
-
-            // Price
-            Text(
-              _formatPrice(book.actualPrice),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: priceSize,
-                color: textColor,
-              ),
-            ),
-
-            if (book.hasDiscount) ...[
-              SizedBox(height: isTablet ? 4 : 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _formatPrice(book.originalPrice ?? book.price),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: descSize,
-                      color: secondaryTextColor,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                  SizedBox(width: isTablet ? 8 : 6),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${book.discount}% OFF',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: isTablet ? 12 : 10,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4CAF50),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-
-            SizedBox(height: isTablet ? 20 : 16),
-
-            // Buy button
-            SizedBox(
-              width: double.infinity,
-              height: btnHeight,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(btnRadius),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Buy Now',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                    fontSize: btnFontSize,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-            SizedBox(height: isTablet ? 10 : 8),
-
-            // Cancel button
-            SizedBox(
-              width: double.infinity,
-              height: btnHeight,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: buttonColor, width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(btnRadius),
-                  ),
-                ),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                    fontSize: btnFontSize,
-                    color: buttonColor,
-                  ),
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.18),
+              blurRadius: 32,
+              offset: const Offset(0, 8),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(dialogRadius),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Book info ───────────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, isTablet ? 24 : 20, hPad, isTablet ? 20 : 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Close button
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(dialogContext).pop(false),
+                        child: Container(
+                          width: isTablet ? 32 : 28,
+                          height: isTablet ? 32 : 28,
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.close, size: isTablet ? 18 : 16, color: secondaryTextColor),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 12 : 10),
+
+                    // Book thumbnail (centered, original large size)
+                    if (book.thumbnailUrl != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                        child: CachedNetworkImage(
+                          imageUrl: book.thumbnailUrl!,
+                          width: imgWidth,
+                          height: imgHeight,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: imgWidth,
+                            height: imgHeight,
+                            color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                            child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: imgWidth,
+                            height: imgHeight,
+                            color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                            child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: imgWidth,
+                        height: imgHeight,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                        ),
+                        child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                      ),
+
+                    SizedBox(height: isTablet ? 18 : 14),
+
+                    // Title
+                    Text(
+                      book.title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: titleSize,
+                        color: textColor,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    SizedBox(height: isTablet ? 6 : 4),
+
+                    // Author
+                    Text(
+                      book.author,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: descSize,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 16 : 12),
+                    Divider(height: 1, color: borderColor),
+                    SizedBox(height: isTablet ? 16 : 12),
+
+                    // Price
+                    Text(
+                      _formatPrice(book.actualPrice),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w700,
+                        fontSize: priceSize,
+                        color: textColor,
+                      ),
+                    ),
+
+                    if (book.hasDiscount) ...[
+                      SizedBox(height: isTablet ? 4 : 2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _formatPrice(book.originalPrice ?? book.price),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: descSize,
+                              color: secondaryTextColor,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          SizedBox(width: isTablet ? 8 : 6),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${book.discount}% OFF',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 12 : 10,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4CAF50),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // ── Separator ───────────────────────────────────────────────
+              Container(height: 1, color: borderColor),
+
+              // ── Buttons — GestureDetector+Container, padding-based height
+              // ElevatedButton uses Material(clipBehavior: Clip.antiAlias) which
+              // clips text when SizedBox height is tight. This approach never clips.
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, isTablet ? 16 : 14, hPad, isTablet ? 24 : 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(true),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: isTablet ? 16 : 14),
+                        decoration: BoxDecoration(
+                          color: buttonColor,
+                          borderRadius: BorderRadius.circular(btnRadius),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Buy Now',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: btnFontSize,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isTablet ? 10 : 8),
+                    GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(false),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: isTablet ? 15 : 13),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: borderColor, width: 1.5),
+                          borderRadius: BorderRadius.circular(btnRadius),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              fontSize: btnFontSize,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
