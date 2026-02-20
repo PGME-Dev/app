@@ -832,31 +832,11 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
 
               SizedBox(height: isTablet ? 10 : 12),
 
-              // Pages and Date Row
+              // Date Row
               Wrap(
                 spacing: inGrid ? 12 : (isTablet ? 24 : 24),
                 runSpacing: 6,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.description_outlined,
-                        size: metaIconSize,
-                        color: secondaryTextColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        item.pageCountText,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: metaSize,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
