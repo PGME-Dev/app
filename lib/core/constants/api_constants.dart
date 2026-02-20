@@ -98,7 +98,11 @@ class ApiConstants {
   // Series & Progress Endpoints
   static const String series = '/series';
   static const String progress = '/users/progress';
-  static const String updateProgress = '/users/progress';
+  // Correct video-progress endpoints (backend: POST/GET /users/progress/video/:id)
+  static String updateVideoProgress(String videoId) =>
+      '/users/progress/video/$videoId';
+  static String getVideoProgress(String videoId) =>
+      '/users/progress/video/$videoId';
 
   // Video Playback Endpoints
   static String videoPlayback(String videoId) => '/videos/$videoId/playback';

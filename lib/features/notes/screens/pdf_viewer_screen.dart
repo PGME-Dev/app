@@ -767,7 +767,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         child: Icon(
                           isUnderline
                               ? Icons.format_underlined
-                              : Icons.highlight,
+                              : Icons.border_color,
                           size: isTablet ? 22 : 20,
                           color: indicatorColor,
                         ),
@@ -1441,7 +1441,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                       ),
                                       child: Icon(
                                         isHighlight
-                                            ? Icons.highlight
+                                            ? Icons.border_color
                                             : Icons.format_underlined,
                                         size: isTablet ? 18 : 16,
                                         color: accentColor,
@@ -1694,7 +1694,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildQuickActionButton(
-                                      icon: Icons.highlight,
+                                      icon: Icons.border_color,
                                       color: const Color(0xFFFFEB3B),
                                       tooltip: 'Highlight',
                                       onTap: () => _highlightSelectedText('yellow'),

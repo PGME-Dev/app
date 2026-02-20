@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
+import 'package:pgme/core/models/lecture_model.dart';
 import 'package:pgme/core/models/purchase_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
@@ -156,9 +157,9 @@ class EnrolledCoursesService {
     }
   }
 
-  /// Get user's progress for a purchase
-  /// Returns all watched lectures with progress info
-  /// purchaseId is optional - if not provided, returns progress across all purchases
+  /// Get user's recent progress.
+  /// Uses GET /users/progress/last-watched (the only backend endpoint available).
+  /// Client-side filters isCompleted and limit are applied after fetch.
   Future<List<ProgressModel>> getProgress({
     String? purchaseId,
     String? seriesId,
@@ -166,38 +167,34 @@ class EnrolledCoursesService {
     int? limit,
   }) async {
     try {
-      debugPrint('=== EnrolledCoursesService: Getting progress ===');
+      debugPrint('=== EnrolledCoursesService: Getting progress (last-watched) ===');
 
-      final queryParams = <String, dynamic>{};
-      if (purchaseId != null) {
-        queryParams['purchase_id'] = purchaseId;
-      }
-      if (seriesId != null) {
-        queryParams['series_id'] = seriesId;
-      }
-      if (isCompleted != null) {
-        queryParams['is_completed'] = isCompleted.toString();
-      }
-      if (limit != null) {
-        queryParams['limit'] = limit;
-      }
+      final queryParams = <String, dynamic>{
+        'limit': limit ?? 10,
+      };
 
       final response = await _apiService.dio.get(
-        ApiConstants.progress,
+        ApiConstants.lastWatched,
         queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final progressData = response.data['data']['progress'] as List;
-        final progress = progressData
-            .map((json) => ProgressModel.fromJson(json as Map<String, dynamic>))
-            .toList();
+        final videosData = response.data['data']['videos'] as List;
+
+        final progress = videosData.map((json) {
+          return _progressFromLastWatchedJson(json as Map<String, dynamic>);
+        }).toList();
+
+        // Apply optional client-side filter
+        final filtered = isCompleted != null
+            ? progress.where((p) => p.isCompleted == isCompleted).toList()
+            : progress;
 
         // Sort by last watched (most recent first)
-        progress.sort((a, b) => b.lastWatchedAt.compareTo(a.lastWatchedAt));
+        filtered.sort((a, b) => b.lastWatchedAt.compareTo(a.lastWatchedAt));
 
-        debugPrint('✓ ${progress.length} progress items retrieved');
-        return progress;
+        debugPrint('✓ ${filtered.length} progress items retrieved');
+        return filtered;
       }
 
       throw Exception('Failed to load progress');
@@ -210,8 +207,8 @@ class EnrolledCoursesService {
     }
   }
 
-  /// Update or create progress for a lecture
-  /// Call this when user watches a video
+  /// Update or create video progress.
+  /// Calls POST /users/progress/video/:videoId — the correct backend endpoint.
   Future<ProgressModel> updateProgress({
     required String lectureId,
     required int lastWatchedPositionSeconds,
@@ -223,19 +220,19 @@ class EnrolledCoursesService {
       debugPrint('=== EnrolledCoursesService: Updating progress ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.updateProgress,
+        ApiConstants.updateVideoProgress(lectureId),
         data: {
-          'lecture_id': lectureId,
-          'last_watched_position_seconds': lastWatchedPositionSeconds,
-          'watch_time_seconds': watchTimeSeconds,
-          'is_completed': isCompleted,
-          'completion_percentage': completionPercentage,
+          'position_seconds': lastWatchedPositionSeconds,
         },
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final progressData = response.data['data']['progress'];
-        final progress = ProgressModel.fromJson(progressData as Map<String, dynamic>);
+        final data = response.data['data']['progress'] as Map<String, dynamic>;
+        final progress = _progressFromUpdateJson(
+          data,
+          lectureId: lectureId,
+          watchTimeSeconds: watchTimeSeconds,
+        );
 
         debugPrint('✓ Progress updated for lecture: $lectureId');
         return progress;
@@ -249,6 +246,62 @@ class EnrolledCoursesService {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers — map backend response shapes to ProgressModel
+  // ---------------------------------------------------------------------------
+
+  /// Maps the GET /last-watched item to a ProgressModel.
+  ProgressModel _progressFromLastWatchedJson(Map<String, dynamic> json) {
+    final videoId = json['video_id'] as String? ?? '';
+    final durationSeconds = (json['duration_seconds'] as num?)?.toInt() ?? 0;
+    return ProgressModel(
+      progressId: videoId,
+      lecture: LectureModel(
+        lectureId: videoId,
+        title: json['title'] as String? ?? '',
+        durationMinutes: (durationSeconds / 60).ceil(),
+        sequenceNumber: 0,
+        isFree: false,
+      ),
+      watchTimeSeconds: 0,
+      lastWatchedPositionSeconds:
+          (json['position_seconds'] as num?)?.toInt() ?? 0,
+      isCompleted: json['completed'] as bool? ?? false,
+      completionPercentage:
+          (json['watch_percentage'] as num?)?.toInt() ?? 0,
+      lastWatchedAt: json['last_accessed_at'] as String? ??
+          DateTime.now().toIso8601String(),
+    );
+  }
+
+  /// Maps the POST /video/:id response to a ProgressModel.
+  ProgressModel _progressFromUpdateJson(
+    Map<String, dynamic> json, {
+    required String lectureId,
+    required int watchTimeSeconds,
+  }) {
+    final durationSeconds =
+        (json['duration_seconds'] as num?)?.toInt() ?? 0;
+    return ProgressModel(
+      progressId: json['video_id'] as String? ?? lectureId,
+      lecture: LectureModel(
+        lectureId: lectureId,
+        title: '',
+        durationMinutes: (durationSeconds / 60).ceil(),
+        sequenceNumber: 0,
+        isFree: false,
+      ),
+      watchTimeSeconds: watchTimeSeconds,
+      lastWatchedPositionSeconds:
+          (json['position_seconds'] as num?)?.toInt() ?? 0,
+      isCompleted: json['completed'] as bool? ?? false,
+      completionPercentage:
+          (json['watch_percentage'] as num?)?.toInt() ?? 0,
+      lastWatchedAt: json['last_accessed_at'] as String? ??
+          DateTime.now().toIso8601String(),
+    );
   }
 
   /// Get user's library (saved documents)

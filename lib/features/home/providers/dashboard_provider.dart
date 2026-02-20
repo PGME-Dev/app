@@ -11,6 +11,7 @@ import 'package:pgme/core/models/subject_selection_model.dart';
 import 'package:pgme/core/models/banner_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/services/offline_storage_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/push_notification_service.dart';
@@ -272,9 +273,24 @@ class DashboardProvider with ChangeNotifier {
           if (videos.isNotEmpty) {
             _lastWatchedVideo = videos.first;
             debugPrint('  Last watched: ${_lastWatchedVideo!.title}');
+            // Cache locally for offline fallback
+            await OfflineStorageService()
+                .saveLastWatchedVideo(_lastWatchedVideo!.toJson());
           }
         } catch (e) {
-          debugPrint('⚠ Error getting watch history: $e');
+          debugPrint('⚠ Error getting watch history (trying local): $e');
+          // Offline fallback — show whatever was cached from last session
+          try {
+            final localJson =
+                await OfflineStorageService().getLastWatchedVideo();
+            if (localJson != null) {
+              _lastWatchedVideo = VideoModel.fromJson(localJson);
+              debugPrint(
+                  '  Last watched (local): ${_lastWatchedVideo!.title}');
+            }
+          } catch (localErr) {
+            debugPrint('⚠ Error loading local last watched: $localErr');
+          }
         }
       } else {
         // No active purchase - load package types for "What We Offer" section
@@ -341,6 +357,15 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
+  /// Optimistically update the resume card after the user finishes watching a
+  /// video. Call this from the video player screen on pop (or listen to route
+  /// changes) so the home screen shows the correct last-watched title and
+  /// remaining time without a full dashboard reload.
+  void updateLastWatchedLocally(VideoModel video) {
+    _lastWatchedVideo = video;
+    notifyListeners();
+  }
+
   /// Retry loading primary subject
   Future<void> retrySubject() async {
     debugPrint('=== Retrying primary subject ===');
@@ -391,6 +416,44 @@ class DashboardProvider with ChangeNotifier {
       debugPrint('✗ Error fetching subjects: $e');
     } finally {
       _isLoadingAllSubjects = false;
+      notifyListeners();
+    }
+  }
+
+  /// Apply a subject change after the backend has already been updated
+  /// (e.g. via OnboardingService). Optimistically updates the local
+  /// [_primarySubject] state immediately so the home screen reflects the
+  /// new subject at once, then reloads all subject-dependent content.
+  Future<void> applySubjectChange(SubjectModel subject) async {
+    _isChangingSubject = true;
+
+    // Optimistic update — home screen shows new subject name instantly
+    _primarySubject = SubjectSelectionModel(
+      selectionId: 'local_${subject.subjectId}',
+      subjectId: subject.subjectId,
+      subjectName: subject.name,
+      subjectDescription: subject.description,
+      subjectIconUrl: subject.iconUrl,
+      isPrimary: true,
+      selectedAt: DateTime.now().toIso8601String(),
+    );
+    notifyListeners();
+
+    try {
+      // Subscribe to FCM topic for the new subject
+      PushNotificationService().subscribeToSubject(subject.subjectId);
+
+      // Clear cache so all content APIs fetch fresh data for the new subject
+      _dashboardService.clearCache();
+
+      // Reload all subject-dependent sections in parallel
+      await Future.wait([
+        _loadUpcomingSession(),
+        _loadContentSection(),
+        _loadFacultyList(),
+      ]);
+    } finally {
+      _isChangingSubject = false;
       notifyListeners();
     }
   }

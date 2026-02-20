@@ -64,18 +64,21 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       return;
     }
 
+    // Capture selected subject before any async gap so it's safe to use after await
+    final selectedSubject = provider.selectedSubject!;
+
     try {
       final success = await provider.submitSubjectSelection();
       if (success && mounted) {
         if (_isChangingSubject) {
-          // Changing subject from profile — refresh dashboard and pop back
-          context.read<DashboardProvider>().refresh();
+          // Changing subject from profile — apply change to dashboard then pop.
+          // We await here so the dashboard is fully updated (optimistic + content
+          // reload) before returning to the caller. The Continue button shows a
+          // spinner during this time, so the user always sees fresh data on home.
+          await context.read<DashboardProvider>().applySubjectChange(selectedSubject);
           if (mounted) {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/home');
-            }
+            // Return true so the caller (ProfileScreen) knows to refresh itself
+            context.pop(true);
           }
         } else {
           // Initial onboarding — complete onboarding and navigate to home

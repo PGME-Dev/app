@@ -9,6 +9,8 @@ class OfflineStorageService {
   OfflineStorageService._internal();
 
   static const String _storageKey = 'pgme_offline_videos';
+  static const String _lastWatchedKey = 'pgme_last_watched_video';
+  static const String _videoProgressPrefix = 'pgme_video_progress_';
 
   /// In-memory cache
   List<OfflineVideoModel>? _cachedVideos;
@@ -78,7 +80,68 @@ class OfflineStorageService {
   Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
+    await prefs.remove(_lastWatchedKey);
     _cachedVideos = [];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Last Watched Video (for home screen "Continue where you left off")
+  // ---------------------------------------------------------------------------
+
+  /// Save the last watched video metadata for offline fallback on home screen.
+  /// [videoJson] should match the VideoModel.toJson() format.
+  Future<void> saveLastWatchedVideo(Map<String, dynamic> videoJson) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastWatchedKey, jsonEncode(videoJson));
+  }
+
+  /// Load the cached last-watched video. Returns null when nothing is saved.
+  Future<Map<String, dynamic>?> getLastWatchedVideo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_lastWatchedKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Per-Video Progress (for resume when offline or provider list is empty)
+  // ---------------------------------------------------------------------------
+
+  /// Save the playback position for a specific video.
+  Future<void> saveVideoProgress(
+    String videoId,
+    int positionSeconds,
+    int durationSeconds,
+    bool isCompleted,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_videoProgressPrefix$videoId',
+      jsonEncode({
+        'videoId': videoId,
+        'positionSeconds': positionSeconds,
+        'durationSeconds': durationSeconds,
+        'isCompleted': isCompleted,
+        'savedAt': DateTime.now().toIso8601String(),
+      }),
+    );
+  }
+
+  /// Get the locally-saved playback position for a video.
+  /// Returns null when no local progress exists.
+  Future<Map<String, dynamic>?> getVideoProgress(String videoId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('$_videoProgressPrefix$videoId');
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _persist(List<OfflineVideoModel> videos) async {

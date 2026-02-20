@@ -352,8 +352,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       SizedBox(height: isTablet ? 10 : 8),
                                       // Subject selection - tappable
                                       GestureDetector(
-                                        onTap: () {
-                                          context.push('/subject-selection');
+                                        onTap: () async {
+                                          // Await the push so we can detect when
+                                          // the subject selection screen has finished.
+                                          // SubjectSelectionScreen returns true when
+                                          // a subject change was successfully applied.
+                                          final changed = await context.push<bool>('/subject-selection');
+                                          if (changed == true && mounted) {
+                                            // Reload profile to reflect new subject
+                                            // name and any updated community links.
+                                            _loadData();
+                                          }
                                         },
                                         child: Container(
                                           padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 8 : 6),
@@ -379,16 +388,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               ),
                                               SizedBox(width: isTablet ? 8 : 6),
                                               Flexible(
-                                                child: Text(
-                                                  _selectedSubject?['subject_name'] ?? 'Select Subject',
-                                                  style: TextStyle(
-                                                    fontFamily: 'SF Pro Display',
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: isTablet ? 15 : 12,
-                                                    color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      'Primary Subject',
+                                                      style: TextStyle(
+                                                        fontFamily: 'SF Pro Display',
+                                                        fontWeight: FontWeight.w400,
+                                                        fontSize: isTablet ? 11 : 9,
+                                                        color: (isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1)).withValues(alpha: 0.7),
+                                                        height: 1.2,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      _selectedSubject?['subject_name'] ?? 'Not selected',
+                                                      style: TextStyle(
+                                                        fontFamily: 'SF Pro Display',
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: isTablet ? 14 : 11,
+                                                        color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                                        height: 1.3,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                               SizedBox(width: isTablet ? 6 : 4),

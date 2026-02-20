@@ -31,27 +31,6 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     return firstName.isNotEmpty ? firstName : 'User';
   }
 
-  Future<void> _showSubjectPicker() async {
-    final provider = context.read<DashboardProvider>();
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDark = themeProvider.isDarkMode;
-
-    // Fetch subjects if not already loaded
-    await provider.fetchAllSubjects();
-
-    if (!mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _SubjectPickerSheet(
-        isDark: isDark,
-        provider: provider,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -239,9 +218,9 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                                     ),
                                   ),
                                   GestureDetector(
-                                    onTap: _showSubjectPicker,
+                                    onTap: () => context.push('/subject-selection'),
                                     child: Text(
-                                      'Browse All',
+                                      'Browse All Subjects',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontWeight: FontWeight.w400,

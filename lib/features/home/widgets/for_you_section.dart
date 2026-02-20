@@ -76,7 +76,7 @@ class ForYouSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Resume Card (Left - Tall)
-                      _buildResumeCard(isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
+                      _buildResumeCard(context, isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
                       SizedBox(width: gap),
 
                       // Right Column - Theory and Practical
@@ -101,14 +101,19 @@ class ForYouSection extends StatelessWidget {
     );
   }
 
-  Widget _buildResumeCard(bool isDark, Color textColor, VideoModel? video, double cardWidth, double cardHeight, bool isTablet) {
+  Widget _buildResumeCard(BuildContext context, bool isDark, Color textColor, VideoModel? video, double cardWidth, double cardHeight, bool isTablet) {
     final labelSize = isTablet ? 17.0 : 12.0;
     final titleSize = isTablet ? 26.0 : 18.0;
     final subtitleSize = isTablet ? 19.0 : 14.0;
     final timeSize = isTablet ? 19.0 : 14.0;
     final playBtnSize = isTablet ? 50.0 : 32.0;
 
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: video != null
+          ? () => context.push('/video/${video.videoId}')
+          : null,
+      child: Container(
       width: cardWidth,
       height: cardHeight,
       decoration: BoxDecoration(
@@ -185,6 +190,7 @@ class ForYouSection extends StatelessWidget {
             child: _buildPlayButton(isDark, playBtnSize),
           ),
         ],
+      ),
       ),
     );
   }

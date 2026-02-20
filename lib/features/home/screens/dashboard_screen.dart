@@ -290,26 +290,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               constraints: BoxConstraints(
                                 maxWidth: ResponsiveHelper.getMaxContentWidth(context),
                               ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isTablet ? 28 : 16,
-                                  vertical: isTablet ? 14 : 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.darkCardBackground
-                                      : const Color(0xFFE3F2FD),
-                                  borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
-                                ),
-                                child: Text(
-                                  dashboardProvider.primarySubject!.subjectName,
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: isTablet ? 22 : 14,
-                                    color: textColor,
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Subject',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: isTablet ? 28.0 : 20.0,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => context.push('/subject-selection'),
+                                        child: Text(
+                                          'Browse All Subjects',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: isTablet ? 18.0 : 14.0,
+                                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
+                                  SizedBox(height: isTablet ? 18.0 : 12.0),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isTablet ? 28 : 16,
+                                      vertical: isTablet ? 14 : 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.darkCardBackground
+                                          : const Color(0xFFE3F2FD),
+                                      borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
+                                    ),
+                                    child: Text(
+                                      dashboardProvider.primarySubject!.subjectName,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: isTablet ? 22 : 14,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
