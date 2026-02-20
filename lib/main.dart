@@ -76,6 +76,10 @@ class _MyAppState extends State<MyApp> {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             routerConfig: AppRouter.router,
+            scrollBehavior: const MaterialScrollBehavior().copyWith(
+              physics: const ClampingScrollPhysics(),
+              overscroll: false,
+            ),
             builder: (context, child) {
               // Lock orientation based on device type once MediaQuery is available
               if (!_orientationSet) {

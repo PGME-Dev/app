@@ -74,7 +74,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
               await provider.loadRecentProgress();
             },
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),

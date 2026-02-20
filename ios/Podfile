@@ -43,8 +43,7 @@ post_install do |installer|
     # Set minimum iOS for all pods to match
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-      # Exclude arm64 for simulator (MobileRTC doesn't have sim arm64 slice)
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      # MobileRTC.xcframework includes ios-arm64_x86_64-simulator, so arm64 is valid
     end
   end
 end

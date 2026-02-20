@@ -139,6 +139,47 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
+  /// Remove notification from local state only (optimistic delete for undo support)
+  void removeNotificationLocally(NotificationModel notification) {
+    final index = _notifications.indexWhere((n) => n.notificationId == notification.notificationId);
+    if (index != -1) {
+      final wasUnread = !_notifications[index].isRead;
+      _notifications.removeAt(index);
+      _total = (_total - 1).clamp(0, _total);
+      if (wasUnread) {
+        _unreadCount = (_unreadCount - 1).clamp(0, _total);
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Restore a previously removed notification (for undo support)
+  void restoreNotification(NotificationModel notification) {
+    // Insert back in sorted order by sentAt (most recent first)
+    final insertIndex = _notifications.indexWhere(
+      (n) => n.sentAt.isBefore(notification.sentAt),
+    );
+    if (insertIndex == -1) {
+      _notifications.add(notification);
+    } else {
+      _notifications.insert(insertIndex, notification);
+    }
+    _total = _total + 1;
+    if (!notification.isRead) {
+      _unreadCount = _unreadCount + 1;
+    }
+    notifyListeners();
+  }
+
+  /// Delete notification from server only (no local state change)
+  Future<void> deleteNotificationOnServer(String notificationId) async {
+    try {
+      await _notificationService.deleteNotification(notificationId);
+    } catch (e) {
+      debugPrint('Delete notification from server error: $e');
+    }
+  }
+
   /// Clear all data (on logout)
   void clear() {
     _notifications = [];

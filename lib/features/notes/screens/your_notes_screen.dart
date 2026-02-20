@@ -599,6 +599,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                             onRefresh: _loadLibrary,
                             child: isTablet
                               ? GridView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                                   padding: EdgeInsets.only(
                                     left: hPadding,
                                     right: hPadding,
@@ -628,6 +629,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                                   },
                                 )
                               : ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                                   padding: const EdgeInsets.only(bottom: 100),
                                   itemCount: _filteredItems.length,
                                   itemBuilder: (context, index) {

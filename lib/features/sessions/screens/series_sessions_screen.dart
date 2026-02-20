@@ -242,6 +242,7 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                                 child: ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                                   padding: EdgeInsets.symmetric(horizontal: hPadding),
                                   itemCount: _sessions.length,
                                   itemBuilder: (context, index) {

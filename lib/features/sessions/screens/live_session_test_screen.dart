@@ -632,7 +632,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
                   : RefreshIndicator(
                       onRefresh: _loadSessions,
                       child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
+                        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

@@ -116,12 +116,10 @@ class DashboardProvider with ChangeNotifier {
   Future<void> refresh() async {
     debugPrint('=== DashboardProvider: Refreshing dashboard ===');
     _isRefreshing = true;
-    notifyListeners();
 
     await loadDashboard();
 
     _isRefreshing = false;
-    notifyListeners();
     debugPrint('✓ Dashboard refreshed');
   }
 

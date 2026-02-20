@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
@@ -458,20 +458,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () {
                             context.push('/manage-plans');
                           },
-                          child: Text(
-                            'Manage',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: isTablet ? 15 : 12,
-                              height: 20 / 12,
-                              letterSpacing: -0.5,
-                              color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8, vertical: isTablet ? 10 : 8),
+                            child: Text(
+                              'Manage',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 18 : 15,
+                                letterSpacing: -0.5,
+                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                              ),
+                              textAlign: TextAlign.right,
                             ),
-                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -563,6 +566,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () async {
                             if (_user != null) {
                               final result = await context.push('/edit-profile', extra: _user);
@@ -572,17 +576,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               }
                             }
                           },
-                          child: Text(
-                            'Edit',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: isTablet ? 15 : 12,
-                              height: 20 / 12,
-                              letterSpacing: -0.5,
-                              color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8, vertical: isTablet ? 10 : 8),
+                            child: Text(
+                              'Edit',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 18 : 15,
+                                letterSpacing: -0.5,
+                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                              ),
+                              textAlign: TextAlign.right,
                             ),
-                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -684,6 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () async {
                               if (_user != null) {
                                 final result = await context.push('/edit-profile', extra: _user);
@@ -693,17 +700,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 }
                               }
                             },
-                            child: Text(
-                              'Edit',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w500,
-                                fontSize: isTablet ? 15 : 12,
-                                height: 20 / 12,
-                                letterSpacing: -0.5,
-                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 8, vertical: isTablet ? 10 : 8),
+                              child: Text(
+                                'Edit',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTablet ? 18 : 15,
+                                  letterSpacing: -0.5,
+                                  color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                                ),
+                                textAlign: TextAlign.right,
                               ),
-                              textAlign: TextAlign.right,
                             ),
                           ),
                         ],

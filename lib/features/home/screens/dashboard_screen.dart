@@ -141,8 +141,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           return RefreshIndicator(
             onRefresh: dashboardProvider.refresh,
+            displacement: 40,
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: ClampingScrollPhysics(),
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(

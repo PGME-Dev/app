@@ -105,7 +105,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
     // ViewBinding (required by Zoom SDK for screen sharing)
-    implementation("androidx.databinding:viewbinding:8.7.3")
+    implementation("androidx.databinding:viewbinding:8.11.1")
 
     // ExoPlayer (required by Zoom SDK for media playback)
     implementation("androidx.media3:media3-exoplayer:1.2.1")

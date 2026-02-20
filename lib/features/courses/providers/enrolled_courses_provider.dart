@@ -308,7 +308,6 @@ class EnrolledCoursesProvider with ChangeNotifier {
   /// Refresh purchases list (for pull-to-refresh)
   Future<void> refreshPurchases() async {
     _isRefreshing = true;
-    notifyListeners();
 
     await loadPurchases();
 

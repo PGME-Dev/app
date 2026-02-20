@@ -285,6 +285,7 @@ class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
                   onRefresh: () => provider.loadBooks(refresh: true),
                   child: GridView.builder(
                     controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                     padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 130 : 100)),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: isTablet ? 3 : 2,

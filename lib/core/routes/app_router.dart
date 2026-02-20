@@ -109,7 +109,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -128,7 +128,7 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(1, 0),
                   end: Offset.zero,
-                ).animate(animation),
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                 child: child,
               );
             },
@@ -147,7 +147,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -165,7 +165,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -195,7 +195,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -217,7 +217,7 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(0, 1),
                   end: Offset.zero,
-                ).animate(animation),
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                 child: child,
               );
             },
@@ -248,7 +248,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -267,7 +267,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -286,7 +286,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -305,7 +305,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -324,7 +324,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -343,7 +343,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -362,7 +362,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -380,7 +380,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -401,7 +401,7 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(0, 1),
                   end: Offset.zero,
-                ).animate(animation),
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                 child: child,
               );
             },
@@ -428,7 +428,7 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(0, 1),
                   end: Offset.zero,
-                ).animate(animation),
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                 child: child,
               );
             },
@@ -448,7 +448,7 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
               child: child,
             );
           },
@@ -469,7 +469,7 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(1, 0),
                   end: Offset.zero,
-                ).animate(animation),
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                 child: child,
               );
             },
@@ -529,7 +529,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -559,7 +559,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -584,7 +584,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -606,7 +606,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -630,7 +630,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -654,7 +654,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -674,7 +674,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -693,7 +693,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -712,7 +712,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -733,7 +733,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -753,7 +753,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(0, 1),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -772,7 +772,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -793,7 +793,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -819,7 +819,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -839,7 +839,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -858,7 +858,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -877,7 +877,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -896,7 +896,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -915,7 +915,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -934,7 +934,7 @@ class AppRouter {
                   position: Tween<Offset>(
                     begin: const Offset(1, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 );
               },
@@ -959,7 +959,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },
@@ -985,7 +985,7 @@ class AppRouter {
                     position: Tween<Offset>(
                       begin: const Offset(1, 0),
                       end: Offset.zero,
-                    ).animate(animation),
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                     child: child,
                   );
                 },

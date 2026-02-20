@@ -444,6 +444,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: packages.length,
             itemBuilder: (context, index) {
@@ -664,6 +665,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: books.length,
             itemBuilder: (context, index) {
@@ -871,6 +873,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: sessions.length,
             itemBuilder: (context, index) {
@@ -1053,6 +1056,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
             padding: EdgeInsets.all(isTablet ? 20 : 16),
             itemCount: invoices.length,
             itemBuilder: (context, index) {

@@ -148,6 +148,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                 return RefreshIndicator(
                   onRefresh: () => provider.loadOrders(refresh: true),
                   child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                     padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 130 : 100)),
                     itemCount: provider.orders.length,
                     itemBuilder: (context, index) {

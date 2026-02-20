@@ -58,7 +58,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           return RefreshIndicator(
             onRefresh: provider.refresh,
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(

@@ -149,7 +149,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                 return RefreshIndicator(
                   onRefresh: provider.refresh,
                   child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                     padding: EdgeInsets.only(top: 20, bottom: bottomPadding + 20),
                     child: Center(
                       child: ConstrainedBox(

@@ -652,6 +652,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
                                     },
                                     child: GridView.builder(
                                       controller: _scrollController,
+                                      physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                                       padding: EdgeInsets.only(
                                         left: hPadding,
                                         right: hPadding,
