@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -18,6 +19,28 @@ class AppScaffold extends StatelessWidget {
     required this.currentIndex,
     this.isSubscribed = false,
   });
+
+  /// Handle Android back button press
+  void _handleBackButton(BuildContext context, bool didPop) {
+    if (didPop) return; // Already popped by the system
+
+    final router = GoRouter.of(context);
+
+    // If the router has pages to pop (pushed sub-pages), pop them
+    if (router.canPop()) {
+      router.pop();
+      return;
+    }
+
+    // If not on the home tab, navigate to home
+    if (currentIndex != 0) {
+      context.go('/home');
+      return;
+    }
+
+    // On home tab with nothing to pop — exit the app
+    SystemNavigator.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +70,10 @@ class AppScaffold extends StatelessWidget {
     final inactiveIconColor = isDark ? AppColors.darkTextTertiary : const Color(0xFF666666);
     final activeIconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF00C2FF);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _handleBackButton(context, didPop),
+      child: Scaffold(
       backgroundColor: backgroundColor,
       extendBody: true,
       body: Stack(
@@ -157,6 +183,7 @@ class AppScaffold extends StatelessWidget {
             ),
         ],
       ),
+    ),
     );
   }
 

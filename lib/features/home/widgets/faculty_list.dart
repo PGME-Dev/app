@@ -56,20 +56,13 @@ class FacultyList extends StatelessWidget {
         // Section Header
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPadding),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-              ),
-              child: Text(
-                'Your Faculty',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: sectionTitleSize,
-                  color: textColor,
-                ),
-              ),
+          child: Text(
+            'Your Faculty',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              fontSize: sectionTitleSize,
+              color: textColor,
             ),
           ),
         ),

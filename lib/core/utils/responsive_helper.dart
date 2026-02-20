@@ -6,6 +6,12 @@ class ResponsiveHelper {
   /// Tablet breakpoint: devices with shortest side >= 600dp
   static const double tabletBreakpoint = 600.0;
 
+  /// Large tablet breakpoint: width >= 900dp (e.g. iPad Pro 13-inch)
+  static const double largeTabletBreakpoint = 900.0;
+
+  /// Base tablet width used for scaling (iPad Pro 11-inch portrait)
+  static const double _baseTabletWidth = 834.0;
+
   /// Max content width on tablets to prevent overly wide layouts
   static const double maxContentWidth = 780.0;
 
@@ -16,6 +22,19 @@ class ResponsiveHelper {
   static bool isTablet(BuildContext context) {
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     return shortestSide >= tabletBreakpoint;
+  }
+
+  /// Check if the device is a large tablet (iPad Pro 13-inch, etc.)
+  static bool isLargeTablet(BuildContext context) {
+    if (!isTablet(context)) return false;
+    return screenWidth(context) >= largeTabletBreakpoint;
+  }
+
+  /// Scale factor for large tablets relative to base iPad 11-inch (834dp).
+  /// Returns 1.0 for phones and standard iPads, >1.0 for larger iPads.
+  static double tabletScale(BuildContext context) {
+    if (!isLargeTablet(context)) return 1.0;
+    return (screenWidth(context) / _baseTabletWidth).clamp(1.0, 1.35);
   }
 
   /// Get screen width
@@ -41,12 +60,11 @@ class ResponsiveHelper {
   /// Responsive horizontal padding
   static double horizontalPadding(BuildContext context) {
     if (!isTablet(context)) return 16.0;
-    if (isLandscape(context)) {
-      // Landscape: minimal padding, let content take full width
-      return 24.0;
-    }
+    if (isLandscape(context)) return 24.0;
+    // Large tablets: small fixed padding, centering handled by ConstrainedBox
+    if (isLargeTablet(context)) return 24.0;
     final width = screenWidth(context);
-    // Portrait: center content with side margins on tablets
+    // Standard tablets: center content with side margins
     return ((width - maxContentWidth) / 2).clamp(24.0, double.infinity);
   }
 
@@ -65,19 +83,29 @@ class ResponsiveHelper {
     return isTablet(context) ? baseSpacing * 1.25 : baseSpacing;
   }
 
+  /// Dynamic max content width that scales for larger iPads.
+  /// Standard iPad (11-inch): 780dp, Large iPad (13-inch): screen width minus small margins.
+  static double _dynamicMaxContentWidth(BuildContext context) {
+    if (isLargeTablet(context)) {
+      // Use nearly full width, just 24dp margin on each side
+      return screenWidth(context) - 48;
+    }
+    return maxContentWidth;
+  }
+
   /// Get the appropriate max content width based on orientation
   static double getMaxContentWidth(BuildContext context) {
     if (!isTablet(context)) return double.infinity;
     // Landscape: no constraint, let content take full width
     if (isLandscape(context)) return double.infinity;
-    return maxContentWidth;
+    return _dynamicMaxContentWidth(context);
   }
 
   /// Get constrained content width (prevents content from being too wide on tablets)
   static double contentWidth(BuildContext context) {
     final width = screenWidth(context);
     if (!isTablet(context)) return width;
-    final maxWidth = isLandscape(context) ? maxContentWidthLandscape : maxContentWidth;
+    final maxWidth = isLandscape(context) ? maxContentWidthLandscape : _dynamicMaxContentWidth(context);
     return width.clamp(0, maxWidth);
   }
 
@@ -91,7 +119,7 @@ class ResponsiveHelper {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: maxWidth ?? maxContentWidth,
+          maxWidth: maxWidth ?? _dynamicMaxContentWidth(context),
         ),
         child: child,
       ),
@@ -113,45 +141,60 @@ class ResponsiveHelper {
     if (isLandscape(context)) {
       return (maxContentWidthLandscape - 48).clamp(0, width - 48);
     }
-    return width - 48;
+    final effectiveMaxWidth = _dynamicMaxContentWidth(context);
+    return (effectiveMaxWidth).clamp(0, width - 48);
   }
 
   /// Get carousel height responsive to device
   static double carouselHeight(BuildContext context) {
-    return isTablet(context) ? 260.0 : 140.0;
+    if (!isTablet(context)) return 140.0;
+    return (260.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Get responsive card height for ForYou section
   static double forYouCardHeight(BuildContext context) {
-    return isTablet(context) ? 420.0 : 281.0;
+    if (!isTablet(context)) return 281.0;
+    return (420.0 * tabletScale(context)).roundToDouble();
+  }
+
+  /// Get responsive small card height for ForYou section (theory/practical)
+  static double forYouSmallCardHeight(BuildContext context) {
+    if (!isTablet(context)) return 137.0;
+    return (200.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Faculty card dimensions
   static double facultyCardWidth(BuildContext context) {
-    return isTablet(context) ? 210.0 : 140.0;
+    if (!isTablet(context)) return 140.0;
+    return (210.0 * tabletScale(context)).roundToDouble();
   }
 
   static double facultyCardHeight(BuildContext context) {
-    return isTablet(context) ? 240.0 : 148.0;
+    if (!isTablet(context)) return 148.0;
+    return (240.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Faculty photo size
   static double facultyPhotoSize(BuildContext context) {
-    return isTablet(context) ? 130.0 : 88.0;
+    if (!isTablet(context)) return 88.0;
+    return (130.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Profile avatar size on dashboard header
   static double profileAvatarSize(BuildContext context) {
-    return isTablet(context) ? 68.0 : 44.0;
+    if (!isTablet(context)) return 44.0;
+    return (68.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Action button size on dashboard header
   static double actionButtonSize(BuildContext context) {
-    return isTablet(context) ? 56.0 : 38.0;
+    if (!isTablet(context)) return 38.0;
+    return (56.0 * tabletScale(context)).roundToDouble();
   }
 
   /// Order book card height
   static double orderBookCardHeight(BuildContext context) {
-    return isTablet(context) ? 160.0 : 100.0;
+    if (!isTablet(context)) return 100.0;
+    return (160.0 * tabletScale(context)).roundToDouble();
   }
 }

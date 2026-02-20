@@ -5,6 +5,18 @@ allprojects {
     }
 }
 
+// Clean macOS ._ resource fork files before every Gradle task (exFAT drive workaround)
+fun cleanDotFiles(dir: java.io.File) {
+    if (dir.exists()) {
+        dir.walkTopDown().filter { it.name.startsWith("._") }.forEach { it.delete() }
+    }
+}
+allprojects {
+    tasks.configureEach {
+        doFirst { cleanDotFiles(project.layout.buildDirectory.get().asFile) }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

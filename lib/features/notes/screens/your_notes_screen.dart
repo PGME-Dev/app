@@ -261,6 +261,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+    final scale = ResponsiveHelper.tabletScale(context);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -282,7 +283,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
-                    fontSize: isTablet ? 25 : 20,
+                    fontSize: isTablet ? 25 * scale : 20,
                     height: 1.0,
                     letterSpacing: -0.5,
                     color: textColor,
@@ -296,11 +297,11 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                     _loadPurchasedEbooks();
                   },
                   child: SizedBox(
-                    width: isTablet ? 30 : 24,
-                    height: isTablet ? 30 : 24,
+                    width: isTablet ? 30 * scale : 24,
+                    height: isTablet ? 30 * scale : 24,
                     child: Icon(
                       Icons.refresh,
-                      size: isTablet ? 30 : 24,
+                      size: isTablet ? 30 * scale : 24,
                       color: textColor,
                     ),
                   ),
@@ -316,10 +317,10 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
             padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: Container(
               width: double.infinity,
-              height: isTablet ? 56 : 48,
+              height: isTablet ? 56 * scale : 48,
               decoration: BoxDecoration(
                 color: searchBarColor,
-                borderRadius: BorderRadius.circular(isTablet ? 23 : 18),
+                borderRadius: BorderRadius.circular(isTablet ? 23 * scale : 18),
                 border: Border.all(
                   color: searchBarBorderColor,
                   width: 1,
@@ -330,7 +331,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                   SizedBox(width: isTablet ? 20 : 16),
                   Icon(
                     Icons.search,
-                    size: isTablet ? 30 : 24,
+                    size: isTablet ? 30 * scale : 24,
                     color: secondaryTextColor,
                   ),
                   SizedBox(width: isTablet ? 16 : 12),
@@ -346,7 +347,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                         hintText: 'Search through your medical notes...',
                         hintStyle: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: isTablet ? 15 : 12,
+                          fontSize: isTablet ? 15 * scale : 12,
                           fontWeight: FontWeight.w500,
                           height: 20 / 12,
                           letterSpacing: -0.5,
@@ -358,7 +359,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                       ),
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: isTablet ? 15 : 12,
+                        fontSize: isTablet ? 15 * scale : 12,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.5,
                         color: textColor,
@@ -386,7 +387,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                     _loadLibrary();
                   },
                   child: Container(
-                    height: isTablet ? 42 : 36,
+                    height: isTablet ? 42 * scale : 36,
                     decoration: BoxDecoration(
                       color: !_showBookmarkedOnly ? badgeColor : Colors.transparent,
                       borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
@@ -398,7 +399,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: isTablet ? 15 : 12,
+                        fontSize: isTablet ? 15 * scale : 12,
                         height: 20 / 12,
                         letterSpacing: -0.5,
                         color: !_showBookmarkedOnly ? Colors.white : badgeColor,
@@ -415,7 +416,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                     _loadLibrary();
                   },
                   child: Container(
-                    height: isTablet ? 42 : 36,
+                    height: isTablet ? 42 * scale : 36,
                     decoration: BoxDecoration(
                       color: _showBookmarkedOnly ? badgeColor : Colors.transparent,
                       borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
@@ -427,7 +428,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
-                        fontSize: isTablet ? 15 : 12,
+                        fontSize: isTablet ? 15 * scale : 12,
                         height: 20 / 12,
                         letterSpacing: -0.5,
                         color: _showBookmarkedOnly ? Colors.white : badgeColor,
@@ -490,7 +491,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w600,
-                                fontSize: isTablet ? 22 : 16,
+                                fontSize: isTablet ? 22 * scale : 16,
                                 color: Colors.white,
                               ),
                             ),
@@ -500,7 +501,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                fontSize: isTablet ? 15 : 12,
+                                fontSize: isTablet ? 15 * scale : 12,
                                 color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
@@ -547,7 +548,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                               _error!.replaceAll('Exception: ', ''),
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: isTablet ? 15 : 12,
+                                fontSize: isTablet ? 15 * scale : 12,
                                 color: secondaryTextColor,
                               ),
                               textAlign: TextAlign.center,
@@ -672,16 +673,17 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
     required Color iconColor,
     required double hPadding,
   }) {
+    final scale = ResponsiveHelper.tabletScale(context);
     final inGrid = isTablet && hPadding == 0;
-    final cardPad = isTablet ? 18.0 : 16.0;
-    final titleSize = isTablet ? 17.0 : 16.0;
-    final descSize = isTablet ? 13.0 : 12.0;
-    final metaSize = isTablet ? 13.0 : 12.0;
-    final metaIconSize = isTablet ? 16.0 : 16.0;
-    final badgeHeight = isTablet ? 22.0 : 20.0;
-    final badgeFontSize = isTablet ? 11.0 : 10.0;
-    final bookmarkSize = isTablet ? 28.0 : 24.0;
-    final cardRadius = isTablet ? 22.0 : 20.0;
+    final cardPad = isTablet ? 18.0 * scale : 16.0;
+    final titleSize = isTablet ? 20.0 * scale : 16.0;
+    final descSize = isTablet ? 16.0 * scale : 12.0;
+    final metaSize = isTablet ? 15.0 * scale : 12.0;
+    final metaIconSize = isTablet ? 20.0 * scale : 16.0;
+    final badgeHeight = isTablet ? 26.0 * scale : 20.0;
+    final badgeFontSize = isTablet ? 13.0 * scale : 10.0;
+    final bookmarkSize = isTablet ? 30.0 * scale : 24.0;
+    final cardRadius = isTablet ? 22.0 * scale : 20.0;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: inGrid ? 0 : (isTablet ? hPadding : 15)),

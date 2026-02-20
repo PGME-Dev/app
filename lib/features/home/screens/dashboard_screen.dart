@@ -38,12 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-          ),
-          child: GestureDetector(
+      child: GestureDetector(
             onTap: () => context.push('/your-notes'),
             child: Container(
               width: double.infinity,
@@ -110,8 +105,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-          ),
-        ),
       ),
     );
   }
@@ -157,12 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Header Section
                       Padding(
                         padding: EdgeInsets.only(top: topPadding + 20, left: hPadding, right: hPadding),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-                            ),
-                            child: Row(
+                        child: Row(
                               children: [
                                 // Profile Icon
                                 GestureDetector(
@@ -266,8 +254,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ],
                             ),
-                          ),
-                        ),
                       ),
 
                       SizedBox(height: isTablet ? 40 : 25),
@@ -288,12 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding: EdgeInsets.symmetric(
                             horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 16,
                           ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-                              ),
-                              child: Column(
+                          child: Column(
                                 children: [
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -345,8 +326,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
                         ),
 
                       if (dashboardProvider.primarySubject != null) SizedBox(height: isTablet ? 36 : 24),
@@ -359,12 +338,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding: EdgeInsets.symmetric(
                             horizontal: isTablet ? ResponsiveHelper.horizontalPadding(context) : 16,
                           ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-                              ),
-                              child: Container(
+                          child: Container(
                                 width: double.infinity,
                                 padding: EdgeInsets.symmetric(
                                   vertical: isTablet ? 48 : 36,
@@ -425,8 +399,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ],
                                 ),
                               ),
-                            ),
-                          ),
                         ),
 
                       if (!dashboardProvider.isLoadingContent &&

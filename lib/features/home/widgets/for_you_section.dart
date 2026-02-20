@@ -55,46 +55,39 @@ class ForYouSection extends StatelessWidget {
         // Content - Responsive layout
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPadding),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final availableWidth = constraints.maxWidth;
-                  final gap = isTablet ? 14.0 : 9.0;
-                  // Left card takes ~49% of available width, right column takes ~51%
-                  final resumeCardWidth = (availableWidth - gap) * 0.49;
-                  final rightColumnWidth = (availableWidth - gap) * 0.51;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.maxWidth;
+              final gap = isTablet ? 14.0 : 9.0;
+              // Left card takes ~49% of available width, right column takes ~51%
+              final resumeCardWidth = (availableWidth - gap) * 0.49;
+              final rightColumnWidth = (availableWidth - gap) * 0.51;
 
-                  final resumeCardHeight = ResponsiveHelper.forYouCardHeight(context);
-                  final smallCardHeight = isTablet ? 200.0 : 137.0;
-                  final smallCardHeight2 = isTablet ? 198.0 : 135.0;
+              final resumeCardHeight = ResponsiveHelper.forYouCardHeight(context);
+              final smallCardHeight = ResponsiveHelper.forYouSmallCardHeight(context);
+              final smallCardHeight2 = smallCardHeight - 2;
 
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Resume Card (Left - Tall)
-                      _buildResumeCard(context, isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
-                      SizedBox(width: gap),
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Resume Card (Left - Tall)
+                  _buildResumeCard(context, isDark, textColor, lastWatched, resumeCardWidth, resumeCardHeight, isTablet),
+                  SizedBox(width: gap),
 
-                      // Right Column - Theory and Practical
-                      SizedBox(
-                        width: rightColumnWidth,
-                        child: Column(
-                          children: [
-                            _buildTheoryCard(context, isDark, textColor, rightColumnWidth, smallCardHeight, isTablet),
-                            SizedBox(height: isTablet ? 14 : 9),
-                            _buildPracticalCard(context, isDark, textColor, rightColumnWidth, smallCardHeight2, isTablet),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                  // Right Column - Theory and Practical
+                  SizedBox(
+                    width: rightColumnWidth,
+                    child: Column(
+                      children: [
+                        _buildTheoryCard(context, isDark, textColor, rightColumnWidth, smallCardHeight, isTablet),
+                        SizedBox(height: isTablet ? 14 : 9),
+                        _buildPracticalCard(context, isDark, textColor, rightColumnWidth, smallCardHeight2, isTablet),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
