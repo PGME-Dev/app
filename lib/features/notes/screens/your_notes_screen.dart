@@ -11,6 +11,7 @@ import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/ebook_order_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class YourNotesScreen extends StatefulWidget {
   const YourNotesScreen({super.key});
@@ -85,8 +86,12 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
     });
 
     try {
+      // Filter by user's primary subject so only relevant notes are shown
+      final primarySubjectId = context.read<DashboardProvider>().primarySubject?.subjectId;
+
       final items = await _dashboardService.getUserLibrary(
         isBookmarked: _showBookmarkedOnly ? true : null,
+        subjectId: primarySubjectId,
       );
 
       if (mounted) {

@@ -9,6 +9,7 @@ import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -155,6 +156,20 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
     final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
 
+    final packageName = _theoryPackage?.name ?? 'the Package';
+    final packageDescription = _theoryPackage?.description ?? 'Unlock all content and get access to comprehensive study materials.';
+    final packageFeatures = _theoryPackage?.features ?? ['Access to all content'];
+    final priceValue = _theoryPackage?.displayPrice ?? 0;
+    final priceFormatted = '₹${priceValue.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final durationDays = _theoryPackage?.durationDays ?? 0;
+    final durationText = durationDays >= 365
+        ? '/ ${durationDays ~/ 365} ${(durationDays ~/ 365) == 1 ? 'year' : 'years'}'
+        : durationDays >= 30
+            ? '/ ${durationDays ~/ 30} ${(durationDays ~/ 30) == 1 ? 'month' : 'months'}'
+            : durationDays > 0
+                ? '/ $durationDays ${durationDays == 1 ? 'day' : 'days'}'
+                : '';
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -200,7 +215,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Get the Theory Package',
+                'Get $packageName',
                 style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: isTablet ? 26 : 20, color: textColor),
                 textAlign: TextAlign.center,
               ),
@@ -208,7 +223,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Unlock all revision series and get access to comprehensive study materials.',
+                  packageDescription,
                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: isTablet ? 17 : 14, height: 1.4, color: secondaryTextColor),
                   textAlign: TextAlign.center,
                 ),
@@ -223,19 +238,18 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildFeatureCheckItem('4 Complete Revision Series', textColor, iconColor),
-                      const SizedBox(height: 8),
-                      _buildFeatureCheckItem('Downloadable PDF Notes', textColor, iconColor),
-                      const SizedBox(height: 8),
-                      _buildFeatureCheckItem('Expert Faculty Guidance', textColor, iconColor),
-                      const SizedBox(height: 8),
-                      _buildFeatureCheckItem('3 Months Access', textColor, iconColor),
+                      for (int i = 0; i < packageFeatures.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        _buildFeatureCheckItem(packageFeatures[i], textColor, iconColor),
+                      ],
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Text('₹4,999', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: isTablet ? 30 : 24, color: textColor)),
-                          const SizedBox(width: 8),
-                          Text('/ 3 months', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 12, color: secondaryTextColor)),
+                          Text(priceFormatted, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: isTablet ? 30 : 24, color: textColor)),
+                          if (durationText.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Text(durationText, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: 12, color: secondaryTextColor)),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -851,9 +865,23 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               color: isDark ? AppColors.darkCardBackground : const Color(0xFFE8F0FE),
               borderRadius: BorderRadius.circular(iconBoxRadius),
             ),
-            child: Center(
-              child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: series.thumbnailUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: series.thumbnailUrl!,
+                    fit: BoxFit.cover,
+                    width: iconBoxSize,
+                    height: iconBoxSize,
+                    placeholder: (context, url) => Center(
+                      child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
+                    ),
+                  )
+                : Center(
+                    child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
+                  ),
           ),
           SizedBox(width: isTablet ? 16 : 12),
           Expanded(
@@ -989,7 +1017,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
         padding: EdgeInsets.all(cardPadding),
         child: Row(
           children: [
-            // Icon
+            // Icon / Thumbnail
             Container(
               width: iconBoxSize,
               height: iconBoxSize,
@@ -997,13 +1025,35 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                 color: isDark ? AppColors.darkSurface : Colors.white,
                 borderRadius: BorderRadius.circular(iconBoxRadius),
               ),
-              child: Center(
-                child: Icon(
-                  isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
-                  size: contentIconSize,
-                  color: iconColor,
-                ),
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: series.thumbnailUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: series.thumbnailUrl!,
+                      fit: BoxFit.cover,
+                      width: iconBoxSize,
+                      height: iconBoxSize,
+                      placeholder: (context, url) => Center(
+                        child: Icon(
+                          isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+                          size: contentIconSize,
+                          color: iconColor,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Icon(
+                          isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+                          size: contentIconSize,
+                          color: iconColor,
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Icon(
+                        isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+                        size: contentIconSize,
+                        color: iconColor,
+                      ),
+                    ),
             ),
             SizedBox(width: contentGap),
             // Content

@@ -508,10 +508,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                 ],
                               ],
                             ),
-                            if (hasTiers && selectedTier!.price > selectedTier.effectivePrice) ...[
+                            if (hasTiers && (selectedTier!.originalPrice ?? selectedTier.price) > selectedTier.effectivePrice) ...[
                               SizedBox(height: isTablet ? 4 : 2),
                               Text(
-                                '${_formatPrice(selectedTier.price)} (${package.saleDiscountPercent}% off)',
+                                '${_formatPrice(selectedTier.originalPrice ?? selectedTier.price)} (${(((selectedTier.originalPrice ?? selectedTier.price) - selectedTier.effectivePrice) * 100 ~/ (selectedTier.originalPrice ?? selectedTier.price))}% off)',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w400,
@@ -838,7 +838,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         ? selectedTier!.effectivePrice
         : (package.isOnSale && package.salePrice != null ? package.salePrice! : package.price);
     final displayDuration = hasTiers ? selectedTier!.durationDays : package.durationDays;
-    final originalForDiscount = hasTiers ? selectedTier!.price : package.originalPrice;
+    final originalForDiscount = hasTiers ? (selectedTier!.originalPrice ?? selectedTier.price) : package.originalPrice;
     final discount = _calculateDiscount(displayPrice, originalForDiscount);
 
     return Scaffold(
@@ -1004,7 +1004,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       ),
                       SizedBox(height: isTablet ? 16 : 12),
                       SizedBox(
-                        height: isTablet ? 110 : 90,
+                        height: isTablet ? 120 : 100,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: EdgeInsets.symmetric(horizontal: hPadding),
@@ -1051,10 +1051,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                         color: isSelected ? Colors.white : priceColor,
                                       ),
                                     ),
-                                    if (tier.price > tier.effectivePrice) ...[
+                                    if ((tier.originalPrice ?? tier.price) > tier.effectivePrice) ...[
                                       SizedBox(height: isTablet ? 2 : 1),
                                       Text(
-                                        _formatPrice(tier.price),
+                                        _formatPrice(tier.originalPrice ?? tier.price),
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
                                           fontSize: isTablet ? 13 : 11,

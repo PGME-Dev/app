@@ -117,6 +117,9 @@ class DashboardProvider with ChangeNotifier {
     debugPrint('=== DashboardProvider: Refreshing dashboard ===');
     _isRefreshing = true;
 
+    // Clear cache so pull-to-refresh always fetches fresh data
+    _dashboardService.clearCache();
+
     await loadDashboard();
 
     _isRefreshing = false;
@@ -267,7 +270,10 @@ class DashboardProvider with ChangeNotifier {
       if (_hasActivePurchase == true) {
         // User has active purchase - try to get last watched video
         try {
-          final videos = await _dashboardService.getLastWatchedVideos(limit: 1);
+          final videos = await _dashboardService.getLastWatchedVideos(
+            limit: 1,
+            subjectId: _primarySubject?.subjectId,
+          );
           if (videos.isNotEmpty) {
             _lastWatchedVideo = videos.first;
             debugPrint('  Last watched: ${_lastWatchedVideo!.title}');

@@ -362,13 +362,18 @@ class DashboardService {
   }
 
   /// Get user's last watched videos
-  Future<List<VideoModel>> getLastWatchedVideos({int limit = 1}) async {
+  Future<List<VideoModel>> getLastWatchedVideos({int limit = 1, String? subjectId}) async {
     try {
       debugPrint('=== DashboardService: Getting last watched videos ===');
 
+      final queryParams = <String, dynamic>{'limit': limit};
+      if (subjectId != null) {
+        queryParams['subject_id'] = subjectId;
+      }
+
       final response = await _apiService.dio.get(
         ApiConstants.lastWatched,
-        queryParameters: {'limit': limit},
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -640,13 +645,16 @@ class DashboardService {
   }
 
   /// Get user's library (notes/documents)
-  Future<List<LibraryItemModel>> getUserLibrary({bool? isBookmarked}) async {
+  Future<List<LibraryItemModel>> getUserLibrary({bool? isBookmarked, String? subjectId}) async {
     try {
       debugPrint('=== DashboardService: Getting user library ===');
 
       final queryParams = <String, dynamic>{};
       if (isBookmarked != null) {
         queryParams['is_bookmarked'] = isBookmarked.toString();
+      }
+      if (subjectId != null) {
+        queryParams['subject_id'] = subjectId;
       }
 
       final response = await _apiService.dio.get(

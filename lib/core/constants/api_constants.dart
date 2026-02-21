@@ -95,6 +95,9 @@ class ApiConstants {
   static String purchaseDetails(String purchaseId) =>
       '/users/purchases/$purchaseId';
 
+  // App Settings Endpoints
+  static const String appSettings = '/app-settings';
+
   // Series & Progress Endpoints
   static const String series = '/series';
   static const String progress = '/users/progress';

@@ -21,6 +21,7 @@ LibraryItemModel _$LibraryItemModelFromJson(Map<String, dynamic> json) =>
       isBookmarked: json['is_bookmarked'] as bool? ?? false,
       notes: json['notes'] as String?,
       lastOpenedAt: json['last_opened_at'] as String?,
+      subjectId: json['subject_id'] as String?,
     );
 
 Map<String, dynamic> _$LibraryItemModelToJson(LibraryItemModel instance) =>
@@ -38,4 +39,5 @@ Map<String, dynamic> _$LibraryItemModelToJson(LibraryItemModel instance) =>
       'is_bookmarked': instance.isBookmarked,
       'notes': instance.notes,
       'last_opened_at': instance.lastOpenedAt,
+      'subject_id': instance.subjectId,
     };

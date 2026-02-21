@@ -10,6 +10,7 @@ import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class LectureVideoScreen extends StatefulWidget {
   final String courseId; // This is actually seriesId from route
@@ -240,26 +241,48 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         height: bannerHeight,
                         child: ClipRRect(
                           borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
-                          child: Image.asset(
-                            'assets/illustrations/course.png',
-                            width: double.infinity,
-                            height: bannerHeight,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: double.infinity,
-                                height: bannerHeight,
-                                color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    size: isTablet ? 80 : 60,
-                                    color: secondaryTextColor,
+                          child: _series?.thumbnailUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: _series!.thumbnailUrl!,
+                                  width: double.infinity,
+                                  height: bannerHeight,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        color: isDark ? Colors.white54 : Colors.black26,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
                                   ),
+                                  errorWidget: (context, url, error) => Image.asset(
+                                    'assets/illustrations/course.png',
+                                    width: double.infinity,
+                                    height: bannerHeight,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Image.asset(
+                                  'assets/illustrations/course.png',
+                                  width: double.infinity,
+                                  height: bannerHeight,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: double.infinity,
+                                      height: bannerHeight,
+                                      color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.image_outlined,
+                                          size: isTablet ? 80 : 60,
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          ),
                         ),
                       ),
                     ),

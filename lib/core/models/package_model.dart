@@ -27,6 +27,8 @@ class PackageTier {
   @JsonKey(name: 'duration_days')
   final int durationDays;
   final int price;
+  @JsonKey(name: 'original_price')
+  final int? originalPrice;
   @JsonKey(name: 'effective_price')
   final int effectivePrice;
   @JsonKey(name: 'display_order', defaultValue: 0)
@@ -37,6 +39,7 @@ class PackageTier {
     required this.name,
     required this.durationDays,
     required this.price,
+    this.originalPrice,
     required this.effectivePrice,
     required this.displayOrder,
   });

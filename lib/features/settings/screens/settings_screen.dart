@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/services/app_settings_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -15,6 +16,24 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
+  final AppSettingsService _appSettingsService = AppSettingsService();
+  String _whatsappSupportUrl = 'https://wa.me/918074220727';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await _appSettingsService.getSettings();
+    final url = settings['whatsapp_support_url']?.toString();
+    if (url != null && url.isNotEmpty && mounted) {
+      setState(() {
+        _whatsappSupportUrl = url;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         padding: EdgeInsets.symmetric(horizontal: hPadding),
                         child: GestureDetector(
                           onTap: () async {
-                            final whatsappUrl = Uri.parse('https://wa.me/918074220727');
+                            final whatsappUrl = Uri.parse(_whatsappSupportUrl);
                             if (await canLaunchUrl(whatsappUrl)) {
                               await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
                             }

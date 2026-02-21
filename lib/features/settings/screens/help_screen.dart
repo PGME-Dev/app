@@ -3,18 +3,60 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
+import 'package:pgme/core/services/app_settings_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
-class HelpScreen extends StatelessWidget {
+class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
 
+  @override
+  State<HelpScreen> createState() => _HelpScreenState();
+}
+
+class _HelpScreenState extends State<HelpScreen> {
+  final AppSettingsService _appSettingsService = AppSettingsService();
+  Map<String, dynamic> _appSettings = {};
+
+  // Fallback values
+  static const _defaultWhatsAppNumber = '918074220727';
+  static const _defaultEmail = 'support@pgme.in';
+  static const _defaultPhone = '+918074220727';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await _appSettingsService.getSettings();
+    if (mounted) {
+      setState(() {
+        _appSettings = settings;
+      });
+    }
+  }
+
+  String get _whatsAppNumber {
+    // Prefer whatsapp_support_url if available, otherwise construct from phone
+    final url = _appSettings['whatsapp_support_url']?.toString();
+    if (url != null && url.isNotEmpty) return url;
+    final phone = _appSettings['support_phone']?.toString() ?? _defaultWhatsAppNumber;
+    // Strip non-digits for WhatsApp URL
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    return 'https://wa.me/$digits';
+  }
+
+  String get _supportEmail => _appSettings['support_email']?.toString() ?? _defaultEmail;
+
+  String get _supportPhone => _appSettings['support_phone']?.toString() ?? _defaultPhone;
+
   Future<void> _launchWhatsApp() async {
-    const phoneNumber = '918074220727';
     const message = 'Hi, I need help with the PGME app.';
-    final url = Uri.parse(
-      'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}',
-    );
+    final baseUrl = _whatsAppNumber;
+    final separator = baseUrl.contains('?') ? '&' : '?';
+    final url = Uri.parse('$baseUrl${separator}text=${Uri.encodeComponent(message)}');
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -23,7 +65,7 @@ class HelpScreen extends StatelessWidget {
 
   Future<void> _launchEmail() async {
     final url = Uri.parse(
-      'mailto:support@pgme.in?subject=PGME App Support&body=Hi, I need help with...',
+      'mailto:$_supportEmail?subject=PGME App Support&body=Hi, I need help with...',
     );
 
     if (await canLaunchUrl(url)) {
@@ -32,7 +74,7 @@ class HelpScreen extends StatelessWidget {
   }
 
   Future<void> _launchPhone() async {
-    final url = Uri.parse('tel:+918074220727');
+    final url = Uri.parse('tel:$_supportPhone');
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -136,7 +178,7 @@ class HelpScreen extends StatelessWidget {
                         _buildContactCard(
                           icon: Icons.mail_outline,
                           title: 'Email',
-                          subtitle: 'support@pgme.in',
+                          subtitle: _supportEmail,
                           iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
                           iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
                           cardColor: cardColor,
@@ -151,7 +193,7 @@ class HelpScreen extends StatelessWidget {
                         _buildContactCard(
                           icon: Icons.phone_outlined,
                           title: 'Call Us',
-                          subtitle: '+91 8074220727',
+                          subtitle: _supportPhone,
                           iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
                           iconColor: Colors.orange,
                           cardColor: cardColor,
@@ -304,5 +346,4 @@ class HelpScreen extends StatelessWidget {
       ),
     );
   }
-
 }

@@ -14,6 +14,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/services/app_settings_service.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -27,10 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   final ApiService _apiService = ApiService();
   final AuthService _authService = AuthService();
+  final AppSettingsService _appSettingsService = AppSettingsService();
 
   UserModel? _user;
   Map<String, dynamic>? _subscriptionStatus;
   Map<String, dynamic>? _selectedSubject;
+  Map<String, dynamic>? _appSettings;
   bool _isLoading = true;
   String? _error;
 
@@ -47,17 +50,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Load user profile, subscription status, and selected subject in parallel
+      // Load user profile, subscription status, selected subject, and app settings in parallel
       final results = await Future.wait([
         _userService.getProfile(),
         _loadSubscriptionStatus(),
         _loadSelectedSubject(),
+        _appSettingsService.getSettings(),
       ]);
 
       setState(() {
         _user = results[0] as UserModel;
         _subscriptionStatus = results[1] as Map<String, dynamic>?;
         _selectedSubject = results[2] as Map<String, dynamic>?;
+        _appSettings = results[3] as Map<String, dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
@@ -612,6 +617,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Column(
                         children: [
+                          // Student ID
+                          _buildInfoRow(
+                            icon: Icons.badge_outlined,
+                            label: 'STUDENT ID',
+                            value: _user?.studentId ?? 'Not assigned',
+                            showDivider: true,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            iconBgColor: iconBgColor,
+                            iconColor: iconColor,
+                            dividerColor: dividerColor,
+                            isTablet: isTablet,
+                          ),
                           // Full Name
                           _buildInfoRow(
                             icon: Icons.person_outline,
@@ -990,48 +1008,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: isDark ? AppColors.darkCardBackground : Colors.white,
                               borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
+                            child: Builder(
+                              builder: (context) {
+                                final instagramUrl = _appSettings?['instagram_url']?.toString();
+                                final youtubeUrl = _appSettings?['youtube_url']?.toString();
+                                final twitterUrl = _appSettings?['twitter_url']?.toString();
+                                final whatsappLink = _selectedSubject?['whatsapp_community_link'];
+
+                                final topRow = <Widget>[
+                                  if (instagramUrl != null && instagramUrl.isNotEmpty)
                                     _buildCommunityIcon(
                                       icon: FontAwesomeIcons.instagram,
                                       color: const Color(0xFFE1306C),
-                                      url: 'https://www.instagram.com/pgmemedical?igsh=MTh2d2E5dTB2NnJqZQ==',
+                                      url: instagramUrl,
                                       isTablet: isTablet,
                                     ),
+                                  if (youtubeUrl != null && youtubeUrl.isNotEmpty)
                                     _buildCommunityIcon(
                                       icon: FontAwesomeIcons.youtube,
                                       color: const Color(0xFFFF0000),
-                                      url: 'https://youtube.com/@pgmeessentials?si=SsmIf4otndfiGfiS',
+                                      url: youtubeUrl,
                                       isTablet: isTablet,
                                     ),
-                                  ],
-                                ),
-                                SizedBox(height: isTablet ? 28 : 24),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
+                                ];
+
+                                final bottomRow = <Widget>[
+                                  if (twitterUrl != null && twitterUrl.isNotEmpty)
                                     _buildCommunityIcon(
                                       icon: FontAwesomeIcons.xTwitter,
                                       color: isDark ? Colors.white : const Color(0xFF000000),
-                                      url: 'https://x.com/PGME_Medical',
+                                      url: twitterUrl,
                                       isTablet: isTablet,
                                     ),
-                                    if (_selectedSubject?['whatsapp_community_link'] != null)
-                                      _buildCommunityIcon(
-                                        icon: FontAwesomeIcons.whatsapp,
-                                        color: const Color(0xFF25D366),
-                                        url: _selectedSubject!['whatsapp_community_link'],
-                                        isTablet: isTablet,
-                                      )
-                                    else
-                                      SizedBox(width: isTablet ? 38 : 32),
+                                  if (whatsappLink != null)
+                                    _buildCommunityIcon(
+                                      icon: FontAwesomeIcons.whatsapp,
+                                      color: const Color(0xFF25D366),
+                                      url: whatsappLink,
+                                      isTablet: isTablet,
+                                    ),
+                                ];
+
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (topRow.isNotEmpty)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: topRow,
+                                      ),
+                                    if (topRow.isNotEmpty && bottomRow.isNotEmpty)
+                                      SizedBox(height: isTablet ? 28 : 24),
+                                    if (bottomRow.isNotEmpty)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: bottomRow,
+                                      ),
                                   ],
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
                         ),

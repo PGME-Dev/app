@@ -8,6 +8,9 @@ class SeriesModel {
   @JsonKey(name: 'series_id')
   final String seriesId;
 
+  @JsonKey(name: 'package_id')
+  final String? packageId;
+
   @JsonKey(name: 'name')
   final String title;
 
@@ -49,6 +52,7 @@ class SeriesModel {
 
   SeriesModel({
     required this.seriesId,
+    this.packageId,
     required this.title,
     this.description,
     this.sequenceNumber = 0,
@@ -72,6 +76,7 @@ class SeriesModel {
 
   SeriesModel copyWith({
     String? seriesId,
+    String? packageId,
     String? title,
     String? description,
     String? type,
@@ -86,6 +91,7 @@ class SeriesModel {
   }) {
     return SeriesModel(
       seriesId: seriesId ?? this.seriesId,
+      packageId: packageId ?? this.packageId,
       title: title ?? this.title,
       description: description ?? this.description,
       type: type ?? this.type,

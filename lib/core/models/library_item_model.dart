@@ -40,6 +40,9 @@ class LibraryItemModel {
   @JsonKey(name: 'last_opened_at')
   final String? lastOpenedAt;
 
+  @JsonKey(name: 'subject_id')
+  final String? subjectId;
+
   LibraryItemModel({
     required this.libraryId,
     required this.documentId,
@@ -54,6 +57,7 @@ class LibraryItemModel {
     this.isBookmarked = false,
     this.notes,
     this.lastOpenedAt,
+    this.subjectId,
   });
 
   factory LibraryItemModel.fromJson(Map<String, dynamic> json) =>
@@ -76,6 +80,7 @@ class LibraryItemModel {
       isBookmarked: isBookmarked ?? this.isBookmarked,
       notes: notes,
       lastOpenedAt: lastOpenedAt,
+      subjectId: subjectId,
     );
   }
 

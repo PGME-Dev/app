@@ -11,6 +11,7 @@ PackageTier _$PackageTierFromJson(Map<String, dynamic> json) => PackageTier(
       name: json['name'] as String,
       durationDays: (json['duration_days'] as num).toInt(),
       price: (json['price'] as num).toInt(),
+      originalPrice: (json['original_price'] as num?)?.toInt(),
       effectivePrice: (json['effective_price'] as num).toInt(),
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
     );
@@ -21,6 +22,7 @@ Map<String, dynamic> _$PackageTierToJson(PackageTier instance) =>
       'name': instance.name,
       'duration_days': instance.durationDays,
       'price': instance.price,
+      'original_price': instance.originalPrice,
       'effective_price': instance.effectivePrice,
       'display_order': instance.displayOrder,
     };

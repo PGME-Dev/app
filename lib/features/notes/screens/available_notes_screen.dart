@@ -63,32 +63,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
       final documents = results[1] as List<SeriesDocumentModel>;
 
       // Fetch package for enrollment dialog
+      // Use widget.packageId if passed explicitly, otherwise use package_id from series details
       PackageModel? package;
-      if (widget.packageId != null) {
-        // If packageId was passed (e.g. from practical series), fetch and match it
+      final lookupPackageId = widget.packageId ?? series.packageId;
+      if (lookupPackageId != null) {
         try {
           final packages = await _dashboardService.getPackages(forceRefresh: true);
-          final matching = packages.where((p) => p.packageId == widget.packageId);
+          final matching = packages.where((p) => p.packageId == lookupPackageId);
           if (matching.isNotEmpty) {
             package = matching.first;
-          }
-        } catch (e) {
-          debugPrint('Failed to load package by ID: $e');
-        }
-      } else if (series.subject?.subjectId != null) {
-        // Fallback: determine package from series subject and type
-        try {
-          final seriesType = series.type;
-          final packageType = seriesType != null
-              ? '${seriesType[0].toUpperCase()}${seriesType.substring(1).toLowerCase()}'
-              : null;
-
-          final packages = await _dashboardService.getPackages(
-            subjectId: series.subject!.subjectId,
-            packageType: packageType,
-          );
-          if (packages.isNotEmpty) {
-            package = packages.first;
           }
         } catch (e) {
           debugPrint('Failed to load package: $e');
@@ -126,12 +109,10 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     if (shouldEnroll == true && mounted) {
       if (_package != null) {
         context.push('/purchase?packageId=${_package!.packageId}&packageType=${_package!.type ?? 'Theory'}');
+      } else if (_series?.packageId != null) {
+        context.push('/purchase?packageId=${_series!.packageId}');
       } else {
-        final seriesType = _series?.type;
-        final packageType = seriesType != null
-            ? '${seriesType[0].toUpperCase()}${seriesType.substring(1).toLowerCase()}'
-            : 'Theory';
-        context.push('/purchase?packageType=$packageType');
+        context.push('/all-packages');
       }
     }
   }
