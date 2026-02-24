@@ -24,7 +24,7 @@ class ApiConstants {
   static const String webLoginToken = '/auth/web-login-token';
 
   // Web Store Base URL
-  static const String webStoreBaseUrl = 'https://store.pgme.in';
+  static const String webStoreBaseUrl = 'https://store-frontend-ivory.vercel.app';
 
   // User Endpoints (Onboarding accessible)
   static const String profile = '/users/profile';
