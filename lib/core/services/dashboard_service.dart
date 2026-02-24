@@ -28,6 +28,7 @@ class DashboardService {
   DateTime? _lastPackagesFetch;
   List<PackageModel>? _cachedPackages;
   String? _cachedPackagesSubjectId;
+  String? _cachedPackagesType;
 
   /// Get next upcoming live session
   /// Returns null if no upcoming session found
@@ -287,6 +288,7 @@ class DashboardService {
           _cachedPackages != null &&
           _lastPackagesFetch != null &&
           _cachedPackagesSubjectId == subjectId &&
+          _cachedPackagesType == packageType &&
           DateTime.now().difference(_lastPackagesFetch!) < const Duration(hours: 1)) {
         debugPrint('✓ Returning cached packages (${_cachedPackages!.length} items)');
         return _cachedPackages!;
@@ -317,6 +319,7 @@ class DashboardService {
         _cachedPackages = packages;
         _lastPackagesFetch = DateTime.now();
         _cachedPackagesSubjectId = subjectId;
+        _cachedPackagesType = packageType;
 
         debugPrint('✓ ${packages.length} packages retrieved and cached');
         return packages;
@@ -490,7 +493,7 @@ class DashboardService {
       debugPrint('Package ID: $packageId');
 
       final response = await _apiService.dio.get(
-        '${ApiConstants.baseUrl}/packages/$packageId/series',
+        ApiConstants.packageSeries(packageId),
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -528,7 +531,7 @@ class DashboardService {
       debugPrint('Series ID: $seriesId');
 
       final response = await _apiService.dio.get(
-        '${ApiConstants.baseUrl}/series/$seriesId',
+        '/series/$seriesId',
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -556,7 +559,7 @@ class DashboardService {
       debugPrint('Series ID: $seriesId');
 
       final response = await _apiService.dio.get(
-        '${ApiConstants.baseUrl}/series/$seriesId/modules',
+        '/series/$seriesId/modules',
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -589,7 +592,7 @@ class DashboardService {
       debugPrint('Series ID: $seriesId');
 
       final response = await _apiService.dio.get(
-        '${ApiConstants.baseUrl}/series/$seriesId/documents',
+        '/series/$seriesId/documents',
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -901,5 +904,6 @@ class DashboardService {
     _cachedPackages = null;
     _lastPackagesFetch = null;
     _cachedPackagesSubjectId = null;
+    _cachedPackagesType = null;
   }
 }

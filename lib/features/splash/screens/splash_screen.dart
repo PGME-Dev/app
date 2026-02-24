@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/services/push_notification_service.dart';
+import 'package:pgme/core/services/version_check_service.dart';
+import 'package:pgme/core/widgets/force_update_modal.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/core/services/storage_service.dart';
 
@@ -18,6 +20,8 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   // Dark blue background color matching the design
   static const Color _darkBlue = Color(0xFF0033CC);
+
+  VersionCheckResult? _forceUpdateResult;
 
   @override
   void initState() {
@@ -43,6 +47,17 @@ class _SplashScreenState extends State<SplashScreen> {
       await PushNotificationService().initialize();
 
       if (!mounted) return;
+
+      // Check app version before proceeding
+      final versionResult = await VersionCheckService().checkVersion();
+      if (versionResult.updateRequired) {
+        debugPrint('Force update required: current=${versionResult.currentVersion}, min=${versionResult.minVersion}');
+        if (!mounted) return;
+        setState(() {
+          _forceUpdateResult = versionResult;
+        });
+        return; // Stop here — don't navigate, show the modal
+      }
 
       final authProvider = context.read<AuthProvider>();
       final storageService = StorageService();
@@ -178,6 +193,16 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
           ),
+
+          // Force Update Modal (blocks entire screen)
+          if (_forceUpdateResult != null)
+            Positioned.fill(
+              child: ForceUpdateModal(
+                storeUrl: _forceUpdateResult!.storeUrl,
+                currentVersion: _forceUpdateResult!.currentVersion,
+                minVersion: _forceUpdateResult!.minVersion,
+              ),
+            ),
         ],
       ),
     );

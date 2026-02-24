@@ -13,6 +13,7 @@ import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
 import 'package:pgme/core/models/billing_address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
 class EbookListScreen extends StatefulWidget {
@@ -128,6 +129,16 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
   Future<void> _handleBuy(BookModel book) async {
     if (_isPurchasing) return;
+
+    // iOS: redirect to web store to avoid Apple IAP requirement
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'ebooks',
+        productId: book.bookId,
+      );
+      return;
+    }
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;

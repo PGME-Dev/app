@@ -1113,8 +1113,36 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
 
           const SizedBox(height: 20),
 
-          // Price and enroll button (if not purchased)
-          if (!pkg.isPurchased) ...[
+          // Enroll / Enrolled button
+          if (pkg.isPurchased) ...[
+            SizedBox(
+              width: double.infinity,
+              height: isTablet ? 60 : 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() => _contentMode = 'videos');
+                },
+                icon: Icon(Icons.check_circle_outline, size: isTablet ? 22 : 20, color: Colors.white),
+                label: Text(
+                  'Enrolled',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: isTablet ? 20 : 16,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? const Color(0xFF2E7D32) : const Color(0xFF388E3C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
             Container(
               padding: EdgeInsets.all(isTablet ? 28 : 20),
               decoration: BoxDecoration(
@@ -1240,26 +1268,26 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             const SizedBox(height: 16),
           ],
 
-          // Series overview
-          if (_series.isNotEmpty) ...[
-            Text(
-              'Series',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: isTablet ? 20 : 16,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ..._series.map((s) => _buildSeriesPreviewTile(
-                  s,
-                  isDark,
-                  textColor,
-                  secondaryTextColor,
-                  iconColor,
-                )),
-          ],
+          // // Series overview
+          // if (_series.isNotEmpty) ...[
+          //   Text(
+          //     'Series',
+          //     style: TextStyle(
+          //       fontFamily: 'Poppins',
+          //       fontWeight: FontWeight.w600,
+          //       fontSize: isTablet ? 20 : 16,
+          //       color: textColor,
+          //     ),
+          //   ),
+          //   const SizedBox(height: 12),
+          //   ..._series.map((s) => _buildSeriesPreviewTile(
+          //         s,
+          //         isDark,
+          //         textColor,
+          //         secondaryTextColor,
+          //         iconColor,
+          //       )),
+          // ],
         ],
       ),
     );
@@ -1378,9 +1406,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
             ),
           ),
           if (series.isLocked)
-            Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: secondaryTextColor)
-          else
-            Icon(Icons.chevron_right_rounded, size: isTablet ? 24 : 20, color: secondaryTextColor),
+            Icon(Icons.lock_rounded, size: isTablet ? 20 : 16, color: secondaryTextColor),
         ],
       ),
     );

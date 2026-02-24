@@ -21,6 +21,10 @@ class ApiConstants {
   static const String activeSessions = '/auth/active-sessions';
   static String deviceSession(String sessionId) =>
       '/auth/device-session/$sessionId';
+  static const String webLoginToken = '/auth/web-login-token';
+
+  // Web Store Base URL
+  static const String webStoreBaseUrl = 'https://store.pgme.in';
 
   // User Endpoints (Onboarding accessible)
   static const String profile = '/users/profile';

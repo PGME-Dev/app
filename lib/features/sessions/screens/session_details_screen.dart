@@ -15,6 +15,7 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/zoom_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
@@ -194,6 +195,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
   Future<void> _initiatePayment() async {
     if (_session == null) return;
+
+    // iOS: redirect to web store to avoid Apple IAP requirement
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'sessions',
+        productId: widget.sessionId,
+      );
+      return;
+    }
 
     // Show billing address bottom sheet before payment
     BillingAddress? savedAddress;
@@ -1171,10 +1182,15 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.shopping_cart, color: Colors.white, size: 20),
+                        Icon(
+                          WebStoreLauncher.shouldUseWebStore ? Icons.open_in_new : Icons.shopping_cart,
+                          color: Colors.white, size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
-                          'BUY NOW - ${_formatPrice(price)}',
+                          WebStoreLauncher.shouldUseWebStore
+                              ? 'GET ACCESS - ${_formatPrice(price)}'
+                              : 'BUY NOW - ${_formatPrice(price)}',
                           style: TextStyle(
                             fontFamily: 'Poppins', fontWeight: FontWeight.w500,
                             fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,

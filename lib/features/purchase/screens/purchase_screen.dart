@@ -12,6 +12,7 @@ import 'package:pgme/core/models/billing_address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/features/purchase/widgets/upgrade_bottom_sheet.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
@@ -126,6 +127,16 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   void _showPaymentPopup() async {
     if (_package == null) return;
+
+    // iOS: redirect to web store to avoid Apple IAP requirement
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'packages',
+        productId: _package!.packageId,
+      );
+      return;
+    }
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
@@ -1271,7 +1282,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                             onTap: _isProcessing
                                 ? null
                                 : canUpgrade
-                                    ? () => _showUpgradeSheet(package)
+                                    ? WebStoreLauncher.shouldUseWebStore
+                                        ? () => WebStoreLauncher.openProductPage(context, productType: 'packages', productId: package.packageId)
+                                        : () => _showUpgradeSheet(package)
                                     : _showPaymentPopup,
                             child: Container(
                               width: isTablet ? 200 : 160,
@@ -1288,14 +1301,26 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                 ],
                               ),
                               child: Center(
-                                child: Text(
-                                  canUpgrade ? 'Upgrade' : 'Buy Now',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: isTablet ? 22 : 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (WebStoreLauncher.shouldUseWebStore)
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 6),
+                                        child: Icon(Icons.open_in_new, color: Colors.white, size: 16),
+                                      ),
+                                    Text(
+                                      canUpgrade
+                                          ? (WebStoreLauncher.shouldUseWebStore ? 'Upgrade on Web' : 'Upgrade')
+                                          : (WebStoreLauncher.shouldUseWebStore ? 'Get Access' : 'Buy Now'),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: isTablet ? 22 : 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

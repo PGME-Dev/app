@@ -8,6 +8,7 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   const AllPackagesScreen({super.key});
@@ -127,6 +128,13 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       } else {
         context.go('/home');
       }
+    } else if (WebStoreLauncher.shouldUseWebStore) {
+      // iOS: redirect to web store to avoid Apple IAP requirement
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'packages',
+        productId: package.packageId,
+      );
     } else {
       context.pop();
       context.push('/purchase?packageId=${package.packageId}');
@@ -348,16 +356,28 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                       ],
                     ),
                     child: Center(
-                      child: Text(
-                        _packages[_selectedIndex].isPurchased
-                            ? 'Go to Content'
-                            : 'Enroll Now',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: isTablet ? 20 : 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!_packages[_selectedIndex].isPurchased && WebStoreLauncher.shouldUseWebStore)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 6),
+                              child: Icon(Icons.open_in_new, color: Colors.white, size: 16),
+                            ),
+                          Text(
+                            _packages[_selectedIndex].isPurchased
+                                ? 'Go to Content'
+                                : WebStoreLauncher.shouldUseWebStore
+                                    ? 'Get Access'
+                                    : 'Enroll Now',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isTablet ? 20 : 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

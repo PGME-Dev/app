@@ -730,35 +730,63 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
             const SizedBox(height: 16),
           ],
 
-          // Enroll Now button for non-subscribed users
-          if (!isSubscribed) ...[
-            _buildEnrollButton(isDark, isTablet),
-            const SizedBox(height: 24),
-          ],
+          // Enroll / Enrolled button
+          _buildEnrollButton(isDark, isTablet, isSubscribed: isSubscribed),
+          const SizedBox(height: 24),
 
-          // Series overview
-          Text(
-            'Series',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: isTablet ? 20 : 16,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ..._series.map((s) => _buildSeriesPreviewTile(s, isDark, textColor, secondaryTextColor, iconColor)),
+          // // Series overview
+          // Text(
+          //   'Series',
+          //   style: TextStyle(
+          //     fontFamily: 'Poppins',
+          //     fontWeight: FontWeight.w600,
+          //     fontSize: isTablet ? 20 : 16,
+          //     color: textColor,
+          //   ),
+          // ),
+          // const SizedBox(height: 12),
+          // ..._series.map((s) => _buildSeriesPreviewTile(s, isDark, textColor, secondaryTextColor, iconColor)),
         ],
       ),
     );
   }
 
-  Widget _buildEnrollButton(bool isDark, bool isTablet) {
-    final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
+  Widget _buildEnrollButton(bool isDark, bool isTablet, {required bool isSubscribed}) {
     final buttonHeight = isTablet ? 56.0 : 48.0;
     final buttonRadius = isTablet ? 24.0 : 20.0;
     final fontSize = isTablet ? 18.0 : 16.0;
 
+    if (isSubscribed) {
+      final enrolledColor = isDark ? const Color(0xFF2E7D32) : const Color(0xFF388E3C);
+      return SizedBox(
+        width: double.infinity,
+        height: buttonHeight,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            setState(() => _contentMode = 'lectures');
+          },
+          icon: Icon(Icons.check_circle_outline, size: isTablet ? 22 : 20, color: Colors.white),
+          label: Text(
+            'Enrolled',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: enrolledColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonRadius),
+            ),
+            elevation: 0,
+          ),
+        ),
+      );
+    }
+
+    final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
     return SizedBox(
       width: double.infinity,
       height: buttonHeight,

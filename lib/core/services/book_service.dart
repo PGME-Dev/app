@@ -117,7 +117,7 @@ class BookService {
   Future<Map<String, dynamic>> checkStock(String bookId, {int quantity = 1}) async {
     try {
       final response = await _apiService.dio.get(
-        '${ApiConstants.bookDetails(bookId)}/stock',
+        ApiConstants.bookStock(bookId),
         queryParameters: {'quantity': quantity},
       );
 

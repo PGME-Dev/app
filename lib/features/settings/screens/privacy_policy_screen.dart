@@ -102,7 +102,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Last Updated: February 13, 2026',
+                          'Last Updated: February 23, 2026',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: isTablet ? 15 : 12,
@@ -114,7 +114,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                         _buildSection(
                           'Introduction',
-                          'PGME ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform.',
+                          'PGME ("we," "our," or "us") operates the PGME mobile application (the "App"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our App. Please read this Privacy Policy carefully. By using the App, you agree to the collection and use of information in accordance with this policy.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
@@ -122,47 +122,47 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                         _buildSection(
                           '1. Information We Collect',
-                          'We collect several types of information to provide and improve our services:\n\nPersonal Information:\n• Name and contact details (email, phone number)\n• Account credentials\n• Profile information\n• Payment and billing information\n\nUsage Information:\n• Course progress and performance\n• Video viewing history\n• Test and assessment results\n• Device information and IP address\n• App usage analytics',
+                          'Personal Information:\n• Identity Information: Full name, date of birth, gender\n• Contact Information: Phone number, email address\n• Educational Background: Undergraduate college/university, postgraduate college/university, current professional designation, current affiliated organisation\n• Address Information: Residential address, billing address, shipping address (for book orders)\n• Profile Information: Profile photograph\n• Payment Information: Transaction details processed through our payment partner (Zoho Payments). We do not store your credit/debit card numbers directly.\n\nDevice Information:\n• Device Identifiers: Android ID or iOS Vendor Identifier\n• Device Details: Device brand, model, and operating system type\n• Network Information: Network connection status\n\nLocation Information (with your explicit consent):\n• Precise Location: GPS coordinates used for address auto-fill during profile setup and address selection\n• Address Data: Structured address components obtained through reverse geocoding via OpenStreetMap\n\nYou can disable location access at any time through your device settings.\n\nUsage Information:\n• Learning Activity: Video watch progress, document reading progress, module and course completion status, time spent on content\n• Session Activity: Live session attendance, meeting participation records\n• Purchase History: Subscription purchases, session purchases, book orders, payment status\n• Notification Activity: Notification delivery status, read/unread status\n\nLocally Stored Data:\n• Authentication Tokens: Encrypted access tokens and session identifiers stored in secure device storage\n• Downloaded Content: Video lectures and PDF documents downloaded for offline access\n• User Preferences: Theme settings, notification preferences, subject selections',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '2. How We Collect Information',
-                          'We collect information through:\n\n• Direct input when you create an account or update your profile\n• Automatically through your use of the Platform\n• From third-party authentication services (if applicable)\n• Through cookies and similar tracking technologies\n• From payment processors when you make purchases',
+                          '2. How We Use Your Information',
+                          'We use the information we collect for the following purposes:\n\n• Account Management: To create, maintain, and authenticate your account using phone-based OTP verification\n• Service Delivery: To provide access to courses, live sessions, study materials, and other educational content\n• Progress Tracking: To track and synchronise your learning progress across devices\n• Payment Processing: To process subscription payments, session purchases, and book orders through our payment partner\n• Order Fulfillment: To deliver physical books to your shipping address and provide order tracking\n• Communication: To send push notifications about class reminders, new content, purchase confirmations, and important announcements\n• Personalisation: To recommend content and send notifications based on your selected subjects and preferences\n• Device Management: To manage active sessions across multiple devices and provide secure access\n• Customer Support: To respond to your inquiries and provide technical assistance\n• App Improvement: To analyse usage patterns and improve our services',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '3. How We Use Your Information',
-                          'We use your information to:\n\n• Provide and maintain our services\n• Process your transactions and manage subscriptions\n• Personalize your learning experience\n• Send notifications about courses, sessions, and updates\n• Improve our content and platform functionality\n• Analyze usage patterns and trends\n• Prevent fraud and ensure platform security\n• Comply with legal obligations',
+                          '3. Third-Party Services',
+                          'We integrate the following third-party services that may collect or process your data:\n\n• Firebase (Google): Push notification delivery (FCM), app infrastructure. Data shared: FCM device token, notification delivery data.\n• Zoho Payments: Secure payment processing for subscriptions, sessions, and book orders. Data shared: Transaction amount, payment session identifiers.\n• Zoom Video Communications: Live interactive video sessions and classes. Data shared: Meeting access credentials, participant information.\n• MSG91: OTP delivery for phone-based authentication. Data shared: Phone number for OTP delivery.\n• OpenStreetMap (Nominatim): Reverse geocoding for address auto-fill. Data shared: GPS coordinates for address lookup.\n• Amazon CloudFront (AWS): Content delivery network for streaming video lectures and serving media content. Data shared: Standard web request data (IP address, user agent).',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '4. Information Sharing and Disclosure',
-                          'We may share your information with:\n\nService Providers:\n• Payment processors (Zoho Payments)\n• Cloud storage providers (Cloudinary)\n• Analytics services (Firebase)\n• Video hosting services (Zoom)\n• SMS/OTP services (MSG91)\n\nWe do not sell your personal information to third parties.\n\nWe may disclose information when:\n• Required by law or legal process\n• Necessary to protect our rights or safety\n• In connection with a business transfer or merger',
+                          '4. Data Storage and Security',
+                          'Data Storage:\n• Your personal information is stored on secure cloud servers\n• Authentication tokens are stored in encrypted device storage (Android EncryptedSharedPreferences / iOS Keychain)\n• Downloaded content is stored locally on your device in a private application directory\n• All data transmission between the App and our servers is encrypted using HTTPS/TLS\n\nSecurity Measures:\n• Encrypted data transmission (HTTPS/TLS)\n• Encrypted local storage for sensitive data (tokens, credentials)\n• JWT-based authentication with token refresh mechanism\n• Session management with device-level access control\n• Secure payment processing through PCI-compliant payment partners\n\nData Retention:\n• We retain your personal information for as long as your account is active or as needed to provide services\n• Learning progress data is retained to enable continued access to your course history\n• Payment records are retained as required by applicable financial regulations\n• You may request deletion of your account and associated data at any time (see Section 7)',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '5. Data Security',
-                          'We implement industry-standard security measures to protect your information:\n\n• Encrypted data transmission (HTTPS/SSL)\n• Secure storage using encryption\n• Regular security audits\n• Access controls and authentication\n• Secure payment processing\n\nHowever, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.',
+                          '5. Sharing of Information',
+                          'We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:\n\n• Service Providers: With third-party service providers who assist us in operating the App (as listed in Section 3), strictly for the purposes described\n• Payment Processing: With Zoho Payments to process your transactions securely\n• Legal Requirements: When required by law, regulation, legal process, or governmental request\n• Safety and Security: To protect the rights, property, or safety of PGME, our users, or the public\n• Business Transfers: In connection with a merger, acquisition, or sale of assets, with appropriate notice to users',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '6. Data Retention',
-                          'We retain your information for as long as:\n\n• Your account is active\n• Necessary to provide our services\n• Required by law or for legitimate business purposes\n• Needed to resolve disputes or enforce our agreements\n\nYou may request deletion of your account and associated data by contacting us.',
+                          '6. Permissions',
+                          'The App requests the following device permissions:\n\n• Camera: Required for live Zoom video sessions\n• Microphone: Required for audio in live Zoom sessions\n• Location: Address auto-fill during profile setup (optional)\n• Storage: Downloading videos and documents for offline access\n• Notifications: Receiving class reminders and important updates\n• Bluetooth: Audio device connectivity during Zoom sessions\n• Internet: Core app functionality and content delivery\n\nAll permissions are requested at the time of use and can be managed through your device settings.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
@@ -170,55 +170,55 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                         _buildSection(
                           '7. Your Rights and Choices',
-                          'You have the right to:\n\n• Access your personal information\n• Correct inaccurate data\n• Request deletion of your data\n• Opt-out of marketing communications\n• Withdraw consent for data processing\n• Export your data\n\nTo exercise these rights, please contact us through the app support section.',
+                          'You have the following rights regarding your personal information:\n\n• Access and Update: You can view and update your profile information at any time through the Edit Profile section in the App\n• Device Session Management: You can view all active sessions and remotely logout from any device through the App settings\n• Notification Preferences: You can manage notification preferences within the App settings or disable push notifications through your device settings\n• Location Access: You can enable or disable location access through your device settings at any time\n• Data Deletion: You may request complete deletion of your account and all associated personal data by contacting us. Upon receiving a valid deletion request, we will delete your personal data within 30 days, except where retention is required by law\n• Data Download: You may request a copy of your personal data in a portable format by contacting us',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '8. Cookies and Tracking',
-                          'We use cookies and similar technologies to:\n\n• Maintain your session and preferences\n• Analyze platform usage\n• Improve user experience\n• Provide personalized content\n\nYou can control cookie preferences through your device settings.',
+                          '8. Children\'s Privacy',
+                          'The App is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from children under 18 years of age. If we become aware that we have collected personal information from a child under 18, we will take steps to delete such information promptly.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '9. Third-Party Links',
-                          'Our Platform may contain links to third-party websites or services. We are not responsible for the privacy practices of these third parties. We encourage you to review their privacy policies.',
+                          '9. Changes to This Privacy Policy',
+                          'We may update this Privacy Policy from time to time. We will notify you of any material changes by:\n\n• Posting the updated Privacy Policy within the App\n• Sending a push notification about the update\n• Updating the "Last Updated" date at the top of this policy\n\nYour continued use of the App after any changes constitutes your acceptance of the updated Privacy Policy.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '10. Children\'s Privacy',
-                          'Our Platform is intended for users aged 18 and above. We do not knowingly collect information from children under 18. If you believe we have collected such information, please contact us immediately.',
+                          '10. Data Transfer',
+                          'Your information may be transferred to and processed on servers located outside your country of residence. By using the App, you consent to the transfer of your information to facilities maintained by us or our third-party service providers, where applicable data protection laws may differ from those in your jurisdiction.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '11. International Data Transfers',
-                          'Your information may be transferred to and processed in countries other than your country of residence. We ensure appropriate safeguards are in place to protect your information during such transfers.',
+                          '11. Cookies and Tracking',
+                          'The App itself does not use browser cookies. However, our integrated WebView-based payment gateway (Zoho Payments) may use cookies or similar technologies as necessary for secure payment processing.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '12. Changes to This Policy',
-                          'We may update this Privacy Policy from time to time. We will notify you of significant changes by:\n\n• Posting the updated policy on the Platform\n• Sending an in-app notification\n• Updating the "Last Updated" date\n\nYour continued use of the Platform after changes constitutes acceptance of the updated policy.',
+                          '12. Contact Us',
+                          'If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:\n\nPGME (Post Graduate Medical Education)\nEmail: support@pgmemedicalteaching.com',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
                         ),
 
                         _buildSection(
-                          '13. Contact Us',
-                          'If you have questions or concerns about this Privacy Policy or our data practices, please contact us through:\n\n• The support section in the app\n• Our website contact form\n• Email support (available in the app)',
+                          '13. Grievance Officer',
+                          'In accordance with applicable regulations, the details of the Grievance Officer are as follows:\n\nName: [Grievance Officer Name]\nEmail: [grievance-officer-email@pgme.com]\nAddress: [Registered Office Address]\n\nResponse time: We will acknowledge your grievance within 24 hours and resolve it within 15 days from the date of receipt.',
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,

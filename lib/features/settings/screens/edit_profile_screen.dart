@@ -23,7 +23,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final UserService _userService = UserService();
 
   late TextEditingController _nameController;
-  late TextEditingController _emailController;
   late TextEditingController _addressController;
   late TextEditingController _organisationController;
   late TextEditingController _designationController;
@@ -38,7 +37,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
-    _emailController = TextEditingController(text: widget.user.email ?? '');
     _addressController = TextEditingController(text: widget.user.address ?? '');
     _organisationController = TextEditingController(text: widget.user.affiliatedOrganisation ?? '');
     _designationController = TextEditingController(text: widget.user.currentDesignation ?? '');
@@ -52,7 +50,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _addressController.dispose();
     _organisationController.dispose();
     _designationController.dispose();
@@ -75,11 +72,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Only include fields that have changed
       if (_nameController.text.trim() != widget.user.name) {
         updateData['name'] = _nameController.text.trim();
-      }
-      if (_emailController.text.trim() != (widget.user.email ?? '')) {
-        updateData['email'] = _emailController.text.trim().isEmpty
-            ? null
-            : _emailController.text.trim();
       }
       // Compare normalized gender values (lowercase)
       final originalGender = widget.user.gender?.toLowerCase();
@@ -271,56 +263,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       SizedBox(height: isTablet ? 24 : 20),
 
-                      // Email Field
-                      Text(
-                        'Email',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTablet ? 16 : 14,
-                          color: textColor,
-                        ),
+                      // Read-only fields section
+                      _buildReadOnlyField(
+                        label: 'Phone',
+                        value: widget.user.phoneNumber,
+                        icon: Icons.phone_outlined,
+                        cardColor: cardColor,
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        isTablet: isTablet,
                       ),
-                      SizedBox(height: isTablet ? 10 : 8),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(fontSize: isTablet ? 17 : 16, color: textColor),
-                        decoration: InputDecoration(
-                          hintText: 'Enter your email',
-                          hintStyle: TextStyle(color: secondaryTextColor),
-                          filled: true,
-                          fillColor: cardColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
-                            borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 18 : 16,
-                            vertical: isTablet ? 18 : 16,
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value != null && value.trim().isNotEmpty) {
-                            final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                            if (!emailRegex.hasMatch(value.trim())) {
-                              return 'Invalid email format';
-                            }
-                          }
-                          return null;
-                        },
+
+                      SizedBox(height: isTablet ? 24 : 20),
+
+                      _buildReadOnlyField(
+                        label: 'Student ID',
+                        value: widget.user.studentId ?? 'Not assigned',
+                        icon: Icons.badge_outlined,
+                        cardColor: cardColor,
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        isTablet: isTablet,
+                      ),
+
+                      SizedBox(height: isTablet ? 24 : 20),
+
+                      _buildReadOnlyField(
+                        label: 'Email',
+                        value: widget.user.email ?? 'Not set',
+                        icon: Icons.mail_outline,
+                        cardColor: cardColor,
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        isTablet: isTablet,
                       ),
 
                       SizedBox(height: isTablet ? 24 : 20),
@@ -568,6 +546,70 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildReadOnlyField({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required bool isTablet,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontWeight: FontWeight.w500,
+            fontSize: isTablet ? 16 : 14,
+            color: secondaryTextColor,
+          ),
+        ),
+        SizedBox(height: isTablet ? 10 : 8),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 18 : 16,
+            vertical: isTablet ? 18 : 16,
+          ),
+          decoration: BoxDecoration(
+            color: cardColor.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(isTablet ? 14 : 12),
+            border: Border.all(color: borderColor.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: isTablet ? 22 : 18,
+                color: secondaryTextColor,
+              ),
+              SizedBox(width: isTablet ? 12 : 10),
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: isTablet ? 17 : 16,
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.lock_outline,
+                size: isTablet ? 18 : 16,
+                color: secondaryTextColor.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
