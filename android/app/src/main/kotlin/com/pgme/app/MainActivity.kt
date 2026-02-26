@@ -1,4 +1,4 @@
-package com.example.pgme
+package com.pgme.app
 
 import io.flutter.embedding.android.FlutterActivity
 
