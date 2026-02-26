@@ -17,15 +17,32 @@ class WebStoreLauncher {
     required String productId,
   }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    bool dialogShowing = true;
 
     // Show loading overlay
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      barrierDismissible: true,
+      builder: (_) => PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, _) {
+          dialogShowing = false;
+        },
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
       ),
     );
+
+    void dismissDialog() {
+      if (dialogShowing) {
+        dialogShowing = false;
+        try {
+          navigator.pop();
+        } catch (_) {}
+      }
+    }
 
     try {
       final redirectPath = '/$productType/$productId';
@@ -35,8 +52,8 @@ class WebStoreLauncher {
         data: {'redirect_path': redirectPath},
       );
 
-      // Dismiss loading
-      if (context.mounted) Navigator.of(context).pop();
+      // Always dismiss loading before opening Safari
+      dismissDialog();
 
       final token = response.data['data']['token'] as String;
       final url = Uri.parse(
@@ -54,7 +71,7 @@ class WebStoreLauncher {
       }
     } catch (e) {
       // Dismiss loading if still showing
-      if (context.mounted) Navigator.of(context).pop();
+      dismissDialog();
 
       scaffoldMessenger.showSnackBar(
         const SnackBar(

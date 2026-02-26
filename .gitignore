@@ -54,3 +54,9 @@ FRONTEND_INTEGRATION_GUIDE.md
 packages
 .claude/settings.local.json
 packages.zip
+
+# Large MobileRTC framework binaries (exceed GitHub 100MB limit)
+ios/MobileRTC.xcframework/ios-arm64/MobileRTC.framework/MobileRTC
+ios/MobileRTC.xcframework/ios-arm64_x86_64-simulator/MobileRTC.framework/MobileRTC
+ios/MobileRTCScreenShare.xcframework/ios-arm64/MobileRTCScreenShare.framework/MobileRTCScreenShare
+ios/MobileRTCScreenShare.xcframework/ios-arm64_x86_64-simulator/MobileRTCScreenShare.framework/MobileRTCScreenShare
