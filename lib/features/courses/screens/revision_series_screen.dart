@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -143,7 +144,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      context.push('/purchase?packageId=$_activePackageId&packageType=Theory');
+      context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
     }
   }
 
@@ -160,7 +161,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     final packageDescription = _theoryPackage?.description ?? 'Unlock all content and get access to comprehensive study materials.';
     final packageFeatures = _theoryPackage?.features ?? ['Access to all content'];
     final priceValue = _theoryPackage?.displayPrice ?? 0;
-    final priceFormatted = '₹${priceValue.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final priceFormatted = Platform.isIOS ? '' : '₹${priceValue.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final durationDays = _theoryPackage?.durationDays ?? 0;
     final durationText = durationDays >= 365
         ? '/ ${durationDays ~/ 365} ${(durationDays ~/ 365) == 1 ? 'year' : 'years'}'
@@ -792,7 +793,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       height: buttonHeight,
       child: ElevatedButton(
         onPressed: () {
-          context.push('/purchase?packageId=$_activePackageId&packageType=Theory');
+          context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: buttonColor,

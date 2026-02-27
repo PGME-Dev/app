@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/lecture_model.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
 import 'package:pgme/core/models/library_model.dart';
@@ -18,7 +18,7 @@ class EnrolledCoursesService {
 
   /// Get all user purchases
   /// Returns list of active and expired purchases
-  Future<List<PurchaseModel>> getPurchases() async {
+  Future<List<AccessRecordModel>> getPurchases() async {
     try {
       debugPrint('=== EnrolledCoursesService: Getting purchases ===');
 
@@ -43,7 +43,7 @@ class EnrolledCoursesService {
         debugPrint('=== END RAW API RESPONSE ===');
 
         final purchases = purchasesData
-            .map((json) => PurchaseModel.fromJson(json as Map<String, dynamic>))
+            .map((json) => AccessRecordModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
         // Sort by purchase date (newest first)
@@ -65,7 +65,7 @@ class EnrolledCoursesService {
 
   /// Get purchase details by ID
   /// Includes complete package information and expiry details
-  Future<PurchaseModel> getPurchaseDetails(String purchaseId) async {
+  Future<AccessRecordModel> getPurchaseDetails(String purchaseId) async {
     try {
       debugPrint('=== EnrolledCoursesService: Getting purchase details ===');
 
@@ -75,7 +75,7 @@ class EnrolledCoursesService {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final purchaseData = response.data['data']['purchase'];
-        final purchase = PurchaseModel.fromJson(purchaseData as Map<String, dynamic>);
+        final purchase = AccessRecordModel.fromJson(purchaseData as Map<String, dynamic>);
 
         debugPrint('✓ Purchase details retrieved: ${purchase.package.name}');
         return purchase;

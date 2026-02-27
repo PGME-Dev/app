@@ -1,14 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'session_purchase_model.dart';
+part of 'session_access_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-SessionPurchaseModel _$SessionPurchaseModelFromJson(
-        Map<String, dynamic> json) =>
-    SessionPurchaseModel(
+SessionAccessModel _$SessionAccessModelFromJson(Map<String, dynamic> json) =>
+    SessionAccessModel(
       purchaseId: json['purchase_id'] as String,
       sessionId: json['session_id'] as String,
       sessionTitle: json['session_title'] as String,
@@ -24,8 +23,7 @@ SessionPurchaseModel _$SessionPurchaseModelFromJson(
       isActive: json['is_active'] as bool? ?? true,
     );
 
-Map<String, dynamic> _$SessionPurchaseModelToJson(
-        SessionPurchaseModel instance) =>
+Map<String, dynamic> _$SessionAccessModelToJson(SessionAccessModel instance) =>
     <String, dynamic>{
       'purchase_id': instance.purchaseId,
       'session_id': instance.sessionId,
@@ -63,18 +61,18 @@ Map<String, dynamic> _$SessionAccessStatusToJson(
       'purchased_at': instance.purchasedAt,
     };
 
-SessionOrderResponse _$SessionOrderResponseFromJson(
+SessionAccessResponse _$SessionAccessResponseFromJson(
         Map<String, dynamic> json) =>
-    SessionOrderResponse(
+    SessionAccessResponse(
       orderId: json['order_id'] as String,
       amount: json['amount'] as num,
       currency: json['currency'] as String,
-      session:
-          SessionOrderDetails.fromJson(json['session'] as Map<String, dynamic>),
+      session: SessionAccessDetails.fromJson(
+          json['session'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$SessionOrderResponseToJson(
-        SessionOrderResponse instance) =>
+Map<String, dynamic> _$SessionAccessResponseToJson(
+        SessionAccessResponse instance) =>
     <String, dynamic>{
       'order_id': instance.orderId,
       'amount': instance.amount,
@@ -82,15 +80,16 @@ Map<String, dynamic> _$SessionOrderResponseToJson(
       'session': instance.session,
     };
 
-SessionOrderDetails _$SessionOrderDetailsFromJson(Map<String, dynamic> json) =>
-    SessionOrderDetails(
+SessionAccessDetails _$SessionAccessDetailsFromJson(
+        Map<String, dynamic> json) =>
+    SessionAccessDetails(
       sessionId: json['session_id'] as String,
       title: json['title'] as String,
       scheduledStartTime: json['scheduled_start_time'] as String,
     );
 
-Map<String, dynamic> _$SessionOrderDetailsToJson(
-        SessionOrderDetails instance) =>
+Map<String, dynamic> _$SessionAccessDetailsToJson(
+        SessionAccessDetails instance) =>
     <String, dynamic>{
       'session_id': instance.sessionId,
       'title': instance.title,

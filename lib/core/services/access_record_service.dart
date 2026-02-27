@@ -2,14 +2,14 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:pgme/core/constants/api_constants.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 
-class SubscriptionService {
+class AccessRecordService {
   final ApiService _apiService = ApiService();
 
-  /// Get user's purchase history
-  Future<List<PurchaseModel>> getUserPurchases({
+  /// Get user's access record history
+  Future<List<AccessRecordModel>> getUserRecords({
     bool? isActive,
     String? paymentStatus,
     int limit = 20,
@@ -26,43 +26,43 @@ class SubscriptionService {
       }
 
       final response = await _apiService.dio.get(
-        ApiConstants.purchases,
+        ApiConstants.activeUserRecords,
         queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final purchasesData = response.data['data']['purchases'] as List;
-        return purchasesData
-            .map((json) => PurchaseModel.fromJson(json))
+        final recordsData = response.data['data']['purchases'] as List;
+        return recordsData
+            .map((json) => AccessRecordModel.fromJson(json))
             .toList();
       }
-      throw Exception('Failed to load purchases');
+      throw Exception('Failed to load access records');
     } catch (e) {
-      throw Exception('Failed to load purchases: $e');
+      throw Exception('Failed to load access records: $e');
     }
   }
 
-  /// Get all user purchases (packages, books, sessions, invoices)
-  Future<AllPurchasesData> getAllPurchases() async {
+  /// Get all user records (packages, books, sessions, records)
+  Future<AllRecordsData> getAllRecords() async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.allPurchases,
+        ApiConstants.activeAllRecords,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        return AllPurchasesData.fromJson(response.data['data']);
+        return AllRecordsData.fromJson(response.data['data']);
       }
-      throw Exception('Failed to load purchases');
+      throw Exception('Failed to load records');
     } catch (e) {
-      throw Exception('Failed to load purchases: $e');
+      throw Exception('Failed to load records: $e');
     }
   }
 
-  /// Get invoice details by purchase ID
-  Future<InvoiceItem> getInvoiceByPurchaseId(String purchaseId) async {
+  /// Get record details by record ID
+  Future<InvoiceItem> getRecordByPurchaseId(String purchaseId) async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.invoiceByPurchase(purchaseId),
+        ApiConstants.activeRecordExport(purchaseId),
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -78,66 +78,66 @@ class SubscriptionService {
           createdAt: inv['created_at'],
         );
       }
-      throw Exception('Invoice not found');
+      throw Exception('Record not found');
     } catch (e) {
-      throw Exception('Failed to load invoice: $e');
+      throw Exception('Failed to load record: $e');
     }
   }
 
-  /// Download invoice PDF as bytes
-  Future<Uint8List> downloadInvoicePdf(String invoiceId) async {
+  /// Download record PDF as bytes
+  Future<Uint8List> downloadRecordPdf(String invoiceId) async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.invoicePdf(invoiceId),
+        ApiConstants.activeRecordPdf(invoiceId),
         options: Options(responseType: ResponseType.bytes),
       );
 
       if (response.statusCode == 200) {
         return Uint8List.fromList(response.data);
       }
-      throw Exception('Failed to download invoice PDF');
+      throw Exception('Failed to download record PDF');
     } catch (e) {
-      throw Exception('Failed to download invoice PDF: $e');
+      throw Exception('Failed to download record PDF: $e');
     }
   }
 
-  /// Get subscription status (theory/practical)
-  Future<SubscriptionStatus> getSubscriptionStatus() async {
+  /// Get access level (theory/practical)
+  Future<AccessLevel> getAccessLevel() async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.subscriptionStatus,
+        ApiConstants.activeAccessLevel,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        return SubscriptionStatus.fromJson(response.data['data']);
+        return AccessLevel.fromJson(response.data['data']);
       }
-      throw Exception('Failed to load subscription status');
+      throw Exception('Failed to load access level');
     } catch (e) {
-      throw Exception('Failed to load subscription status: $e');
+      throw Exception('Failed to load access level: $e');
     }
   }
 }
 
-/// Subscription status model
-class SubscriptionStatus {
+/// Access level model
+class AccessLevel {
   final bool hasTheory;
   final bool hasPractical;
   final bool hasBoth;
   final List<ActivePackageInfo> theoryPackages;
   final List<ActivePackageInfo> practicalPackages;
-  final int totalActiveSubscriptions;
+  final int totalActiveRecords;
 
-  SubscriptionStatus({
+  AccessLevel({
     required this.hasTheory,
     required this.hasPractical,
     required this.hasBoth,
     required this.theoryPackages,
     required this.practicalPackages,
-    required this.totalActiveSubscriptions,
+    required this.totalActiveRecords,
   });
 
-  factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
-    return SubscriptionStatus(
+  factory AccessLevel.fromJson(Map<String, dynamic> json) {
+    return AccessLevel(
       hasTheory: json['has_theory'] ?? false,
       hasPractical: json['has_practical'] ?? false,
       hasBoth: json['has_both'] ?? false,
@@ -147,7 +147,7 @@ class SubscriptionStatus {
       practicalPackages: (json['practical_packages'] as List? ?? [])
           .map((e) => ActivePackageInfo.fromJson(e))
           .toList(),
-      totalActiveSubscriptions: json['total_active_subscriptions'] ?? 0,
+      totalActiveRecords: json['total_active_subscriptions'] ?? 0,
     );
   }
 
@@ -156,7 +156,7 @@ class SubscriptionStatus {
       [...theoryPackages, ...practicalPackages];
 }
 
-/// Active package info from subscription status
+/// Active package info from access level
 class ActivePackageInfo {
   final String purchaseId;
   final String packageId;
@@ -189,15 +189,15 @@ class ActivePackageInfo {
   }
 }
 
-/// All purchases data from unified endpoint
-class AllPurchasesData {
-  final List<PackagePurchaseItem> packages;
-  final List<SessionPurchaseItem> liveSessions;
-  final List<BookOrderItem> books;
+/// All records data from unified endpoint
+class AllRecordsData {
+  final List<PackageRecordItem> packages;
+  final List<SessionRecordItem> liveSessions;
+  final List<BookRequestItem> books;
   final List<InvoiceItem> invoices;
-  final PurchaseSummary summary;
+  final RecordSummary summary;
 
-  AllPurchasesData({
+  AllRecordsData({
     required this.packages,
     required this.liveSessions,
     required this.books,
@@ -205,21 +205,21 @@ class AllPurchasesData {
     required this.summary,
   });
 
-  factory AllPurchasesData.fromJson(Map<String, dynamic> json) {
-    return AllPurchasesData(
+  factory AllRecordsData.fromJson(Map<String, dynamic> json) {
+    return AllRecordsData(
       packages: (json['packages'] as List? ?? [])
-          .map((e) => PackagePurchaseItem.fromJson(e))
+          .map((e) => PackageRecordItem.fromJson(e))
           .toList(),
       liveSessions: (json['live_sessions'] as List? ?? [])
-          .map((e) => SessionPurchaseItem.fromJson(e))
+          .map((e) => SessionRecordItem.fromJson(e))
           .toList(),
       books: (json['books'] as List? ?? [])
-          .map((e) => BookOrderItem.fromJson(e))
+          .map((e) => BookRequestItem.fromJson(e))
           .toList(),
       invoices: (json['invoices'] as List? ?? [])
           .map((e) => InvoiceItem.fromJson(e))
           .toList(),
-      summary: PurchaseSummary.fromJson(json['summary'] ?? {}),
+      summary: RecordSummary.fromJson(json['summary'] ?? {}),
     );
   }
 
@@ -230,7 +230,7 @@ class AllPurchasesData {
       invoices.isEmpty;
 }
 
-class PackagePurchaseItem {
+class PackageRecordItem {
   final String purchaseId;
   final String packageId;
   final String name;
@@ -246,7 +246,7 @@ class PackagePurchaseItem {
   final String? tierName;
   final bool isUpgrade;
 
-  PackagePurchaseItem({
+  PackageRecordItem({
     required this.purchaseId,
     required this.packageId,
     required this.name,
@@ -263,8 +263,8 @@ class PackagePurchaseItem {
     this.isUpgrade = false,
   });
 
-  factory PackagePurchaseItem.fromJson(Map<String, dynamic> json) {
-    return PackagePurchaseItem(
+  factory PackageRecordItem.fromJson(Map<String, dynamic> json) {
+    return PackageRecordItem(
       purchaseId: json['purchase_id'] ?? '',
       packageId: json['package_id'] ?? '',
       name: json['name'] ?? '',
@@ -283,7 +283,7 @@ class PackagePurchaseItem {
   }
 }
 
-class SessionPurchaseItem {
+class SessionRecordItem {
   final String purchaseId;
   final String name;
   final String? sessionStatus;
@@ -294,7 +294,7 @@ class SessionPurchaseItem {
   final String? purchasedAt;
   final bool isActive;
 
-  SessionPurchaseItem({
+  SessionRecordItem({
     required this.purchaseId,
     required this.name,
     this.sessionStatus,
@@ -306,8 +306,8 @@ class SessionPurchaseItem {
     required this.isActive,
   });
 
-  factory SessionPurchaseItem.fromJson(Map<String, dynamic> json) {
-    return SessionPurchaseItem(
+  factory SessionRecordItem.fromJson(Map<String, dynamic> json) {
+    return SessionRecordItem(
       purchaseId: json['purchase_id'] ?? '',
       name: json['name'] ?? '',
       sessionStatus: json['session_status'],
@@ -321,10 +321,10 @@ class SessionPurchaseItem {
   }
 }
 
-class BookOrderItem {
+class BookRequestItem {
   final String orderId;
   final String orderNumber;
-  final List<BookOrderItemDetail> items;
+  final List<BookRequestItemDetail> items;
   final int itemsCount;
   final num totalAmount;
   final String orderStatus;
@@ -332,7 +332,7 @@ class BookOrderItem {
   final String? courierName;
   final String? purchasedAt;
 
-  BookOrderItem({
+  BookRequestItem({
     required this.orderId,
     required this.orderNumber,
     required this.items,
@@ -344,12 +344,12 @@ class BookOrderItem {
     this.purchasedAt,
   });
 
-  factory BookOrderItem.fromJson(Map<String, dynamic> json) {
-    return BookOrderItem(
+  factory BookRequestItem.fromJson(Map<String, dynamic> json) {
+    return BookRequestItem(
       orderId: json['order_id'] ?? '',
       orderNumber: json['order_number'] ?? '',
       items: (json['items'] as List? ?? [])
-          .map((e) => BookOrderItemDetail.fromJson(e))
+          .map((e) => BookRequestItemDetail.fromJson(e))
           .toList(),
       itemsCount: json['items_count'] ?? 0,
       totalAmount: json['total_amount'] ?? 0,
@@ -361,19 +361,19 @@ class BookOrderItem {
   }
 }
 
-class BookOrderItemDetail {
+class BookRequestItemDetail {
   final String title;
   final int quantity;
   final num price;
 
-  BookOrderItemDetail({
+  BookRequestItemDetail({
     required this.title,
     required this.quantity,
     required this.price,
   });
 
-  factory BookOrderItemDetail.fromJson(Map<String, dynamic> json) {
-    return BookOrderItemDetail(
+  factory BookRequestItemDetail.fromJson(Map<String, dynamic> json) {
+    return BookRequestItemDetail(
       title: json['title'] ?? '',
       quantity: json['quantity'] ?? 1,
       price: json['price'] ?? 0,
@@ -419,24 +419,24 @@ class InvoiceItem {
   }
 }
 
-class PurchaseSummary {
+class RecordSummary {
   final int totalPackages;
   final int totalSessions;
-  final int totalBookOrders;
+  final int totalBookRequests;
   final int totalInvoices;
 
-  PurchaseSummary({
+  RecordSummary({
     required this.totalPackages,
     required this.totalSessions,
-    required this.totalBookOrders,
+    required this.totalBookRequests,
     required this.totalInvoices,
   });
 
-  factory PurchaseSummary.fromJson(Map<String, dynamic> json) {
-    return PurchaseSummary(
+  factory RecordSummary.fromJson(Map<String, dynamic> json) {
+    return RecordSummary(
       totalPackages: json['total_packages'] ?? 0,
       totalSessions: json['total_sessions'] ?? 0,
-      totalBookOrders: json['total_book_orders'] ?? 0,
+      totalBookRequests: json['total_book_orders'] ?? 0,
       totalInvoices: json['total_invoices'] ?? 0,
     );
   }

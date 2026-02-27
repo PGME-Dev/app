@@ -1,17 +1,19 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/api_service.dart';
-import 'package:pgme/core/services/session_purchase_service.dart';
+import 'package:pgme/core/services/session_access_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/zoom_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 
 // Enrollment status model
 class EnrollmentStatus {
@@ -90,7 +92,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
   final ApiService _apiService = ApiService();
   final UserService _userService = UserService();
   final ZoomMeetingService _zoomService = ZoomMeetingService();
-  final SessionPurchaseService _sessionPurchaseService = SessionPurchaseService();
+  final SessionAccessService _sessionPurchaseService = SessionAccessService();
 
   List<LiveSessionModel> _allSessions = [];
   Map<String, EnrollmentStatus> _enrollmentStatuses = {};
@@ -272,6 +274,16 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
   }
 
   Future<void> _initiatePayment(LiveSessionModel session) async {
+    // iOS: redirect to web store
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'sessions',
+        productId: session.sessionId,
+      );
+      return;
+    }
+
     debugPrint('');
     debugPrint('═══════════════════════════════════════════════════════════');
     debugPrint('[TEST] Initiating payment for: ${session.title}');
@@ -284,7 +296,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
     try {
       // Step 1: Create Zoho payment session
       debugPrint('[TEST] Step 1: Creating Zoho payment session...');
-      final paymentSession = await _sessionPurchaseService.createPaymentSession(
+      final paymentSession = await _sessionPurchaseService.initSession(
         session.sessionId,
       );
 
@@ -301,16 +313,16 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
 
       // Show info if continuing existing payment
       if (paymentSession.isExisting) {
-        _showInfo('Continuing your pending payment session');
+        _showInfo(Platform.isIOS ? 'Continuing your pending session' : 'Continuing your pending payment session');
         await Future.delayed(const Duration(milliseconds: 800));
         if (!mounted) return;
       }
 
       // Step 2: Show Zoho payment widget
       debugPrint('[TEST] Step 2: Showing Zoho payment widget...');
-      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final result = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               debugPrint('[TEST] Payment widget completed with status: ${response.status}');
@@ -333,7 +345,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
           debugPrint('[TEST] Payment successful! Verifying with backend...');
 
           // Verify payment with backend
-          final verification = await _sessionPurchaseService.verifyZohoPayment(
+          final verification = await _sessionPurchaseService.confirmSession(
             sessionId: session.sessionId,
             paymentSessionId: result.paymentSessionId!,
             paymentId: result.paymentId!,
@@ -353,21 +365,21 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
             setState(() => _isProcessingPayment = false);
 
             _showSuccess(
-              'Payment successful! You are now enrolled in ${session.title}',
+              Platform.isIOS ? 'You now have access to ${session.title}' : 'Payment successful! You are now enrolled in ${session.title}',
             );
 
             debugPrint('[TEST] ✓ Payment flow completed successfully');
             debugPrint('═══════════════════════════════════════════════════════════');
             debugPrint('');
           } else if (mounted) {
-            _showError('Payment verification failed. Please contact support.');
+            _showError(Platform.isIOS ? 'Verification failed. Please contact support.' : 'Payment verification failed. Please contact support.');
           }
         } else if (result.isFailed) {
           debugPrint('[TEST] Payment failed: ${result.errorMessage}');
-          _showError('Payment failed: ${result.errorMessage ?? "Unknown error"}');
+          _showError(Platform.isIOS ? 'Failed: ${result.errorMessage ?? "Unknown error"}' : 'Payment failed: ${result.errorMessage ?? "Unknown error"}');
         } else if (result.isCancelled) {
           debugPrint('[TEST] Payment cancelled by user');
-          _showInfo('Payment cancelled');
+          _showInfo(Platform.isIOS ? 'Cancelled' : 'Payment cancelled');
         }
       } else {
         debugPrint('[TEST] No payment response received (user closed widget)');
@@ -377,7 +389,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
       debugPrint('═══════════════════════════════════════════════════════════');
       debugPrint('');
       if (mounted) {
-        _showError('Error processing payment: ${e.toString().replaceAll('Exception: ', '')}');
+        _showError(Platform.isIOS ? 'Error: ${e.toString().replaceAll('Exception: ', '')}' : 'Error processing payment: ${e.toString().replaceAll('Exception: ', '')}');
       }
     } finally {
       if (mounted) {
@@ -919,20 +931,22 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
                   style: TextStyle(fontSize: 13, color: secondaryTextColor),
                 ),
                 const SizedBox(width: 16),
-                Icon(
-                  session.isFree ? Icons.check_circle : Icons.currency_rupee,
-                  size: 16,
-                  color: secondaryTextColor,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  session.isFree ? 'Free' : '₹${session.price}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: session.isFree ? Colors.green : secondaryTextColor,
-                    fontWeight: session.isFree ? FontWeight.bold : FontWeight.normal,
+                if (!Platform.isIOS || session.isFree) ...[
+                  Icon(
+                    session.isFree ? Icons.check_circle : Icons.currency_rupee,
+                    size: 16,
+                    color: secondaryTextColor,
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  Text(
+                    session.isFree ? 'Free' : '₹${session.price}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: session.isFree ? Colors.green : secondaryTextColor,
+                      fontWeight: session.isFree ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
                 // Capacity Info
                 if (capacityInfo != null) ...[
                   const SizedBox(width: 16),
@@ -955,13 +969,13 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
             // Action Buttons
             Row(
               children: [
-                // Buy Session Button (for paid sessions that are not enrolled)
+                // Get Access Button (for paid sessions that are not enrolled)
                 if (_shouldShowEnrollButton(session) && !session.isFree)
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _initiatePayment(session),
-                      icon: const Icon(Icons.shopping_cart, size: 20),
-                      label: Text('Buy Session - ₹${session.price}'),
+                      icon: Icon(WebStoreLauncher.shouldUseWebStore ? Icons.open_in_new : Icons.shopping_cart, size: 20),
+                      label: Text(WebStoreLauncher.shouldUseWebStore ? 'Get Access' : 'Buy Session - ₹${session.price}'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
@@ -1018,7 +1032,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
             // Debug info
             const SizedBox(height: 8),
             Text(
-              'ID: ${session.sessionId.substring(0, 8)}... | Mode: $enrollmentMode | ${session.isFree ? 'FREE' : 'PAID ₹${session.price}'}',
+              'ID: ${session.sessionId.substring(0, 8)}... | Mode: $enrollmentMode | ${session.isFree ? 'FREE' : (Platform.isIOS ? 'PAID' : 'PAID ₹${session.price}')}',
               style: TextStyle(
                 fontSize: 10,
                 color: secondaryTextColor.withValues(alpha: 0.6),

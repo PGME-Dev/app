@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/models/book_order_model.dart';
+import 'package:pgme/core/models/book_request_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
-class BookOrderConfirmationScreen extends StatefulWidget {
-  final String orderId;
+class BookRequestConfirmationScreen extends StatefulWidget {
+  final String requestId;
 
-  const BookOrderConfirmationScreen({
+  const BookRequestConfirmationScreen({
     super.key,
-    required this.orderId,
+    required this.requestId,
   });
 
   @override
-  State<BookOrderConfirmationScreen> createState() =>
-      _BookOrderConfirmationScreenState();
+  State<BookRequestConfirmationScreen> createState() =>
+      _BookRequestConfirmationScreenState();
 }
 
-class _BookOrderConfirmationScreenState
-    extends State<BookOrderConfirmationScreen> {
-  BookOrderModel? _order;
+class _BookRequestConfirmationScreenState
+    extends State<BookRequestConfirmationScreen> {
+  BookRequestModel? _order;
   bool _isLoading = true;
   String? _error;
 
@@ -35,7 +35,7 @@ class _BookOrderConfirmationScreenState
   Future<void> _loadOrder() async {
     try {
       final provider = Provider.of<BookProvider>(context, listen: false);
-      final order = await provider.getOrderById(widget.orderId);
+      final order = await provider.getOrderById(widget.requestId);
       if (mounted) {
         setState(() {
           _order = order;
@@ -280,7 +280,7 @@ class _BookOrderConfirmationScreenState
                     width: double.infinity,
                     height: isTablet ? 60 : 50,
                     child: ElevatedButton(
-                      onPressed: () => context.push('/book-orders'),
+                      onPressed: () => context.push('/book-requests'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
                         foregroundColor: Colors.white,

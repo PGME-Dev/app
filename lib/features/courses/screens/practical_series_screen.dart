@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -135,7 +136,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
 
     if (shouldEnroll == true && mounted && _selectedPackage != null) {
-      context.push('/purchase?packageId=${_selectedPackage!.packageId}&packageType=Practical');
+      context.push('/package-access?packageId=${_selectedPackage!.packageId}&packageType=Practical');
     }
   }
 
@@ -1154,37 +1155,39 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                 children: [
                   Row(
                     children: [
-                      if (pkg.isOnSale && pkg.salePrice != null) ...[
-                        Text(
-                          '₹${pkg.salePrice}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            fontSize: isTablet ? 30 : 24,
-                            color: textColor,
+                      if (!Platform.isIOS) ...[
+                        if (pkg.isOnSale && pkg.salePrice != null) ...[
+                          Text(
+                            '₹${pkg.salePrice}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTablet ? 30 : 24,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '₹${pkg.price}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: isTablet ? 18 : 16,
-                            decoration: TextDecoration.lineThrough,
-                            color: secondaryTextColor,
+                          const SizedBox(width: 8),
+                          Text(
+                            '₹${pkg.price}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: isTablet ? 18 : 16,
+                              decoration: TextDecoration.lineThrough,
+                              color: secondaryTextColor,
+                            ),
                           ),
-                        ),
-                      ] else
-                        Text(
-                          '₹${pkg.price}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            fontSize: isTablet ? 30 : 24,
-                            color: textColor,
+                        ] else
+                          Text(
+                            '₹${pkg.price}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTablet ? 30 : 24,
+                              color: textColor,
+                            ),
                           ),
-                        ),
+                      ],
                       if (pkg.durationDays != null) ...[
                         const SizedBox(width: 8),
                         Text(
@@ -1205,7 +1208,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     height: isTablet ? 60 : 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/purchase?packageId=${pkg.packageId}&packageType=Practical');
+                        context.push('/package-access?packageId=${pkg.packageId}&packageType=Practical');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1),
@@ -1527,7 +1530,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               // Price + action row
               Row(
                 children: [
-                  if (!isPurchased) ...[
+                  if (!isPurchased && !Platform.isIOS) ...[
                     if (package.isOnSale && package.salePrice != null) ...[
                       Text(
                         '₹${package.salePrice}',
@@ -1850,7 +1853,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                       SizedBox(height: isTablet ? 12 : 8),
                       Row(
                         children: [
-                          Text('₹$displayPrice', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: priceSize, color: textColor)),
+                          if (!Platform.isIOS) Text('₹$displayPrice', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: priceSize, color: textColor)),
                           if (pkg.durationDays != null) ...[
                             SizedBox(width: isTablet ? 10 : 8),
                             Text('/ ${_formatDuration(pkg.durationDays!)}', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, fontSize: durationSize, color: secondaryTextColor)),

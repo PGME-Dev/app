@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -5,12 +6,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/book_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/services/book_service.dart';
-import 'package:pgme/core/services/ebook_order_service.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
-import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/services/ebook_access_service.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
+import 'package:pgme/core/widgets/address_bottom_sheet.dart';
+import 'package:pgme/core/models/address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
@@ -25,7 +26,7 @@ class EbookListScreen extends StatefulWidget {
 
 class _EbookListScreenState extends State<EbookListScreen> {
   final BookService _bookService = BookService();
-  final EbookOrderService _ebookOrderService = EbookOrderService();
+  final EbookAccessService _ebookOrderService = EbookAccessService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -112,7 +113,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
   Future<void> _loadPurchasedEbooks() async {
     try {
-      final purchased = await _ebookOrderService.getUserPurchasedEbooks();
+      final purchased = await _ebookOrderService.getUserAccessibleEbooks();
       if (mounted) {
         setState(() {
           _purchasedBookIds = purchased.map((e) => e.bookId).toSet();
@@ -124,6 +125,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
   }
 
   String _formatPrice(int price) {
+    if (Platform.isIOS) return '';
     return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
@@ -153,17 +155,17 @@ class _EbookListScreenState extends State<EbookListScreen> {
     if (shouldBuy != true || !mounted) return;
 
     // Show billing address bottom sheet before payment
-    BillingAddress? savedAddress;
+    Address? savedAddress;
     try {
       final user = await UserService().getProfile();
       if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
-        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+        savedAddress = Address.fromJson(user.billingAddress!);
       }
     } catch (_) {}
 
     if (!mounted) return;
 
-    final addressResult = await showBillingAddressSheet(
+    final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
     );
@@ -175,7 +177,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
     try {
       // Step 1: Create payment session
-      final paymentSession = await _ebookOrderService.createPaymentSession(
+      final paymentSession = await _ebookOrderService.initSession(
         book.bookId,
         billingAddress: billingAddress.toJson(),
       );
@@ -183,9 +185,9 @@ class _EbookListScreenState extends State<EbookListScreen> {
       if (!mounted) return;
 
       // Step 2: Show Zoho payment widget
-      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final result = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               Navigator.pop(context, response);
@@ -198,7 +200,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
       // Step 3: Handle payment response
       if (result != null && mounted) {
         if (result.isSuccess) {
-          final verification = await _ebookOrderService.verifyPayment(
+          final verification = await _ebookOrderService.confirmSession(
             paymentSessionId: result.paymentSessionId!,
             paymentId: result.paymentId!,
             signature: result.signature,
@@ -209,14 +211,14 @@ class _EbookListScreenState extends State<EbookListScreen> {
               _purchasedBookIds.add(book.bookId);
               _isPurchasing = false;
             });
-            _showSuccess('eBook purchased successfully!');
+            _showSuccess(Platform.isIOS ? 'eBook unlocked successfully!' : 'eBook purchased successfully!');
           } else if (mounted) {
-            _showError('Payment verification failed. Please contact support.');
+            _showError(Platform.isIOS ? 'Verification failed. Please contact support.' : 'Payment verification failed. Please contact support.');
           }
         } else if (result.isFailed) {
-          _showError('Payment failed: ${result.errorMessage ?? "Unknown error"}');
+          _showError(Platform.isIOS ? 'Failed: ${result.errorMessage ?? "Unknown error"}' : 'Payment failed: ${result.errorMessage ?? "Unknown error"}');
         } else if (result.isCancelled) {
-          _showInfo('Payment cancelled');
+          _showInfo(Platform.isIOS ? 'Cancelled' : 'Payment cancelled');
         }
       }
     } catch (e) {
@@ -474,7 +476,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            'Buy Now',
+                            Platform.isIOS ? 'Get Access' : 'Buy Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
@@ -988,7 +990,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
                                 padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12),
                               ),
                               child: Text(
-                                'Buy',
+                                Platform.isIOS ? 'Get' : 'Buy',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,

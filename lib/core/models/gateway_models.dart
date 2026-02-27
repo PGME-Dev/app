@@ -1,7 +1,7 @@
-/// Zoho Payments Models for PGME
-/// These models handle Zoho payment session creation, responses, and verification
+/// Gateway Payment Models for PGME
+/// These models handle Gateway payment session creation, responses, and verification
 
-class ZohoPaymentSession {
+class GatewaySession {
   final String paymentSessionId;
   final num amount;
   final String currency;
@@ -10,7 +10,7 @@ class ZohoPaymentSession {
   final bool isExisting; // Flag indicating if this is an existing pending payment
   final String? createdAt; // When the payment session was created
 
-  ZohoPaymentSession({
+  GatewaySession({
     required this.paymentSessionId,
     required this.amount,
     required this.currency,
@@ -20,8 +20,8 @@ class ZohoPaymentSession {
     this.createdAt,
   });
 
-  factory ZohoPaymentSession.fromJson(Map<String, dynamic> json) {
-    return ZohoPaymentSession(
+  factory GatewaySession.fromJson(Map<String, dynamic> json) {
+    return GatewaySession(
       paymentSessionId: json['payment_session_id'] as String,
       amount: json['amount'] as num,
       currency: json['currency'] as String,
@@ -45,14 +45,14 @@ class ZohoPaymentSession {
   }
 }
 
-class ZohoPaymentResponse {
+class GatewayResponse {
   final String status; // 'success', 'failed', 'cancelled'
   final String? paymentId;
   final String? paymentSessionId;
   final String? signature;
   final String? errorMessage;
 
-  ZohoPaymentResponse({
+  GatewayResponse({
     required this.status,
     this.paymentId,
     this.paymentSessionId,
@@ -64,8 +64,8 @@ class ZohoPaymentResponse {
   bool get isFailed => status == 'failed';
   bool get isCancelled => status == 'cancelled';
 
-  factory ZohoPaymentResponse.fromJson(Map<String, dynamic> json) {
-    return ZohoPaymentResponse(
+  factory GatewayResponse.fromJson(Map<String, dynamic> json) {
+    return GatewayResponse(
       status: json['status'] as String,
       paymentId: json['payment_id'] as String?,
       paymentSessionId: json['payment_session_id'] as String?,
@@ -85,21 +85,21 @@ class ZohoPaymentResponse {
   }
 }
 
-class ZohoVerificationResponse {
+class GatewayVerificationResponse {
   final bool success;
   final String purchaseId;
   final String? expiresAt;
   final String message;
 
-  ZohoVerificationResponse({
+  GatewayVerificationResponse({
     required this.success,
     required this.purchaseId,
     this.expiresAt,
     required this.message,
   });
 
-  factory ZohoVerificationResponse.fromJson(Map<String, dynamic> json) {
-    return ZohoVerificationResponse(
+  factory GatewayVerificationResponse.fromJson(Map<String, dynamic> json) {
+    return GatewayVerificationResponse(
       success: json['success'] as bool,
       purchaseId: json['purchase_id'] as String,
       expiresAt: json['expires_at'] as String?,

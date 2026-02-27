@@ -1,32 +1,33 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/package_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
-import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
+import 'package:pgme/core/widgets/address_bottom_sheet.dart';
+import 'package:pgme/core/models/address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
-import 'package:pgme/features/purchase/widgets/upgrade_bottom_sheet.dart';
+import 'package:pgme/features/purchase/widgets/tier_change_sheet.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
-class PurchaseScreen extends StatefulWidget {
+class PackageAccessScreen extends StatefulWidget {
   final String? packageId;
   final String? packageType; // 'Theory' or 'Practical'
 
-  const PurchaseScreen({super.key, this.packageId, this.packageType});
+  const PackageAccessScreen({super.key, this.packageId, this.packageType});
 
   @override
-  State<PurchaseScreen> createState() => _PurchaseScreenState();
+  State<PackageAccessScreen> createState() => _PackageAccessScreenState();
 }
 
-class _PurchaseScreenState extends State<PurchaseScreen> {
+class _PackageAccessScreenState extends State<PackageAccessScreen> {
   bool _isProcessing = false;
   bool _isLoading = true;
   PackageModel? _package;
@@ -104,6 +105,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   }
 
   String _formatPrice(int price) {
+    if (Platform.isIOS) return '';
     return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
@@ -678,17 +680,17 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     if (_package == null) return;
 
     // Show billing address bottom sheet before payment
-    BillingAddress? savedAddress;
+    Address? savedAddress;
     try {
       final user = await UserService().getProfile();
       if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
-        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+        savedAddress = Address.fromJson(user.billingAddress!);
       }
     } catch (_) {}
 
     if (!mounted) return;
 
-    final addressResult = await showBillingAddressSheet(
+    final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
     );
@@ -710,9 +712,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       if (!mounted) return;
 
       // Step 2: Show Zoho payment widget
-      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final result = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               Navigator.pop(context, response);
@@ -735,7 +737,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           if (verification.success && mounted) {
             setState(() => _isProcessing = false);
             // Navigate to congratulations screen with purchase ID
-            context.go('/congratulations?purchaseId=${verification.purchaseId}');
+            context.go('/success?purchaseId=${verification.purchaseId}');
           } else if (mounted) {
             _showError('Payment verification failed. Please contact support.');
           }
@@ -770,7 +772,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final currentIdx = package.currentTier?.tierIndex ?? package.currentTierIndex;
     if (currentIdx == null) return;
 
-    final result = await showUpgradeBottomSheet(
+    final result = await showTierChangeSheet(
       context,
       package: package,
       currentTierIndex: currentIdx,

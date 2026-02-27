@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -70,6 +71,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   String _formatPrice(int price) {
+    if (Platform.isIOS) return '';
     return '₹${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
@@ -137,7 +139,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       );
     } else {
       context.pop();
-      context.push('/purchase?packageId=${package.packageId}');
+      context.push('/package-access?packageId=${package.packageId}');
     }
   }
 

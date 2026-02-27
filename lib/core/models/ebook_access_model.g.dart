@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ebook_purchase_model.dart';
+part of 'ebook_access_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-EbookPurchaseModel _$EbookPurchaseModelFromJson(Map<String, dynamic> json) =>
-    EbookPurchaseModel(
+EbookAccessModel _$EbookAccessModelFromJson(Map<String, dynamic> json) =>
+    EbookAccessModel(
       purchaseId: json['purchase_id'] as String,
       bookId: json['book_id'] as String,
       title: json['title'] as String,
@@ -20,7 +20,7 @@ EbookPurchaseModel _$EbookPurchaseModelFromJson(Map<String, dynamic> json) =>
       purchasedAt: json['purchased_at'] as String?,
     );
 
-Map<String, dynamic> _$EbookPurchaseModelToJson(EbookPurchaseModel instance) =>
+Map<String, dynamic> _$EbookAccessModelToJson(EbookAccessModel instance) =>
     <String, dynamic>{
       'purchase_id': instance.purchaseId,
       'book_id': instance.bookId,

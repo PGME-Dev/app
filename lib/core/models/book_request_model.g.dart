@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'book_order_model.dart';
+part of 'book_request_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-BookOrderModel _$BookOrderModelFromJson(Map<String, dynamic> json) =>
-    BookOrderModel(
+BookRequestModel _$BookRequestModelFromJson(Map<String, dynamic> json) =>
+    BookRequestModel(
       orderId: json['order_id'] as String,
       orderNumber: json['order_number'] as String,
       itemsCount: (json['items_count'] as num).toInt(),
@@ -18,7 +18,7 @@ BookOrderModel _$BookOrderModelFromJson(Map<String, dynamic> json) =>
       courierName: json['courier_name'] as String?,
       createdAt: json['created_at'] as String,
       items: (json['items'] as List<dynamic>?)
-          ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => RequestItemModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       recipientName: json['recipient_name'] as String?,
       shippingPhone: json['shipping_phone'] as String?,
@@ -30,7 +30,7 @@ BookOrderModel _$BookOrderModelFromJson(Map<String, dynamic> json) =>
       notes: json['notes'] as String?,
     );
 
-Map<String, dynamic> _$BookOrderModelToJson(BookOrderModel instance) =>
+Map<String, dynamic> _$BookRequestModelToJson(BookRequestModel instance) =>
     <String, dynamic>{
       'order_id': instance.orderId,
       'order_number': instance.orderNumber,
@@ -52,8 +52,8 @@ Map<String, dynamic> _$BookOrderModelToJson(BookOrderModel instance) =>
       'notes': instance.notes,
     };
 
-OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
-    OrderItemModel(
+RequestItemModel _$RequestItemModelFromJson(Map<String, dynamic> json) =>
+    RequestItemModel(
       bookId: json['book_id'] as String,
       title: json['title'] as String,
       author: json['author'] as String?,
@@ -62,7 +62,7 @@ OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
       price: json['price'] as num,
     );
 
-Map<String, dynamic> _$OrderItemModelToJson(OrderItemModel instance) =>
+Map<String, dynamic> _$RequestItemModelToJson(RequestItemModel instance) =>
     <String, dynamic>{
       'book_id': instance.bookId,
       'title': instance.title,
@@ -72,17 +72,18 @@ Map<String, dynamic> _$OrderItemModelToJson(OrderItemModel instance) =>
       'price': instance.price,
     };
 
-BookOrderResponse _$BookOrderResponseFromJson(Map<String, dynamic> json) =>
-    BookOrderResponse(
+BookRequestResponse _$BookRequestResponseFromJson(Map<String, dynamic> json) =>
+    BookRequestResponse(
       orderId: json['order_id'] as String,
       razorpayOrderId: json['razorpay_order_id'] as String,
       amount: json['amount'] as num,
       currency: json['currency'] as String,
-      orderSummary:
-          OrderSummary.fromJson(json['order_summary'] as Map<String, dynamic>),
+      orderSummary: RequestSummary.fromJson(
+          json['order_summary'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$BookOrderResponseToJson(BookOrderResponse instance) =>
+Map<String, dynamic> _$BookRequestResponseToJson(
+        BookRequestResponse instance) =>
     <String, dynamic>{
       'order_id': instance.orderId,
       'razorpay_order_id': instance.razorpayOrderId,
@@ -91,16 +92,17 @@ Map<String, dynamic> _$BookOrderResponseToJson(BookOrderResponse instance) =>
       'order_summary': instance.orderSummary,
     };
 
-OrderSummary _$OrderSummaryFromJson(Map<String, dynamic> json) => OrderSummary(
+RequestSummary _$RequestSummaryFromJson(Map<String, dynamic> json) =>
+    RequestSummary(
       items: (json['items'] as List<dynamic>)
-          .map((e) => OrderSummaryItem.fromJson(e as Map<String, dynamic>))
+          .map((e) => RequestSummaryItem.fromJson(e as Map<String, dynamic>))
           .toList(),
       subtotal: json['subtotal'] as num,
       shippingCost: json['shipping_cost'] as num,
       total: json['total'] as num,
     );
 
-Map<String, dynamic> _$OrderSummaryToJson(OrderSummary instance) =>
+Map<String, dynamic> _$RequestSummaryToJson(RequestSummary instance) =>
     <String, dynamic>{
       'items': instance.items,
       'subtotal': instance.subtotal,
@@ -108,15 +110,15 @@ Map<String, dynamic> _$OrderSummaryToJson(OrderSummary instance) =>
       'total': instance.total,
     };
 
-OrderSummaryItem _$OrderSummaryItemFromJson(Map<String, dynamic> json) =>
-    OrderSummaryItem(
+RequestSummaryItem _$RequestSummaryItemFromJson(Map<String, dynamic> json) =>
+    RequestSummaryItem(
       bookId: json['book_id'] as String,
       title: json['title'] as String,
       quantity: (json['quantity'] as num).toInt(),
       price: json['price'] as num,
     );
 
-Map<String, dynamic> _$OrderSummaryItemToJson(OrderSummaryItem instance) =>
+Map<String, dynamic> _$RequestSummaryItemToJson(RequestSummaryItem instance) =>
     <String, dynamic>{
       'book_id': instance.bookId,
       'title': instance.title,
@@ -124,9 +126,9 @@ Map<String, dynamic> _$OrderSummaryItemToJson(OrderSummaryItem instance) =>
       'price': instance.price,
     };
 
-PaymentVerifyResponse _$PaymentVerifyResponseFromJson(
+RequestVerifyResponse _$RequestVerifyResponseFromJson(
         Map<String, dynamic> json) =>
-    PaymentVerifyResponse(
+    RequestVerifyResponse(
       success: json['success'] as bool,
       orderId: json['order_id'] as String,
       orderNumber: json['order_number'] as String,
@@ -134,8 +136,8 @@ PaymentVerifyResponse _$PaymentVerifyResponseFromJson(
       message: json['message'] as String,
     );
 
-Map<String, dynamic> _$PaymentVerifyResponseToJson(
-        PaymentVerifyResponse instance) =>
+Map<String, dynamic> _$RequestVerifyResponseToJson(
+        RequestVerifyResponse instance) =>
     <String, dynamic>{
       'success': instance.success,
       'order_id': instance.orderId,

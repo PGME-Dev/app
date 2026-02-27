@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
-import 'package:pgme/features/settings/providers/subscription_provider.dart';
+import 'package:pgme/features/settings/providers/access_record_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class ManagePlansScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SubscriptionProvider>().loadSubscriptionData();
+      context.read<AccessRecordProvider>().loadSubscriptionData();
     });
   }
 
@@ -116,7 +116,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
 
           // Content
           Expanded(
-            child: Consumer<SubscriptionProvider>(
+            child: Consumer<AccessRecordProvider>(
               builder: (context, provider, _) {
                 if (provider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
@@ -144,7 +144,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
                   );
                 }
 
-                final activePurchases = provider.activePurchases;
+                final activePurchases = provider.activeRecords;
 
                 return RefreshIndicator(
                   onRefresh: provider.refresh,
@@ -248,7 +248,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
     );
   }
 
-  Widget _buildActivePlanCard(PurchaseModel plan, bool isDark, Color primaryColor, bool isTablet) {
+  Widget _buildActivePlanCard(AccessRecordModel plan, bool isDark, Color primaryColor, bool isTablet) {
     final packageName = plan.package.name;
     final packageType = plan.package.type ?? '';
     final price = _formatCurrency(plan.amountPaid);

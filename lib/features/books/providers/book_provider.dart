@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/models/book_model.dart';
-import 'package:pgme/core/models/book_order_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/book_request_model.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/services/book_service.dart';
-import 'package:pgme/core/services/book_order_service.dart';
+import 'package:pgme/core/services/book_request_service.dart';
 
 class BookProvider extends ChangeNotifier {
   final BookService _bookService = BookService();
-  final BookOrderService _bookOrderService = BookOrderService();
+  final BookRequestService _bookRequestService = BookRequestService();
 
   // Books state
   List<BookModel> _books = [];
@@ -21,7 +21,7 @@ class BookProvider extends ChangeNotifier {
   final Map<String, CartItem> _cart = {};
 
   // Orders state
-  List<BookOrderModel> _orders = [];
+  List<BookRequestModel> _orders = [];
   bool _isLoadingOrders = false;
   String? _ordersError;
 
@@ -42,7 +42,7 @@ class BookProvider extends ChangeNotifier {
   int get cartItemCount => _cart.values.fold(0, (sum, item) => sum + item.quantity);
   bool get isCartEmpty => _cart.isEmpty;
 
-  List<BookOrderModel> get orders => _orders;
+  List<BookRequestModel> get orders => _orders;
   bool get isLoadingOrders => _isLoadingOrders;
   String? get ordersError => _ordersError;
   String? get shippingCostError => _shippingCostError;
@@ -213,13 +213,13 @@ class BookProvider extends ChangeNotifier {
   }
 
   /// Create order (with Razorpay)
-  Future<BookOrderResponse> createOrder({
+  Future<BookRequestResponse> createOrder({
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
   }) async {
     final items = getCartAsOrderItems();
-    return await _bookOrderService.createOrder(
+    return await _bookRequestService.createOrder(
       items: items,
       recipientName: recipientName,
       shippingPhone: shippingPhone,
@@ -228,12 +228,12 @@ class BookProvider extends ChangeNotifier {
   }
 
   /// Verify payment
-  Future<PaymentVerifyResponse> verifyPayment({
+  Future<RequestVerifyResponse> verifyPayment({
     required String razorpayOrderId,
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
-    final response = await _bookOrderService.verifyPayment(
+    final response = await _bookRequestService.verifyAccess(
       razorpayOrderId: razorpayOrderId,
       razorpayPaymentId: razorpayPaymentId,
       razorpaySignature: razorpaySignature,
@@ -254,7 +254,7 @@ class BookProvider extends ChangeNotifier {
     required String shippingAddress,
   }) async {
     final items = getCartAsOrderItems();
-    final response = await _bookOrderService.createTestOrder(
+    final response = await _bookRequestService.createTestRequest(
       items: items,
       recipientName: recipientName,
       shippingPhone: shippingPhone,
@@ -270,11 +270,11 @@ class BookProvider extends ChangeNotifier {
   }
 
   // ============================================================================
-  // ZOHO PAYMENTS METHODS
+  // GATEWAY METHODS
   // ============================================================================
 
-  /// Create Zoho payment session for book order
-  Future<ZohoPaymentSession> createPaymentSession({
+  /// Create gateway session for book order
+  Future<GatewaySession> initSession({
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
@@ -282,7 +282,7 @@ class BookProvider extends ChangeNotifier {
     Map<String, dynamic>? shippingAddressStructured,
   }) async {
     final items = getCartAsOrderItems();
-    return await _bookOrderService.createPaymentSession(
+    return await _bookRequestService.initSession(
       items: items,
       recipientName: recipientName,
       shippingPhone: shippingPhone,
@@ -292,13 +292,13 @@ class BookProvider extends ChangeNotifier {
     );
   }
 
-  /// Verify Zoho payment for book order
-  Future<ZohoVerificationResponse> verifyZohoPayment({
+  /// Verify gateway payment for book request
+  Future<GatewayVerificationResponse> confirmSession({
     required String paymentSessionId,
     required String paymentId,
     String? signature,
   }) async {
-    final result = await _bookOrderService.verifyZohoPayment(
+    final result = await _bookRequestService.confirmSession(
       paymentSessionId: paymentSessionId,
       paymentId: paymentId,
       signature: signature,
@@ -324,7 +324,7 @@ class BookProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _orders = await _bookOrderService.getUserOrders();
+      _orders = await _bookRequestService.getUserRequests();
     } catch (e) {
       _ordersError = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -334,13 +334,13 @@ class BookProvider extends ChangeNotifier {
   }
 
   /// Get order by ID
-  Future<BookOrderModel> getOrderById(String orderId) async {
-    return await _bookOrderService.getOrderById(orderId);
+  Future<BookRequestModel> getOrderById(String orderId) async {
+    return await _bookRequestService.getRequestById(orderId);
   }
 
   /// Cancel order
   Future<void> cancelOrder(String orderId) async {
-    await _bookOrderService.cancelOrder(orderId);
+    await _bookRequestService.cancelRequest(orderId);
     // Refresh orders list
     await loadOrders(refresh: true);
   }

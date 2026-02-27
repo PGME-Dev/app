@@ -435,7 +435,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                           onPressed: () {
                             final params = <String>['packageType=${widget.packageType}'];
                             if (widget.packageId != null) params.add('packageId=${widget.packageId}');
-                            context.push('/purchase?${params.join('&')}');
+                            context.push('/package-access?${params.join('&')}');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,

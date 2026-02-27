@@ -1,9 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'ebook_purchase_model.g.dart';
+part 'ebook_access_model.g.dart';
 
 @JsonSerializable()
-class EbookPurchaseModel {
+class EbookAccessModel {
   @JsonKey(name: 'purchase_id')
   final String purchaseId;
 
@@ -28,7 +28,7 @@ class EbookPurchaseModel {
   @JsonKey(name: 'purchased_at')
   final String? purchasedAt;
 
-  EbookPurchaseModel({
+  EbookAccessModel({
     required this.purchaseId,
     required this.bookId,
     required this.title,
@@ -41,10 +41,10 @@ class EbookPurchaseModel {
     this.purchasedAt,
   });
 
-  factory EbookPurchaseModel.fromJson(Map<String, dynamic> json) =>
-      _$EbookPurchaseModelFromJson(json);
+  factory EbookAccessModel.fromJson(Map<String, dynamic> json) =>
+      _$EbookAccessModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$EbookPurchaseModelToJson(this);
+  Map<String, dynamic> toJson() => _$EbookAccessModelToJson(this);
 
   String get formattedFileSize {
     if (ebookFileSizeMb == null) return 'N/A';

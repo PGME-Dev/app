@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -76,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<Map<String, dynamic>?> _loadSubscriptionStatus() async {
     try {
       final response = await _apiService.dio.get(
-        ApiConstants.subscriptionStatus,
+        ApiConstants.activeAccessLevel,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -896,9 +898,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Expanded(
                           child: _buildQuickActionCard(
                             icon: Icons.shopping_bag_outlined,
-                            label: 'My Orders',
-                            subtitle: 'View orders',
-                            onTap: () => context.push('/my-purchases'),
+                            label: Platform.isIOS ? 'My Records' : 'My Orders',
+                            subtitle: Platform.isIOS ? 'View records' : 'View orders',
+                            onTap: () => context.push('/my-records'),
                             cardColor: cardColor,
                             iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
                             iconColor: Colors.green,

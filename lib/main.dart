@@ -11,7 +11,7 @@ import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
-import 'package:pgme/features/settings/providers/subscription_provider.dart';
+import 'package:pgme/features/settings/providers/access_record_provider.dart';
 import 'package:pgme/features/notifications/providers/notification_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
@@ -62,7 +62,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => BookProvider()),
-        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => AccessRecordProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => EnrolledCoursesProvider()),
         ChangeNotifierProvider(create: (_) => DownloadProvider()),

@@ -1,10 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:pgme/core/models/package_model.dart';
 
-part 'purchase_model.g.dart';
+part 'access_record_model.g.dart';
 
 @JsonSerializable()
-class PurchaseModel {
+class AccessRecordModel {
   @JsonKey(name: 'purchase_id')
   final String purchaseId;
 
@@ -48,7 +48,7 @@ class PurchaseModel {
   @JsonKey(name: 'updatedAt')
   final String? updatedAt;
 
-  PurchaseModel({
+  AccessRecordModel({
     required this.purchaseId,
     required this.package,
     required this.amountPaid,
@@ -66,12 +66,12 @@ class PurchaseModel {
     this.updatedAt,
   });
 
-  factory PurchaseModel.fromJson(Map<String, dynamic> json) =>
-      _$PurchaseModelFromJson(json);
+  factory AccessRecordModel.fromJson(Map<String, dynamic> json) =>
+      _$AccessRecordModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PurchaseModelToJson(this);
+  Map<String, dynamic> toJson() => _$AccessRecordModelToJson(this);
 
-  PurchaseModel copyWith({
+  AccessRecordModel copyWith({
     String? purchaseId,
     PackageModel? package,
     int? amountPaid,
@@ -88,7 +88,7 @@ class PurchaseModel {
     String? createdAt,
     String? updatedAt,
   }) {
-    return PurchaseModel(
+    return AccessRecordModel(
       purchaseId: purchaseId ?? this.purchaseId,
       package: package ?? this.package,
       amountPaid: amountPaid ?? this.amountPaid,

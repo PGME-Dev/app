@@ -1,25 +1,27 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
-import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
+import 'package:pgme/core/widgets/address_bottom_sheet.dart';
+import 'package:pgme/core/models/address_model.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 
-class BookCheckoutScreen extends StatefulWidget {
-  const BookCheckoutScreen({super.key});
+class BookConfirmScreen extends StatefulWidget {
+  const BookConfirmScreen({super.key});
 
   @override
-  State<BookCheckoutScreen> createState() => _BookCheckoutScreenState();
+  State<BookConfirmScreen> createState() => _BookConfirmScreenState();
 }
 
-class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
+class _BookConfirmScreenState extends State<BookConfirmScreen> {
   final _formKey = GlobalKey<FormState>();
   final _recipientNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -65,19 +67,25 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
   Future<void> _processOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // iOS: redirect to web store
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(context, productType: 'books', productId: '');
+      return;
+    }
+
     // Show billing address bottom sheet before payment
-    BillingAddress? savedAddress;
+    Address? savedAddress;
     try {
       final userService = UserService();
       final user = await userService.getProfile();
       if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
-        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+        savedAddress = Address.fromJson(user.billingAddress!);
       }
     } catch (_) {}
 
     if (!mounted) return;
 
-    final addressResult = await showBillingAddressSheet(
+    final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
       showShippingOption: true,
@@ -93,7 +101,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
 
     try {
       // Step 1: Create Zoho payment session
-      final paymentSession = await provider.createPaymentSession(
+      final paymentSession = await provider.initSession(
         recipientName: _recipientNameController.text.trim(),
         shippingPhone: _phoneController.text.trim(),
         shippingAddress: _addressController.text.trim(),
@@ -104,9 +112,9 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
       if (!mounted) return;
 
       // Step 2: Show Zoho payment widget
-      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final result = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               Navigator.pop(context, response);
@@ -120,14 +128,14 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
       if (result != null && mounted) {
         if (result.isSuccess) {
           // Verify payment with backend
-          final verification = await provider.verifyZohoPayment(
+          final verification = await provider.confirmSession(
             paymentSessionId: result.paymentSessionId!,
             paymentId: result.paymentId!,
             signature: result.signature,
           );
 
           if (verification.success && mounted) {
-            context.go('/book-order-confirmation/${verification.purchaseId}');
+            context.go('/book-request-confirmation/${verification.purchaseId}');
           } else if (mounted) {
             _showError('Payment verification failed. Please contact support.');
           }
@@ -195,7 +203,7 @@ class _BookCheckoutScreenState extends State<BookCheckoutScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'Checkout',
+                  Platform.isIOS ? 'Confirm' : 'Checkout',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,

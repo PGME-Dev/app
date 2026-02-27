@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/models/book_order_model.dart';
+import 'package:pgme/core/models/book_request_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 
 class BookCartScreen extends StatelessWidget {
   const BookCartScreen({super.key});
@@ -216,7 +218,13 @@ class BookCartScreen extends StatelessWidget {
                       width: double.infinity,
                       height: isTablet ? 60 : 50,
                       child: ElevatedButton(
-                        onPressed: () => context.push('/book-checkout'),
+                        onPressed: () {
+                          if (WebStoreLauncher.shouldUseWebStore) {
+                            WebStoreLauncher.openProductPage(context, productType: 'books', productId: '');
+                          } else {
+                            context.push('/book-confirm');
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonColor,
                           foregroundColor: Colors.white,
@@ -225,7 +233,7 @@ class BookCartScreen extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'Proceed to Checkout (${provider.cartItemCount} items)',
+                          Platform.isIOS ? 'Proceed (${provider.cartItemCount} items)' : 'Proceed to Checkout (${provider.cartItemCount} items)',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,

@@ -8,14 +8,14 @@ import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
-class OrderPhysicalBooksScreen extends StatefulWidget {
-  const OrderPhysicalBooksScreen({super.key});
+class BrowsePhysicalBooksScreen extends StatefulWidget {
+  const BrowsePhysicalBooksScreen({super.key});
 
   @override
-  State<OrderPhysicalBooksScreen> createState() => _OrderPhysicalBooksScreenState();
+  State<BrowsePhysicalBooksScreen> createState() => _BrowsePhysicalBooksScreenState();
 }
 
-class _OrderPhysicalBooksScreenState extends State<OrderPhysicalBooksScreen> {
+class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 

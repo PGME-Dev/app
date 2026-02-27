@@ -20,24 +20,24 @@ import 'package:pgme/features/settings/screens/settings_screen.dart';
 import 'package:pgme/features/settings/screens/profile_screen.dart';
 import 'package:pgme/features/settings/screens/edit_profile_screen.dart';
 import 'package:pgme/features/settings/screens/manage_plans_screen.dart';
-import 'package:pgme/features/purchase/screens/purchase_screen.dart';
-import 'package:pgme/features/purchase/screens/congratulations_screen.dart';
+import 'package:pgme/features/purchase/screens/package_access_screen.dart';
+import 'package:pgme/features/purchase/screens/success_screen.dart';
 import 'package:pgme/features/purchase/screens/all_packages_screen.dart';
 import 'package:pgme/features/sessions/screens/session_details_screen.dart';
 import 'package:pgme/features/sessions/screens/series_sessions_screen.dart';
-import 'package:pgme/features/notes/screens/order_physical_books_screen.dart';
+import 'package:pgme/features/notes/screens/browse_physical_books_screen.dart';
 import 'package:pgme/features/notes/screens/ebook_list_screen.dart';
 import 'package:pgme/features/books/screens/book_cart_screen.dart';
-import 'package:pgme/features/books/screens/book_checkout_screen.dart';
-import 'package:pgme/features/books/screens/book_order_confirmation_screen.dart';
-import 'package:pgme/features/books/screens/book_orders_screen.dart';
+import 'package:pgme/features/books/screens/book_confirm_screen.dart';
+import 'package:pgme/features/books/screens/book_request_confirmation_screen.dart';
+import 'package:pgme/features/books/screens/book_requests_screen.dart';
 import 'package:pgme/features/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features/courses/screens/revision_series_screen.dart';
 import 'package:pgme/features/courses/screens/enrolled_course_detail_screen.dart';
 import 'package:pgme/features/notifications/screens/notifications_screen.dart';
 import 'package:pgme/features/settings/screens/help_screen.dart';
 import 'package:pgme/features/settings/screens/about_screen.dart';
-import 'package:pgme/features/settings/screens/my_purchases_screen.dart';
+import 'package:pgme/features/settings/screens/my_records_screen.dart';
 import 'package:pgme/features/settings/screens/careers_screen.dart';
 import 'package:pgme/features/settings/screens/terms_and_conditions_screen.dart';
 import 'package:pgme/features/settings/screens/privacy_policy_screen.dart';
@@ -202,16 +202,16 @@ class AppRouter {
         ),
       ),
 
-      // Purchase Flow (outside shell - no nav bar)
+      // Package Access Flow (outside shell - no nav bar)
       GoRoute(
-        path: '/purchase',
-        name: 'purchase',
+        path: '/package-access',
+        name: 'package-access',
         pageBuilder: (context, state) {
           final packageId = state.uri.queryParameters['packageId'];
           final packageType = state.uri.queryParameters['packageType'];
           return CustomTransitionPage(
             key: state.pageKey,
-            child: PurchaseScreen(packageId: packageId, packageType: packageType),
+            child: PackageAccessScreen(packageId: packageId, packageType: packageType),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
@@ -226,11 +226,11 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: '/congratulations',
-        name: 'congratulations',
+        path: '/success',
+        name: 'success',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const CongratulationsScreen(),
+          child: const SuccessScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -436,13 +436,13 @@ class AppRouter {
         },
       ),
 
-      // Book Checkout (outside shell - no nav bar)
+      // Book Confirm (outside shell - no nav bar)
       GoRoute(
-        path: '/book-checkout',
-        name: 'book-checkout',
+        path: '/book-confirm',
+        name: 'book-confirm',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const BookCheckoutScreen(),
+          child: const BookConfirmScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return SlideTransition(
               position: Tween<Offset>(
@@ -455,15 +455,15 @@ class AppRouter {
         ),
       ),
 
-      // Book Order Confirmation (outside shell - no nav bar)
+      // Book Request Confirmation (outside shell - no nav bar)
       GoRoute(
-        path: '/book-order-confirmation/:orderId',
-        name: 'book-order-confirmation',
+        path: '/book-request-confirmation/:requestId',
+        name: 'book-request-confirmation',
         pageBuilder: (context, state) {
-          final orderId = state.pathParameters['orderId']!;
+          final requestId = state.pathParameters['requestId']!;
           return CustomTransitionPage(
             key: state.pageKey,
-            child: BookOrderConfirmationScreen(orderId: orderId),
+            child: BookRequestConfirmationScreen(requestId: requestId),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(
@@ -827,13 +827,13 @@ class AppRouter {
             },
           ),
 
-          // Order Physical Books
+          // Browse Physical Books
           GoRoute(
-            path: '/order-physical-books',
-            name: 'order-physical-books',
+            path: '/browse-physical-books',
+            name: 'browse-physical-books',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const OrderPhysicalBooksScreen(),
+              child: const BrowsePhysicalBooksScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
@@ -884,13 +884,13 @@ class AppRouter {
             ),
           ),
 
-          // Book Orders List
+          // Book Requests List
           GoRoute(
-            path: '/book-orders',
-            name: 'book-orders',
+            path: '/book-requests',
+            name: 'book-requests',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const BookOrdersScreen(),
+              child: const BookRequestsScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(
@@ -903,13 +903,13 @@ class AppRouter {
             ),
           ),
 
-          // My Purchases
+          // My Records
           GoRoute(
-            path: '/my-purchases',
-            name: 'my-purchases',
+            path: '/my-records',
+            name: 'my-records',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const MyPurchasesScreen(),
+              child: const MyRecordsScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return SlideTransition(
                   position: Tween<Offset>(

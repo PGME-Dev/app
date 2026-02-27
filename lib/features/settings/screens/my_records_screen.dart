@@ -7,26 +7,25 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
-import 'package:pgme/core/services/subscription_service.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pgme/core/services/access_record_service.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
-class MyPurchasesScreen extends StatefulWidget {
-  const MyPurchasesScreen({super.key});
+class MyRecordsScreen extends StatefulWidget {
+  const MyRecordsScreen({super.key});
 
   @override
-  State<MyPurchasesScreen> createState() => _MyPurchasesScreenState();
+  State<MyRecordsScreen> createState() => _MyRecordsScreenState();
 }
 
-class _MyPurchasesScreenState extends State<MyPurchasesScreen>
+class _MyRecordsScreenState extends State<MyRecordsScreen>
     with SingleTickerProviderStateMixin {
-  final SubscriptionService _subscriptionService = SubscriptionService();
+  final AccessRecordService _accessRecordService = AccessRecordService();
   late TabController _tabController;
 
-  AllPurchasesData? _data;
+  AllRecordsData? _data;
   bool _isLoading = true;
   String? _error;
   final Set<String> _loadingPackageInvoices = {};
@@ -37,7 +36,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     'Packages',
     'Books',
     'Sessions',
-    'Invoices',
+    Platform.isIOS ? 'Records' : 'Invoices',
   ];
 
   @override
@@ -59,7 +58,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       _error = null;
     });
     try {
-      final data = await _subscriptionService.getAllPurchases();
+      final data = await _accessRecordService.getAllRecords();
       setState(() {
         _data = data;
         _isLoading = false;
@@ -72,7 +71,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     }
   }
 
-  Future<void> _openPackageInvoice(PackagePurchaseItem pkg) async {
+  Future<void> _openPackageInvoice(PackageRecordItem pkg) async {
     if (_loadingPackageInvoices.contains(pkg.purchaseId)) return;
 
     // Find matching invoice from already-loaded data
@@ -114,7 +113,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
 
     try {
       final pdfBytes =
-          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+          await _accessRecordService.downloadRecordPdf(invoice.invoiceId);
 
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
@@ -178,7 +177,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                       ),
                       const Spacer(),
                       Text(
-                        'My Orders',
+                        Platform.isIOS ? 'My Records' : 'My Orders',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
@@ -300,7 +299,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     );
   }
 
-  Future<void> _openBookInvoice(BookOrderItem book) async {
+  Future<void> _openBookInvoice(BookRequestItem book) async {
     if (_loadingBookInvoices.contains(book.orderId)) return;
 
     final invoices = _data?.invoices ?? [];
@@ -340,7 +339,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
 
     try {
       final pdfBytes =
-          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+          await _accessRecordService.downloadRecordPdf(invoice.invoiceId);
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
       await file.writeAsBytes(pdfBytes);
@@ -364,7 +363,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
     }
   }
 
-  Future<void> _openSessionInvoice(SessionPurchaseItem session) async {
+  Future<void> _openSessionInvoice(SessionRecordItem session) async {
     if (_loadingSessionInvoices.contains(session.purchaseId)) return;
 
     final invoices = _data?.invoices ?? [];
@@ -403,7 +402,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
 
     try {
       final pdfBytes =
-          await _subscriptionService.downloadInvoicePdf(invoice.invoiceId);
+          await _accessRecordService.downloadRecordPdf(invoice.invoiceId);
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${invoice.invoiceNumber}.pdf');
       await file.writeAsBytes(pdfBytes);
@@ -459,7 +458,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   }
 
   Widget _buildPackageCard(
-      PackagePurchaseItem pkg,
+      PackageRecordItem pkg,
       bool isDark,
       Color textColor,
       Color secondaryTextColor,
@@ -587,7 +586,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                 if (pkg.tierName != null)
                   GestureDetector(
                     onTap: () {
-                      context.push('/purchase?packageId=${pkg.packageId}');
+                      context.push('/package-access?packageId=${pkg.packageId}');
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -680,7 +679,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   }
 
   Widget _buildBookCard(
-      BookOrderItem book,
+      BookRequestItem book,
       bool isDark,
       Color textColor,
       Color secondaryTextColor,
@@ -888,7 +887,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   }
 
   Widget _buildSessionCard(
-      SessionPurchaseItem session,
+      SessionRecordItem session,
       bool isDark,
       Color textColor,
       Color secondaryTextColor,
@@ -1201,7 +1200,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
             SizedBox(height: isTablet ? 13 : 10),
             _InvoiceDownloadButton(
               invoice: invoice,
-              subscriptionService: _subscriptionService,
+              accessRecordService: _accessRecordService,
               accentColor: accentColor,
               isTablet: isTablet,
             ),
@@ -1215,13 +1214,13 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
 /// Stateful button that handles invoice PDF download with loading state
 class _InvoiceDownloadButton extends StatefulWidget {
   final InvoiceItem invoice;
-  final SubscriptionService subscriptionService;
+  final AccessRecordService accessRecordService;
   final Color accentColor;
   final bool isTablet;
 
   const _InvoiceDownloadButton({
     required this.invoice,
-    required this.subscriptionService,
+    required this.accessRecordService,
     required this.accentColor,
     required this.isTablet,
   });
@@ -1238,7 +1237,7 @@ class _InvoiceDownloadButtonState extends State<_InvoiceDownloadButton> {
     setState(() => _isDownloading = true);
 
     try {
-      final pdfBytes = await widget.subscriptionService.downloadInvoicePdf(
+      final pdfBytes = await widget.accessRecordService.downloadRecordPdf(
         widget.invoice.invoiceId,
       );
 

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
 import 'package:pgme/core/models/library_model.dart';
@@ -9,8 +9,8 @@ class EnrolledCoursesProvider with ChangeNotifier {
   final EnrolledCoursesService _enrolledCoursesService = EnrolledCoursesService();
 
   // State - Purchases
-  List<PurchaseModel> _purchases = [];
-  PurchaseModel? _selectedPurchase;
+  List<AccessRecordModel> _purchases = [];
+  AccessRecordModel? _selectedPurchase;
 
   // State - Series
   List<SeriesModel> _theorySeries = [];
@@ -39,8 +39,8 @@ class EnrolledCoursesProvider with ChangeNotifier {
   String? _libraryError;
 
   // Getters - State
-  List<PurchaseModel> get purchases => _purchases;
-  PurchaseModel? get selectedPurchase => _selectedPurchase;
+  List<AccessRecordModel> get purchases => _purchases;
+  AccessRecordModel? get selectedPurchase => _selectedPurchase;
   List<SeriesModel> get theorySeries => _theorySeries;
   List<SeriesModel> get practicalSeries => _practicalSeries;
   List<ProgressModel> get progressList => _progressList;
@@ -63,10 +63,10 @@ class EnrolledCoursesProvider with ChangeNotifier {
   String? get libraryError => _libraryError;
 
   // Computed getters
-  List<PurchaseModel> get activePurchases =>
+  List<AccessRecordModel> get activePurchases =>
       _purchases.where((p) => p.isActive).toList();
 
-  List<PurchaseModel> get expiredPurchases =>
+  List<AccessRecordModel> get expiredPurchases =>
       _purchases.where((p) => !p.isActive).toList();
 
   bool get hasActivePurchases => activePurchases.isNotEmpty;

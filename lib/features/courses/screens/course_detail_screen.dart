@@ -214,7 +214,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      context.push('/purchase?packageType=Theory');
+                                      context.push('/package-access?packageType=Theory');
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: iconColor,

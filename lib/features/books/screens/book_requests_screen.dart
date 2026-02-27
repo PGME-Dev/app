@@ -1,21 +1,23 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:pgme/core/models/book_order_model.dart';
+import 'package:pgme/core/models/book_request_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
-class BookOrdersScreen extends StatefulWidget {
-  const BookOrdersScreen({super.key});
+class BookRequestsScreen extends StatefulWidget {
+  const BookRequestsScreen({super.key});
 
   @override
-  State<BookOrdersScreen> createState() => _BookOrdersScreenState();
+  State<BookRequestsScreen> createState() => _BookRequestsScreenState();
 }
 
-class _BookOrdersScreenState extends State<BookOrdersScreen> {
+class _BookRequestsScreenState extends State<BookRequestsScreen> {
   final Set<String> _expandedOrders = {};
 
   @override
@@ -71,7 +73,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'My Orders',
+                  Platform.isIOS ? 'Book Requests' : 'My Orders',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
@@ -125,7 +127,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                         Icon(Icons.receipt_long_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
                         SizedBox(height: isTablet ? 21 : 16),
                         Text(
-                          'No orders yet',
+                          Platform.isIOS ? 'No requests yet' : 'No orders yet',
                           style: TextStyle(
                             fontSize: isTablet ? 22 : 18,
                             fontWeight: FontWeight.w500,
@@ -134,7 +136,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
                         ),
                         SizedBox(height: isTablet ? 10 : 8),
                         Text(
-                          'Your book orders will appear here',
+                          Platform.isIOS ? 'Your book requests will appear here' : 'Your book orders will appear here',
                           style: TextStyle(
                             fontSize: isTablet ? 17 : 14,
                             color: secondaryTextColor,
@@ -181,7 +183,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
 
   Widget _buildOrderCard({
     required BuildContext context,
-    required BookOrderModel order,
+    required BookRequestModel order,
     required bool isExpanded,
     required VoidCallback onTap,
     required bool isDark,
@@ -367,7 +369,7 @@ class _BookOrdersScreenState extends State<BookOrdersScreen> {
   }
 
   Widget _buildExpandedDetails({
-    required BookOrderModel order,
+    required BookRequestModel order,
     required bool isDark,
     required bool isTablet,
     required Color textColor,

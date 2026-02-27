@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConstants {
+  // Platform-aware helper: use neutral aliases on iOS
+  static bool get _useAlias => Platform.isIOS;
   // Base URL - Use deployed backend on Render
   // static const String baseUrl = 'http://192.168.29.105:5000/api/v1';
   static const String baseUrl = 'https://d1po9pb0pflxq5.cloudfront.net/api/v1';
@@ -58,6 +61,10 @@ class ApiConstants {
   static String sessionZoomSignature(String sessionId) =>
       '/live-sessions/$sessionId/zoom-signature';
   static const String userSessionPurchases = '/users/session-purchases';
+  static String activeSessionInitAccess(String sessionId) => _useAlias ? '/live-sessions/$sessionId/init-session' : sessionCreateOrder(sessionId);
+  static String activeSessionConfirmAccess(String sessionId) => _useAlias ? '/live-sessions/$sessionId/confirm-access' : sessionVerifyPayment(sessionId);
+  static String activeSessionTestAccess(String sessionId) => _useAlias ? '/live-sessions/$sessionId/test-access' : sessionTestPurchase(sessionId);
+  static String get activeSessionActivity => _useAlias ? '/session-activity' : userSessionPurchases;
 
   // Enrollment Endpoints
   static String sessionEnrollmentStatus(String sessionId) =>
@@ -90,7 +97,7 @@ class ApiConstants {
   static String libraryBookmark(String libraryId) =>
       '/users/library/$libraryId/bookmark';
 
-  // Purchase Endpoints
+  // Record Endpoints
   static const String userPurchases = '/users/purchases';
   static const String purchases = '/users/purchases';
   static const String allPurchases = '/users/purchases/all';
@@ -98,6 +105,10 @@ class ApiConstants {
       '/users/purchases/subscription-status';
   static String purchaseDetails(String purchaseId) =>
       '/users/purchases/$purchaseId';
+  static String get activeUserRecords => _useAlias ? '/users/activity' : userPurchases;
+  static String get activeAllRecords => _useAlias ? '/users/activity/all' : allPurchases;
+  static String get activeAccessLevel => _useAlias ? '/users/activity/access-level' : subscriptionStatus;
+  static String activeRecordDetails(String id) => _useAlias ? '/users/activity/$id' : purchaseDetails(id);
 
   // App Settings Endpoints
   static const String appSettings = '/app-settings';
@@ -154,7 +165,7 @@ class ApiConstants {
   static String bookDetails(String bookId) => '/books/$bookId';
   static String bookStock(String bookId) => '/books/$bookId/stock';
 
-  // Book Order Endpoints
+  // Book Request Endpoints
   static const String bookOrders = '/book-orders';
   static const String createBookOrder = '/book-orders/create-order';
   static const String verifyBookPayment = '/book-orders/verify-payment';
@@ -162,35 +173,51 @@ class ApiConstants {
   static String bookOrderDetails(String orderId) => '/book-orders/$orderId';
   static String cancelBookOrder(String orderId) =>
       '/book-orders/$orderId/cancel';
+  static String get activeBookRequests => _useAlias ? '/book-requests' : bookOrders;
+  static String get activeInitBookRequest => _useAlias ? '/book-requests/init-session' : createBookOrder;
+  static String get activeConfirmBookRequest => _useAlias ? '/book-requests/confirm' : verifyBookPayment;
+  static String activeBookRequestDetails(String id) => _useAlias ? '/book-requests/$id' : bookOrderDetails(id);
+  static String activeCancelBookRequest(String id) => _useAlias ? '/book-requests/$id/cancel' : cancelBookOrder(id);
 
-  // Ebook Order Endpoints
+  // User Reads Endpoints
   static const String ebookOrders = '/ebook-orders';
   static const String createEbookOrder = '/ebook-orders/create-order';
   static const String verifyEbookPayment = '/ebook-orders/verify-payment';
   static String ebookViewUrl(String bookId) => '/ebook-orders/$bookId/view-url';
+  static String get activeUserReads => _useAlias ? '/user-reads' : ebookOrders;
+  static String get activeInitUserRead => _useAlias ? '/user-reads/init-session' : createEbookOrder;
+  static String get activeConfirmUserRead => _useAlias ? '/user-reads/confirm' : verifyEbookPayment;
+  static String activeReadViewUrl(String bookId) => _useAlias ? '/user-reads/$bookId/view-url' : ebookViewUrl(bookId);
 
-  // Payment Endpoints (Zoho)
+  // Access Endpoints
   static const String createPaymentOrder =
       '/payments/create-order'; // For packages
   static const String verifyPayment = '/payments/verify'; // For packages
+  static String get activeInitAccessSession => _useAlias ? '/content-access/init-session' : createPaymentOrder;
+  static String get activeConfirmAccess => _useAlias ? '/content-access/confirm' : verifyPayment;
 
-  // Upgrade Endpoints
+  // Tier Change Endpoints
   static const String calculateUpgrade = '/payments/upgrade/calculate';
   static const String createUpgradeOrder = '/payments/upgrade/create-order';
   static const String verifyUpgradePayment = '/payments/upgrade/verify';
+  static String get activeTierPreview => _useAlias ? '/content-access/tier-preview' : calculateUpgrade;
+  static String get activeTierInit => _useAlias ? '/content-access/tier-init' : createUpgradeOrder;
+  static String get activeTierConfirm => _useAlias ? '/content-access/tier-confirm' : verifyUpgradePayment;
 
-  // Zoho Payments Configuration
-  static const String zohoScriptUrl =
+  // Gateway Configuration
+  static const String gatewayScriptUrl =
       'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
 
-  // Get Zoho credentials from environment
-  static String get zohoAccountId =>
-      dotenv.env['ZOHO_PAYMENTS_ACCOUNT_ID'] ?? '';
-  static String get zohoApiKey => dotenv.env['ZOHO_PAYMENTS_API_KEY'] ?? '';
+  // Get gateway credentials from environment
+  static String get gatewayAccountId =>
+      dotenv.env['PG_ACCOUNT_ID'] ?? '';
+  static String get gatewayApiKey => dotenv.env['PG_API_KEY'] ?? '';
 
-  // Invoice Endpoints
+  // Record Export Endpoints
   static String invoiceByPurchase(String purchaseId) => '/invoices/$purchaseId';
   static String invoicePdf(String invoiceId) => '/invoices/$invoiceId/pdf';
+  static String activeRecordExport(String id) => _useAlias ? '/records/$id' : invoiceByPurchase(id);
+  static String activeRecordPdf(String id) => _useAlias ? '/records/$id/export' : invoicePdf(id);
 
   // Notification Endpoints
   static const String notifications = '/users/notifications';

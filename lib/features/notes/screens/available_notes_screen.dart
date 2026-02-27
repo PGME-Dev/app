@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -108,9 +109,9 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
     if (shouldEnroll == true && mounted) {
       if (_package != null) {
-        context.push('/purchase?packageId=${_package!.packageId}&packageType=${_package!.type ?? 'Theory'}');
+        context.push('/package-access?packageId=${_package!.packageId}&packageType=${_package!.type ?? 'Theory'}');
       } else if (_series?.packageId != null) {
-        context.push('/purchase?packageId=${_series!.packageId}');
+        context.push('/package-access?packageId=${_series!.packageId}');
       } else {
         context.push('/all-packages');
       }
@@ -288,30 +289,32 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      if (_package?.isOnSale == true && _package!.salePrice != null) ...[
+                      if (!Platform.isIOS) ...[
+                        if (_package?.isOnSale == true && _package!.salePrice != null) ...[
+                          Text(
+                            '₹${_package!.originalPrice?.toStringAsFixed(0) ?? _package!.price.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: strikePriceSize,
+                              decoration: TextDecoration.lineThrough,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                          SizedBox(width: isTablet ? 10 : 8),
+                        ],
                         Text(
-                          '₹${_package!.originalPrice?.toStringAsFixed(0) ?? _package!.price.toStringAsFixed(0)}',
+                          '₹${_package?.salePrice?.toStringAsFixed(0) ?? _package?.price.toStringAsFixed(0) ?? '4,999'}',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
-                            fontSize: strikePriceSize,
-                            decoration: TextDecoration.lineThrough,
-                            color: secondaryTextColor,
+                            fontSize: priceSize,
+                            height: 1.0,
+                            letterSpacing: -0.18,
+                            color: textColor,
                           ),
                         ),
-                        SizedBox(width: isTablet ? 10 : 8),
                       ],
-                      Text(
-                        '₹${_package?.salePrice?.toStringAsFixed(0) ?? _package?.price.toStringAsFixed(0) ?? '4,999'}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: priceSize,
-                          height: 1.0,
-                          letterSpacing: -0.18,
-                          color: textColor,
-                        ),
-                      ),
                       SizedBox(width: isTablet ? 10 : 8),
                       Text(
                         '/ ${_package?.durationDays != null ? '${(_package!.durationDays! / 30).round()} months' : '3 months'}',

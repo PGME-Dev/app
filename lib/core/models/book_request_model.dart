@@ -1,9 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'book_order_model.g.dart';
+part 'book_request_model.g.dart';
 
 @JsonSerializable()
-class BookOrderModel {
+class BookRequestModel {
   @JsonKey(name: 'order_id')
   final String orderId;
 
@@ -32,7 +32,7 @@ class BookOrderModel {
   final String createdAt;
 
   // Detail fields (only present when fetching single order)
-  final List<OrderItemModel>? items;
+  final List<RequestItemModel>? items;
 
   @JsonKey(name: 'recipient_name')
   final String? recipientName;
@@ -56,7 +56,7 @@ class BookOrderModel {
 
   final String? notes;
 
-  BookOrderModel({
+  BookRequestModel({
     required this.orderId,
     required this.orderNumber,
     required this.itemsCount,
@@ -77,10 +77,10 @@ class BookOrderModel {
     this.notes,
   });
 
-  factory BookOrderModel.fromJson(Map<String, dynamic> json) =>
-      _$BookOrderModelFromJson(json);
+  factory BookRequestModel.fromJson(Map<String, dynamic> json) =>
+      _$BookRequestModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$BookOrderModelToJson(this);
+  Map<String, dynamic> toJson() => _$BookRequestModelToJson(this);
 
   /// Check if order can be cancelled
   bool get canCancel {
@@ -125,7 +125,7 @@ class BookOrderModel {
 }
 
 @JsonSerializable()
-class OrderItemModel {
+class RequestItemModel {
   @JsonKey(name: 'book_id')
   final String bookId;
 
@@ -138,7 +138,7 @@ class OrderItemModel {
   final int quantity;
   final num price;
 
-  OrderItemModel({
+  RequestItemModel({
     required this.bookId,
     required this.title,
     this.author,
@@ -147,17 +147,17 @@ class OrderItemModel {
     required this.price,
   });
 
-  factory OrderItemModel.fromJson(Map<String, dynamic> json) =>
-      _$OrderItemModelFromJson(json);
+  factory RequestItemModel.fromJson(Map<String, dynamic> json) =>
+      _$RequestItemModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrderItemModelToJson(this);
+  Map<String, dynamic> toJson() => _$RequestItemModelToJson(this);
 
   /// Get total price for this item
   num get totalPrice => price * quantity;
 }
 
 @JsonSerializable()
-class BookOrderResponse {
+class BookRequestResponse {
   @JsonKey(name: 'order_id')
   final String orderId;
 
@@ -168,9 +168,9 @@ class BookOrderResponse {
   final String currency;
 
   @JsonKey(name: 'order_summary')
-  final OrderSummary orderSummary;
+  final RequestSummary orderSummary;
 
-  BookOrderResponse({
+  BookRequestResponse({
     required this.orderId,
     required this.razorpayOrderId,
     required this.amount,
@@ -178,15 +178,15 @@ class BookOrderResponse {
     required this.orderSummary,
   });
 
-  factory BookOrderResponse.fromJson(Map<String, dynamic> json) =>
-      _$BookOrderResponseFromJson(json);
+  factory BookRequestResponse.fromJson(Map<String, dynamic> json) =>
+      _$BookRequestResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => _$BookOrderResponseToJson(this);
+  Map<String, dynamic> toJson() => _$BookRequestResponseToJson(this);
 }
 
 @JsonSerializable()
-class OrderSummary {
-  final List<OrderSummaryItem> items;
+class RequestSummary {
+  final List<RequestSummaryItem> items;
   final num subtotal;
 
   @JsonKey(name: 'shipping_cost')
@@ -194,21 +194,21 @@ class OrderSummary {
 
   final num total;
 
-  OrderSummary({
+  RequestSummary({
     required this.items,
     required this.subtotal,
     required this.shippingCost,
     required this.total,
   });
 
-  factory OrderSummary.fromJson(Map<String, dynamic> json) =>
-      _$OrderSummaryFromJson(json);
+  factory RequestSummary.fromJson(Map<String, dynamic> json) =>
+      _$RequestSummaryFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrderSummaryToJson(this);
+  Map<String, dynamic> toJson() => _$RequestSummaryToJson(this);
 }
 
 @JsonSerializable()
-class OrderSummaryItem {
+class RequestSummaryItem {
   @JsonKey(name: 'book_id')
   final String bookId;
 
@@ -216,21 +216,21 @@ class OrderSummaryItem {
   final int quantity;
   final num price;
 
-  OrderSummaryItem({
+  RequestSummaryItem({
     required this.bookId,
     required this.title,
     required this.quantity,
     required this.price,
   });
 
-  factory OrderSummaryItem.fromJson(Map<String, dynamic> json) =>
-      _$OrderSummaryItemFromJson(json);
+  factory RequestSummaryItem.fromJson(Map<String, dynamic> json) =>
+      _$RequestSummaryItemFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrderSummaryItemToJson(this);
+  Map<String, dynamic> toJson() => _$RequestSummaryItemToJson(this);
 }
 
 @JsonSerializable()
-class PaymentVerifyResponse {
+class RequestVerifyResponse {
   final bool success;
 
   @JsonKey(name: 'order_id')
@@ -244,7 +244,7 @@ class PaymentVerifyResponse {
 
   final String message;
 
-  PaymentVerifyResponse({
+  RequestVerifyResponse({
     required this.success,
     required this.orderId,
     required this.orderNumber,
@@ -252,10 +252,10 @@ class PaymentVerifyResponse {
     required this.message,
   });
 
-  factory PaymentVerifyResponse.fromJson(Map<String, dynamic> json) =>
-      _$PaymentVerifyResponseFromJson(json);
+  factory RequestVerifyResponse.fromJson(Map<String, dynamic> json) =>
+      _$RequestVerifyResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PaymentVerifyResponseToJson(this);
+  Map<String, dynamic> toJson() => _$RequestVerifyResponseToJson(this);
 }
 
 /// Cart item for local state management

@@ -2,23 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/models/package_model.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/address_model.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
-import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
+import 'package:pgme/core/widgets/address_bottom_sheet.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 
 /// Shows an upgrade bottom sheet for a tiered package.
 ///
 /// [package] - The package with tiers
 /// [currentTierIndex] - The user's current tier index
 /// [packageId] - The package ID for API calls
-Future<bool?> showUpgradeBottomSheet(
+Future<bool?> showTierChangeSheet(
   BuildContext context, {
   required PackageModel package,
   required int currentTierIndex,
@@ -126,18 +127,28 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
   Future<void> _processUpgrade() async {
     if (_selectedTierIndex == null) return;
 
+    // iOS: redirect to web store
+    if (WebStoreLauncher.shouldUseWebStore) {
+      WebStoreLauncher.openProductPage(
+        context,
+        productType: 'packages',
+        productId: widget.package.packageId,
+      );
+      return;
+    }
+
     // Collect billing address
-    BillingAddress? savedAddress;
+    Address? savedAddress;
     try {
       final user = await UserService().getProfile();
       if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
-        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+        savedAddress = Address.fromJson(user.billingAddress!);
       }
     } catch (_) {}
 
     if (!mounted) return;
 
-    final addressResult = await showBillingAddressSheet(
+    final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
     );
@@ -166,13 +177,13 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
       }
 
       // Paid upgrade - launch payment widget
-      final paymentSession = ZohoPaymentSession.fromJson(result);
+      final paymentSession = GatewaySession.fromJson(result);
 
       if (!mounted) return;
 
-      final paymentResult = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final paymentResult = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               Navigator.pop(context, response);
@@ -192,7 +203,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
 
           if (verification.success && mounted) {
             Navigator.of(context).pop(true);
-            context.go('/congratulations?purchaseId=${verification.purchaseId}');
+            context.go('/success?purchaseId=${verification.purchaseId}');
           } else if (mounted) {
             _showError('Payment verification failed. Please contact support.');
           }

@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:pgme/core/constants/api_constants.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
-class ZohoPaymentWidget extends StatefulWidget {
-  final ZohoPaymentSession paymentSession;
-  final Function(ZohoPaymentResponse) onPaymentComplete;
+class GatewayWidget extends StatefulWidget {
+  final GatewaySession paymentSession;
+  final Function(GatewayResponse) onPaymentComplete;
   final VoidCallback? onCancel;
 
-  const ZohoPaymentWidget({
+  const GatewayWidget({
     super.key,
     required this.paymentSession,
     required this.onPaymentComplete,
@@ -19,10 +19,10 @@ class ZohoPaymentWidget extends StatefulWidget {
   });
 
   @override
-  State<ZohoPaymentWidget> createState() => _ZohoPaymentWidgetState();
+  State<GatewayWidget> createState() => _GatewayWidgetState();
 }
 
-class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
+class _GatewayWidgetState extends State<GatewayWidget> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
@@ -31,7 +31,7 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
     super.initState();
 
     debugPrint('');
-    debugPrint('=== ZohoPaymentWidget INIT ===');
+    debugPrint('=== GatewayWidget INIT ===');
     debugPrint('Session ID: "${widget.paymentSession.paymentSessionId}"');
     debugPrint('Amount: ${widget.paymentSession.amount} ${widget.paymentSession.currency}');
     debugPrint('=============================');
@@ -41,7 +41,7 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
   }
 
   void _initializeWebView() {
-    // Build the backend checkout URL with payment session details
+    // Build the backend checkout URL with gateway session details
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api/v1', '');
     final checkoutUrl = '$baseUrl/checkout'
         '?session_id=${widget.paymentSession.paymentSessionId}'
@@ -92,16 +92,16 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
           },
         ),
       )
-      // Load from backend - gives proper HTTPS origin for Zoho SDK
+      // Load from backend - gives proper HTTPS origin for Gateway SDK
       ..loadRequest(Uri.parse(checkoutUrl));
   }
 
   void _handlePaymentResponse(String message) {
     try {
-      debugPrint('Parsing payment response: $message');
+      debugPrint('Parsing gateway response: $message');
       final Map<String, dynamic> data = json.decode(message);
 
-      final response = ZohoPaymentResponse(
+      final response = GatewayResponse(
         status: data['status'] as String,
         paymentId: data['payment_id'] as String?,
         paymentSessionId: data['payment_session_id'] as String?,
@@ -109,12 +109,12 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
         errorMessage: data['error_message'] as String?,
       );
 
-      debugPrint('Payment result: status=${response.status}, paymentId=${response.paymentId}');
+      debugPrint('Gateway result: status=${response.status}, paymentId=${response.paymentId}');
       widget.onPaymentComplete(response);
     } catch (e) {
-      debugPrint('Error parsing payment response: $e');
+      debugPrint('Error parsing gateway response: $e');
       widget.onPaymentComplete(
-        ZohoPaymentResponse(
+        GatewayResponse(
           status: 'failed',
           errorMessage: 'Failed to process payment response',
         ),
@@ -129,7 +129,7 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Complete Payment',
+          'Continue',
           style: TextStyle(fontSize: isTablet ? 20 : null),
         ),
         toolbarHeight: isTablet ? 64 : null,
@@ -155,7 +155,7 @@ class _ZohoPaymentWidgetState extends State<ZohoPaymentWidget> {
                     ),
                     SizedBox(height: isTablet ? 24 : 16),
                     Text(
-                      'Loading payment gateway...',
+                      'Loading...',
                       style: TextStyle(
                         fontSize: isTablet ? 18 : 16,
                         color: Colors.grey,

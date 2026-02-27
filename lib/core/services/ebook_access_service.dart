@@ -1,23 +1,23 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
-import 'package:pgme/core/models/ebook_purchase_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/ebook_access_model.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/services/api_service.dart';
 
-class EbookOrderService {
+class EbookAccessService {
   final ApiService _apiService = ApiService();
 
-  /// Create a Zoho payment session for ebook purchase
-  Future<ZohoPaymentSession> createPaymentSession(
+  /// Create a gateway session for ebook access
+  Future<GatewaySession> initSession(
     String bookId, {
     Map<String, dynamic>? billingAddress,
   }) async {
     try {
-      debugPrint('=== EbookOrderService: Creating payment session for book $bookId ===');
+      debugPrint('=== EbookAccessService: Creating gateway session for book $bookId ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.createEbookOrder,
+        ApiConstants.activeInitUserRead,
         data: {
           'book_id': bookId,
           if (billingAddress != null) 'billing_address': billingAddress,
@@ -26,33 +26,33 @@ class EbookOrderService {
 
       if (response.statusCode == 201 && response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
-        return ZohoPaymentSession.fromJson(data);
+        return GatewaySession.fromJson(data);
       }
 
-      throw Exception('Failed to create payment session');
+      throw Exception('Failed to create gateway session');
     } on DioException catch (e) {
-      debugPrint('DioException creating ebook payment session: ${e.message}');
+      debugPrint('DioException creating ebook gateway session: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error creating ebook payment session: $e');
+      debugPrint('Error creating ebook gateway session: $e');
       rethrow;
     }
   }
 
-  /// Verify ebook payment after Zoho checkout
-  Future<ZohoVerificationResponse> verifyPayment({
+  /// Confirm ebook access after gateway checkout
+  Future<GatewayVerificationResponse> confirmSession({
     required String paymentSessionId,
     required String paymentId,
     String? signature,
   }) async {
     try {
-      debugPrint('=== EbookOrderService: Verifying payment ===');
+      debugPrint('=== EbookAccessService: Confirming gateway session ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.verifyEbookPayment,
+        ApiConstants.activeConfirmUserRead,
         data: {
           'payment_session_id': paymentSessionId,
           'payment_id': paymentId,
@@ -62,46 +62,46 @@ class EbookOrderService {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
-        return ZohoVerificationResponse.fromJson(data);
+        return GatewayVerificationResponse.fromJson(data);
       }
 
-      throw Exception('Payment verification failed');
+      throw Exception('Gateway session confirmation failed');
     } on DioException catch (e) {
-      debugPrint('DioException verifying ebook payment: ${e.message}');
+      debugPrint('DioException confirming ebook gateway session: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error verifying ebook payment: $e');
+      debugPrint('Error confirming ebook gateway session: $e');
       rethrow;
     }
   }
 
-  /// Get user's purchased ebooks
-  Future<List<EbookPurchaseModel>> getUserPurchasedEbooks() async {
+  /// Get user's accessible ebooks
+  Future<List<EbookAccessModel>> getUserAccessibleEbooks() async {
     try {
-      debugPrint('=== EbookOrderService: Getting purchased ebooks ===');
+      debugPrint('=== EbookAccessService: Getting accessible ebooks ===');
 
-      final response = await _apiService.dio.get(ApiConstants.ebookOrders);
+      final response = await _apiService.dio.get(ApiConstants.activeUserReads);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
         final ebooksList = data['ebooks'] as List;
         return ebooksList
-            .map((json) => EbookPurchaseModel.fromJson(json as Map<String, dynamic>))
+            .map((json) => EbookAccessModel.fromJson(json as Map<String, dynamic>))
             .toList();
       }
 
-      throw Exception('Failed to load purchased ebooks');
+      throw Exception('Failed to load accessible ebooks');
     } on DioException catch (e) {
-      debugPrint('DioException getting purchased ebooks: ${e.message}');
+      debugPrint('DioException getting accessible ebooks: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error getting purchased ebooks: $e');
+      debugPrint('Error getting accessible ebooks: $e');
       rethrow;
     }
   }
@@ -109,10 +109,10 @@ class EbookOrderService {
   /// Get ebook view URL (presigned URL for reading)
   Future<Map<String, dynamic>> getEbookViewUrl(String bookId) async {
     try {
-      debugPrint('=== EbookOrderService: Getting view URL for book $bookId ===');
+      debugPrint('=== EbookAccessService: Getting view URL for book $bookId ===');
 
       final response = await _apiService.dio.get(
-        ApiConstants.ebookViewUrl(bookId),
+        ApiConstants.activeReadViewUrl(bookId),
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {

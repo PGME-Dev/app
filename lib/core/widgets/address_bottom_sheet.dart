@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/constants/indian_states.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/models/address_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/location_service.dart';
 import 'package:pgme/core/services/pincode_service.dart';
@@ -10,42 +10,42 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
-/// Shows a billing address bottom sheet and returns a [BillingAddress] or null if dismissed.
+/// Shows an address bottom sheet and returns an [Address] or null if dismissed.
 ///
-/// [initialAddress] - Pre-fill with user's saved billing address.
+/// [initialAddress] - Pre-fill with user's saved address.
 /// [showShippingOption] - If true, shows "Use as shipping address" checkbox (for book orders).
-/// Returns a map with 'billing' and optionally 'shipping' BillingAddress objects.
-Future<Map<String, BillingAddress>?> showBillingAddressSheet(
+/// Returns a map with 'billing' and optionally 'shipping' Address objects.
+Future<Map<String, Address>?> showAddressSheet(
   BuildContext context, {
-  BillingAddress? initialAddress,
+  Address? initialAddress,
   bool showShippingOption = false,
 }) {
-  return showModalBottomSheet<Map<String, BillingAddress>>(
+  return showModalBottomSheet<Map<String, Address>>(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => _BillingAddressSheet(
+    builder: (ctx) => _AddressSheet(
       initialAddress: initialAddress,
       showShippingOption: showShippingOption,
     ),
   );
 }
 
-class _BillingAddressSheet extends StatefulWidget {
-  final BillingAddress? initialAddress;
+class _AddressSheet extends StatefulWidget {
+  final Address? initialAddress;
   final bool showShippingOption;
 
-  const _BillingAddressSheet({
+  const _AddressSheet({
     this.initialAddress,
     this.showShippingOption = false,
   });
 
   @override
-  State<_BillingAddressSheet> createState() => _BillingAddressSheetState();
+  State<_AddressSheet> createState() => _AddressSheetState();
 }
 
-class _BillingAddressSheetState extends State<_BillingAddressSheet> {
+class _AddressSheetState extends State<_AddressSheet> {
   final _formKey = GlobalKey<FormState>();
   final _pincodeController = TextEditingController();
   final _cityController = TextEditingController();
@@ -225,7 +225,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
       return;
     }
 
-    final billing = BillingAddress(
+    final billing = Address(
       street: _streetController.text.trim(),
       street2: _street2Controller.text.trim(),
       city: _cityController.text.trim(),
@@ -234,7 +234,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
       pincode: _pincodeController.text.trim(),
     );
 
-    final result = <String, BillingAddress>{'billing': billing};
+    final result = <String, Address>{'billing': billing};
 
     if (widget.showShippingOption) {
       if (_sameAsShipping) {
@@ -244,7 +244,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
           showAppDialog(context, message: 'Please select a state for shipping address', type: AppDialogType.info);
           return;
         }
-        result['shipping'] = BillingAddress(
+        result['shipping'] = Address(
           street: _shipStreetController.text.trim(),
           street2: _shipStreet2Controller.text.trim(),
           city: _shipCityController.text.trim(),
@@ -311,7 +311,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
               child: Row(
                 children: [
                   Text(
-                    'Billing Address',
+                    'Address',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -387,7 +387,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
                                   });
                                 },
                                 child: Text(
-                                  'Use saved address as billing address',
+                                  'Use saved address',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: fieldFontSize,
@@ -514,7 +514,7 @@ class _BillingAddressSheetState extends State<_BillingAddressSheet> {
                               child: GestureDetector(
                                 onTap: () => setState(() => _sameAsShipping = !_sameAsShipping),
                                 child: Text(
-                                  'Shipping address same as billing',
+                                  'Same as above',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: fieldFontSize,

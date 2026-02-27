@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +10,7 @@ import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/download_service.dart';
-import 'package:pgme/core/services/ebook_order_service.dart';
+import 'package:pgme/core/services/ebook_access_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -22,7 +24,7 @@ class YourNotesScreen extends StatefulWidget {
 
 class _YourNotesScreenState extends State<YourNotesScreen> {
   final DashboardService _dashboardService = DashboardService();
-  final EbookOrderService _ebookOrderService = EbookOrderService();
+  final EbookAccessService _ebookAccessService = EbookAccessService();
   final DownloadService _downloadService = DownloadService();
   List<LibraryItemModel> _libraryItems = [];
   List<LibraryItemModel> _purchasedEbookItems = [];
@@ -113,7 +115,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
 
   Future<void> _loadPurchasedEbooks() async {
     try {
-      final ebooks = await _ebookOrderService.getUserPurchasedEbooks();
+      final ebooks = await _ebookAccessService.getUserAccessibleEbooks();
       if (mounted) {
         setState(() {
           _purchasedEbookItems = ebooks.map((ebook) => LibraryItemModel(
@@ -164,7 +166,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
       String fileName;
 
       if (_isEbookItem(item)) {
-        final data = await _ebookOrderService.getEbookViewUrl(docId);
+        final data = await _ebookAccessService.getEbookViewUrl(docId);
         url = data['url'] as String;
         fileName = 'ebook_$docId.pdf';
       } else {
@@ -210,7 +212,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
 
   Future<void> _openEbook(LibraryItemModel item) async {
     try {
-      final data = await _ebookOrderService.getEbookViewUrl(item.documentId);
+      final data = await _ebookAccessService.getEbookViewUrl(item.documentId);
       if (mounted) {
         final url = data['url'] as String?;
         final title = data['title'] as String? ?? item.title;
@@ -492,7 +494,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Buy E-Books',
+                              Platform.isIOS ? 'E-Books' : 'Buy E-Books',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w600,
@@ -502,7 +504,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                             ),
                             SizedBox(height: isTablet ? 4 : 2),
                             Text(
-                              'Browse and purchase study materials',
+                              Platform.isIOS ? 'Browse study materials' : 'Browse and purchase study materials',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,

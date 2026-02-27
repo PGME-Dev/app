@@ -11,14 +11,14 @@ import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/library_item_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/models/banner_model.dart';
 import 'package:pgme/core/services/api_service.dart';
-import 'package:pgme/core/services/zoho_payment_service.dart';
+import 'package:pgme/core/services/gateway_service.dart';
 
 class DashboardService {
   final ApiService _apiService = ApiService();
-  final ZohoPaymentService _zohoPaymentService = ZohoPaymentService();
+  final GatewayService _gatewayService = GatewayService();
 
   // Cache for faculty (1 hour TTL)
   DateTime? _lastFacultyFetch;
@@ -737,7 +737,7 @@ class DashboardService {
       debugPrint('=== DashboardService: Checking active purchases ===');
 
       final response = await _apiService.dio.get(
-        ApiConstants.userPurchases,
+        ApiConstants.activeUserRecords,
         queryParameters: {
           'is_active': 'true',
           'payment_status': 'completed',
@@ -767,13 +767,13 @@ class DashboardService {
   // ============================================================================
 
   /// Create Zoho payment session for package purchase
-  Future<ZohoPaymentSession> createPackagePaymentSession(
+  Future<GatewaySession> createPackagePaymentSession(
     String packageId, {
     Map<String, dynamic>? billingAddress,
     int? tierIndex,
   }) async {
-    return await _zohoPaymentService.createPaymentSession(
-      endpoint: ApiConstants.createPaymentOrder,
+    return await _gatewayService.initSession(
+      endpoint: ApiConstants.activeInitAccessSession,
       data: {
         'package_id': packageId,
         if (billingAddress != null) 'billing_address': billingAddress,
@@ -783,13 +783,13 @@ class DashboardService {
   }
 
   /// Verify Zoho payment for package purchase
-  Future<ZohoVerificationResponse> verifyPackagePayment({
+  Future<GatewayVerificationResponse> verifyPackagePayment({
     required String paymentSessionId,
     required String paymentId,
     String? signature,
   }) async {
-    return await _zohoPaymentService.verifyPayment(
-      endpoint: ApiConstants.verifyPayment,
+    return await _gatewayService.confirmSession(
+      endpoint: ApiConstants.activeConfirmAccess,
       paymentSessionId: paymentSessionId,
       paymentId: paymentId,
       signature: signature,
@@ -803,7 +803,7 @@ class DashboardService {
   ) async {
     try {
       final response = await _apiService.dio.post(
-        ApiConstants.calculateUpgrade,
+        ApiConstants.activeTierPreview,
         data: {
           'package_id': packageId,
           'target_tier_index': targetTierIndex,
@@ -830,7 +830,7 @@ class DashboardService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        ApiConstants.createUpgradeOrder,
+        ApiConstants.activeTierInit,
         data: {
           'package_id': packageId,
           'target_tier_index': targetTierIndex,
@@ -852,13 +852,13 @@ class DashboardService {
   }
 
   /// Verify upgrade payment
-  Future<ZohoVerificationResponse> verifyUpgradePayment({
+  Future<GatewayVerificationResponse> verifyUpgradePayment({
     required String paymentSessionId,
     required String paymentId,
     String? signature,
   }) async {
-    return await _zohoPaymentService.verifyPayment(
-      endpoint: ApiConstants.verifyUpgradePayment,
+    return await _gatewayService.confirmSession(
+      endpoint: ApiConstants.activeTierConfirm,
       paymentSessionId: paymentSessionId,
       paymentId: paymentId,
       signature: signature,

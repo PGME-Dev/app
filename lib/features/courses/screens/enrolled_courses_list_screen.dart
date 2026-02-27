@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +7,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
 
 class EnrolledCoursesListScreen extends StatefulWidget {
@@ -386,7 +387,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
   }
 
   Widget _buildPurchaseCard(
-    PurchaseModel purchase,
+    AccessRecordModel purchase,
     Color textColor,
     Color secondaryTextColor,
     Color cardColor,
@@ -488,18 +489,19 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '₹${purchase.amountPaid.toString().replaceAllMapped(
-                          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                          (Match m) => '${m[1]},',
-                        )}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: isTablet ? 22 : 18,
-                          color: textColor,
+                      if (!Platform.isIOS)
+                        Text(
+                          '₹${purchase.amountPaid.toString().replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                            (Match m) => '${m[1]},',
+                          )}',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w700,
+                            fontSize: isTablet ? 22 : 18,
+                            color: textColor,
+                          ),
                         ),
-                      ),
                       // Status and expiry badge
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 8 : 6),

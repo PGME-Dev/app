@@ -1,4 +1,4 @@
-class BillingAddress {
+class Address {
   final String street;
   final String street2;
   final String city;
@@ -7,7 +7,7 @@ class BillingAddress {
   final String pincode;
   final String country;
 
-  BillingAddress({
+  Address({
     this.street = '',
     this.street2 = '',
     required this.city,
@@ -44,8 +44,8 @@ class BillingAddress {
         'country': country,
       };
 
-  factory BillingAddress.fromJson(Map<String, dynamic> json) {
-    return BillingAddress(
+  factory Address.fromJson(Map<String, dynamic> json) {
+    return Address(
       street: json['street'] as String? ?? '',
       street2: json['street2'] as String? ?? '',
       city: json['city'] as String? ?? '',
@@ -56,7 +56,7 @@ class BillingAddress {
     );
   }
 
-  BillingAddress copyWith({
+  Address copyWith({
     String? street,
     String? street2,
     String? city,
@@ -65,7 +65,7 @@ class BillingAddress {
     String? pincode,
     String? country,
   }) {
-    return BillingAddress(
+    return Address(
       street: street ?? this.street,
       street2: street2 ?? this.street2,
       city: city ?? this.city,

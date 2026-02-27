@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -407,9 +409,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               // My Orders
                               _buildLegalItem(
                                 icon: Icons.shopping_bag_outlined,
-                                title: 'My Orders',
+                                title: Platform.isIOS ? 'My Records' : 'My Orders',
                                 onTap: () {
-                                  context.push('/my-purchases');
+                                  context.push('/my-records');
                                 },
                                 textColor: textColor,
                                 iconColor: iconColor,

@@ -1,9 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'session_purchase_model.g.dart';
+part 'session_access_model.g.dart';
 
 @JsonSerializable()
-class SessionPurchaseModel {
+class SessionAccessModel {
   @JsonKey(name: 'purchase_id')
   final String purchaseId;
 
@@ -42,7 +42,7 @@ class SessionPurchaseModel {
   @JsonKey(name: 'is_active', defaultValue: true)
   final bool isActive;
 
-  SessionPurchaseModel({
+  SessionAccessModel({
     required this.purchaseId,
     required this.sessionId,
     required this.sessionTitle,
@@ -58,12 +58,12 @@ class SessionPurchaseModel {
     required this.isActive,
   });
 
-  factory SessionPurchaseModel.fromJson(Map<String, dynamic> json) =>
-      _$SessionPurchaseModelFromJson(json);
+  factory SessionAccessModel.fromJson(Map<String, dynamic> json) =>
+      _$SessionAccessModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SessionPurchaseModelToJson(this);
+  Map<String, dynamic> toJson() => _$SessionAccessModelToJson(this);
 
-  SessionPurchaseModel copyWith({
+  SessionAccessModel copyWith({
     String? purchaseId,
     String? sessionId,
     String? sessionTitle,
@@ -78,7 +78,7 @@ class SessionPurchaseModel {
     String? purchasedAt,
     bool? isActive,
   }) {
-    return SessionPurchaseModel(
+    return SessionAccessModel(
       purchaseId: purchaseId ?? this.purchaseId,
       sessionId: sessionId ?? this.sessionId,
       sessionTitle: sessionTitle ?? this.sessionTitle,
@@ -131,9 +131,9 @@ class SessionAccessStatus {
   Map<String, dynamic> toJson() => _$SessionAccessStatusToJson(this);
 }
 
-/// Model for Razorpay order response
+/// Model for session access response
 @JsonSerializable()
-class SessionOrderResponse {
+class SessionAccessResponse {
   @JsonKey(name: 'order_id')
   final String orderId;
 
@@ -141,23 +141,23 @@ class SessionOrderResponse {
 
   final String currency;
 
-  final SessionOrderDetails session;
+  final SessionAccessDetails session;
 
-  SessionOrderResponse({
+  SessionAccessResponse({
     required this.orderId,
     required this.amount,
     required this.currency,
     required this.session,
   });
 
-  factory SessionOrderResponse.fromJson(Map<String, dynamic> json) =>
-      _$SessionOrderResponseFromJson(json);
+  factory SessionAccessResponse.fromJson(Map<String, dynamic> json) =>
+      _$SessionAccessResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SessionOrderResponseToJson(this);
+  Map<String, dynamic> toJson() => _$SessionAccessResponseToJson(this);
 }
 
 @JsonSerializable()
-class SessionOrderDetails {
+class SessionAccessDetails {
   @JsonKey(name: 'session_id')
   final String sessionId;
 
@@ -166,14 +166,14 @@ class SessionOrderDetails {
   @JsonKey(name: 'scheduled_start_time')
   final String scheduledStartTime;
 
-  SessionOrderDetails({
+  SessionAccessDetails({
     required this.sessionId,
     required this.title,
     required this.scheduledStartTime,
   });
 
-  factory SessionOrderDetails.fromJson(Map<String, dynamic> json) =>
-      _$SessionOrderDetailsFromJson(json);
+  factory SessionAccessDetails.fromJson(Map<String, dynamic> json) =>
+      _$SessionAccessDetailsFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SessionOrderDetailsToJson(this);
+  Map<String, dynamic> toJson() => _$SessionAccessDetailsToJson(this);
 }

@@ -1,16 +1,17 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/models/live_session_model.dart';
-import 'package:pgme/core/models/session_purchase_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/session_access_model.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
-import 'package:pgme/core/services/session_purchase_service.dart';
-import 'package:pgme/core/widgets/zoho_payment_widget.dart';
-import 'package:pgme/core/widgets/billing_address_bottom_sheet.dart';
-import 'package:pgme/core/models/billing_address_model.dart';
+import 'package:pgme/core/services/session_access_service.dart';
+import 'package:pgme/core/widgets/gateway_widget.dart';
+import 'package:pgme/core/widgets/address_bottom_sheet.dart';
+import 'package:pgme/core/models/address_model.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/zoom_service.dart';
@@ -32,7 +33,7 @@ class SessionDetailsScreen extends StatefulWidget {
 
 class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   final DashboardService _dashboardService = DashboardService();
-  final SessionPurchaseService _purchaseService = SessionPurchaseService();
+  final SessionAccessService _purchaseService = SessionAccessService();
   final ZoomMeetingService _zoomService = ZoomMeetingService();
 
   LiveSessionModel? _session;
@@ -207,17 +208,17 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
 
     // Show billing address bottom sheet before payment
-    BillingAddress? savedAddress;
+    Address? savedAddress;
     try {
       final user = await UserService().getProfile();
       if (user.billingAddress != null && user.billingAddress!.isNotEmpty) {
-        savedAddress = BillingAddress.fromJson(user.billingAddress!);
+        savedAddress = Address.fromJson(user.billingAddress!);
       }
     } catch (_) {}
 
     if (!mounted) return;
 
-    final addressResult = await showBillingAddressSheet(
+    final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
     );
@@ -228,16 +229,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     setState(() => _isPurchasing = true);
 
     try {
-      final paymentSession = await _purchaseService.createPaymentSession(
+      final paymentSession = await _purchaseService.initSession(
         widget.sessionId,
         billingAddress: billingAddress.toJson(),
       );
 
       if (!mounted) return;
 
-      final result = await Navigator.of(context, rootNavigator: true).push<ZohoPaymentResponse>(
+      final result = await Navigator.of(context, rootNavigator: true).push<GatewayResponse>(
         MaterialPageRoute(
-          builder: (context) => ZohoPaymentWidget(
+          builder: (context) => GatewayWidget(
             paymentSession: paymentSession,
             onPaymentComplete: (response) {
               Navigator.pop(context, response);
@@ -266,9 +267,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
   }
 
-  Future<void> _handlePaymentSuccess(ZohoPaymentResponse response) async {
+  Future<void> _handlePaymentSuccess(GatewayResponse response) async {
     try {
-      final verification = await _purchaseService.verifyZohoPayment(
+      final verification = await _purchaseService.confirmSession(
         sessionId: widget.sessionId,
         paymentSessionId: response.paymentSessionId!,
         paymentId: response.paymentId!,
@@ -281,9 +282,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             _checkAccessStatus(),
             _checkEnrollmentStatus(),
           ]);
-          showAppDialog(context, message: 'Payment successful! You can now join the session.', type: AppDialogType.success);
+          showAppDialog(context, message: Platform.isIOS ? 'You now have access. You can now join the session.' : 'Payment successful! You can now join the session.', type: AppDialogType.success);
         } else {
-          _showError('Payment verification failed. Please contact support.');
+          _showError(Platform.isIOS ? 'Verification failed. Please contact support.' : 'Payment verification failed. Please contact support.');
         }
       }
     } catch (e) {
@@ -426,6 +427,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   }
 
   String _formatPrice(num price) {
+    if (Platform.isIOS) return '';
     final priceInt = price.toInt();
     return '₹${priceInt.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }

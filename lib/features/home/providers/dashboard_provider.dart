@@ -3,7 +3,7 @@ import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/models/package_type_model.dart';
-import 'package:pgme/core/models/purchase_model.dart';
+import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/models/faculty_model.dart';
 import 'package:pgme/core/models/subject_model.dart';
@@ -55,7 +55,7 @@ class DashboardProvider with ChangeNotifier {
   // Package-specific subscription status
   bool _hasTheorySubscription = false;
   bool _hasPracticalSubscription = false;
-  List<PurchaseModel> _activePurchases = [];
+  List<AccessRecordModel> _activePurchases = [];
 
   // Getters
   String? get userName => _userName;
@@ -85,7 +85,7 @@ class DashboardProvider with ChangeNotifier {
   bool? get hasActivePurchase => _hasActivePurchase;
   bool get hasTheorySubscription => _hasTheorySubscription;
   bool get hasPracticalSubscription => _hasPracticalSubscription;
-  List<PurchaseModel> get activePurchases => _activePurchases;
+  List<AccessRecordModel> get activePurchases => _activePurchases;
 
   /// Main dashboard load method
   /// Loads primary subject first, then other sections in parallel
@@ -321,7 +321,7 @@ class DashboardProvider with ChangeNotifier {
       debugPrint('Loading subscription status from API...');
 
       final response = await _apiService.dio.get(
-        ApiConstants.subscriptionStatus,
+        ApiConstants.activeAccessLevel,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {

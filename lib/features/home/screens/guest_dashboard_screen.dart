@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -350,7 +352,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Buy E-Books',
+                            Platform.isIOS ? 'E-Books' : 'Buy E-Books',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
@@ -360,7 +362,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                           ),
                           SizedBox(height: isTablet ? 4 : 2),
                           Text(
-                            'Browse and purchase study materials',
+                            Platform.isIOS ? 'Browse study materials' : 'Browse and purchase study materials',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w400,

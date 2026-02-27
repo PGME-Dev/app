@@ -1,27 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pgme/core/constants/api_constants.dart';
-import 'package:pgme/core/models/book_order_model.dart';
-import 'package:pgme/core/models/zoho_payment_models.dart';
+import 'package:pgme/core/models/book_request_model.dart';
+import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/services/api_service.dart';
-import 'package:pgme/core/services/zoho_payment_service.dart';
+import 'package:pgme/core/services/gateway_service.dart';
 
-class BookOrderService {
+class BookRequestService {
   final ApiService _apiService = ApiService();
-  final ZohoPaymentService _zohoPaymentService = ZohoPaymentService();
+  final GatewayService _gatewayService = GatewayService();
 
-  /// Create Razorpay order for book purchase
-  Future<BookOrderResponse> createOrder({
+  /// Create order for book request
+  Future<BookRequestResponse> createOrder({
     required List<Map<String, dynamic>> items,
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
   }) async {
     try {
-      debugPrint('=== BookOrderService: Creating order ===');
+      debugPrint('=== BookRequestService: Creating request ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.createBookOrder,
+        ApiConstants.activeInitBookRequest,
         data: {
           'items': items,
           'recipient_name': recipientName,
@@ -32,33 +32,33 @@ class BookOrderService {
 
       if (response.statusCode == 201 && response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
-        return BookOrderResponse.fromJson(data);
+        return BookRequestResponse.fromJson(data);
       }
 
-      throw Exception(response.data['message'] ?? 'Failed to create order');
+      throw Exception(response.data['message'] ?? 'Failed to create request');
     } on DioException catch (e) {
-      debugPrint('DioException creating order: ${e.message}');
+      debugPrint('DioException creating request: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error creating order: $e');
+      debugPrint('Error creating request: $e');
       rethrow;
     }
   }
 
-  /// Verify Razorpay payment
-  Future<PaymentVerifyResponse> verifyPayment({
+  /// Verify request access
+  Future<RequestVerifyResponse> verifyAccess({
     required String razorpayOrderId,
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
     try {
-      debugPrint('=== BookOrderService: Verifying payment ===');
+      debugPrint('=== BookRequestService: Verifying access ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.verifyBookPayment,
+        ApiConstants.activeConfirmBookRequest,
         data: {
           'razorpay_order_id': razorpayOrderId,
           'razorpay_payment_id': razorpayPaymentId,
@@ -68,31 +68,31 @@ class BookOrderService {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
-        return PaymentVerifyResponse.fromJson(data);
+        return RequestVerifyResponse.fromJson(data);
       }
 
-      throw Exception(response.data['message'] ?? 'Payment verification failed');
+      throw Exception(response.data['message'] ?? 'Access verification failed');
     } on DioException catch (e) {
-      debugPrint('DioException verifying payment: ${e.message}');
+      debugPrint('DioException verifying access: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
-      throw Exception('Payment verification failed');
+      throw Exception('Access verification failed');
     } catch (e) {
-      debugPrint('Error verifying payment: $e');
+      debugPrint('Error verifying access: $e');
       rethrow;
     }
   }
 
-  /// Create test order (bypasses Razorpay for testing)
-  Future<Map<String, dynamic>> createTestOrder({
+  /// Create test request (bypasses gateway for testing)
+  Future<Map<String, dynamic>> createTestRequest({
     required List<Map<String, dynamic>> items,
     required String recipientName,
     required String shippingPhone,
     required String shippingAddress,
   }) async {
     try {
-      debugPrint('=== BookOrderService: Creating test order ===');
+      debugPrint('=== BookRequestService: Creating test request ===');
 
       final response = await _apiService.dio.post(
         ApiConstants.testBookOrder,
@@ -108,116 +108,116 @@ class BookOrderService {
         return response.data['data'] as Map<String, dynamic>;
       }
 
-      throw Exception(response.data['message'] ?? 'Failed to create test order');
+      throw Exception(response.data['message'] ?? 'Failed to create test request');
     } on DioException catch (e) {
-      debugPrint('DioException creating test order: ${e.message}');
+      debugPrint('DioException creating test request: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error creating test order: $e');
+      debugPrint('Error creating test request: $e');
       rethrow;
     }
   }
 
-  /// Get user's book orders
-  Future<List<BookOrderModel>> getUserOrders({
+  /// Get user's book requests
+  Future<List<BookRequestModel>> getUserRequests({
     String? orderStatus,
     String? paymentStatus,
     int limit = 20,
   }) async {
     try {
-      debugPrint('=== BookOrderService: Getting user orders ===');
+      debugPrint('=== BookRequestService: Getting user requests ===');
 
       final queryParams = <String, dynamic>{'limit': limit};
       if (orderStatus != null) queryParams['order_status'] = orderStatus;
       if (paymentStatus != null) queryParams['payment_status'] = paymentStatus;
 
       final response = await _apiService.dio.get(
-        ApiConstants.bookOrders,
+        ApiConstants.activeBookRequests,
         queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final ordersData = response.data['data']['orders'] as List;
-        return ordersData
-            .map((json) => BookOrderModel.fromJson(json as Map<String, dynamic>))
+        final requestsData = response.data['data']['orders'] as List;
+        return requestsData
+            .map((json) => BookRequestModel.fromJson(json as Map<String, dynamic>))
             .toList();
       }
 
       return [];
     } on DioException catch (e) {
-      debugPrint('DioException getting orders: ${e.message}');
+      debugPrint('DioException getting requests: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error getting orders: $e');
+      debugPrint('Error getting requests: $e');
       rethrow;
     }
   }
 
-  /// Get order by ID
-  Future<BookOrderModel> getOrderById(String orderId) async {
+  /// Get request by ID
+  Future<BookRequestModel> getRequestById(String orderId) async {
     try {
-      debugPrint('=== BookOrderService: Getting order $orderId ===');
+      debugPrint('=== BookRequestService: Getting request $orderId ===');
 
       final response = await _apiService.dio.get(
-        ApiConstants.bookOrderDetails(orderId),
+        ApiConstants.activeBookRequestDetails(orderId),
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final orderData = response.data['data']['order'] as Map<String, dynamic>;
-        return BookOrderModel.fromJson(orderData);
+        final requestData = response.data['data']['order'] as Map<String, dynamic>;
+        return BookRequestModel.fromJson(requestData);
       }
 
-      throw Exception('Failed to load order details');
+      throw Exception('Failed to load request details');
     } on DioException catch (e) {
-      debugPrint('DioException getting order: ${e.message}');
+      debugPrint('DioException getting request: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error getting order: $e');
+      debugPrint('Error getting request: $e');
       rethrow;
     }
   }
 
-  /// Cancel an order
-  Future<Map<String, dynamic>> cancelOrder(String orderId) async {
+  /// Cancel a request
+  Future<Map<String, dynamic>> cancelRequest(String orderId) async {
     try {
-      debugPrint('=== BookOrderService: Cancelling order $orderId ===');
+      debugPrint('=== BookRequestService: Cancelling request $orderId ===');
 
       final response = await _apiService.dio.post(
-        ApiConstants.cancelBookOrder(orderId),
+        ApiConstants.activeCancelBookRequest(orderId),
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>;
       }
 
-      throw Exception(response.data['message'] ?? 'Failed to cancel order');
+      throw Exception(response.data['message'] ?? 'Failed to cancel request');
     } on DioException catch (e) {
-      debugPrint('DioException cancelling order: ${e.message}');
+      debugPrint('DioException cancelling request: ${e.message}');
       if (e.response?.data != null && e.response?.data['message'] != null) {
         throw Exception(e.response?.data['message']);
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      debugPrint('Error cancelling order: $e');
+      debugPrint('Error cancelling request: $e');
       rethrow;
     }
   }
 
   // ============================================================================
-  // ZOHO PAYMENTS METHODS
+  // GATEWAY METHODS
   // ============================================================================
 
-  /// Create Zoho payment session for book order
-  Future<ZohoPaymentSession> createPaymentSession({
+  /// Create gateway session for book request
+  Future<GatewaySession> initSession({
     required List<Map<String, dynamic>> items,
     required String recipientName,
     required String shippingPhone,
@@ -225,8 +225,8 @@ class BookOrderService {
     Map<String, dynamic>? billingAddress,
     Map<String, dynamic>? shippingAddressStructured,
   }) async {
-    return await _zohoPaymentService.createPaymentSession(
-      endpoint: ApiConstants.createBookOrder,
+    return await _gatewayService.initSession(
+      endpoint: ApiConstants.activeInitBookRequest,
       data: {
         'items': items,
         'recipient_name': recipientName,
@@ -238,14 +238,14 @@ class BookOrderService {
     );
   }
 
-  /// Verify Zoho payment for book order
-  Future<ZohoVerificationResponse> verifyZohoPayment({
+  /// Confirm gateway session for book request
+  Future<GatewayVerificationResponse> confirmSession({
     required String paymentSessionId,
     required String paymentId,
     String? signature,
   }) async {
-    return await _zohoPaymentService.verifyPayment(
-      endpoint: ApiConstants.verifyBookPayment,
+    return await _gatewayService.confirmSession(
+      endpoint: ApiConstants.activeConfirmBookRequest,
       paymentSessionId: paymentSessionId,
       paymentId: paymentId,
       signature: signature,

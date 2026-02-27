@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'purchase_model.dart';
+part of 'access_record_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-PurchaseModel _$PurchaseModelFromJson(Map<String, dynamic> json) =>
-    PurchaseModel(
+AccessRecordModel _$AccessRecordModelFromJson(Map<String, dynamic> json) =>
+    AccessRecordModel(
       purchaseId: json['purchase_id'] as String,
       package: PackageModel.fromJson(json['package'] as Map<String, dynamic>),
       amountPaid: (json['amount_paid'] as num).toInt(),
@@ -25,7 +25,7 @@ PurchaseModel _$PurchaseModelFromJson(Map<String, dynamic> json) =>
       updatedAt: json['updatedAt'] as String?,
     );
 
-Map<String, dynamic> _$PurchaseModelToJson(PurchaseModel instance) =>
+Map<String, dynamic> _$AccessRecordModelToJson(AccessRecordModel instance) =>
     <String, dynamic>{
       'purchase_id': instance.purchaseId,
       'package': instance.package,
