@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,176 @@ import 'package:pgme/core/utils/responsive_helper.dart';
 
 class TermsAndConditionsScreen extends StatelessWidget {
   const TermsAndConditionsScreen({super.key});
+
+  List<Map<String, String>> _getSections() {
+    if (Platform.isIOS) {
+      return _getIOSSections();
+    }
+    return _getDefaultSections();
+  }
+
+  List<Map<String, String>> _getDefaultSections() {
+    return [
+      {
+        'title': 'Welcome to PGME',
+        'content':
+            'These Terms and Conditions ("Terms") govern your access to and use of the PGME platform, including our mobile application and website (collectively, the "Platform"). By accessing or using the Platform, you agree to be bound by these Terms.',
+      },
+      {
+        'title': '1. Acceptance of Terms',
+        'content':
+            'These Terms govern your use of the PGME platform, including mobile application and website.\nBy accessing or using the Platform, you agree to be legally bound by these Terms and our Refund Policy and Privacy Policy.\nIf you do not agree, you must discontinue use immediately.',
+      },
+      {
+        'title': '2. Eligibility',
+        'content':
+            'You must be at least 18 years old and legally competent to enter into binding contracts under Indian law.',
+      },
+      {
+        'title': '3. Account Registration',
+        'content':
+            'You are responsible for:\n\n• Maintaining confidentiality of login credentials\n• All activity under your account\n• Providing accurate information\n\nAccount sharing is strictly prohibited.\nPGME reserves the right to monitor usage patterns to detect unauthorized access.',
+      },
+      {
+        'title': '4. Subscription & Payment',
+        'content':
+            'Access to paid content requires subscription.\n\nBy purchasing a subscription:\n\n• You agree to pay the listed fee\n• All prices are inclusive of applicable GST unless stated otherwise\n• Payments are non-refundable as per Refund Policy\n• Subscriptions are non-transferable and non-resalable\n\nIf applicable, subscription renewals will occur automatically unless cancelled before renewal date.',
+      },
+      {
+        'title': '5. Intellectual Property',
+        'content':
+            'All content is the exclusive property of PGME MEDICAL EDUCATION LLP.\n\nYou are granted a limited, non-exclusive, non-transferable license for personal academic use only.\n\nYou may not:\n\n• Copy\n• Record\n• Screen capture\n• Share\n• Redistribute\n• Commercially exploit\n\nViolation may result in:\n\n• Immediate termination\n• Legal action\n• Permanent access ban\n• No refund',
+      },
+      {
+        'title': '6. Prohibited Conduct',
+        'content':
+            'You shall not:\n\n• Attempt unauthorized access\n• Reverse engineer the platform\n• Circumvent security mechanisms\n• Engage in chargeback abuse\n• Upload malicious content',
+      },
+      {
+        'title': '7. Live Sessions',
+        'content':
+            'PGME may:\n\n• Schedule or reschedule sessions\n• Record sessions\n• Modify faculty or content\n• Remove disruptive participants\n\nNo refund shall be issued due to scheduling changes.',
+      },
+      {
+        'title': '8. Disclaimer',
+        'content':
+            'The Platform is provided "as is."\n\nPGME does not guarantee:\n\n• Uninterrupted access\n• Error-free service\n• Exam success\n• Professional outcomes\n\nEducational content is for academic assistance only.',
+      },
+      {
+        'title': '9. Limitation of Liability',
+        'content':
+            'To the maximum extent permitted by law:\n\n• PGME shall not be liable for indirect or consequential damages\n• Total liability shall not exceed the amount paid for the relevant subscription\n• PGME is not liable for third-party payment gateway or banking issues',
+      },
+      {
+        'title': '10. Indemnification',
+        'content':
+            'You agree to indemnify and hold harmless PGME from any claims, damages, losses, or expenses arising from:\n\n• Violation of these Terms\n• Unauthorized content sharing\n• Fraudulent payment disputes\n• Misuse of the Platform',
+      },
+      {
+        'title': '11. Suspension & Termination',
+        'content':
+            'PGME may suspend or terminate accounts for:\n\n• Policy violations\n• Fraud\n• Unauthorized sharing\n• Chargeback abuse\n\nNo refund shall be granted in such cases.',
+      },
+      {
+        'title': '12. Force Majeure',
+        'content':
+            'PGME shall not be liable for delays or failures caused by events beyond reasonable control, including but not limited to:\n\n• Natural disasters\n• Government restrictions\n• Internet or server failures\n• Power outages',
+      },
+      {
+        'title': '13. Governing Law & Jurisdiction',
+        'content':
+            'These Terms shall be governed by the laws of India.\nAll disputes shall be subject to the exclusive jurisdiction of courts located in Jalandhar, Punjab.',
+      },
+      {
+        'title': '14. Modifications',
+        'content':
+            'PGME may modify these Terms at any time. Continued use constitutes acceptance of revised Terms.',
+      },
+      {
+        'title': '15. Contact',
+        'content': 'Email: support@pgmemedicalteaching.com',
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getIOSSections() {
+    return [
+      {
+        'title': 'Welcome to PGME',
+        'content':
+            'These Terms and Conditions ("Terms") govern your access to and use of the PGME platform, including our mobile application and website (collectively, the "Platform"). By accessing or using the Platform, you agree to be bound by these Terms.',
+      },
+      {
+        'title': '1. Acceptance of Terms',
+        'content':
+            'These Terms govern your use of the PGME platform, including mobile application and website.\nBy accessing or using the Platform, you agree to be legally bound by these Terms and our Privacy Policy.\nIf you do not agree, you must discontinue use immediately.',
+      },
+      {
+        'title': '2. Eligibility',
+        'content':
+            'You must be at least 18 years old and legally competent to enter into binding contracts under Indian law.',
+      },
+      {
+        'title': '3. Account Registration',
+        'content':
+            'You are responsible for:\n\n• Maintaining confidentiality of login credentials\n• All activity under your account\n• Providing accurate information\n\nAccount sharing is strictly prohibited.\nPGME reserves the right to monitor usage patterns to detect unauthorized access.',
+      },
+      {
+        'title': '4. Intellectual Property',
+        'content':
+            'All content is the exclusive property of PGME MEDICAL EDUCATION LLP.\n\nYou are granted a limited, non-exclusive, non-transferable license for personal academic use only.\n\nYou may not:\n\n• Copy\n• Record\n• Screen capture\n• Share\n• Redistribute\n• Commercially exploit\n\nViolation may result in:\n\n• Immediate termination\n• Legal action\n• Permanent access ban',
+      },
+      {
+        'title': '5. Prohibited Conduct',
+        'content':
+            'You shall not:\n\n• Attempt unauthorized access\n• Reverse engineer the platform\n• Circumvent security mechanisms\n• Upload malicious content',
+      },
+      {
+        'title': '6. Live Sessions',
+        'content':
+            'PGME may:\n\n• Schedule or reschedule sessions\n• Record sessions\n• Modify faculty or content\n• Remove disruptive participants',
+      },
+      {
+        'title': '7. Disclaimer',
+        'content':
+            'The Platform is provided "as is."\n\nPGME does not guarantee:\n\n• Uninterrupted access\n• Error-free service\n• Exam success\n• Professional outcomes\n\nEducational content is for academic assistance only.',
+      },
+      {
+        'title': '8. Limitation of Liability',
+        'content':
+            'To the maximum extent permitted by law:\n\n• PGME shall not be liable for indirect or consequential damages',
+      },
+      {
+        'title': '9. Indemnification',
+        'content':
+            'You agree to indemnify and hold harmless PGME from any claims, damages, losses, or expenses arising from:\n\n• Violation of these Terms\n• Unauthorized content sharing\n• Misuse of the Platform',
+      },
+      {
+        'title': '10. Suspension & Termination',
+        'content':
+            'PGME may suspend or terminate accounts for:\n\n• Policy violations\n• Fraud\n• Unauthorized sharing',
+      },
+      {
+        'title': '11. Force Majeure',
+        'content':
+            'PGME shall not be liable for delays or failures caused by events beyond reasonable control, including but not limited to:\n\n• Natural disasters\n• Government restrictions\n• Internet or server failures\n• Power outages',
+      },
+      {
+        'title': '12. Governing Law & Jurisdiction',
+        'content':
+            'These Terms shall be governed by the laws of India.\nAll disputes shall be subject to the exclusive jurisdiction of courts located in Jalandhar, Punjab.',
+      },
+      {
+        'title': '13. Modifications',
+        'content':
+            'PGME may modify these Terms at any time. Continued use constitutes acceptance of revised Terms.',
+      },
+      {
+        'title': '14. Contact',
+        'content': 'Email: support@pgmemedicalteaching.com',
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +197,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
     final backButtonBgColor = isDark ? AppColors.darkBackground : const Color(0xFFF5F7FA);
 
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+    final sections = _getSections();
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -102,7 +275,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Last Updated: February 13, 2026',
+                          'Last Updated: February 23, 2026',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: isTablet ? 15 : 12,
@@ -112,117 +285,13 @@ class TermsAndConditionsScreen extends StatelessWidget {
                         ),
                         SizedBox(height: isTablet ? 26 : 20),
 
-                        _buildSection(
-                          'Welcome to PGME',
-                          'These Terms and Conditions ("Terms") govern your access to and use of the PGME platform, including our mobile application and website (collectively, the "Platform"). By accessing or using the Platform, you agree to be bound by these Terms.',
+                        ...sections.map((section) => _buildSection(
+                          section['title']!,
+                          section['content']!,
                           textColor,
                           secondaryTextColor,
                           isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '1. Acceptance of Terms',
-                          'By creating an account or accessing any part of the Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, you must not use the Platform.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '2. Eligibility',
-                          'You must be at least 18 years of age to use the Platform. By using the Platform, you represent and warrant that you meet this age requirement and have the legal capacity to enter into these Terms.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '3. User Accounts',
-                          'To access certain features of the Platform, you must create an account. You are responsible for:\n\n• Maintaining the confidentiality of your account credentials\n• All activities that occur under your account\n• Ensuring that your account information is accurate and up-to-date\n\nYou must notify us immediately of any unauthorized use of your account.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '4. Subscription and Payments',
-                          'Access to premium content requires a paid subscription. By purchasing a subscription, you agree to:\n\n• Pay all applicable fees for the selected subscription plan\n• Provide accurate payment information\n• Our refund policy as outlined separately\n\nAll payments are processed securely through our payment gateway partners.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '5. Content and Intellectual Property',
-                          'All content on the Platform, including but not limited to courses, videos, study materials, and assessments, is owned by PGME or our content partners. You are granted a limited, non-exclusive, non-transferable license to access and use the content solely for your personal educational purposes.\n\nYou may not:\n\n• Copy, distribute, or reproduce any content\n• Share your account credentials with others\n• Record, screenshot, or capture any content\n• Use content for commercial purposes',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '6. User Conduct',
-                          'You agree to use the Platform in accordance with all applicable laws and regulations. Prohibited activities include:\n\n• Violating any intellectual property rights\n• Attempting to gain unauthorized access to the Platform\n• Interfering with or disrupting the Platform\n• Harassing or threatening other users\n• Posting inappropriate or offensive content',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '7. Live Sessions',
-                          'Access to live sessions is subject to availability and capacity limits. PGME reserves the right to:\n\n• Schedule, reschedule, or cancel live sessions\n• Limit the number of participants\n• Record sessions for later viewing\n• Remove disruptive participants',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '8. Privacy and Data Protection',
-                          'Your use of the Platform is subject to our Privacy Policy, which explains how we collect, use, and protect your personal information. By using the Platform, you consent to our data practices as described in the Privacy Policy.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '9. Disclaimers',
-                          'The Platform and all content are provided "as is" without warranties of any kind, either express or implied. PGME does not guarantee:\n\n• Uninterrupted or error-free operation\n• That content will meet your specific requirements\n• Specific exam results or outcomes\n• The accuracy or completeness of any content',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '10. Limitation of Liability',
-                          'To the maximum extent permitted by law, PGME shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Platform.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '11. Termination',
-                          'PGME reserves the right to suspend or terminate your account at any time for:\n\n• Violation of these Terms\n• Fraudulent or illegal activity\n• Non-payment of fees\n• Any other reason at our sole discretion',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '12. Changes to Terms',
-                          'We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting to the Platform. Your continued use of the Platform after changes constitutes acceptance of the modified Terms.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
-
-                        _buildSection(
-                          '13. Contact Information',
-                          'For questions or concerns about these Terms, please contact us through the support section in the app or visit our website.',
-                          textColor,
-                          secondaryTextColor,
-                          isTablet: isTablet,
-                        ),
+                        )),
                       ],
                     ),
                   ),

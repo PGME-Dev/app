@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -310,17 +312,19 @@ class AboutScreen extends StatelessWidget {
                           onTap: () => context.push('/privacy-policy'),
                           isTablet: isTablet,
                         ),
-                        SizedBox(height: isTablet ? 10 : 8),
+                        if (!Platform.isIOS) ...[
+                          SizedBox(height: isTablet ? 10 : 8),
 
-                        _buildLinkItem(
-                          icon: Icons.policy_outlined,
-                          title: 'Refund Policy',
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          onTap: () => context.push('/refund-policy'),
-                          isTablet: isTablet,
-                        ),
+                          _buildLinkItem(
+                            icon: Icons.policy_outlined,
+                            title: 'Refund Policy',
+                            cardColor: cardColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            onTap: () => context.push('/refund-policy'),
+                            isTablet: isTablet,
+                          ),
+                        ],
 
                         SizedBox(height: isTablet ? 30 : 24),
 

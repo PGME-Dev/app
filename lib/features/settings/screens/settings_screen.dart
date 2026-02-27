@@ -513,23 +513,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 iconColor: iconColor,
                                 isTablet: isTablet,
                               ),
-                              // Divider
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 27 : 21),
-                                child: Container(
-                                  height: 1,
-                                  color: dividerColor,
+                              if (!Platform.isIOS) ...[
+                                // Divider
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 27 : 21),
+                                  child: Container(
+                                    height: 1,
+                                    color: dividerColor,
+                                  ),
                                 ),
-                              ),
-                              // Refund Policy
-                              _buildLegalItem(
-                                icon: Icons.refresh,
-                                title: 'Refund Policy',
-                                onTap: () => context.push('/refund-policy'),
-                                textColor: textColor,
-                                iconColor: iconColor,
-                                isTablet: isTablet,
-                              ),
+                                // Refund Policy
+                                _buildLegalItem(
+                                  icon: Icons.refresh,
+                                  title: 'Refund Policy',
+                                  onTap: () => context.push('/refund-policy'),
+                                  textColor: textColor,
+                                  iconColor: iconColor,
+                                  isTablet: isTablet,
+                                ),
+                              ],
                             ],
                           ),
                         ),
