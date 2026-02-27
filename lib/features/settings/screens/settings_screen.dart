@@ -406,25 +406,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // My Orders
-                              _buildLegalItem(
-                                icon: Icons.shopping_bag_outlined,
-                                title: Platform.isIOS ? 'My Records' : 'My Orders',
-                                onTap: () {
-                                  context.push('/my-records');
-                                },
-                                textColor: textColor,
-                                iconColor: iconColor,
-                                isTablet: isTablet,
-                              ),
-                              // Divider
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 27 : 21),
-                                child: Container(
-                                  height: 1,
-                                  color: dividerColor,
+                              if (!Platform.isIOS) ...[
+                                // My Orders (Android only)
+                                _buildLegalItem(
+                                  icon: Icons.shopping_bag_outlined,
+                                  title: 'My Orders',
+                                  onTap: () {
+                                    context.push('/my-records');
+                                  },
+                                  textColor: textColor,
+                                  iconColor: iconColor,
+                                  isTablet: isTablet,
                                 ),
-                              ),
+                                // Divider
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 27 : 21),
+                                  child: Container(
+                                    height: 1,
+                                    color: dividerColor,
+                                  ),
+                                ),
+                              ],
                               // Join PGME - Careers
                               _buildLegalItem(
                                 icon: Icons.work_outline,

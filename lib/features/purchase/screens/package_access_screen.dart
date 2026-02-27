@@ -27,7 +27,8 @@ class PackageAccessScreen extends StatefulWidget {
   State<PackageAccessScreen> createState() => _PackageAccessScreenState();
 }
 
-class _PackageAccessScreenState extends State<PackageAccessScreen> {
+class _PackageAccessScreenState extends State<PackageAccessScreen>
+    with WidgetsBindingObserver {
   bool _isProcessing = false;
   bool _isLoading = true;
   PackageModel? _package;
@@ -38,7 +39,24 @@ class _PackageAccessScreenState extends State<PackageAccessScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadPackageData();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadPackageData();
+    }
   }
 
   Future<void> _loadPackageData() async {
@@ -327,7 +345,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen> {
 
               // Title
               Text(
-                'Get the ${package.type ?? ''}\nPackage',
+                Platform.isIOS ? 'View ${package.type ?? ''}\nPackage' : 'Get the ${package.type ?? ''}\nPackage',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
@@ -568,7 +586,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen> {
                           padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: btnPadV),
                         ),
                         child: Text(
-                          'Enroll Now',
+                          Platform.isIOS ? 'View Details' : 'Enroll Now',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Poppins',
@@ -1313,8 +1331,8 @@ class _PackageAccessScreenState extends State<PackageAccessScreen> {
                                       ),
                                     Text(
                                       canUpgrade
-                                          ? (WebStoreLauncher.shouldUseWebStore ? 'Upgrade on Web' : 'Upgrade')
-                                          : (WebStoreLauncher.shouldUseWebStore ? 'Get Access' : 'Buy Now'),
+                                          ? (WebStoreLauncher.shouldUseWebStore ? 'Change Plan' : (Platform.isIOS ? 'Change Plan' : 'Upgrade'))
+                                          : (WebStoreLauncher.shouldUseWebStore ? 'View Details' : (Platform.isIOS ? 'View Details' : 'Buy Now')),
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontSize: isTablet ? 22 : 18,

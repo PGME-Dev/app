@@ -440,7 +440,7 @@ class _BookRequestsScreenState extends State<BookRequestsScreen> {
 
         // Order Summary Section
         Text(
-          'Order Summary',
+          Platform.isIOS ? 'Summary' : 'Order Summary',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,

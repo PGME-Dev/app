@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -26,7 +27,8 @@ class RevisionSeriesScreen extends StatefulWidget {
   State<RevisionSeriesScreen> createState() => _RevisionSeriesScreenState();
 }
 
-class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
+class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
+    with WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
   List<SeriesModel> _series = [];
   PackageModel? _theoryPackage;
@@ -40,7 +42,24 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _initializeAndLoad();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _initializeAndLoad();
+    }
   }
 
   Future<void> _initializeAndLoad() async {
@@ -144,7 +163,11 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
+      if (WebStoreLauncher.shouldUseWebStore) {
+        WebStoreLauncher.openProductPage(context, productType: 'packages', productId: _activePackageId ?? '');
+      } else {
+        context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
+      }
     }
   }
 
@@ -216,7 +239,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Get $packageName',
+                Platform.isIOS ? 'View $packageName' : 'Get $packageName',
                 style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: isTablet ? 26 : 20, color: textColor),
                 textAlign: TextAlign.center,
               ),
@@ -264,7 +287,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                             elevation: 0,
                           ),
-                          child: Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: Colors.white)),
+                          child: Text(Platform.isIOS ? 'View Details' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: Colors.white)),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -793,7 +816,11 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
       height: buttonHeight,
       child: ElevatedButton(
         onPressed: () {
-          context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
+          if (WebStoreLauncher.shouldUseWebStore) {
+            WebStoreLauncher.openProductPage(context, productType: 'packages', productId: _activePackageId ?? '');
+          } else {
+            context.push('/package-access?packageId=$_activePackageId&packageType=Theory');
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: buttonColor,
@@ -803,7 +830,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen> {
           elevation: 0,
         ),
         child: Text(
-          'Enroll Now',
+          Platform.isIOS ? 'View Details' : 'Enroll Now',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: fontSize,

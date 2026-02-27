@@ -894,22 +894,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: EdgeInsets.symmetric(horizontal: hPadding),
                     child: Row(
                       children: [
-                        // My Orders
-                        Expanded(
-                          child: _buildQuickActionCard(
-                            icon: Icons.shopping_bag_outlined,
-                            label: Platform.isIOS ? 'My Records' : 'My Orders',
-                            subtitle: Platform.isIOS ? 'View records' : 'View orders',
-                            onTap: () => context.push('/my-records'),
-                            cardColor: cardColor,
-                            iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
-                            iconColor: Colors.green,
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            isTablet: isTablet,
+                        if (!Platform.isIOS) ...[
+                          // My Orders (Android only)
+                          Expanded(
+                            child: _buildQuickActionCard(
+                              icon: Icons.shopping_bag_outlined,
+                              label: 'My Orders',
+                              subtitle: 'View orders',
+                              onTap: () => context.push('/my-records'),
+                              cardColor: cardColor,
+                              iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
+                              iconColor: Colors.green,
+                              textColor: textColor,
+                              secondaryTextColor: secondaryTextColor,
+                              isTablet: isTablet,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: isTablet ? 16 : 12),
+                          SizedBox(width: isTablet ? 16 : 12),
+                        ],
                         // Settings
                         Expanded(
                           child: _buildQuickActionCard(

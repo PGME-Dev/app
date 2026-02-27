@@ -18,7 +18,8 @@ class AllPackagesScreen extends StatefulWidget {
   State<AllPackagesScreen> createState() => _AllPackagesScreenState();
 }
 
-class _AllPackagesScreenState extends State<AllPackagesScreen> {
+class _AllPackagesScreenState extends State<AllPackagesScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isLoading = true;
   List<PackageModel> _packages = [];
@@ -28,7 +29,24 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadPackages();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadPackages();
+    }
   }
 
   Future<void> _loadPackages() async {
@@ -370,8 +388,8 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                             _packages[_selectedIndex].isPurchased
                                 ? 'Go to Content'
                                 : WebStoreLauncher.shouldUseWebStore
-                                    ? 'Get Access'
-                                    : 'Enroll Now',
+                                    ? 'View Details'
+                                    : (Platform.isIOS ? 'View Details' : 'Enroll Now'),
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: isTablet ? 20 : 16,

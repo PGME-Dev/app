@@ -94,6 +94,16 @@ class ZoomMeetingService {
     }
   }
 
+  /// Reset the SDK state so the next call re-initializes from scratch.
+  /// Use when the SDK may be in a bad state (e.g. after app backgrounding).
+  Future<void> resetSDK() async {
+    debugPrint('=== ZoomMeetingService: Resetting SDK ===');
+    try {
+      await _zoomSdk.unInitZoom();
+    } catch (_) {}
+    _isInitialized = false;
+  }
+
   /// Fetch Zoom SDK signature (JWT) from backend
   Future<ZoomSignatureResponse> getZoomSignature(String sessionId) async {
     try {

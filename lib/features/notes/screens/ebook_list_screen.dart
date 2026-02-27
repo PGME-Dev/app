@@ -24,7 +24,8 @@ class EbookListScreen extends StatefulWidget {
   State<EbookListScreen> createState() => _EbookListScreenState();
 }
 
-class _EbookListScreenState extends State<EbookListScreen> {
+class _EbookListScreenState extends State<EbookListScreen>
+    with WidgetsBindingObserver {
   final BookService _bookService = BookService();
   final EbookAccessService _ebookOrderService = EbookAccessService();
   final TextEditingController _searchController = TextEditingController();
@@ -43,6 +44,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadEbooks();
     _loadPurchasedEbooks();
     _scrollController.addListener(_onScroll);
@@ -50,9 +52,21 @@ class _EbookListScreenState extends State<EbookListScreen> {
 
   @override
   void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadEbooks();
+      _loadPurchasedEbooks();
+    }
   }
 
   void _onScroll() {
@@ -476,7 +490,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            Platform.isIOS ? 'Get Access' : 'Buy Now',
+                            Platform.isIOS ? 'View Details' : 'Buy Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
@@ -990,7 +1004,7 @@ class _EbookListScreenState extends State<EbookListScreen> {
                                 padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12),
                               ),
                               child: Text(
-                                Platform.isIOS ? 'Get' : 'Buy',
+                                Platform.isIOS ? 'View' : 'Buy',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,

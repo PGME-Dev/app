@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/features/home/screens/dashboard_screen.dart';
 import 'package:pgme/features/home/screens/guest_dashboard_screen.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -43,9 +44,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // Check session validity when app comes to foreground
     if (state == AppLifecycleState.resumed) {
       _checkSessionValidity();
+      // Refresh entire dashboard when returning from an external purchase
+      if (WebStoreLauncher.awaitingExternalPurchase) {
+        WebStoreLauncher.clearAwaitingPurchase();
+        if (mounted) {
+          context.read<DashboardProvider>().refresh();
+        }
+      }
     }
   }
 

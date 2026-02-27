@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -171,7 +173,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
         setState(() => _isProcessing = false);
         if (mounted) {
           Navigator.of(context).pop(true);
-          showAppDialog(context, message: 'Upgrade successful!', type: AppDialogType.info);
+          showAppDialog(context, message: Platform.isIOS ? 'Plan changed successfully!' : 'Upgrade successful!', type: AppDialogType.info);
         }
         return;
       }
@@ -281,7 +283,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
                 children: [
                   // Title
                   Text(
-                    'Upgrade Your Plan',
+                    Platform.isIOS ? 'Change Your Plan' : 'Upgrade Your Plan',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -333,7 +335,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
 
                   // Available upgrade tiers
                   Text(
-                    'Upgrade to',
+                    Platform.isIOS ? 'Change to' : 'Upgrade to',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -443,7 +445,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
                     ),
                     SizedBox(height: isTablet ? 10 : 6),
                     _buildPreviewRow(
-                      'Upgrade amount',
+                      Platform.isIOS ? 'Change amount' : 'Upgrade amount',
                       _formatPrice(_upgradePreview!['upgrade_base_price'] ?? 0),
                       secondaryText,
                       textColor,
@@ -480,7 +482,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'Free upgrade! Your existing credit covers the full amount.',
+                          Platform.isIOS ? 'Free! Your existing credit covers the full amount.' : 'Free upgrade! Your existing credit covers the full amount.',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: isTablet ? 14 : 12,
@@ -530,7 +532,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
                                 ),
                               )
                             : Text(
-                                'Upgrade Now',
+                                Platform.isIOS ? 'Change Plan' : 'Upgrade Now',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,

@@ -70,14 +70,13 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     try {
       final success = await provider.submitSubjectSelection();
       if (success && mounted) {
-        if (_isChangingSubject) {
+        // Use canPop() as the definitive check: if we were pushed onto the
+        // stack (from Profile/Dashboard) we can pop back; if we were placed
+        // here via context.go() (sign-up / splash) the stack is empty.
+        if (_isChangingSubject && context.canPop()) {
           // Changing subject from profile — apply change to dashboard then pop.
-          // We await here so the dashboard is fully updated (optimistic + content
-          // reload) before returning to the caller. The Continue button shows a
-          // spinner during this time, so the user always sees fresh data on home.
           await context.read<DashboardProvider>().applySubjectChange(selectedSubject);
           if (mounted) {
-            // Return true so the caller (ProfileScreen) knows to refresh itself
             context.pop(true);
           }
         } else {
@@ -132,7 +131,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => context.pop(),
+                    onTap: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      }
+                    },
                     child: Container(
                       width: backBtnSize,
                       height: backBtnSize,

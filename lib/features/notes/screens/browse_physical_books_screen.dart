@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -102,7 +104,7 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
                 const Spacer(),
                 // Title
                 Text(
-                  'Order Books',
+                  Platform.isIOS ? 'Browse Books' : 'Order Books',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Poppins',

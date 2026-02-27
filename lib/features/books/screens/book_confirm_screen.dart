@@ -21,7 +21,8 @@ class BookConfirmScreen extends StatefulWidget {
   State<BookConfirmScreen> createState() => _BookConfirmScreenState();
 }
 
-class _BookConfirmScreenState extends State<BookConfirmScreen> {
+class _BookConfirmScreenState extends State<BookConfirmScreen>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _recipientNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -33,15 +34,27 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadUserDetails();
   }
 
   @override
   void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
     _recipientNameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadUserDetails();
+    }
   }
 
   Future<void> _loadUserDetails() async {
@@ -336,7 +349,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
 
                           // Order Summary Section
                           Text(
-                            'Order Summary',
+                            Platform.isIOS ? 'Summary' : 'Order Summary',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
@@ -493,7 +506,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
                         ),
                       )
                     : Text(
-                        'Place Order',
+                        Platform.isIOS ? 'Confirm' : 'Place Order',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,

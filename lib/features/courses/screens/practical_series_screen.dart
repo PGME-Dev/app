@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/series_model.dart';
@@ -27,7 +28,8 @@ class PracticalSeriesScreen extends StatefulWidget {
   State<PracticalSeriesScreen> createState() => _PracticalSeriesScreenState();
 }
 
-class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
+class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
+    with WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
 
   List<LiveSessionModel> _liveSessions = [];
@@ -43,7 +45,24 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
@@ -136,7 +155,11 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
     );
 
     if (shouldEnroll == true && mounted && _selectedPackage != null) {
-      context.push('/package-access?packageId=${_selectedPackage!.packageId}&packageType=Practical');
+      if (WebStoreLauncher.shouldUseWebStore) {
+        WebStoreLauncher.openProductPage(context, productType: 'packages', productId: _selectedPackage!.packageId);
+      } else {
+        context.push('/package-access?packageId=${_selectedPackage!.packageId}&packageType=Practical');
+      }
     }
   }
 
@@ -1208,7 +1231,11 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                     height: isTablet ? 60 : 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/package-access?packageId=${pkg.packageId}&packageType=Practical');
+                        if (WebStoreLauncher.shouldUseWebStore) {
+                          WebStoreLauncher.openProductPage(context, productType: 'packages', productId: pkg.packageId);
+                        } else {
+                          context.push('/package-access?packageId=${pkg.packageId}&packageType=Practical');
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1),
@@ -1218,7 +1245,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Enroll Now',
+                        Platform.isIOS ? 'View Details' : 'Enroll Now',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
@@ -1814,7 +1841,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: descPadH),
                 child: Text(
-                  'Get ${pkg.name}',
+                  Platform.isIOS ? 'View ${pkg.name}' : 'Get ${pkg.name}',
                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: titleSize, color: textColor),
                   textAlign: TextAlign.center,
                 ),
@@ -1871,7 +1898,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(btnRadius)),
                             elevation: 0,
                           ),
-                          child: Text('Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: btnFontSize, color: Colors.white)),
+                          child: Text(Platform.isIOS ? 'View Details' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: btnFontSize, color: Colors.white)),
                         ),
                       ),
                     ],

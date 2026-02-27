@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -138,7 +139,7 @@ class _BookRequestConfirmationScreenState
 
                     // Success Text
                     Text(
-                      'Order Placed!',
+                      Platform.isIOS ? 'Request Placed!' : 'Order Placed!',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w700,
@@ -148,7 +149,7 @@ class _BookRequestConfirmationScreenState
                     ),
                     SizedBox(height: isTablet ? 10 : 8),
                     Text(
-                      'Your order has been placed successfully',
+                      Platform.isIOS ? 'Your request has been placed successfully' : 'Your order has been placed successfully',
                       style: TextStyle(
                         fontSize: isTablet ? 17 : 14,
                         color: secondaryTextColor,
@@ -170,7 +171,7 @@ class _BookRequestConfirmationScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Order Details',
+                            Platform.isIOS ? 'Details' : 'Order Details',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
@@ -180,7 +181,7 @@ class _BookRequestConfirmationScreenState
                           ),
                           SizedBox(height: isTablet ? 21 : 16),
                           _buildDetailRow(
-                            'Order Number',
+                            Platform.isIOS ? 'Request Number' : 'Order Number',
                             _order?.orderNumber ?? '-',
                             textColor,
                             secondaryTextColor,
@@ -289,7 +290,7 @@ class _BookRequestConfirmationScreenState
                         ),
                       ),
                       child: Text(
-                        'View All Orders',
+                        Platform.isIOS ? 'View All Requests' : 'View All Orders',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
@@ -311,7 +312,7 @@ class _BookRequestConfirmationScreenState
                         ),
                       ),
                       child: Text(
-                        'Continue Shopping',
+                        Platform.isIOS ? 'Continue Browsing' : 'Continue Shopping',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,

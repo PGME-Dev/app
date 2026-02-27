@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/package_model.dart';
@@ -108,7 +109,10 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
     );
 
     if (shouldEnroll == true && mounted) {
-      if (_package != null) {
+      if (WebStoreLauncher.shouldUseWebStore) {
+        final packageId = _package?.packageId ?? _series?.packageId ?? '';
+        WebStoreLauncher.openProductPage(context, productType: 'packages', productId: packageId);
+      } else if (_package != null) {
         context.push('/package-access?packageId=${_package!.packageId}&packageType=${_package!.type ?? 'Theory'}');
       } else if (_series?.packageId != null) {
         context.push('/package-access?packageId=${_series!.packageId}');
@@ -210,7 +214,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
             // Title
             Text(
-              _package != null ? 'Get the\n${_package!.name}' : 'Get the\nPackage',
+              _package != null ? (Platform.isIOS ? 'View\n${_package!.name}' : 'Get the\n${_package!.name}') : (Platform.isIOS ? 'View\nPackage' : 'Get the\nPackage'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
@@ -356,7 +360,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: isTablet ? 12 : 10),
                       ),
                       child: Text(
-                        'Enroll Now',
+                        Platform.isIOS ? 'View Details' : 'Enroll Now',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Poppins',
@@ -1119,7 +1123,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
-                                          document.previewUrl != null ? 'View full book' : 'Enroll to access',
+                                          document.previewUrl != null ? 'View full book' : (Platform.isIOS ? 'View details' : 'Enroll to access'),
                                           style: TextStyle(
                                             fontFamily: 'Poppins',
                                             fontSize: isTablet ? 14 : 11,

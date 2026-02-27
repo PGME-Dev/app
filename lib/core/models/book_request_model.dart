@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'book_request_model.g.dart';
@@ -93,7 +95,7 @@ class BookRequestModel {
       case 'pending':
         return 'Payment Pending';
       case 'confirmed':
-        return 'Order Confirmed';
+        return Platform.isIOS ? 'Confirmed' : 'Order Confirmed';
       case 'processing':
         return 'Processing';
       case 'shipped':

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -443,7 +445,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
           ),
           SizedBox(height: isTablet ? 16 : 12),
           Text(
-            'No Active Subscription',
+            Platform.isIOS ? 'No Active Plan' : 'No Active Subscription',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: isTablet ? 20 : 16,
@@ -453,7 +455,7 @@ class _ManagePlansScreenState extends State<ManagePlansScreen> {
           ),
           SizedBox(height: isTablet ? 8 : 6),
           Text(
-            'Subscribe to a plan to unlock premium content',
+            Platform.isIOS ? 'Choose a plan to unlock premium content' : 'Subscribe to a plan to unlock premium content',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: isTablet ? 16 : 13,

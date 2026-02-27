@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/models/module_model.dart';
@@ -433,9 +436,13 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                         height: enrollBtnHeight,
                         child: ElevatedButton(
                           onPressed: () {
-                            final params = <String>['packageType=${widget.packageType}'];
-                            if (widget.packageId != null) params.add('packageId=${widget.packageId}');
-                            context.push('/package-access?${params.join('&')}');
+                            if (WebStoreLauncher.shouldUseWebStore) {
+                              WebStoreLauncher.openProductPage(context, productType: 'packages', productId: widget.packageId ?? '');
+                            } else {
+                              final params = <String>['packageType=${widget.packageType}'];
+                              if (widget.packageId != null) params.add('packageId=${widget.packageId}');
+                              context.push('/package-access?${params.join('&')}');
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,
@@ -445,7 +452,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             elevation: 0,
                           ),
                           child: Text(
-                            'Enroll Now',
+                            Platform.isIOS ? 'View Details' : 'Enroll Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: enrollFontSize,

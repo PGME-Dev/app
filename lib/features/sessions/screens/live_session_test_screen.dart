@@ -88,7 +88,8 @@ class LiveSessionTestScreen extends StatefulWidget {
   State<LiveSessionTestScreen> createState() => _LiveSessionTestScreenState();
 }
 
-class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
+class _LiveSessionTestScreenState extends State<LiveSessionTestScreen>
+    with WidgetsBindingObserver {
   final ApiService _apiService = ApiService();
   final UserService _userService = UserService();
   final ZoomMeetingService _zoomService = ZoomMeetingService();
@@ -105,7 +106,24 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadSessions();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadSessions();
+    }
   }
 
   Future<void> _loadSessions() async {
@@ -975,7 +993,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _initiatePayment(session),
                       icon: Icon(WebStoreLauncher.shouldUseWebStore ? Icons.open_in_new : Icons.shopping_cart, size: 20),
-                      label: Text(WebStoreLauncher.shouldUseWebStore ? 'Get Access' : 'Buy Session - ₹${session.price}'),
+                      label: Text(WebStoreLauncher.shouldUseWebStore ? 'View Details' : (Platform.isIOS ? 'View Details' : 'Buy Session - ₹${session.price}')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
@@ -990,7 +1008,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _enrollInSession(session),
                       icon: const Icon(Icons.add_circle_outline, size: 20),
-                      label: const Text('Enroll Free'),
+                      label: Text(Platform.isIOS ? 'Access Free' : 'Enroll Free'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.green,
                         side: const BorderSide(color: Colors.green),

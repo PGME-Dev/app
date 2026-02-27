@@ -10,6 +10,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/access_record_service.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
@@ -21,7 +22,7 @@ class MyRecordsScreen extends StatefulWidget {
 }
 
 class _MyRecordsScreenState extends State<MyRecordsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final AccessRecordService _accessRecordService = AccessRecordService();
   late TabController _tabController;
 
@@ -42,14 +43,26 @@ class _MyRecordsScreenState extends State<MyRecordsScreen>
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: _tabs.length, vsync: this);
     _loadData();
   }
 
   @override
   void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
@@ -586,7 +599,11 @@ class _MyRecordsScreenState extends State<MyRecordsScreen>
                 if (pkg.tierName != null)
                   GestureDetector(
                     onTap: () {
-                      context.push('/package-access?packageId=${pkg.packageId}');
+                      if (WebStoreLauncher.shouldUseWebStore) {
+                        WebStoreLauncher.openProductPage(context, productType: 'packages', productId: pkg.packageId);
+                      } else {
+                        context.push('/package-access?packageId=${pkg.packageId}');
+                      }
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -604,7 +621,7 @@ class _MyRecordsScreenState extends State<MyRecordsScreen>
                           Icon(Icons.upgrade, size: isTablet ? 16 : 14, color: accentColor),
                           SizedBox(width: isTablet ? 6 : 4),
                           Text(
-                            'Upgrade',
+                            Platform.isIOS ? 'Change Plan' : 'Upgrade',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: isTablet ? 14 : 12,
@@ -1098,7 +1115,7 @@ class _MyRecordsScreenState extends State<MyRecordsScreen>
         typeColor = Colors.purple;
         break;
       case 'book':
-        typeLabel = 'Book Order';
+        typeLabel = Platform.isIOS ? 'Book Request' : 'Book Order';
         typeIcon = Icons.menu_book;
         typeColor = Colors.orange;
         break;

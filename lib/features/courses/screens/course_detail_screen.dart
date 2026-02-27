@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,7 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
+import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/models/series_document_model.dart';
@@ -21,7 +24,8 @@ class CourseDetailScreen extends StatefulWidget {
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
 }
 
-class _CourseDetailScreenState extends State<CourseDetailScreen> {
+class _CourseDetailScreenState extends State<CourseDetailScreen>
+    with WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
 
   SeriesModel? _series;
@@ -37,7 +41,24 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
     _loadSeriesData();
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isIOS) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _loadSeriesData();
+    }
   }
 
   Future<void> _loadSeriesData() async {
@@ -214,7 +235,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      context.push('/package-access?packageType=Theory');
+                                      if (WebStoreLauncher.shouldUseWebStore) {
+                                        WebStoreLauncher.openProductPage(context, productType: 'packages', productId: '');
+                                      } else {
+                                        context.push('/package-access?packageType=Theory');
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: iconColor,
@@ -224,7 +249,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                       ),
                                     ),
                                     child: Text(
-                                      'Enroll Now',
+                                      Platform.isIOS ? 'View Details' : 'Enroll Now',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontWeight: FontWeight.w600,

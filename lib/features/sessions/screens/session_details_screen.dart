@@ -31,7 +31,8 @@ class SessionDetailsScreen extends StatefulWidget {
   State<SessionDetailsScreen> createState() => _SessionDetailsScreenState();
 }
 
-class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
+class _SessionDetailsScreenState extends State<SessionDetailsScreen>
+    with WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
   final SessionAccessService _purchaseService = SessionAccessService();
   final ZoomMeetingService _zoomService = ZoomMeetingService();
@@ -58,13 +59,38 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) {
+      WidgetsBinding.instance.addObserver(this);
+    }
     _loadSessionDetails();
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    if (Platform.isIOS) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // iOS only: refresh access/enrollment when returning from Safari purchase
+    if (state == AppLifecycleState.resumed &&
+        WebStoreLauncher.awaitingExternalPurchase) {
+      WebStoreLauncher.clearAwaitingPurchase();
+      _refreshAfterExternalPurchase();
+    }
+  }
+
+  Future<void> _refreshAfterExternalPurchase() async {
+    if (!mounted || _session == null) return;
+    await Future.wait([
+      _checkAccessStatus(),
+      _checkEnrollmentStatus(),
+    ]);
   }
 
   void _startCountdown() {
@@ -305,6 +331,17 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Future<void> _launchMeeting() async {
     if (_session == null) return;
 
+    // iOS: re-check access right before joining in case user purchased
+    // externally and state is stale.
+    if (Platform.isIOS && !_hasAccess && !_isEnrolled) {
+      setState(() => _isJoiningZoom = true);
+      await Future.wait([
+        _checkAccessStatus(),
+        _checkEnrollmentStatus(),
+      ]);
+      if (mounted) setState(() => _isJoiningZoom = false);
+    }
+
     if (!_hasAccess && !_isEnrolled) {
       showAppDialog(context, message: 'Please purchase or enroll in this session to join');
       return;
@@ -337,19 +374,59 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
     }
   }
 
-  Future<void> _joinZoomInApp() async {
+  Future<void> _joinZoomInApp({bool isRetry = false}) async {
     if (_isJoiningZoom) return;
     setState(() => _isJoiningZoom = true);
+
+    // iOS safety: force-reset the joining flag after 45 seconds so the UI
+    // never stays stuck on the spinner indefinitely.
+    Timer? safetyTimer;
+    if (Platform.isIOS) {
+      safetyTimer = Timer(const Duration(seconds: 45), () {
+        if (mounted && _isJoiningZoom) {
+          setState(() => _isJoiningZoom = false);
+          _showZoomErrorModal(
+            ZoomJoinException(
+              type: ZoomErrorType.timeout,
+              message: 'Joining the meeting took too long. Please try again.',
+            ),
+          );
+        }
+      });
+    }
+
     try {
       await _zoomService.joinMeeting(
         sessionId: widget.sessionId,
         displayName: 'PGME Student',
       );
     } on ZoomJoinException catch (e) {
+      // iOS: if first attempt fails, reset SDK and retry once
+      if (Platform.isIOS && !isRetry) {
+        safetyTimer?.cancel();
+        debugPrint('Zoom join failed on iOS, resetting SDK and retrying...');
+        await _zoomService.resetSDK();
+        if (mounted) {
+          setState(() => _isJoiningZoom = false);
+          _joinZoomInApp(isRetry: true);
+        }
+        return;
+      }
       if (mounted) {
         _showZoomErrorModal(e);
       }
     } catch (e) {
+      // iOS: if first attempt fails with unknown error, reset and retry once
+      if (Platform.isIOS && !isRetry) {
+        safetyTimer?.cancel();
+        debugPrint('Zoom join error on iOS, resetting SDK and retrying...');
+        await _zoomService.resetSDK();
+        if (mounted) {
+          setState(() => _isJoiningZoom = false);
+          _joinZoomInApp(isRetry: true);
+        }
+        return;
+      }
       if (mounted) {
         _showZoomErrorModal(
           ZoomJoinException(
@@ -360,6 +437,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         );
       }
     } finally {
+      safetyTimer?.cancel();
       if (mounted) setState(() => _isJoiningZoom = false);
     }
   }
@@ -889,9 +967,9 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
 
     String sectionTitle;
     if (isFree) {
-      sectionTitle = isUserEnrolled ? 'Session Access' : 'Enroll';
+      sectionTitle = isUserEnrolled ? 'Session Access' : (Platform.isIOS ? 'Access' : 'Enroll');
     } else {
-      sectionTitle = hasUserAccess ? 'Session Access' : 'Get Access';
+      sectionTitle = hasUserAccess ? 'Session Access' : (Platform.isIOS ? 'Access' : 'Get Access');
     }
 
     return Column(
@@ -1069,7 +1147,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Enroll now to secure your spot',
+                      Platform.isIOS ? 'Register now to secure your spot' : 'Enroll now to secure your spot',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w400,
                         fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
@@ -1102,7 +1180,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                       child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
                   : Text(
-                      'ENROLL FOR FREE',
+                      Platform.isIOS ? 'ACCESS FOR FREE' : 'ENROLL FOR FREE',
                       style: TextStyle(
                         fontFamily: 'Poppins', fontWeight: FontWeight.w500,
                         fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
@@ -1155,7 +1233,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
         const SizedBox(height: 8),
 
         Text(
-          'Get access to this live session',
+          Platform.isIOS ? 'Access this live session' : 'Get access to this live session',
           style: TextStyle(
             fontFamily: 'Poppins', fontWeight: FontWeight.w400,
             fontSize: isTablet ? 17 : 14, color: secondaryTextColor,
@@ -1192,7 +1270,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                         Text(
                           WebStoreLauncher.shouldUseWebStore
                               ? 'GET ACCESS - ${_formatPrice(price)}'
-                              : 'BUY NOW - ${_formatPrice(price)}',
+                              : (Platform.isIOS ? 'VIEW DETAILS' : 'BUY NOW - ${_formatPrice(price)}'),
                           style: TextStyle(
                             fontFamily: 'Poppins', fontWeight: FontWeight.w500,
                             fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
