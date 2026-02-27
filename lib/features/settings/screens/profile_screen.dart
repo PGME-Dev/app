@@ -989,7 +989,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final instagramUrl = _appSettings?['instagram_url']?.toString();
                         final youtubeUrl = _appSettings?['youtube_url']?.toString();
                         final twitterUrl = _appSettings?['twitter_url']?.toString();
-                        final whatsappLink = _selectedSubject?['whatsapp_community_link'];
+                        // Prioritize subject-specific WhatsApp link, fall back to app-level
+                        final subjectWhatsapp = _selectedSubject?['whatsapp_community_link']?.toString();
+                        final appWhatsapp = _appSettings?['whatsapp_support_url']?.toString();
+                        final whatsappLink = (subjectWhatsapp != null && subjectWhatsapp.isNotEmpty)
+                            ? subjectWhatsapp
+                            : (appWhatsapp != null && appWhatsapp.isNotEmpty)
+                                ? appWhatsapp
+                                : null;
 
                         final hasAnyLink = (instagramUrl != null && instagramUrl.isNotEmpty) ||
                             (youtubeUrl != null && youtubeUrl.isNotEmpty) ||
