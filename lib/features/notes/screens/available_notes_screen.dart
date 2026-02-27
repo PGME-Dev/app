@@ -360,7 +360,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: isTablet ? 12 : 10),
                       ),
                       child: Text(
-                        Platform.isIOS ? 'View Details' : 'Enroll Now',
+                        Platform.isIOS ? 'Learn More' : 'Enroll Now',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Poppins',

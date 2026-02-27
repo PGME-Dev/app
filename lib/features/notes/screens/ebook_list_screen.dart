@@ -490,7 +490,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                         ),
                         child: Center(
                           child: Text(
-                            Platform.isIOS ? 'View Details' : 'Buy Now',
+                            Platform.isIOS ? 'Learn More' : 'Buy Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,

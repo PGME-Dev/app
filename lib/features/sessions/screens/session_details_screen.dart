@@ -1270,7 +1270,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                         Text(
                           WebStoreLauncher.shouldUseWebStore
                               ? 'GET ACCESS - ${_formatPrice(price)}'
-                              : (Platform.isIOS ? 'VIEW DETAILS' : 'BUY NOW - ${_formatPrice(price)}'),
+                              : (Platform.isIOS ? 'LEARN MORE' : 'BUY NOW - ${_formatPrice(price)}'),
                           style: TextStyle(
                             fontFamily: 'Poppins', fontWeight: FontWeight.w500,
                             fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,

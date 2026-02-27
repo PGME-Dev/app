@@ -287,7 +287,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                             elevation: 0,
                           ),
-                          child: Text(Platform.isIOS ? 'View Details' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: Colors.white)),
+                          child: Text(Platform.isIOS ? 'Learn More' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: isTablet ? 19 : 16, color: Colors.white)),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -830,7 +830,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
           elevation: 0,
         ),
         child: Text(
-          Platform.isIOS ? 'View Details' : 'Enroll Now',
+          Platform.isIOS ? 'Learn More' : 'Enroll Now',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: fontSize,

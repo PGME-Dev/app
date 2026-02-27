@@ -249,7 +249,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      Platform.isIOS ? 'View Details' : 'Enroll Now',
+                                      Platform.isIOS ? 'Learn More' : 'Enroll Now',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontWeight: FontWeight.w600,

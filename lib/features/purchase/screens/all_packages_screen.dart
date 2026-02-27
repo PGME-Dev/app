@@ -388,8 +388,8 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                             _packages[_selectedIndex].isPurchased
                                 ? 'Go to Content'
                                 : WebStoreLauncher.shouldUseWebStore
-                                    ? 'View Details'
-                                    : (Platform.isIOS ? 'View Details' : 'Enroll Now'),
+                                    ? 'Learn More'
+                                    : (Platform.isIOS ? 'Learn More' : 'Enroll Now'),
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: isTablet ? 20 : 16,

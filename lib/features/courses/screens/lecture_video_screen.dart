@@ -473,7 +473,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             elevation: 0,
                           ),
                           child: Text(
-                            Platform.isIOS ? 'View Details' : 'Enroll Now',
+                            Platform.isIOS ? 'Learn More' : 'Enroll Now',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: enrollFontSize,

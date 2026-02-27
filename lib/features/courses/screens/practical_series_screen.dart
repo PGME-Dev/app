@@ -1245,7 +1245,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                         elevation: 0,
                       ),
                       child: Text(
-                        Platform.isIOS ? 'View Details' : 'Enroll Now',
+                        Platform.isIOS ? 'Learn More' : 'Enroll Now',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
@@ -1898,7 +1898,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(btnRadius)),
                             elevation: 0,
                           ),
-                          child: Text(Platform.isIOS ? 'View Details' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: btnFontSize, color: Colors.white)),
+                          child: Text(Platform.isIOS ? 'Learn More' : 'Enroll Now', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: btnFontSize, color: Colors.white)),
                         ),
                       ),
                     ],

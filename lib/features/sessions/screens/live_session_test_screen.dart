@@ -993,7 +993,7 @@ class _LiveSessionTestScreenState extends State<LiveSessionTestScreen>
                     child: ElevatedButton.icon(
                       onPressed: () => _initiatePayment(session),
                       icon: Icon(WebStoreLauncher.shouldUseWebStore ? Icons.open_in_new : Icons.shopping_cart, size: 20),
-                      label: Text(WebStoreLauncher.shouldUseWebStore ? 'View Details' : (Platform.isIOS ? 'View Details' : 'Buy Session - ₹${session.price}')),
+                      label: Text(WebStoreLauncher.shouldUseWebStore ? 'Learn More' : (Platform.isIOS ? 'Learn More' : 'Buy Session - ₹${session.price}')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,

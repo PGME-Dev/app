@@ -586,7 +586,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
                           padding: EdgeInsets.symmetric(horizontal: btnPadH, vertical: btnPadV),
                         ),
                         child: Text(
-                          Platform.isIOS ? 'View Details' : 'Enroll Now',
+                          Platform.isIOS ? 'Learn More' : 'Enroll Now',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Poppins',
@@ -1332,7 +1332,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
                                     Text(
                                       canUpgrade
                                           ? (WebStoreLauncher.shouldUseWebStore ? 'Change Plan' : (Platform.isIOS ? 'Change Plan' : 'Upgrade'))
-                                          : (WebStoreLauncher.shouldUseWebStore ? 'View Details' : (Platform.isIOS ? 'View Details' : 'Buy Now')),
+                                          : (WebStoreLauncher.shouldUseWebStore ? 'Learn More' : (Platform.isIOS ? 'Learn More' : 'Buy Now')),
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontSize: isTablet ? 22 : 18,
