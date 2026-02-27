@@ -17,11 +17,7 @@ class HelpScreen extends StatefulWidget {
 class _HelpScreenState extends State<HelpScreen> {
   final AppSettingsService _appSettingsService = AppSettingsService();
   Map<String, dynamic> _appSettings = {};
-
-  // Fallback values
-  static const _defaultWhatsAppNumber = '918074220727';
-  static const _defaultEmail = 'support@pgme.in';
-  static const _defaultPhone = '+918074220727';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -34,27 +30,35 @@ class _HelpScreenState extends State<HelpScreen> {
     if (mounted) {
       setState(() {
         _appSettings = settings;
+        _isLoading = false;
       });
     }
   }
 
-  String get _whatsAppNumber {
-    // Prefer whatsapp_support_url if available, otherwise construct from phone
+  String? get _whatsAppUrl {
     final url = _appSettings['whatsapp_support_url']?.toString();
     if (url != null && url.isNotEmpty) return url;
-    final phone = _appSettings['support_phone']?.toString() ?? _defaultWhatsAppNumber;
-    // Strip non-digits for WhatsApp URL
+    final phone = _appSettings['whatsapp_support_number']?.toString() ??
+        _appSettings['support_phone']?.toString();
+    if (phone == null || phone.isEmpty) return null;
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
     return 'https://wa.me/$digits';
   }
 
-  String get _supportEmail => _appSettings['support_email']?.toString() ?? _defaultEmail;
+  String? get _supportEmail {
+    final email = _appSettings['support_email']?.toString();
+    return (email != null && email.isNotEmpty) ? email : null;
+  }
 
-  String get _supportPhone => _appSettings['support_phone']?.toString() ?? _defaultPhone;
+  String? get _supportPhone {
+    final phone = _appSettings['support_phone']?.toString();
+    return (phone != null && phone.isNotEmpty) ? phone : null;
+  }
 
   Future<void> _launchWhatsApp() async {
+    final baseUrl = _whatsAppUrl;
+    if (baseUrl == null) return;
     const message = 'Hi, I need help with the PGME app.';
-    final baseUrl = _whatsAppNumber;
     final separator = baseUrl.contains('?') ? '&' : '?';
     final url = Uri.parse('$baseUrl${separator}text=${Uri.encodeComponent(message)}');
 
@@ -64,8 +68,10 @@ class _HelpScreenState extends State<HelpScreen> {
   }
 
   Future<void> _launchEmail() async {
+    final email = _supportEmail;
+    if (email == null) return;
     final url = Uri.parse(
-      'mailto:$_supportEmail?subject=PGME App Support&body=Hi, I need help with...',
+      'mailto:$email?subject=PGME App Support&body=Hi, I need help with...',
     );
 
     if (await canLaunchUrl(url)) {
@@ -74,7 +80,9 @@ class _HelpScreenState extends State<HelpScreen> {
   }
 
   Future<void> _launchPhone() async {
-    final url = Uri.parse('tel:$_supportPhone');
+    final phone = _supportPhone;
+    if (phone == null) return;
+    final url = Uri.parse('tel:$phone');
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -143,65 +151,82 @@ class _HelpScreenState extends State<HelpScreen> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
-                    child: Column(
+                    child: _isLoading
+                        ? Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: isTablet ? 60 : 40),
+                              child: CircularProgressIndicator(
+                                color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF0000D1),
+                              ),
+                            ),
+                          )
+                        : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Contact Support Section
-                        Text(
-                          'Contact Support',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 20 : 16,
-                            letterSpacing: -0.5,
-                            color: textColor,
+                        if (_whatsAppUrl != null || _supportEmail != null || _supportPhone != null) ...[
+                          Text(
+                            'Contact Support',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 20 : 16,
+                              letterSpacing: -0.5,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: isTablet ? 16 : 12),
+                          SizedBox(height: isTablet ? 16 : 12),
+                        ],
 
                         // WhatsApp Card
-                        _buildContactCard(
-                          icon: Icons.chat_outlined,
-                          title: 'WhatsApp',
-                          subtitle: 'Chat with us on WhatsApp',
-                          iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
-                          iconColor: Colors.green,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          onTap: _launchWhatsApp,
-                          isTablet: isTablet,
-                        ),
-                        SizedBox(height: isTablet ? 16 : 12),
+                        if (_whatsAppUrl != null) ...[
+                          _buildContactCard(
+                            icon: Icons.chat_outlined,
+                            title: 'WhatsApp',
+                            subtitle: 'Chat with us on WhatsApp',
+                            iconBgColor: isDark ? const Color(0xFF1A4D1A) : const Color(0xFFE8F5E9),
+                            iconColor: Colors.green,
+                            cardColor: cardColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            onTap: _launchWhatsApp,
+                            isTablet: isTablet,
+                          ),
+                          SizedBox(height: isTablet ? 16 : 12),
+                        ],
 
                         // Email Card
-                        _buildContactCard(
-                          icon: Icons.mail_outline,
-                          title: 'Email',
-                          subtitle: _supportEmail,
-                          iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
-                          iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          onTap: _launchEmail,
-                          isTablet: isTablet,
-                        ),
-                        SizedBox(height: isTablet ? 16 : 12),
+                        if (_supportEmail != null) ...[
+                          _buildContactCard(
+                            icon: Icons.mail_outline,
+                            title: 'Email',
+                            subtitle: _supportEmail!,
+                            iconBgColor: isDark ? const Color(0xFF1A1A4D) : const Color(0xFFE3F2FD),
+                            iconColor: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1976D2),
+                            cardColor: cardColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            onTap: _launchEmail,
+                            isTablet: isTablet,
+                          ),
+                          SizedBox(height: isTablet ? 16 : 12),
+                        ],
 
                         // Phone Card
-                        _buildContactCard(
-                          icon: Icons.phone_outlined,
-                          title: 'Call Us',
-                          subtitle: _supportPhone,
-                          iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
-                          iconColor: Colors.orange,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                          onTap: _launchPhone,
-                          isTablet: isTablet,
-                        ),
+                        if (_supportPhone != null) ...[
+                          _buildContactCard(
+                            icon: Icons.phone_outlined,
+                            title: 'Call Us',
+                            subtitle: _supportPhone!,
+                            iconBgColor: isDark ? const Color(0xFF4D4D1A) : const Color(0xFFFFF8E1),
+                            iconColor: Colors.orange,
+                            cardColor: cardColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            onTap: _launchPhone,
+                            isTablet: isTablet,
+                          ),
+                        ],
 
                         SizedBox(height: isTablet ? 30 : 24),
 

@@ -18,6 +18,9 @@ class ModuleVideoModel {
   @JsonKey(name: 'faculty_id')
   final String? facultyId;
 
+  @JsonKey(name: 'faculty_photo_url')
+  final String? facultyPhotoUrl;
+
   @JsonKey(name: 'is_completed', defaultValue: false)
   final bool isCompleted;
 
@@ -36,6 +39,7 @@ class ModuleVideoModel {
     required this.durationSeconds,
     this.facultyName = '',
     this.facultyId,
+    this.facultyPhotoUrl,
     this.isCompleted = false,
     this.isLocked = false,
     this.isFree = false,

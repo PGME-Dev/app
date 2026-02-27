@@ -984,76 +984,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Join PGME Row
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: hPadding),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildQuickActionCard(
-                            icon: Icons.work_outline,
-                            label: 'Join PGME',
-                            subtitle: 'Apply to our team',
-                            onTap: () => context.push('/careers'),
-                            cardColor: cardColor,
-                            iconBgColor: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
-                            iconColor: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFE53935),
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            isTablet: isTablet,
-                          ),
-                        ),
-                        SizedBox(width: isTablet ? 16 : 12),
-                        // Community links 2x2 grid
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 28 : 22,
-                              vertical: isTablet ? 24 : 20,
+                    child: Builder(
+                      builder: (context) {
+                        final instagramUrl = _appSettings?['instagram_url']?.toString();
+                        final youtubeUrl = _appSettings?['youtube_url']?.toString();
+                        final twitterUrl = _appSettings?['twitter_url']?.toString();
+                        final whatsappLink = _selectedSubject?['whatsapp_community_link'];
+
+                        final hasAnyLink = (instagramUrl != null && instagramUrl.isNotEmpty) ||
+                            (youtubeUrl != null && youtubeUrl.isNotEmpty) ||
+                            (twitterUrl != null && twitterUrl.isNotEmpty) ||
+                            whatsappLink != null;
+
+                        final joinPgmeCard = _buildQuickActionCard(
+                          icon: Icons.work_outline,
+                          label: 'Join PGME',
+                          subtitle: 'Apply to our team',
+                          onTap: () => context.push('/careers'),
+                          cardColor: cardColor,
+                          iconBgColor: isDark ? const Color(0xFF4D1A1A) : const Color(0xFFFFEBEE),
+                          iconColor: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFE53935),
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          isTablet: isTablet,
+                        );
+
+                        if (!hasAnyLink) {
+                          return Row(
+                            children: [
+                              Expanded(child: joinPgmeCard),
+                              SizedBox(width: isTablet ? 16 : 12),
+                              const Expanded(child: SizedBox()),
+                            ],
+                          );
+                        }
+
+                        final topRow = <Widget>[
+                          if (instagramUrl != null && instagramUrl.isNotEmpty)
+                            _buildCommunityIcon(
+                              icon: FontAwesomeIcons.instagram,
+                              color: const Color(0xFFE1306C),
+                              url: instagramUrl,
+                              isTablet: isTablet,
                             ),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkCardBackground : Colors.white,
-                              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                          if (youtubeUrl != null && youtubeUrl.isNotEmpty)
+                            _buildCommunityIcon(
+                              icon: FontAwesomeIcons.youtube,
+                              color: const Color(0xFFFF0000),
+                              url: youtubeUrl,
+                              isTablet: isTablet,
                             ),
-                            child: Builder(
-                              builder: (context) {
-                                final instagramUrl = _appSettings?['instagram_url']?.toString();
-                                final youtubeUrl = _appSettings?['youtube_url']?.toString();
-                                final twitterUrl = _appSettings?['twitter_url']?.toString();
-                                final whatsappLink = _selectedSubject?['whatsapp_community_link'];
+                        ];
 
-                                final topRow = <Widget>[
-                                  if (instagramUrl != null && instagramUrl.isNotEmpty)
-                                    _buildCommunityIcon(
-                                      icon: FontAwesomeIcons.instagram,
-                                      color: const Color(0xFFE1306C),
-                                      url: instagramUrl,
-                                      isTablet: isTablet,
-                                    ),
-                                  if (youtubeUrl != null && youtubeUrl.isNotEmpty)
-                                    _buildCommunityIcon(
-                                      icon: FontAwesomeIcons.youtube,
-                                      color: const Color(0xFFFF0000),
-                                      url: youtubeUrl,
-                                      isTablet: isTablet,
-                                    ),
-                                ];
+                        final bottomRow = <Widget>[
+                          if (twitterUrl != null && twitterUrl.isNotEmpty)
+                            _buildCommunityIcon(
+                              icon: FontAwesomeIcons.xTwitter,
+                              color: isDark ? Colors.white : const Color(0xFF000000),
+                              url: twitterUrl,
+                              isTablet: isTablet,
+                            ),
+                          if (whatsappLink != null)
+                            _buildCommunityIcon(
+                              icon: FontAwesomeIcons.whatsapp,
+                              color: const Color(0xFF25D366),
+                              url: whatsappLink,
+                              isTablet: isTablet,
+                            ),
+                        ];
 
-                                final bottomRow = <Widget>[
-                                  if (twitterUrl != null && twitterUrl.isNotEmpty)
-                                    _buildCommunityIcon(
-                                      icon: FontAwesomeIcons.xTwitter,
-                                      color: isDark ? Colors.white : const Color(0xFF000000),
-                                      url: twitterUrl,
-                                      isTablet: isTablet,
-                                    ),
-                                  if (whatsappLink != null)
-                                    _buildCommunityIcon(
-                                      icon: FontAwesomeIcons.whatsapp,
-                                      color: const Color(0xFF25D366),
-                                      url: whatsappLink,
-                                      isTablet: isTablet,
-                                    ),
-                                ];
-
-                                return Column(
+                        return Row(
+                          children: [
+                            Expanded(child: joinPgmeCard),
+                            SizedBox(width: isTablet ? 16 : 12),
+                            // Community links 2x2 grid
+                            Expanded(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 28 : 22,
+                                  vertical: isTablet ? 24 : 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark ? AppColors.darkCardBackground : Colors.white,
+                                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                                ),
+                                child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     if (topRow.isNotEmpty)
@@ -1069,12 +1084,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         children: bottomRow,
                                       ),
                                   ],
-                                );
-                              },
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                   ),
 

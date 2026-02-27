@@ -19,7 +19,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   final AppSettingsService _appSettingsService = AppSettingsService();
-  String _whatsappSupportUrl = 'https://wa.me/918074220727';
+  String? _whatsappSupportUrl;
 
   @override
   void initState() {
@@ -30,9 +30,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final settings = await _appSettingsService.getSettings();
     final url = settings['whatsapp_support_url']?.toString();
-    if (url != null && url.isNotEmpty && mounted) {
+    if (mounted) {
       setState(() {
-        _whatsappSupportUrl = url;
+        if (url != null && url.isNotEmpty) {
+          _whatsappSupportUrl = url;
+        } else {
+          // Try constructing from support phone/number
+          final phone = settings['whatsapp_support_number']?.toString() ??
+              settings['support_phone']?.toString();
+          if (phone != null && phone.isNotEmpty) {
+            final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+            _whatsappSupportUrl = 'https://wa.me/$digits';
+          }
+        }
       });
     }
   }
@@ -290,89 +300,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
 
-                      SizedBox(height: isTablet ? 23 : 18),
+                      if (_whatsappSupportUrl != null) ...[
+                        SizedBox(height: isTablet ? 23 : 18),
 
-                      // Support Channels Box
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: hPadding),
-                        child: GestureDetector(
-                          onTap: () async {
-                            final whatsappUrl = Uri.parse(_whatsappSupportUrl);
-                            if (await canLaunchUrl(whatsappUrl)) {
-                              await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-                            }
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            height: isTablet ? 100 : 81,
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(isTablet ? 22 : 17),
-                              boxShadow: isDark
-                                  ? null
-                                  : const [
-                                      BoxShadow(
-                                        color: Color(0x4D000000),
-                                        blurRadius: 3,
-                                        offset: Offset(0, 1),
-                                      ),
-                                      BoxShadow(
-                                        color: Color(0x26000000),
-                                        blurRadius: 8,
-                                        spreadRadius: 3,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 30 : 24, vertical: isTablet ? 20 : 16),
-                              child: Row(
-                                children: [
-                                  Image.asset(
-                                    'assets/icons/whatsapp_logo.png',
-                                    width: isTablet ? 38 : 30,
-                                    height: isTablet ? 38 : 30,
-                                  ),
-                                  SizedBox(width: isTablet ? 20 : 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Whatsapp Support',
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: isTablet ? 20 : 16,
-                                            color: textColor,
-                                          ),
+                        // Support Channels Box
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: hPadding),
+                          child: GestureDetector(
+                            onTap: () async {
+                              final whatsappUrl = Uri.parse(_whatsappSupportUrl!);
+                              if (await canLaunchUrl(whatsappUrl)) {
+                                await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              height: isTablet ? 100 : 81,
+                              decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(isTablet ? 22 : 17),
+                                boxShadow: isDark
+                                    ? null
+                                    : const [
+                                        BoxShadow(
+                                          color: Color(0x4D000000),
+                                          blurRadius: 3,
+                                          offset: Offset(0, 1),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Message to get direct Assistance',
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: isTablet ? 15 : 12,
-                                            color: secondaryTextColor,
-                                          ),
+                                        BoxShadow(
+                                          color: Color(0x26000000),
+                                          blurRadius: 8,
+                                          spreadRadius: 3,
+                                          offset: Offset(0, 4),
                                         ),
                                       ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 30 : 24, vertical: isTablet ? 20 : 16),
+                                child: Row(
+                                  children: [
+                                    Image.asset(
+                                      'assets/icons/whatsapp_logo.png',
+                                      width: isTablet ? 38 : 30,
+                                      height: isTablet ? 38 : 30,
                                     ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_back_ios,
-                                    size: isTablet ? 20 : 16,
-                                    color: textColor,
-                                    textDirection: TextDirection.rtl,
-                                  ),
-                                ],
+                                    SizedBox(width: isTablet ? 20 : 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Whatsapp Support',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: isTablet ? 20 : 16,
+                                              color: textColor,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Message to get direct Assistance',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: isTablet ? 15 : 12,
+                                              color: secondaryTextColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_back_ios,
+                                      size: isTablet ? 20 : 16,
+                                      color: textColor,
+                                      textDirection: TextDirection.rtl,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
 
                       SizedBox(height: isTablet ? 44 : 34),
 

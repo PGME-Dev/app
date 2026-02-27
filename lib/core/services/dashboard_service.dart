@@ -335,6 +335,40 @@ class DashboardService {
     }
   }
 
+  /// Get package details by ID (includes trailer video info)
+  Future<PackageModel?> getPackageDetails(String packageId) async {
+    try {
+      debugPrint('=== DashboardService: Getting package details ===');
+      debugPrint('Package ID: $packageId');
+
+      final response = await _apiService.dio.get(
+        '${ApiConstants.packages}/$packageId',
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final packageData = response.data['data'] as Map<String, dynamic>;
+
+        // The detail endpoint returns trailer_video as a nested object, flatten it
+        if (packageData['trailer_video'] != null) {
+          final trailer = packageData['trailer_video'] as Map<String, dynamic>;
+          packageData['trailer_video_url'] = trailer['video_url'];
+        }
+
+        final pkg = PackageModel.fromJson(packageData);
+        debugPrint('✓ Package details retrieved: ${pkg.name}');
+        return pkg;
+      }
+
+      return null;
+    } on DioException catch (e) {
+      debugPrint('✗ Get package details error: $e');
+      return null; // Non-fatal - screen can still work without package details
+    } catch (e) {
+      debugPrint('✗ Unexpected error getting package details: $e');
+      return null;
+    }
+  }
+
   /// Get all package types
   Future<List<PackageTypeModel>> getPackageTypes() async {
     try {

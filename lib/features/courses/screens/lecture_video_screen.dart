@@ -8,6 +8,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/models/series_model.dart';
+import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/models/module_model.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
@@ -38,6 +39,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
   SeriesModel? _series;
   List<ModuleModel> _modules = [];
+  String? _trailerVideoUrl;
+  String? _packageThumbnailUrl;
   bool _isLoading = true;
   String? _error;
 
@@ -107,16 +110,27 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     });
 
     try {
-      // Fetch series details and modules in parallel
-      final results = await Future.wait([
+      // Fetch series details, modules, and package details in parallel
+      final futures = <Future>[
         _dashboardService.getSeriesDetails(widget.courseId),
         _dashboardService.getSeriesModules(widget.courseId),
-      ]);
+      ];
+
+      // Also fetch package details if packageId is available (for trailer/thumbnail)
+      if (widget.packageId != null && widget.packageId!.isNotEmpty) {
+        futures.add(_dashboardService.getPackageDetails(widget.packageId!));
+      }
+
+      final results = await Future.wait(futures);
 
       if (mounted) {
+        final packageDetails = results.length > 2 ? results[2] as PackageModel? : null;
+
         setState(() {
           _series = results[0] as SeriesModel;
           _modules = results[1] as List<ModuleModel>;
+          _trailerVideoUrl = packageDetails?.trailerVideoUrl;
+          _packageThumbnailUrl = packageDetails?.thumbnailUrl;
           _isLoading = false;
 
           // Initialize expanded state - expand first module by default
@@ -234,58 +248,65 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
                   SizedBox(height: sectionGap),
 
-                  // Course Banner Image
-                  ClipRRect(
-                    borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: bannerHeight,
-                        child: ClipRRect(
-                          borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
-                          child: _series?.thumbnailUrl != null
-                              ? CachedNetworkImage(
-                                  imageUrl: _series!.thumbnailUrl!,
-                                  width: double.infinity,
-                                  height: bannerHeight,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        color: isDark ? Colors.white54 : Colors.black26,
-                                        strokeWidth: 2,
+                  // Course Banner Image with Trailer Play Button
+                  GestureDetector(
+                    onTap: _trailerVideoUrl != null
+                        ? () {
+                            context.push(
+                              '/trailer-video',
+                              extra: {
+                                'videoUrl': _trailerVideoUrl,
+                                'videoTitle': '${_series?.title ?? 'Course'} - Trailer',
+                              },
+                            );
+                          }
+                        : null,
+                    child: ClipRRect(
+                      borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: bannerHeight,
+                          child: ClipRRect(
+                            borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // Thumbnail: prefer package thumbnail, then series thumbnail, then fallback
+                                _buildBannerImage(
+                                  bannerHeight: bannerHeight,
+                                  isDark: isDark,
+                                  isTablet: isTablet,
+                                  secondaryTextColor: secondaryTextColor,
+                                ),
+                                // Play button overlay (only if trailer exists)
+                                if (_trailerVideoUrl != null)
+                                  Center(
+                                    child: Container(
+                                      width: isTablet ? 72 : 56,
+                                      height: isTablet ? 72 : 56,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.2),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.play_arrow_rounded,
+                                        size: isTablet ? 40 : 32,
+                                        color: const Color(0xFF2470E4),
                                       ),
                                     ),
                                   ),
-                                  errorWidget: (context, url, error) => Image.asset(
-                                    'assets/illustrations/course.png',
-                                    width: double.infinity,
-                                    height: bannerHeight,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Image.asset(
-                                  'assets/illustrations/course.png',
-                                  width: double.infinity,
-                                  height: bannerHeight,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: double.infinity,
-                                      height: bannerHeight,
-                                      color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.image_outlined,
-                                          size: isTablet ? 80 : 60,
-                                          color: secondaryTextColor,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -476,11 +497,86 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     );
   }
 
+  /// Build the banner image with fallback: package thumbnail > series thumbnail > asset > icon
+  Widget _buildBannerImage({
+    required double bannerHeight,
+    required bool isDark,
+    required bool isTablet,
+    required Color secondaryTextColor,
+  }) {
+    // Prefer package thumbnail, then series thumbnail
+    final thumbnailUrl = _packageThumbnailUrl ?? _series?.thumbnailUrl;
+
+    if (thumbnailUrl != null) {
+      return CachedNetworkImage(
+        imageUrl: thumbnailUrl,
+        width: double.infinity,
+        height: bannerHeight,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: isDark ? Colors.white54 : Colors.black26,
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => Image.asset(
+          'assets/illustrations/course.png',
+          width: double.infinity,
+          height: bannerHeight,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildBannerPlaceholder(
+            bannerHeight: bannerHeight,
+            isDark: isDark,
+            isTablet: isTablet,
+            secondaryTextColor: secondaryTextColor,
+          ),
+        ),
+      );
+    }
+
+    return Image.asset(
+      'assets/illustrations/course.png',
+      width: double.infinity,
+      height: bannerHeight,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _buildBannerPlaceholder(
+        bannerHeight: bannerHeight,
+        isDark: isDark,
+        isTablet: isTablet,
+        secondaryTextColor: secondaryTextColor,
+      ),
+    );
+  }
+
+  Widget _buildBannerPlaceholder({
+    required double bannerHeight,
+    required bool isDark,
+    required bool isTablet,
+    required Color secondaryTextColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: bannerHeight,
+      color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: isTablet ? 80 : 60,
+          color: secondaryTextColor,
+        ),
+      ),
+    );
+  }
+
   Widget _buildLessonItem({
     required bool isAccessible,
     required bool isWatched,
     required String title,
     required String instructor,
+    String? instructorPhotoUrl,
     required bool isDark,
     required bool isTablet,
     required Color textColor,
@@ -607,25 +703,44 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   SizedBox(height: isTablet ? 6 : 4),
                   Row(
                     children: [
-                      // Doctor avatar
+                      // Doctor avatar - use faculty photo if available, fallback to placeholder
                       ClipRRect(
                         borderRadius: BorderRadius.circular(avatarSize / 2),
-                        child: Image.asset(
-                          'assets/illustrations/doc.png',
-                          width: avatarSize,
-                          height: avatarSize,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: avatarSize,
-                              height: avatarSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                        child: instructorPhotoUrl != null && instructorPhotoUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: instructorPhotoUrl,
+                                width: avatarSize,
+                                height: avatarSize,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Image.asset(
+                                  'assets/illustrations/doc.png',
+                                  width: avatarSize,
+                                  height: avatarSize,
+                                  fit: BoxFit.cover,
+                                ),
+                                errorWidget: (context, url, error) => Image.asset(
+                                  'assets/illustrations/doc.png',
+                                  width: avatarSize,
+                                  height: avatarSize,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Image.asset(
+                                'assets/illustrations/doc.png',
+                                width: avatarSize,
+                                height: avatarSize,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: avatarSize,
+                                    height: avatarSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                       SizedBox(width: isTablet ? 6 : 4),
                       Expanded(
@@ -878,6 +993,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                             isWatched: isWatched,
                             title: video.title,
                             instructor: video.facultyName,
+                            instructorPhotoUrl: video.facultyPhotoUrl,
                             isDark: isDark,
                             isTablet: isTablet,
                             textColor: textColor,
