@@ -30,6 +30,7 @@ class OTPInputState extends State<OTPInput> {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
   final _smartAuth = SmartAuth.instance;
+  bool _isAutoFilling = false;
 
   // Colors
   static const Color _filledBorderColor = Color(0xFF0000D1);
@@ -42,7 +43,7 @@ class OTPInputState extends State<OTPInput> {
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
 
-    // Listen for SMS auto-fill via User Consent API
+    // Listen for SMS auto-fill via User Consent API (Android)
     _startSmsListener();
 
     // Add listeners for focus changes to trigger rebuild
@@ -68,14 +69,25 @@ class OTPInputState extends State<OTPInput> {
   }
 
   void _fillOtp(String code) {
+    _isAutoFilling = true;
+    // Clear all fields first
+    for (var c in _controllers) {
+      c.text = '';
+    }
+    // Fill digits into individual fields
     for (int i = 0; i < widget.length && i < code.length; i++) {
       _controllers[i].text = code[i];
     }
+    _isAutoFilling = false;
+    setState(() {});
     for (var node in _focusNodes) {
       node.unfocus();
     }
-    widget.onChanged?.call(code);
-    widget.onCompleted(code);
+    final otp = _controllers.map((c) => c.text).join();
+    widget.onChanged?.call(otp);
+    if (otp.length == widget.length) {
+      widget.onCompleted(otp);
+    }
   }
 
   /// Clear all OTP input fields
@@ -101,6 +113,19 @@ class OTPInputState extends State<OTPInput> {
   }
 
   void _onChanged(String value, int index) {
+    if (_isAutoFilling) return;
+
+    // Handle multi-digit paste/autofill (keyboard OTP suggestion)
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+      if (digits.isNotEmpty) {
+        _fillOtp(digits.length > widget.length
+            ? digits.substring(0, widget.length)
+            : digits);
+      }
+      return;
+    }
+
     if (value.length == 1 && index < widget.length - 1) {
       _focusNodes[index + 1].requestFocus();
     }
@@ -125,73 +150,77 @@ class OTPInputState extends State<OTPInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        widget.length,
-        (index) {
-          final hasValue = _controllers[index].text.isNotEmpty;
-          final isFocused = _focusNodes[index].hasFocus;
+    return AutofillGroup(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(
+          widget.length,
+          (index) {
+            final hasValue = _controllers[index].text.isNotEmpty;
+            final isFocused = _focusNodes[index].hasFocus;
 
-          return Container(
-            margin: EdgeInsets.only(right: index < widget.length - 1 ? widget.spacing : 0),
-            child: SizedBox(
-              width: widget.boxSize,
-              height: widget.boxSize,
-              child: KeyboardListener(
-                focusNode: FocusNode(),
-                onKeyEvent: (event) => _onKeyDown(event, index),
-                child: TextFormField(
-                  controller: _controllers[index],
-                  focusNode: _focusNodes[index],
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  maxLength: 1,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: widget.fontSize,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0D0D26),
+            return Container(
+              margin: EdgeInsets.only(right: index < widget.length - 1 ? widget.spacing : 0),
+              child: SizedBox(
+                width: widget.boxSize,
+                height: widget.boxSize,
+                child: KeyboardListener(
+                  focusNode: FocusNode(),
+                  onKeyEvent: (event) => _onKeyDown(event, index),
+                  child: TextFormField(
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    autofillHints: index == 0
+                        ? const [AutofillHints.oneTimeCode]
+                        : null,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF0D0D26),
+                    ),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      filled: true,
+                      fillColor: _backgroundColor,
+                      contentPadding: EdgeInsets.zero,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(widget.borderRadius),
+                        borderSide: BorderSide(
+                          color: hasValue ? _filledBorderColor : _emptyBorderColor,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(widget.borderRadius),
+                        borderSide: BorderSide(
+                          color: hasValue ? _filledBorderColor : _emptyBorderColor,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(widget.borderRadius),
+                        borderSide: BorderSide(
+                          color: isFocused ? _emptyBorderColor : (hasValue ? _filledBorderColor : _emptyBorderColor),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onChanged: (value) => _onChanged(value, index),
+                    onTap: () {
+                      _controllers[index].clear();
+                    },
                   ),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    filled: true,
-                    fillColor: _backgroundColor,
-                    contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      borderSide: BorderSide(
-                        color: hasValue ? _filledBorderColor : _emptyBorderColor,
-                        width: 1,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      borderSide: BorderSide(
-                        color: hasValue ? _filledBorderColor : _emptyBorderColor,
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      borderSide: BorderSide(
-                        color: isFocused ? _emptyBorderColor : (hasValue ? _filledBorderColor : _emptyBorderColor),
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  onChanged: (value) => _onChanged(value, index),
-                  onTap: () {
-                    _controllers[index].clear();
-                  },
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

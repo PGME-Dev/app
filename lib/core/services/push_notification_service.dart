@@ -84,9 +84,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   debugPrint('Background FCM message: ${message.messageId}');
 
-  // On iOS, show a local notification for data-only messages
-  // (messages with a notification payload are shown automatically by iOS)
-  if (Platform.isIOS && message.notification == null) {
+  // Show local notification for data-only messages on both platforms.
+  // Messages WITH a notification payload are shown automatically by the OS
+  // in background, but data-only messages need manual handling.
+  if (message.notification == null) {
     try {
       await _initLocalNotifications();
       await _showLocalNotification(message);
@@ -239,10 +240,15 @@ class PushNotificationService {
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('Foreground FCM: ${message.notification?.title ?? message.data['title']}');
 
-    // If the message has a notification payload, iOS shows it automatically
-    // via setForegroundNotificationPresentationOptions.
-    // For data-only messages, we need to show a local notification manually.
-    if (message.notification == null) {
+    if (Platform.isIOS) {
+      // On iOS, setForegroundNotificationPresentationOptions auto-shows
+      // notification-payload messages. Only handle data-only messages.
+      if (message.notification == null) {
+        _showLocalNotification(message);
+      }
+    } else {
+      // On Android, foreground messages are NEVER auto-shown by the OS.
+      // We must always show a local notification manually.
       _showLocalNotification(message);
     }
   }
