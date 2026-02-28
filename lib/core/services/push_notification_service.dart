@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +24,9 @@ class PushNotificationService {
   final StorageService _storageService = StorageService();
 
   bool _initialized = false;
+  StreamSubscription<RemoteMessage>? _foregroundSub;
+  StreamSubscription<RemoteMessage>? _tapSub;
+  StreamSubscription<String>? _tokenRefreshSub;
 
   /// Initialize Firebase Messaging and set up handlers.
   /// Call this from main.dart AFTER Firebase.initializeApp()
@@ -57,10 +62,10 @@ class PushNotificationService {
     );
 
     // Listen for foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _foregroundSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // Listen for notification taps (when app is in background/terminated)
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    _tapSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
     // Check if app was opened from a terminated state via notification tap
     final initialMessage = await _messaging.getInitialMessage();
@@ -69,7 +74,7 @@ class PushNotificationService {
     }
 
     // Listen for token refresh
-    _messaging.onTokenRefresh.listen(_onTokenRefresh);
+    _tokenRefreshSub = _messaging.onTokenRefresh.listen(_onTokenRefresh);
 
     _initialized = true;
     debugPrint('Push notification service initialized');
@@ -79,11 +84,30 @@ class PushNotificationService {
   /// Call this AFTER successful login.
   Future<void> registerToken() async {
     try {
+      // On iOS, FCM requires the APNs token before it can return an FCM token.
+      // There is a race condition on first launch where getToken() returns null
+      // because the APNs token hasn't been exchanged yet. Retry up to 5 times.
+      if (Platform.isIOS) {
+        String? apnsToken;
+        for (int i = 0; i < 5; i++) {
+          apnsToken = await _messaging.getAPNSToken();
+          if (apnsToken != null) break;
+          await Future.delayed(const Duration(seconds: 1));
+        }
+        if (apnsToken == null) {
+          debugPrint('APNs token unavailable — FCM token registration deferred to onTokenRefresh');
+          return;
+        }
+        debugPrint('APNs token confirmed, requesting FCM token');
+      }
+
       final token = await _messaging.getToken();
       if (token != null) {
         debugPrint('FCM Token: ${token.substring(0, 20)}...');
         await _userService.updateFCMToken(token);
         debugPrint('FCM token registered with backend');
+      } else {
+        debugPrint('FCM token was null — will retry via onTokenRefresh');
       }
     } catch (e) {
       debugPrint('Failed to register FCM token: $e');
@@ -161,6 +185,13 @@ class PushNotificationService {
 
   /// Cleanup on logout
   Future<void> cleanup() async {
+    // Cancel stream subscriptions to prevent duplicate handlers on re-login
+    await _foregroundSub?.cancel();
+    await _tapSub?.cancel();
+    await _tokenRefreshSub?.cancel();
+    _foregroundSub = null;
+    _tapSub = null;
+    _tokenRefreshSub = null;
     // Don't delete the FCM token itself — the backend clears it on logout
     _initialized = false;
   }
