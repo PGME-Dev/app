@@ -14,8 +14,8 @@ class ApiConstants {
   static const int receiveTimeout = 30000; // 30 seconds
 
   // MSG91 Configuration
-  static const String msg91WidgetId = '3662626a546d363538363637';
-  static const String msg91AuthToken = '476937TtIKe4opN3690e3faeP1';
+  static const String msg91WidgetId = '3662426d6a49313834333034';
+  static const String msg91AuthToken = '497163T6jH5bBz69a2e7cbP1';
 
   // Authentication Endpoints
   static const String verifyWidget = '/auth/verify-widget';
