@@ -4,9 +4,27 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
-class SuccessScreen extends StatelessWidget {
+class SuccessScreen extends StatefulWidget {
   const SuccessScreen({super.key});
+
+  @override
+  State<SuccessScreen> createState() => _SuccessScreenState();
+}
+
+class _SuccessScreenState extends State<SuccessScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh dashboard in the background so the home screen reflects the new
+    // purchase immediately when the user taps "Continue to Dashboard".
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<DashboardProvider>().refresh();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

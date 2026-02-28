@@ -58,6 +58,19 @@
 	<string>Reminders access is used to schedule and manage meeting reminders.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>in.pgme.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pgme</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

@@ -56,6 +56,11 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
         WebStoreLauncher.awaitingExternalPurchase) {
       WebStoreLauncher.clearAwaitingPurchase();
       _loadPackageData();
+      // Refresh the dashboard so the home screen shows the new purchase
+      // status without requiring a manual pull-to-refresh.
+      if (mounted) {
+        context.read<DashboardProvider>().refresh();
+      }
     }
   }
 

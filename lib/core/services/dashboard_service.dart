@@ -347,13 +347,6 @@ class DashboardService {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final packageData = response.data['data'] as Map<String, dynamic>;
-
-        // The detail endpoint returns trailer_video as a nested object, flatten it
-        if (packageData['trailer_video'] != null) {
-          final trailer = packageData['trailer_video'] as Map<String, dynamic>;
-          packageData['trailer_video_url'] = trailer['video_url'];
-        }
-
         final pkg = PackageModel.fromJson(packageData);
         debugPrint('✓ Package details retrieved: ${pkg.name}');
         return pkg;
