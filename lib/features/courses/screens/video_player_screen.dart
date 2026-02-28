@@ -10,8 +10,10 @@ import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/enrolled_courses_service.dart';
 import 'package:pgme/core/services/offline_storage_service.dart';
+import 'package:pgme/core/services/video_review_service.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
+import 'package:pgme/features/courses/widgets/star_rating_input.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   final DashboardService _dashboardService = DashboardService();
+  final VideoReviewService _videoReviewService = VideoReviewService();
 
   BetterPlayerController? _playerController;
   Timer? _progressTimer;
@@ -61,6 +64,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // Resume position to seek after player initialization (more reliable than startAt for HLS)
   int _pendingSeekSeconds = 0;
 
+  // Review state
+  bool _reviewLoading = true;
+  bool _ratingSubmitted = false;
+  bool _feedbackSubmitted = false;
+  int? _submittedRating;
+  String? _submittedFeedback;
+  int _pendingRating = 0;
+  final TextEditingController _feedbackCtrl = TextEditingController();
+  bool _isSubmittingRating = false;
+  bool _isSubmittingFeedback = false;
+
   // Fullscreen overlay
   OverlayEntry? _fullscreenBackButtonOverlay;
   bool _isFullscreen = false;
@@ -72,6 +86,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     debugPrint('VideoPlayer: init for videoId=${widget.videoId}');
     _loadVideoData();
+    _loadMyReview();
   }
 
   @override
@@ -107,6 +122,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             DeviceOrientation.portraitDown,
           ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _feedbackCtrl.dispose();
     super.dispose();
   }
 
@@ -965,6 +981,301 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Review
+  // ---------------------------------------------------------------------------
+
+  Future<void> _loadMyReview() async {
+    try {
+      final review = await _videoReviewService.getMyReview(widget.videoId);
+      if (!mounted) return;
+      setState(() {
+        _reviewLoading = false;
+        if (review == null) {
+          _ratingSubmitted = false;
+          _feedbackSubmitted = false;
+        } else {
+          _ratingSubmitted = review['rating_submitted_at'] != null;
+          _feedbackSubmitted = review['feedback_submitted_at'] != null;
+          _submittedRating = review['rating'] as int?;
+          _submittedFeedback = review['feedback'] as String?;
+        }
+      });
+    } catch (_) {
+      // Silently fail — don't block the video player for a review fetch failure
+      if (mounted) setState(() => _reviewLoading = false);
+    }
+  }
+
+  Future<void> _submitRating() async {
+    if (_pendingRating == 0) return;
+    setState(() => _isSubmittingRating = true);
+    try {
+      final review = await _videoReviewService.submitRating(widget.videoId, _pendingRating);
+      if (!mounted) return;
+      setState(() {
+        _ratingSubmitted = true;
+        _submittedRating = review['rating'] as int?;
+        _isSubmittingRating = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Rating submitted!'),
+          backgroundColor: Color(0xFF1847A2),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmittingRating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red[700],
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _submitFeedback() async {
+    final text = _feedbackCtrl.text.trim();
+    if (text.isEmpty) return;
+    setState(() => _isSubmittingFeedback = true);
+    try {
+      final review = await _videoReviewService.submitFeedback(widget.videoId, text);
+      if (!mounted) return;
+      setState(() {
+        _feedbackSubmitted = true;
+        _submittedFeedback = review['feedback'] as String?;
+        _isSubmittingFeedback = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Feedback submitted!'),
+          backgroundColor: Color(0xFF1847A2),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmittingFeedback = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red[700],
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Widget _buildRatingSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Rate this lecture',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_reviewLoading)
+          Container(
+            width: 160,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          )
+        else if (_ratingSubmitted)
+          Row(
+            children: [
+              StarRatingDisplay(rating: _submittedRating ?? 0, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                '${_submittedRating ?? 0}/5',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ],
+          )
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              StarRatingInput(
+                current: _pendingRating,
+                onChanged: (v) => setState(() => _pendingRating = v),
+                size: 32,
+              ),
+              if (_pendingRating > 0) ...[
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSubmittingRating ? null : _submitRating,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1847A2),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.white24,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _isSubmittingRating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit Rating',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFeedbackSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Share your feedback',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_reviewLoading)
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          )
+        else if (_feedbackSubmitted)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white24),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              _submittedFeedback ?? '',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontFamily: 'Poppins',
+                height: 1.5,
+              ),
+            ),
+          )
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _feedbackCtrl,
+                maxLines: 4,
+                minLines: 3,
+                maxLength: 2000,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'What did you like or dislike about this lecture?',
+                  hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                  counterStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+                  filled: true,
+                  fillColor: Colors.white10,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF1847A2), width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (_feedbackCtrl.text.trim().isEmpty || _isSubmittingFeedback)
+                      ? null
+                      : _submitFeedback,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1847A2),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.white12,
+                    disabledForegroundColor: Colors.white38,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isSubmittingFeedback
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Submit Feedback',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
   Widget _buildVideoInfo() {
     return Expanded(
       child: Container(
@@ -1011,6 +1322,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: 28),
+              _buildRatingSection(),
+              const SizedBox(height: 24),
+              _buildFeedbackSection(),
+              const SizedBox(height: 32),
             ],
           ),
         ),

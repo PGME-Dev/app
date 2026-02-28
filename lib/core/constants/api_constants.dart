@@ -127,6 +127,12 @@ class ApiConstants {
   static String videoDownloadUrl(String videoId) =>
       '/videos/$videoId/download-url';
 
+  // Video Review Endpoints
+  static String videoMyReview(String videoId) => '/videos/$videoId/my-review';
+  static String submitVideoRating(String videoId) => '/videos/$videoId/rating';
+  static String submitVideoFeedback(String videoId) =>
+      '/videos/$videoId/feedback';
+
   // Document Endpoints
   static String documentViewUrl(String documentId) =>
       '/documents/$documentId/view-url';
