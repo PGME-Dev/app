@@ -232,6 +232,9 @@ class EnrolledCoursesService {
           data,
           lectureId: lectureId,
           watchTimeSeconds: watchTimeSeconds,
+          sentPositionSeconds: lastWatchedPositionSeconds,
+          sentIsCompleted: isCompleted,
+          sentCompletionPercentage: completionPercentage,
         );
 
         debugPrint('✓ Progress updated for lecture: $lectureId');
@@ -245,6 +248,36 @@ class EnrolledCoursesService {
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');
       throw Exception('An unexpected error occurred');
+    }
+  }
+
+  /// Fetch progress for a specific video from the backend.
+  /// Returns the position in seconds, or null if no progress exists.
+  Future<Map<String, dynamic>?> getVideoProgress(String videoId) async {
+    try {
+      debugPrint('=== EnrolledCoursesService: Fetching video progress for $videoId ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.getVideoProgress(videoId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+        // The response may have progress nested or flat — handle both
+        final progress = data is Map<String, dynamic>
+            ? (data['progress'] as Map<String, dynamic>? ?? data)
+            : null;
+
+        if (progress != null) {
+          debugPrint('✓ Video progress fetched: position_seconds=${progress['position_seconds']}');
+          return progress;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('✗ Fetch video progress failed: $e');
+      return null;
     }
   }
 
@@ -277,13 +310,20 @@ class EnrolledCoursesService {
   }
 
   /// Maps the POST /video/:id response to a ProgressModel.
+  /// Uses the sent values as fallbacks in case the backend response omits
+  /// or uses different field names for position/completion data.
   ProgressModel _progressFromUpdateJson(
     Map<String, dynamic> json, {
     required String lectureId,
     required int watchTimeSeconds,
+    required int sentPositionSeconds,
+    required bool sentIsCompleted,
+    required int sentCompletionPercentage,
   }) {
     final durationSeconds =
         (json['duration_seconds'] as num?)?.toInt() ?? 0;
+    final backendPosition =
+        (json['position_seconds'] as num?)?.toInt() ?? 0;
     return ProgressModel(
       progressId: json['video_id'] as String? ?? lectureId,
       lecture: LectureModel(
@@ -295,10 +335,10 @@ class EnrolledCoursesService {
       ),
       watchTimeSeconds: watchTimeSeconds,
       lastWatchedPositionSeconds:
-          (json['position_seconds'] as num?)?.toInt() ?? 0,
-      isCompleted: json['completed'] as bool? ?? false,
+          backendPosition > 0 ? backendPosition : sentPositionSeconds,
+      isCompleted: json['completed'] as bool? ?? sentIsCompleted,
       completionPercentage:
-          (json['watch_percentage'] as num?)?.toInt() ?? 0,
+          (json['watch_percentage'] as num?)?.toInt() ?? sentCompletionPercentage,
       lastWatchedAt: json['last_accessed_at'] as String? ??
           DateTime.now().toIso8601String(),
     );

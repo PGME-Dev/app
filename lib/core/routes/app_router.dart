@@ -393,9 +393,11 @@ class AppRouter {
         name: 'video-player',
         pageBuilder: (context, state) {
           final videoId = state.pathParameters['id']!;
+          final resumeStr = state.uri.queryParameters['resume'];
+          final resumeFrom = resumeStr != null ? int.tryParse(resumeStr) : null;
           return CustomTransitionPage(
             key: state.pageKey,
-            child: VideoPlayerScreen(videoId: videoId),
+            child: VideoPlayerScreen(videoId: videoId, resumeFromSeconds: resumeFrom),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return SlideTransition(
                 position: Tween<Offset>(

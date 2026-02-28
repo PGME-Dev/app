@@ -788,6 +788,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  no_screenshot:
+    dependency: "direct main"
+    description:
+      name: no_screenshot
+      sha256: "2f8bbb9b35ab815cdc68116008ba7b1af8ced55649af8f02826c4ea538d19ff9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.0"
   objective_c:
     dependency: transitive
     description:

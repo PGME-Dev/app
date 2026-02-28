@@ -8,18 +8,22 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/models/video_model.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/download_service.dart';
+import 'package:pgme/core/services/enrolled_courses_service.dart';
 import 'package:pgme/core/services/offline_storage_service.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
-import 'package:pgme/core/models/progress_model.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoId;
+  /// Resume position passed from the caller (e.g. dashboard).
+  /// When non-null, this is used directly — no need to fetch from API/local.
+  final int? resumeFromSeconds;
 
   const VideoPlayerScreen({
     super.key,
     required this.videoId,
+    this.resumeFromSeconds,
   });
 
   @override
@@ -51,12 +55,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _isPlayerInitialized = false;
   bool _isLocalFile = false;
 
-  // Existing progress for resume
-  ProgressModel? _existingProgress;
-
-  // Fallback resume position from local storage (used when provider list is empty)
+  // Best resume position found across all sources
   int _localResumePosition = 0;
-  bool _localIsCompleted = false;
+
+  // Resume position to seek after player initialization (more reliable than startAt for HLS)
+  int _pendingSeekSeconds = 0;
 
   // Fullscreen overlay
   OverlayEntry? _fullscreenBackButtonOverlay;
@@ -184,37 +187,107 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _loadExistingProgress() async {
-    // 1. Try in-memory provider list first (fastest, always up-to-date when online)
+    int bestPosition = 0;
+    bool bestCompleted = false;
+    String bestSource = 'none';
+
+    // 0. If caller passed the position directly (e.g. dashboard), trust it
+    if (widget.resumeFromSeconds != null && widget.resumeFromSeconds! > 0) {
+      bestPosition = widget.resumeFromSeconds!;
+      bestSource = 'route-param';
+      // ignore: avoid_print
+      print('VideoPlayer: route param pos=${bestPosition}s');
+    }
+
+    // 1. Check DashboardProvider.lastWatchedVideo — proven correct
+    //    (the dashboard loaded it from GET /users/progress/last-watched)
+    try {
+      final dashboard =
+          Provider.of<DashboardProvider>(context, listen: false);
+      final lastWatched = dashboard.lastWatchedVideo;
+      if (lastWatched != null && lastWatched.videoId == widget.videoId) {
+        final dashPos = lastWatched.positionSeconds;
+        // ignore: avoid_print
+        print('VideoPlayer: dashboard pos=${dashPos}s, completed=${lastWatched.completed}');
+        if (dashPos > bestPosition) {
+          bestPosition = dashPos;
+          bestCompleted = lastWatched.completed;
+          bestSource = 'dashboard';
+        }
+      }
+    } catch (e) {
+      debugPrint('VideoPlayer: dashboard lookup failed - $e');
+    }
+
+    // 2. Fetch from backend API for this specific video
+    try {
+      final service = EnrolledCoursesService();
+      final apiProgress = await service.getVideoProgress(widget.videoId);
+      if (apiProgress != null) {
+        // Log raw response to debug field names
+        // ignore: avoid_print
+        print('VideoPlayer: API raw response keys=${apiProgress.keys.toList()}');
+        final apiPos = (apiProgress['position_seconds'] as num?)?.toInt() ??
+            (apiProgress['last_watched_position_seconds'] as num?)?.toInt() ??
+            (apiProgress['positionSeconds'] as num?)?.toInt() ?? 0;
+        final apiCompleted = apiProgress['completed'] as bool? ??
+            apiProgress['is_completed'] as bool? ?? false;
+        // ignore: avoid_print
+        print('VideoPlayer: API pos=${apiPos}s, completed=$apiCompleted');
+        if (apiPos > bestPosition) {
+          bestPosition = apiPos;
+          bestCompleted = apiCompleted;
+          bestSource = 'API';
+        }
+      }
+    } catch (e) {
+      debugPrint('VideoPlayer: API progress fetch failed - $e');
+    }
+
+    // 3. Check local SharedPreferences
+    try {
+      final local =
+          await OfflineStorageService().getVideoProgress(widget.videoId);
+      if (local != null) {
+        final localPos = (local['positionSeconds'] as num?)?.toInt() ?? 0;
+        final localCompleted = local['isCompleted'] as bool? ?? false;
+        // ignore: avoid_print
+        print('VideoPlayer: local pos=${localPos}s, completed=$localCompleted');
+        if (localPos > bestPosition) {
+          bestPosition = localPos;
+          bestCompleted = localCompleted;
+          bestSource = 'local';
+        }
+      }
+    } catch (e) {
+      debugPrint('VideoPlayer: local progress lookup failed - $e');
+    }
+
+    // 4. Check in-memory provider
     try {
       final provider =
           Provider.of<EnrolledCoursesProvider>(context, listen: false);
-      _existingProgress = provider.getProgressForLecture(widget.videoId);
-      if (_existingProgress != null) {
-        _watchTimeSeconds = _existingProgress!.watchTimeSeconds;
-        debugPrint(
-            'VideoPlayer: resume pos=${_existingProgress!.lastWatchedPositionSeconds}s (provider)');
-        return; // provider has it, no need for local lookup
+      final providerProgress = provider.getProgressForLecture(widget.videoId);
+      if (providerProgress != null) {
+        _watchTimeSeconds = providerProgress.watchTimeSeconds;
+        final provPos = providerProgress.lastWatchedPositionSeconds;
+        // ignore: avoid_print
+        print('VideoPlayer: provider pos=${provPos}s');
+        if (provPos > bestPosition) {
+          bestPosition = provPos;
+          bestCompleted = providerProgress.isCompleted;
+          bestSource = 'provider';
+        }
       }
     } catch (e) {
       debugPrint('VideoPlayer: provider lookup failed - $e');
     }
 
-    // 2. Fallback: local SharedPreferences (works offline & when provider is empty)
-    try {
-      final local =
-          await OfflineStorageService().getVideoProgress(widget.videoId);
-      if (local != null) {
-        _localResumePosition =
-            (local['positionSeconds'] as num?)?.toInt() ?? 0;
-        _localIsCompleted = local['isCompleted'] as bool? ?? false;
-        debugPrint(
-            'VideoPlayer: resume pos=$_localResumePosition s (local cache)');
-      } else {
-        debugPrint('VideoPlayer: no existing progress (provider + local)');
-      }
-    } catch (e) {
-      debugPrint('VideoPlayer: local progress lookup failed - $e');
-    }
+    // Use the best (highest) position from all sources
+    _localResumePosition = bestPosition;
+
+    // ignore: avoid_print
+    print('===== VideoPlayer RESUME: pos=${bestPosition}s from $bestSource, completed=$bestCompleted =====');
   }
 
   // ---------------------------------------------------------------------------
@@ -224,29 +297,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _initializePlayer() {
     if (_videoUrl == null || _isDisposed) return;
 
-    int resumePositionSeconds = 0;
-    if (_existingProgress != null) {
-      resumePositionSeconds = _existingProgress!.lastWatchedPositionSeconds;
+    // Use the resume position — even if "completed", resume from where user left off
+    int resumePositionSeconds = _localResumePosition;
 
-      // Already completed -> start from beginning
-      if (_existingProgress!.isCompleted) {
-        debugPrint('VideoPlayer: already completed, starting from 0');
-        resumePositionSeconds = 0;
-      }
-    } else if (_localResumePosition > 0 && !_localIsCompleted) {
-      // Use locally-cached position (offline or provider list was empty)
-      resumePositionSeconds = _localResumePosition;
-    }
-
-    // Guard: resume position exceeds duration -> start from beginning
+    // Only reset to 0 if position exceeds duration (truly finished)
     if (_videoDurationSeconds > 0 &&
         resumePositionSeconds >= _videoDurationSeconds) {
-      debugPrint(
-          'VideoPlayer: resume pos ($resumePositionSeconds) >= duration ($_videoDurationSeconds), resetting');
+      // ignore: avoid_print
+      print('VideoPlayer: resume pos ($resumePositionSeconds) >= duration ($_videoDurationSeconds), resetting');
       resumePositionSeconds = 0;
     }
 
-    debugPrint('VideoPlayer: initializing, resume at ${resumePositionSeconds}s');
+    // Store for post-init seek
+    _pendingSeekSeconds = resumePositionSeconds;
+
+    // ignore: avoid_print
+    print('===== VideoPlayer INIT: resume=${resumePositionSeconds}s, pendingSeek=$_pendingSeekSeconds =====');
 
     final BetterPlayerDataSource dataSource;
     if (_isLocalFile) {
@@ -261,17 +327,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       );
     }
 
+    // Don't autoPlay when we need to seek first — seek then play manually
+    final shouldSeek = resumePositionSeconds > 0;
+
     _playerController = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoPlay: true,
+        autoPlay: !shouldSeek,
         fit: BoxFit.contain,
         fullScreenByDefault: false,
         allowedScreenSleep: false,
         handleLifecycle: true,
         autoDispose: false,
-        startAt: resumePositionSeconds > 0
-            ? Duration(seconds: resumePositionSeconds)
-            : null,
         deviceOrientationsOnFullScreen: const [
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
@@ -335,6 +401,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _videoDurationSeconds = duration.inSeconds;
           debugPrint(
               'VideoPlayer: duration from player - ${_videoDurationSeconds}s');
+        }
+        // Seek to resume position, then start playing
+        if (_pendingSeekSeconds > 0) {
+          final seekTo = _pendingSeekSeconds;
+          _pendingSeekSeconds = 0; // consume so we don't seek again
+          // ignore: avoid_print
+          print('===== VideoPlayer SEEKING to ${seekTo}s =====');
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (_isDisposed || _playerController == null) return;
+            _playerController!.seekTo(Duration(seconds: seekTo)).then((_) {
+              // ignore: avoid_print
+              print('===== VideoPlayer SEEK DONE, now playing =====');
+              if (!_isDisposed) {
+                _playerController?.play();
+              }
+            });
+          });
         }
         break;
 
@@ -539,11 +622,77 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // Navigation
   // ---------------------------------------------------------------------------
 
-  void _stopAndGoBack() {
+  Future<void> _stopAndGoBack() async {
     _playerController?.pause();
+    await _saveProgressBeforeExit();
     if (mounted) {
       context.pop();
     }
+  }
+
+  /// Awaitable save — called before navigation so data is persisted
+  /// before the next screen tries to read it.
+  Future<void> _saveProgressBeforeExit() async {
+    if (_playerController?.videoPlayerController == null) return;
+
+    _accumulateWatchTime();
+
+    final value = _playerController!.videoPlayerController!.value;
+    final positionSeconds = value.position.inSeconds;
+
+    final duration = _videoDurationSeconds > 0
+        ? _videoDurationSeconds
+        : (value.duration?.inSeconds ?? 0);
+
+    if (duration <= 0) return;
+
+    final completionPercentage =
+        ((positionSeconds / duration) * 100).round().clamp(0, 100);
+    final isCompleted = completionPercentage >= 90;
+
+    debugPrint(
+        'VideoPlayer: pre-exit save pos=${positionSeconds}s, watch=${_watchTimeSeconds}s');
+
+    // Save locally and AWAIT so it's persisted before the next screen reads it
+    await OfflineStorageService().saveVideoProgress(
+        widget.videoId, positionSeconds, duration, isCompleted);
+
+    final lastWatchedJson = {
+      'video_id': widget.videoId,
+      'title': _videoTitle ?? '',
+      'thumbnail_url': null,
+      'duration_seconds': duration,
+      'module_title': null,
+      'position_seconds': positionSeconds,
+      'watch_percentage': completionPercentage,
+      'completed': isCompleted,
+      'is_free': false,
+      'last_accessed_at': DateTime.now().toIso8601String(),
+    };
+    await OfflineStorageService().saveLastWatchedVideo(lastWatchedJson);
+
+    // Update in-memory dashboard state
+    try {
+      final dashboard =
+          Provider.of<DashboardProvider>(context, listen: false);
+      dashboard.updateLastWatchedLocally(
+          VideoModel.fromJson(lastWatchedJson));
+    } catch (_) {}
+
+    // Backend save (fire-and-forget is OK here, local is already saved)
+    try {
+      final provider =
+          Provider.of<EnrolledCoursesProvider>(context, listen: false);
+      provider.updateLectureProgress(
+        lectureId: widget.videoId,
+        lastWatchedPositionSeconds: positionSeconds,
+        watchTimeSeconds: _watchTimeSeconds,
+        isCompleted: isCompleted,
+        completionPercentage: completionPercentage,
+      );
+    } catch (_) {}
+
+    _lastSavedPositionSeconds = positionSeconds;
   }
 
   // ---------------------------------------------------------------------------
@@ -679,8 +828,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           return;
         }
 
-        // Pause and navigate back
+        // Save progress, then navigate back
         _playerController?.pause();
+        await _saveProgressBeforeExit();
         if (mounted) {
           Navigator.of(context).pop();
         }

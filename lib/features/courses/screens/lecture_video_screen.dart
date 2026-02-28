@@ -50,10 +50,60 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
   void initState() {
     super.initState();
     _loadData();
-    // Ensure download provider is initialized
+    // Ensure download provider is initialized and set up failure callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DownloadProvider>(context, listen: false).loadDownloads();
+      final dp = Provider.of<DownloadProvider>(context, listen: false);
+      dp.loadDownloads();
+      dp.onDownloadFailed = _onDownloadFailed;
+      dp.onStorageFull = _onStorageFull;
     });
+  }
+
+  @override
+  void dispose() {
+    // Clear callbacks to avoid calling into a disposed widget
+    try {
+      final dp = Provider.of<DownloadProvider>(context, listen: false);
+      if (dp.onDownloadFailed == _onDownloadFailed) {
+        dp.onDownloadFailed = null;
+      }
+      if (dp.onStorageFull == _onStorageFull) {
+        dp.onStorageFull = null;
+      }
+    } catch (_) {}
+    super.dispose();
+  }
+
+  /// Called by the provider when a download fails (even in background)
+  void _onDownloadFailed(DownloadFailureInfo failure) {
+    if (!mounted) return;
+    _showRetryDialog(failure.videoId, failure.title, failure.errorMessage);
+  }
+
+  /// Called by the provider when device storage is too low
+  void _onStorageFull(String freeSpace) {
+    if (!mounted) return;
+    showAppDialog(
+      context,
+      title: 'Storage Full',
+      message: 'Your device storage is almost full ($freeSpace free). '
+          'Please free up space to download videos.',
+      type: AppDialogType.warning,
+      buttonText: 'OK',
+    );
+  }
+
+  /// Show a prominent retry dialog for a failed download
+  void _showRetryDialog(String videoId, String title, String errorMessage) {
+    if (!mounted) return;
+    showAppDialog(
+      context,
+      title: 'Download Failed',
+      message: '$title\n\n$errorMessage',
+      type: AppDialogType.error,
+      actionLabel: 'Retry Download',
+      onAction: () => _retryDownload(videoId),
+    );
   }
 
   /// Download a video via the global DownloadProvider
@@ -61,38 +111,37 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final provider = Provider.of<DownloadProvider>(context, listen: false);
     if (provider.isDownloading(video.videoId) || provider.isDownloaded(video.videoId)) return;
 
-    try {
-      await provider.startDownload(
-        videoId: video.videoId,
-        title: video.title,
-        facultyName: video.facultyName,
-        durationSeconds: video.durationSeconds,
-        moduleName: module.name,
-        seriesName: _series?.title,
-      );
-      if (mounted) {
-        showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.info);
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppDialog(context, message: 'Download failed: ${e.toString().replaceAll("Exception: ", "")}', type: AppDialogType.info, actionLabel: 'Retry', onAction: () => _retryDownload(video.videoId));
-      }
+    // startDownload does NOT throw — it uses the onDownloadFailed callback
+    await provider.startDownload(
+      videoId: video.videoId,
+      title: video.title,
+      facultyName: video.facultyName,
+      durationSeconds: video.durationSeconds,
+      moduleName: module.name,
+      seriesName: _series?.title,
+    );
+
+    if (!mounted) return;
+
+    // Check result after completion
+    if (provider.isDownloaded(video.videoId)) {
+      showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.success);
     }
+    // If failed, the onDownloadFailed callback already showed the retry dialog
   }
 
   /// Retry a failed download
   Future<void> _retryDownload(String videoId) async {
     final provider = Provider.of<DownloadProvider>(context, listen: false);
-    try {
-      await provider.retryDownload(videoId);
-      if (mounted) {
-        showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.info);
-      }
-    } catch (e) {
-      if (mounted) {
-        showAppDialog(context, message: 'Download failed: ${e.toString().replaceAll("Exception: ", "")}', type: AppDialogType.info, actionLabel: 'Retry', onAction: () => _retryDownload(videoId));
-      }
+    // retryDownload does NOT throw — uses the same callback mechanism
+    await provider.retryDownload(videoId);
+
+    if (!mounted) return;
+
+    if (provider.isDownloaded(videoId)) {
+      showAppDialog(context, message: 'Video downloaded successfully', type: AppDialogType.success);
     }
+    // If failed again, the onDownloadFailed callback will show retry dialog
   }
 
   void _handleBack() {
@@ -653,6 +702,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         !isPaused &&
         !isDownloaded;
 
+    // Show retry icon button on the right side when failed or paused
+    final showRetryButton = (isFailed || isPaused) && onRetry != null;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -811,6 +863,19 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                   ),
                 ),
               )
+            // Retry button when failed or paused
+            else if (showRetryButton)
+              GestureDetector(
+                onTap: onRetry,
+                child: Padding(
+                  padding: EdgeInsets.all(isTablet ? 8.0 : 6.0),
+                  child: Icon(
+                    isFailed ? Icons.refresh : Icons.play_arrow,
+                    size: downloadIconSize + 2,
+                    color: isFailed ? Colors.red.shade400 : Colors.orange.shade400,
+                  ),
+                ),
+              )
             // Download button (only when not downloading/downloaded/failed)
             else if (showDownloadButton)
               GestureDetector(
@@ -890,6 +955,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
           children: [
             // Module Header
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onTap,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: headerPadding, vertical: headerPadding),

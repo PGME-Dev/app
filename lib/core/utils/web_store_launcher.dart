@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/theme/app_theme.dart';
+import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class WebStoreLauncher {
   static final ApiService _apiService = ApiService();
@@ -107,6 +109,11 @@ class WebStoreLauncher {
     final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
+    final phoneNumber = context.read<AuthProvider>().user?.phoneNumber;
+    final maskedPhone = phoneNumber != null && phoneNumber.length >= 4
+        ? '******${phoneNumber.substring(phoneNumber.length - 4)}'
+        : phoneNumber;
+
     return showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -172,6 +179,51 @@ class WebStoreLauncher {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                if (maskedPhone != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: AppColors.primaryBlue.withValues(alpha: 0.8),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Please login with the same number ',
+                              children: [
+                                TextSpan(
+                                  text: maskedPhone,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const TextSpan(text: ' on the website.'),
+                              ],
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: textPrimary.withValues(alpha: 0.75),
+                              fontFamily: 'Poppins',
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 // Continue button
                 SizedBox(

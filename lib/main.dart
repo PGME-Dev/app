@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/routes/app_router.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
@@ -18,6 +19,9 @@ import 'package:pgme/features/courses/providers/download_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Prevent screenshots and screen recording across the entire app
+  await NoScreenshot.instance.screenshotOff();
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(

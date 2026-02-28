@@ -41,6 +41,7 @@ dependencies:
   latlong2: ^0.9.1
   font_awesome_flutter: ^10.6.0
   flutter_local_notifications: ^19.4.1
+  no_screenshot: ^0.10.0
 
 dev_dependencies:
   flutter_test:

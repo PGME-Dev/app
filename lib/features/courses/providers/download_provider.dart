@@ -1,14 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pgme/core/models/offline_video_model.dart';
+import 'package:pgme/core/services/background_task_service.dart';
 import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/download_notification_service.dart';
 import 'package:pgme/core/services/offline_storage_service.dart';
+import 'package:pgme/core/services/storage_helper.dart';
 
 /// Holds metadata needed to start/retry a download
-class _DownloadParams {
+class DownloadParams {
   final String videoId;
   final String title;
   final String? thumbnailUrl;
@@ -17,7 +21,7 @@ class _DownloadParams {
   final String? moduleName;
   final String? seriesName;
 
-  _DownloadParams({
+  DownloadParams({
     required this.videoId,
     required this.title,
     this.thumbnailUrl,
@@ -26,6 +30,34 @@ class _DownloadParams {
     this.moduleName,
     this.seriesName,
   });
+
+  Map<String, dynamic> toJson() => {
+    'videoId': videoId,
+    'title': title,
+    'thumbnailUrl': thumbnailUrl,
+    'facultyName': facultyName,
+    'durationSeconds': durationSeconds,
+    'moduleName': moduleName,
+    'seriesName': seriesName,
+  };
+
+  factory DownloadParams.fromJson(Map<String, dynamic> json) => DownloadParams(
+    videoId: json['videoId'] as String,
+    title: json['title'] as String,
+    thumbnailUrl: json['thumbnailUrl'] as String?,
+    facultyName: json['facultyName'] as String? ?? '',
+    durationSeconds: (json['durationSeconds'] as num?)?.toInt() ?? 0,
+    moduleName: json['moduleName'] as String?,
+    seriesName: json['seriesName'] as String?,
+  );
+}
+
+/// Info about a download failure for UI callbacks
+class DownloadFailureInfo {
+  final String videoId;
+  final String title;
+  final String errorMessage;
+  DownloadFailureInfo({required this.videoId, required this.title, required this.errorMessage});
 }
 
 class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
@@ -33,18 +65,28 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   final OfflineStorageService _offlineStorage = OfflineStorageService();
   final DownloadNotificationService _notificationService =
       DownloadNotificationService();
+  final BackgroundTaskService _backgroundTaskService = BackgroundTaskService();
+
+  static const String _pendingParamsKey = 'pgme_pending_download_params';
 
   // State
   List<OfflineVideoModel> _downloadedVideos = [];
   final Map<String, double> _activeDownloads = {}; // videoId -> progress 0.0..1.0
   final Map<String, String> _failedDownloads = {}; // videoId -> error message
-  final Map<String, _DownloadParams> _downloadParams = {}; // for retry
+  final Map<String, DownloadParams> _downloadParams = {}; // for retry
   final Map<String, CancelToken> _cancelTokens = {}; // for cancellation
   final Set<String> _backgroundPaused = {}; // downloads interrupted by app backgrounding
   double _totalStorageUsedMb = 0;
   bool _isLoaded = false;
   bool _isInitializing = false;
   bool _lifecycleObserverAdded = false;
+
+  /// Callback invoked when a download fails — set by the UI to show retry dialog
+  void Function(DownloadFailureInfo failure)? onDownloadFailed;
+
+  /// Callback invoked when storage is too low to start a download.
+  /// The parameter is a human-readable string of the free space (e.g. "120 MB").
+  void Function(String freeSpace)? onStorageFull;
 
   // Getters
   List<OfflineVideoModel> get downloadedVideos => _downloadedVideos;
@@ -73,8 +115,13 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _backgroundPaused.isNotEmpty) {
-      _resumeBackgroundPausedDownloads();
+    if (state == AppLifecycleState.resumed) {
+      // Auto-resume background-paused downloads
+      if (_backgroundPaused.isNotEmpty) {
+        _resumeBackgroundPausedDownloads();
+      }
+      // Also check for persisted pending downloads (survived app restart)
+      _resumePersistedPendingDownloads();
     }
   }
 
@@ -84,6 +131,54 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     debugPrint('DownloadProvider: Auto-resuming ${toResume.length} paused download(s) after foreground');
     for (final videoId in toResume) {
       retryDownload(videoId);
+    }
+  }
+
+  /// Resume downloads that were persisted before app was killed
+  Future<void> _resumePersistedPendingDownloads() async {
+    if (_downloadParams.isNotEmpty) return; // already have in-memory params
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_pendingParamsKey);
+      if (raw == null || raw.isEmpty) return;
+
+      final Map<String, dynamic> paramsMap = jsonDecode(raw) as Map<String, dynamic>;
+      if (paramsMap.isEmpty) return;
+
+      debugPrint('DownloadProvider: Found ${paramsMap.length} persisted pending download(s)');
+      for (final entry in paramsMap.entries) {
+        final params = DownloadParams.fromJson(entry.value as Map<String, dynamic>);
+        // Only resume if not already downloaded or actively downloading
+        if (!isDownloaded(params.videoId) && !isDownloading(params.videoId)) {
+          _downloadParams[params.videoId] = params;
+          _failedDownloads[params.videoId] = 'Interrupted — tap to retry';
+        }
+      }
+      // Clear persisted params now that we've loaded them into memory
+      await prefs.remove(_pendingParamsKey);
+      if (_failedDownloads.isNotEmpty) {
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('DownloadProvider: Failed to restore pending downloads - $e');
+    }
+  }
+
+  /// Persist current download params so they survive app restart
+  Future<void> _persistPendingParams() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_downloadParams.isEmpty) {
+        await prefs.remove(_pendingParamsKey);
+        return;
+      }
+      final map = <String, dynamic>{};
+      for (final entry in _downloadParams.entries) {
+        map[entry.key] = entry.value.toJson();
+      }
+      await prefs.setString(_pendingParamsKey, jsonEncode(map));
+    } catch (e) {
+      debugPrint('DownloadProvider: Failed to persist pending params - $e');
     }
   }
 
@@ -115,6 +210,9 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
         await _offlineStorage.removeOfflineVideo(videoId);
         _downloadedVideos.removeWhere((v) => v.videoId == videoId);
       }
+
+      // Restore any pending downloads from a previous session
+      await _resumePersistedPendingDownloads();
 
       _totalStorageUsedMb = await _offlineStorage.getTotalStorageUsedMb();
       _isLoaded = true;
@@ -171,6 +269,8 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   /// Start downloading a video.
+  /// Does NOT throw on failure — instead sets error state in [failedDownloads]
+  /// and invokes [onDownloadFailed] callback so the UI can show a retry dialog.
   Future<void> startDownload({
     required String videoId,
     required String title,
@@ -182,8 +282,20 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   }) async {
     if (_activeDownloads.containsKey(videoId) || isDownloaded(videoId)) return;
 
+    // --- Storage guard ---
+    final hasSpace = await StorageHelper.hasEnoughSpace();
+    if (!hasSpace) {
+      final freeMb = await StorageHelper.getFreeDiskSpaceMB();
+      final freeStr = StorageHelper.formatMb(freeMb);
+      debugPrint('DownloadProvider: Not enough storage ($freeStr free)');
+      _failedDownloads[videoId] = 'Not enough storage';
+      notifyListeners();
+      onStorageFull?.call(freeStr);
+      return;
+    }
+
     // Store params for potential retry
-    final params = _DownloadParams(
+    final params = DownloadParams(
       videoId: videoId,
       title: title,
       thumbnailUrl: thumbnailUrl,
@@ -194,16 +306,24 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     );
     _downloadParams[videoId] = params;
 
+    // Persist params so they survive app restart
+    _persistPendingParams();
+
     // Create cancel token for this download
     final cancelToken = CancelToken();
     _cancelTokens[videoId] = cancelToken;
 
     // Clear any previous failure
     _failedDownloads.remove(videoId);
+    _backgroundPaused.remove(videoId);
 
     debugPrint('DownloadProvider: Starting download for $videoId');
     _activeDownloads[videoId] = 0.0;
     notifyListeners();
+
+    // Request background execution time on iOS so the download can
+    // continue briefly after the user switches apps (~30s).
+    await _backgroundTaskService.beginBackgroundTask();
 
     // Show initial notification
     await _notificationService.showProgress(
@@ -274,6 +394,7 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
       _activeDownloads.remove(videoId);
       _cancelTokens.remove(videoId);
       _downloadParams.remove(videoId);
+      _persistPendingParams();
       notifyListeners();
 
       // Show completion notification
@@ -281,6 +402,11 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
 
       debugPrint(
           'DownloadProvider: Download complete for $videoId (${actualFileSizeMb.toStringAsFixed(1)} MB)');
+
+      // End background task if no more active downloads
+      if (_activeDownloads.isEmpty) {
+        _backgroundTaskService.endBackgroundTask();
+      }
     } on DioException catch (e) {
       _activeDownloads.remove(videoId);
       _cancelTokens.remove(videoId);
@@ -289,48 +415,107 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
         // User cancelled - don't treat as failure
         debugPrint('DownloadProvider: Download cancelled for $videoId');
         _downloadParams.remove(videoId);
+        _persistPendingParams();
+        notifyListeners();
+        await _notificationService.cancel(videoId);
+      } else if (_isBackgroundInterruption(e)) {
+        debugPrint('DownloadProvider: Download paused (app backgrounded) for $videoId');
+        _backgroundPaused.add(videoId);
+        _failedDownloads[videoId] = 'Paused';
         notifyListeners();
         await _notificationService.cancel(videoId);
       } else {
-        // Detect if the connection was dropped because the app went to background
-        final errorStr = e.error?.toString() ?? e.message ?? '';
-        final isBackgroundInterruption = e.type == DioExceptionType.unknown &&
-            errorStr.contains('HttpConnection closed');
-
-        if (isBackgroundInterruption) {
-          debugPrint('DownloadProvider: Download paused (app backgrounded) for $videoId');
-          _backgroundPaused.add(videoId);
-          _failedDownloads[videoId] = 'Paused';
-          await _notificationService.cancel(videoId);
-        } else {
-          _failedDownloads[videoId] = e.message ?? 'Download failed';
-          debugPrint('DownloadProvider: Download failed for $videoId: $e');
-          await _notificationService.showFailed(
-              videoId: videoId, title: _downloadParams[videoId]?.title ?? 'Video');
-        }
+        final errorMsg = e.message ?? 'Download failed';
+        _failedDownloads[videoId] = errorMsg;
         notifyListeners();
+        debugPrint('DownloadProvider: Download failed for $videoId: $e');
+        await _notificationService.showFailed(
+            videoId: videoId, title: title);
+        // Notify UI to show retry dialog
+        onDownloadFailed?.call(DownloadFailureInfo(
+          videoId: videoId,
+          title: title,
+          errorMessage: errorMsg,
+        ));
       }
 
       // Clean up partial file
       await _downloadService.deleteDownload('video_$videoId.mp4');
-      // Don't rethrow for cancel or background pause - those are not errors
-      if (e.type != DioExceptionType.cancel && !_backgroundPaused.contains(videoId)) rethrow;
+
+      // End background task if no more active downloads
+      if (_activeDownloads.isEmpty) {
+        _backgroundTaskService.endBackgroundTask();
+      }
     } catch (e) {
       _activeDownloads.remove(videoId);
       _cancelTokens.remove(videoId);
-      _failedDownloads[videoId] =
-          e.toString().replaceAll('Exception: ', '');
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _failedDownloads[videoId] = errorMsg;
       notifyListeners();
       debugPrint('DownloadProvider: Download failed for $videoId: $e');
 
       // Show failure notification
       await _notificationService.showFailed(
-          videoId: videoId, title: _downloadParams[videoId]?.title ?? 'Video');
+          videoId: videoId, title: title);
+
+      // Notify UI to show retry dialog
+      onDownloadFailed?.call(DownloadFailureInfo(
+        videoId: videoId,
+        title: title,
+        errorMessage: errorMsg,
+      ));
 
       // Clean up partial file left by failed download
       await _downloadService.deleteDownload('video_$videoId.mp4');
-      rethrow;
+
+      // End background task if no more active downloads
+      if (_activeDownloads.isEmpty) {
+        _backgroundTaskService.endBackgroundTask();
+      }
     }
+  }
+
+  /// Detect if a DioException was caused by the app going to background.
+  /// iOS and Android produce different error messages when the OS suspends
+  /// the HTTP connection.
+  bool _isBackgroundInterruption(DioException e) {
+    if (e.type == DioExceptionType.cancel) return false;
+
+    final errorStr = (e.error?.toString() ?? '') + (e.message ?? '');
+    final lowerError = errorStr.toLowerCase();
+
+    // Common patterns when OS kills the connection:
+    // Android: "HttpConnection closed"
+    // iOS: "The Internet connection appears to be offline",
+    //       "The network connection was lost",
+    //       "A server with the specified hostname could not be found"
+    //       "Connection reset by peer"
+    //       "Socket closed"
+    const backgroundPatterns = [
+      'httpconnection closed',
+      'connection was lost',
+      'network connection was lost',
+      'internet connection appears to be offline',
+      'connection reset by peer',
+      'socket closed',
+      'broken pipe',
+      'software caused connection abort',
+      'operation timed out',
+    ];
+
+    for (final pattern in backgroundPatterns) {
+      if (lowerError.contains(pattern)) return true;
+    }
+
+    // Also treat connectionError as background interruption if there was
+    // an active download (likely the app was suspended)
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.unknown) {
+      // If it's a connection-level failure (not HTTP status), likely backgrounded
+      if (e.response == null) return true;
+    }
+
+    return false;
   }
 
   /// Cancel an active download
@@ -350,12 +535,14 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  /// Retry a failed download
+  /// Retry a failed download.
+  /// Does NOT throw — uses the same callback mechanism as [startDownload].
   Future<void> retryDownload(String videoId) async {
     final params = _downloadParams[videoId];
     if (params == null) return;
 
     _failedDownloads.remove(videoId);
+    _backgroundPaused.remove(videoId);
     notifyListeners();
 
     await startDownload(
@@ -374,6 +561,7 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     _failedDownloads.remove(videoId);
     _backgroundPaused.remove(videoId);
     _downloadParams.remove(videoId);
+    _persistPendingParams();
     notifyListeners();
   }
 

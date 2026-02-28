@@ -280,7 +280,7 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     final thumbnailHeight = isTablet ? 140.0 : 100.0;
     return GestureDetector(
       onTap: () {
-        context.push('/video/${progress.lecture.lectureId}');
+        context.push('/video/${progress.lecture.lectureId}?resume=${progress.lastWatchedPositionSeconds}');
       },
       child: Container(
         width: isTablet ? 380 : 280,

@@ -104,7 +104,7 @@ class ForYouSection extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: video != null
-          ? () => context.push('/video/${video.videoId}')
+          ? () => context.push('/video/${video.videoId}?resume=${video.positionSeconds}')
           : null,
       child: Container(
       width: cardWidth,

@@ -1,16 +1,99 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
+
+/// Local notifications plugin (shared between foreground + background)
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+/// Android notification channel for push messages
+const AndroidNotificationChannel _pushChannel = AndroidNotificationChannel(
+  'pgme_push',
+  'Push Notifications',
+  description: 'Notifications from PGME',
+  importance: Importance.high,
+);
+
+/// Initialize local notifications (called from both foreground and background)
+Future<void> _initLocalNotifications() async {
+  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const iosSettings = DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+  );
+  const initSettings = InitializationSettings(
+    android: androidSettings,
+    iOS: iosSettings,
+  );
+  await _localNotifications.initialize(initSettings);
+
+  // Create Android notification channel
+  await _localNotifications
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_pushChannel);
+}
+
+/// Show a local notification from an FCM message
+Future<void> _showLocalNotification(RemoteMessage message) async {
+  final title = message.notification?.title ??
+      message.data['title'] as String? ??
+      '';
+  final body = message.notification?.body ??
+      message.data['body'] as String? ??
+      message.data['message'] as String? ??
+      '';
+
+  if (title.isEmpty && body.isEmpty) return;
+
+  const androidDetails = AndroidNotificationDetails(
+    'pgme_push',
+    'Push Notifications',
+    channelDescription: 'Notifications from PGME',
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: '@mipmap/ic_launcher',
+  );
+
+  const darwinDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentBadge: true,
+    presentSound: true,
+  );
+
+  const details = NotificationDetails(
+    android: androidDetails,
+    iOS: darwinDetails,
+  );
+
+  final id = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch % 0x7FFFFFFF;
+
+  await _localNotifications.show(id, title, body, details);
+}
 
 /// Top-level background handler (MUST be top-level, not a class method)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   debugPrint('Background FCM message: ${message.messageId}');
+
+  // On iOS, show a local notification for data-only messages
+  // (messages with a notification payload are shown automatically by iOS)
+  if (Platform.isIOS && message.notification == null) {
+    try {
+      await _initLocalNotifications();
+      await _showLocalNotification(message);
+    } catch (e) {
+      debugPrint('Background local notification error: $e');
+    }
+  }
 }
 
 class PushNotificationService {
@@ -33,6 +116,9 @@ class PushNotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
+    // Initialize local notifications for showing FCM messages
+    await _initLocalNotifications();
+
     // Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -47,7 +133,10 @@ class PushNotificationService {
       sound: true,
     );
 
-    debugPrint('FCM Permission status: ${settings.authorizationStatus}');
+    // ignore: avoid_print
+    print('===== FCM SETUP =====');
+    // ignore: avoid_print
+    print('FCM Permission: ${settings.authorizationStatus}');
 
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
       debugPrint('User denied push notification permission');
@@ -60,6 +149,11 @@ class PushNotificationService {
       badge: true,
       sound: true,
     );
+
+    // Check APNs token (critical for iOS)
+    final apnsToken = await _messaging.getAPNSToken();
+    // ignore: avoid_print
+    print('APNs Token: ${apnsToken != null ? "RECEIVED OK" : "NULL - notifications will NOT work!"}');
 
     // Listen for foreground messages
     _foregroundSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -103,7 +197,12 @@ class PushNotificationService {
 
       final token = await _messaging.getToken();
       if (token != null) {
-        debugPrint('FCM Token: ${token.substring(0, 20)}...');
+        // ignore: avoid_print
+        print('===== FCM TOKEN (copy this for testing) =====');
+        // ignore: avoid_print
+        print(token);
+        // ignore: avoid_print
+        print('===== END FCM TOKEN =====');
         await _userService.updateFCMToken(token);
         debugPrint('FCM token registered with backend');
       } else {
@@ -138,14 +237,14 @@ class PushNotificationService {
 
   /// Handle foreground message (app is open and in focus)
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('Foreground FCM: ${message.notification?.title}');
-    if (message.notification?.android?.imageUrl != null) {
-      debugPrint('FCM image: ${message.notification?.android?.imageUrl}');
+    debugPrint('Foreground FCM: ${message.notification?.title ?? message.data['title']}');
+
+    // If the message has a notification payload, iOS shows it automatically
+    // via setForegroundNotificationPresentationOptions.
+    // For data-only messages, we need to show a local notification manually.
+    if (message.notification == null) {
+      _showLocalNotification(message);
     }
-    // Foreground messages are shown as system notifications via
-    // setForegroundNotificationPresentationOptions (iOS) and
-    // the notification channel (Android).
-    // Images are handled natively by FCM via imageUrl in the notification payload.
   }
 
   /// Handle notification tap (app launched from background/terminated)
