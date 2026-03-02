@@ -9,6 +9,7 @@ import 'package:pgme/core/models/faculty_model.dart';
 import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/models/subject_selection_model.dart';
 import 'package:pgme/core/models/banner_model.dart';
+import 'package:pgme/core/models/home_section_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/services/offline_storage_service.dart';
@@ -32,6 +33,7 @@ class DashboardProvider with ChangeNotifier {
   List<FacultyModel> _facultyList = [];
   List<SubjectModel> _allSubjects = [];
   List<BannerModel> _banners = [];
+  List<HomeSectionModel> _homeSections = [];
 
   // Loading states (per section)
   bool _isInitialLoading = true; // Initial dashboard load
@@ -66,6 +68,7 @@ class DashboardProvider with ChangeNotifier {
   VideoModel? get lastWatchedVideo => _lastWatchedVideo;
   List<FacultyModel> get facultyList => _facultyList;
   List<BannerModel> get banners => _banners;
+  List<HomeSectionModel> get homeSections => _homeSections;
 
   bool get isInitialLoading => _isInitialLoading;
   bool get isLoadingSession => _isLoadingSession;
@@ -104,6 +107,7 @@ class DashboardProvider with ChangeNotifier {
       _loadFacultyList(),
       _loadContentSection(),
       _loadBanners(),
+      _loadHomeSections(),
     ], eagerError: false);
 
     // Mark initial loading as complete
@@ -230,6 +234,18 @@ class DashboardProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('✗ Error loading banners: $e');
       _banners = []; // Keep empty list on error
+    }
+  }
+
+  /// Load dynamic home sections (public endpoint)
+  Future<void> _loadHomeSections() async {
+    try {
+      debugPrint('Loading home sections...');
+      _homeSections = await _dashboardService.getHomeSections();
+      debugPrint('✓ Home sections loaded: ${_homeSections.length}');
+    } catch (e) {
+      debugPrint('✗ Error loading home sections: $e');
+      _homeSections = [];
     }
   }
 
@@ -521,8 +537,11 @@ class DashboardProvider with ChangeNotifier {
     _primarySubject = null;
     _upcomingSessions = [];
     _packages = [];
+    _packageTypes = [];
     _lastWatchedVideo = null;
     _facultyList = [];
+    _banners = [];
+    _homeSections = [];
 
     _isInitialLoading = true; // Reset for next login
     _isLoadingSession = false;

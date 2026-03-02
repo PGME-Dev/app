@@ -12,6 +12,7 @@ import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/live_class_carousel.dart';
 import 'package:pgme/features/home/widgets/faculty_list.dart';
+import 'package:pgme/features/home/widgets/home_sections_list.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 
 class GuestDashboardScreen extends StatefulWidget {
@@ -278,6 +279,12 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   _buildBooksSection(context, isDark, textColor, isTablet),
 
                   SizedBox(height: isTablet ? 36.0 : 24.0),
+
+                  // Dynamic Home Sections (from backend)
+                  if (provider.homeSections.isNotEmpty)
+                    HomeSectionsList(
+                      sections: provider.homeSections,
+                    ),
 
                   // Faculty List
                   FacultyList(

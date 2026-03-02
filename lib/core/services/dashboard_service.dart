@@ -13,6 +13,7 @@ import 'package:pgme/core/models/series_document_model.dart';
 import 'package:pgme/core/models/library_item_model.dart';
 import 'package:pgme/core/models/gateway_models.dart';
 import 'package:pgme/core/models/banner_model.dart';
+import 'package:pgme/core/models/home_section_model.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/gateway_service.dart';
 
@@ -231,6 +232,38 @@ class DashboardService {
     } on DioException catch (e) {
       debugPrint('✗ Get banners error: $e');
       return []; // Return empty list on error to not break UI
+    } catch (e) {
+      debugPrint('✗ Unexpected error: $e');
+      return [];
+    }
+  }
+
+  /// Get dynamic home sections (public endpoint, no auth required)
+  Future<List<HomeSectionModel>> getHomeSections() async {
+    try {
+      debugPrint('=== DashboardService: Getting home sections ===');
+
+      final response = await _apiService.dio.get(
+        ApiConstants.homeSections,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final sectionsData = response.data['data']['sections'] as List;
+        final sections = sectionsData
+            .map((json) =>
+                HomeSectionModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        sections.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
+        debugPrint('✓ ${sections.length} home sections retrieved');
+        return sections;
+      }
+
+      return [];
+    } on DioException catch (e) {
+      debugPrint('✗ Get home sections error: $e');
+      return [];
     } catch (e) {
       debugPrint('✗ Unexpected error: $e');
       return [];

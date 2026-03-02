@@ -136,7 +136,7 @@ class FacultyList extends StatelessWidget {
 
           // Faculty Photo
           ClipRRect(
-            borderRadius: BorderRadius.circular(photoSize / 2),
+            borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
             child: member.photoUrl != null && member.photoUrl!.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: member.photoUrl!,
@@ -148,7 +148,7 @@ class FacultyList extends StatelessWidget {
                       height: photoHeight,
                       decoration: BoxDecoration(
                         color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                       ),
                       child: const Center(
                         child: CircularProgressIndicator(strokeWidth: 2),
@@ -159,7 +159,7 @@ class FacultyList extends StatelessWidget {
                       height: photoHeight,
                       decoration: BoxDecoration(
                         color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                       ),
                       child: Icon(
                         Icons.person,
@@ -182,7 +182,7 @@ class FacultyList extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
                         ),
                         child: Icon(
                           Icons.person,
@@ -319,14 +319,14 @@ class _FacultyDetailSheet extends StatelessWidget {
                         width: photoSize,
                         height: photoSize,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                           border: Border.all(
                             color: AppColors.primaryBlue.withValues(alpha: 0.3),
                             width: 3,
                           ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(photoSize / 2),
+                          borderRadius: BorderRadius.circular(isTablet ? 13 : 9),
                           child: faculty.photoUrl != null && faculty.photoUrl!.isNotEmpty
                               ? CachedNetworkImage(
                                   imageUrl: faculty.photoUrl!,

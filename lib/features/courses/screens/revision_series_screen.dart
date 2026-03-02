@@ -717,6 +717,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
 
           const SizedBox(height: 20),
 
+          // Enroll / Enrolled button
+          _buildEnrollButton(isDark, isTablet, isSubscribed: isSubscribed),
+          const SizedBox(height: 20),
+
           // What's included / Features
           if (pkg?.features != null && pkg!.features!.isNotEmpty) ...[
             Text(
@@ -753,10 +757,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                 )),
             const SizedBox(height: 16),
           ],
-
-          // Enroll / Enrolled button
-          _buildEnrollButton(isDark, isTablet, isSubscribed: isSubscribed),
-          const SizedBox(height: 24),
 
           // // Series overview
           // Text(
