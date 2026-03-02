@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smart_auth/smart_auth.dart';
@@ -45,10 +43,8 @@ class OTPInputState extends State<OTPInput> {
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
 
-    // Listen for SMS auto-fill via User Consent API (Android only)
-    if (Platform.isAndroid) {
-      _startSmsListener();
-    }
+    // Listen for SMS auto-fill via User Consent API (Android)
+    _startSmsListener();
 
     // Add listeners for focus changes to trigger rebuild
     for (var node in _focusNodes) {
@@ -106,9 +102,7 @@ class OTPInputState extends State<OTPInput> {
 
   @override
   void dispose() {
-    if (Platform.isAndroid) {
-      _smartAuth.removeUserConsentApiListener();
-    }
+    _smartAuth.removeUserConsentApiListener();
     for (var controller in _controllers) {
       controller.dispose();
     }

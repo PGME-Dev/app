@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import FirebaseCore
 import FirebaseMessaging
 
 @main
@@ -11,6 +12,9 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Initialize Firebase BEFORE anything else so it's ready to receive APNs token
+    FirebaseApp.configure()
+
     // Set UNUserNotificationCenter delegate BEFORE plugin registration
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
