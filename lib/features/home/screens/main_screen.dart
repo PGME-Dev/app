@@ -8,6 +8,7 @@ import 'package:pgme/features/home/screens/dashboard_screen.dart';
 import 'package:pgme/features/home/screens/guest_dashboard_screen.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/features/home/widgets/dashboard_skeleton.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -46,6 +47,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       _checkSessionValidity();
+      // Retry FCM token registration if it failed at startup (e.g., APNs not ready on TestFlight)
+      PushNotificationService().retryTokenRegistrationIfNeeded();
       // Refresh entire dashboard when returning from an external purchase
       if (WebStoreLauncher.awaitingExternalPurchase) {
         WebStoreLauncher.clearAwaitingPurchase();

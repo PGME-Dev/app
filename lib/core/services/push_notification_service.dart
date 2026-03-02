@@ -12,11 +12,19 @@ import 'package:pgme/core/services/storage_service.dart';
 final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
 
-/// Android notification channel for push messages
+/// Android notification channel for push messages (used by flutter_local_notifications)
 const AndroidNotificationChannel _pushChannel = AndroidNotificationChannel(
   'pgme_push',
   'Push Notifications',
   description: 'Notifications from PGME',
+  importance: Importance.high,
+);
+
+/// Android notification channel matching FCM default (used by OS for background messages)
+const AndroidNotificationChannel _fcmDefaultChannel = AndroidNotificationChannel(
+  'pgme_default',
+  'PGME Notifications',
+  description: 'Default notifications from PGME',
   importance: Importance.high,
 );
 
@@ -34,11 +42,12 @@ Future<void> _initLocalNotifications() async {
   );
   await _localNotifications.initialize(initSettings);
 
-  // Create Android notification channel
-  await _localNotifications
+  // Create Android notification channels
+  final androidPlugin = _localNotifications
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(_pushChannel);
+          AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.createNotificationChannel(_pushChannel);
+  await androidPlugin?.createNotificationChannel(_fcmDefaultChannel);
 }
 
 /// Show a local notification from an FCM message
@@ -108,6 +117,7 @@ class PushNotificationService {
   final StorageService _storageService = StorageService();
 
   bool _initialized = false;
+  bool _tokenRegistered = false;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _tapSub;
   StreamSubscription<String>? _tokenRefreshSub;
@@ -176,21 +186,27 @@ class PushNotificationService {
   }
 
   /// Get FCM token and send to backend.
-  /// Call this AFTER successful login.
+  /// Call this AFTER successful login or on app startup when already authenticated.
+  /// Handles all edge cases: APNs delays (TestFlight/release), network failures,
+  /// reinstalls, and token refreshes.
   Future<void> registerToken() async {
     try {
       // On iOS, FCM requires the APNs token before it can return an FCM token.
-      // There is a race condition on first launch where getToken() returns null
-      // because the APNs token hasn't been exchanged yet. Retry up to 5 times.
+      // TestFlight/release builds can take much longer than debug to get APNs token.
+      // Retry up to 10 times with increasing delays (total ~30s).
       if (Platform.isIOS) {
         String? apnsToken;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
           apnsToken = await _messaging.getAPNSToken();
           if (apnsToken != null) break;
-          await Future.delayed(const Duration(seconds: 1));
+          // Increasing delay: 1s, 1s, 2s, 2s, 3s, 3s, 4s, 4s, 5s, 5s
+          await Future.delayed(Duration(seconds: (i ~/ 2) + 1));
+          debugPrint('APNs token retry ${i + 1}/10...');
         }
         if (apnsToken == null) {
-          debugPrint('APNs token unavailable — FCM token registration deferred to onTokenRefresh');
+          // ignore: avoid_print
+          print('APNs token unavailable after 10 retries — FCM registration FAILED');
+          _tokenRegistered = false;
           return;
         }
         debugPrint('APNs token confirmed, requesting FCM token');
@@ -199,19 +215,36 @@ class PushNotificationService {
       final token = await _messaging.getToken();
       if (token != null) {
         // ignore: avoid_print
-        print('===== FCM TOKEN (copy this for testing) =====');
+        print('===== FCM TOKEN =====');
         // ignore: avoid_print
         print(token);
         // ignore: avoid_print
         print('===== END FCM TOKEN =====');
         await _userService.updateFCMToken(token);
-        debugPrint('FCM token registered with backend');
+        _tokenRegistered = true;
+        // ignore: avoid_print
+        print('FCM token registered with backend ✓');
       } else {
-        debugPrint('FCM token was null — will retry via onTokenRefresh');
+        _tokenRegistered = false;
+        // ignore: avoid_print
+        print('FCM token was null — will retry via onTokenRefresh');
       }
     } catch (e) {
-      debugPrint('Failed to register FCM token: $e');
+      _tokenRegistered = false;
+      // ignore: avoid_print
+      print('Failed to register FCM token: $e');
     }
+  }
+
+  /// Retry token registration if it previously failed.
+  /// Call this on app resume (AppLifecycleState.resumed) to handle cases where
+  /// APNs token wasn't ready at startup or network was unavailable.
+  Future<void> retryTokenRegistrationIfNeeded() async {
+    if (_tokenRegistered) return;
+    final isAuth = await _storageService.isAuthenticated();
+    if (!isAuth) return;
+    debugPrint('Retrying FCM token registration on app resume...');
+    await registerToken();
   }
 
   /// Subscribe to a subject topic
@@ -264,17 +297,22 @@ class PushNotificationService {
     }
   }
 
-  /// Token refresh handler
+  /// Token refresh handler — FCM automatically refreshes tokens periodically.
+  /// This also fires when APNs token becomes available after a delay (TestFlight).
   Future<void> _onTokenRefresh(String newToken) async {
-    debugPrint('FCM token refreshed');
+    // ignore: avoid_print
+    print('FCM token refreshed — re-registering with backend');
     try {
       final isAuth = await _storageService.isAuthenticated();
       if (isAuth) {
         await _userService.updateFCMToken(newToken);
-        debugPrint('Refreshed FCM token registered with backend');
+        _tokenRegistered = true;
+        // ignore: avoid_print
+        print('Refreshed FCM token registered with backend ✓');
       }
     } catch (e) {
-      debugPrint('Failed to register refreshed FCM token: $e');
+      // ignore: avoid_print
+      print('Failed to register refreshed FCM token: $e');
     }
   }
 
@@ -299,5 +337,6 @@ class PushNotificationService {
     _tokenRefreshSub = null;
     // Don't delete the FCM token itself — the backend clears it on logout
     _initialized = false;
+    _tokenRegistered = false;
   }
 }
