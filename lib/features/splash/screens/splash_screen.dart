@@ -43,7 +43,16 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       // Initialize core services first
       await dotenv.load(fileName: '.env');
-      await Firebase.initializeApp();
+
+      // Firebase may already be initialized natively in AppDelegate.
+      // Catch duplicate-init and continue safely.
+      try {
+        await Firebase.initializeApp();
+      } catch (e) {
+        // ignore: avoid_print
+        print('Firebase already initialized (native): $e');
+      }
+
       await PushNotificationService().initialize();
 
       if (!mounted) return;

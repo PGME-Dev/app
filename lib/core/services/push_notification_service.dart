@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/storage_service.dart';
+import 'package:pgme/core/widgets/in_app_notification.dart';
 
 /// Local notifications plugin (shared between foreground + background)
 final FlutterLocalNotificationsPlugin _localNotifications =
@@ -90,8 +91,13 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
 /// Top-level background handler (MUST be top-level, not a class method)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint('Background FCM message: ${message.messageId}');
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {
+    // Already initialized natively
+  }
+  // ignore: avoid_print
+  print('Background FCM message: ${message.messageId}');
 
   // Show local notification for data-only messages on both platforms.
   // Messages WITH a notification payload are shown automatically by the OS
@@ -154,9 +160,9 @@ class PushNotificationService {
       return;
     }
 
-    // Set up foreground notification presentation (iOS)
+    // Disable iOS system notification in foreground — we show our own in-app banner
     await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false,
       badge: true,
       sound: true,
     );
@@ -182,7 +188,8 @@ class PushNotificationService {
     _tokenRefreshSub = _messaging.onTokenRefresh.listen(_onTokenRefresh);
 
     _initialized = true;
-    debugPrint('Push notification service initialized');
+    // ignore: avoid_print
+    print('===== PUSH SERVICE INITIALIZED =====');
   }
 
   /// Get FCM token and send to backend.
@@ -271,18 +278,20 @@ class PushNotificationService {
 
   /// Handle foreground message (app is open and in focus)
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('Foreground FCM: ${message.notification?.title ?? message.data['title']}');
+    final title = message.notification?.title ??
+        message.data['title'] as String? ??
+        '';
+    final body = message.notification?.body ??
+        message.data['body'] as String? ??
+        message.data['message'] as String? ??
+        '';
 
-    if (Platform.isIOS) {
-      // On iOS, setForegroundNotificationPresentationOptions auto-shows
-      // notification-payload messages. Only handle data-only messages.
-      if (message.notification == null) {
-        _showLocalNotification(message);
-      }
-    } else {
-      // On Android, foreground messages are NEVER auto-shown by the OS.
-      // We must always show a local notification manually.
-      _showLocalNotification(message);
+    // ignore: avoid_print
+    print('Foreground FCM: $title - $body');
+
+    // Show in-app notification banner (works on both iOS and Android)
+    if (title.isNotEmpty || body.isNotEmpty) {
+      showInAppNotification(title: title, body: body);
     }
   }
 

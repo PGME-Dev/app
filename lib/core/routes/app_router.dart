@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pgme/core/widgets/in_app_notification.dart';
 import 'package:pgme/features/splash/screens/splash_screen.dart';
 import 'package:pgme/features/onboarding/screens/onboarding_screen.dart';
 import 'package:pgme/features/onboarding/screens/subject_selection_screen.dart';
@@ -68,6 +69,7 @@ class AppRouter {
   }
 
   static final GoRouter router = GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
     routes: [
