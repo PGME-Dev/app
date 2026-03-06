@@ -211,7 +211,7 @@ class DashboardProvider with ChangeNotifier {
 
       // Filter faculty by primary subject's ID
       _facultyList = await _dashboardService.getFaculty(
-        limit: 10,
+        limit: 50,
         subjectId: _primarySubject?.subjectId,
       );
 
