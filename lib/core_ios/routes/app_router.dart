@@ -1,0 +1,944 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pgme/core_ios/widgets/in_app_notification.dart';
+import 'package:pgme/features_ios/splash/screens/splash_screen.dart';
+import 'package:pgme/features_ios/onboarding/screens/onboarding_screen.dart';
+import 'package:pgme/features_ios/onboarding/screens/subject_selection_screen.dart';
+import 'package:pgme/features_ios/onboarding/screens/congratulations_screen.dart' as onboarding;
+import 'package:pgme/features_ios/auth/screens/login_screen.dart';
+import 'package:pgme/features_ios/auth/screens/otp_verification_screen.dart';
+import 'package:pgme/features_ios/auth/screens/data_collection_screen.dart';
+import 'package:pgme/features_ios/auth/screens/multiple_logins_screen.dart';
+import 'package:pgme/features_ios/home/screens/main_screen.dart';
+import 'package:pgme/features_ios/courses/screens/course_detail_screen.dart';
+import 'package:pgme/features_ios/courses/screens/lecture_video_screen.dart';
+import 'package:pgme/features_ios/courses/screens/video_player_screen.dart';
+import 'package:pgme/features_ios/courses/screens/trailer_video_player_screen.dart';
+import 'package:pgme/features_ios/notes/screens/notes_list_screen.dart';
+import 'package:pgme/features_ios/notes/screens/available_notes_screen.dart';
+import 'package:pgme/features_ios/notes/screens/your_notes_screen.dart';
+import 'package:pgme/features_ios/settings/screens/settings_screen.dart';
+import 'package:pgme/features_ios/settings/screens/profile_screen.dart';
+import 'package:pgme/features_ios/settings/screens/edit_profile_screen.dart';
+import 'package:pgme/features_ios/settings/screens/manage_plans_screen.dart';
+import 'package:pgme/features_ios/purchase/screens/package_access_screen.dart';
+import 'package:pgme/features_ios/purchase/screens/success_screen.dart';
+import 'package:pgme/features_ios/purchase/screens/all_packages_screen.dart';
+import 'package:pgme/features_ios/sessions/screens/session_details_screen.dart';
+import 'package:pgme/features_ios/sessions/screens/series_sessions_screen.dart';
+import 'package:pgme/features_ios/notes/screens/browse_physical_books_screen.dart';
+import 'package:pgme/features_ios/notes/screens/ebook_list_screen.dart';
+import 'package:pgme/features_ios/books/screens/book_requests_screen.dart';
+import 'package:pgme/features_ios/courses/screens/practical_series_screen.dart';
+import 'package:pgme/features_ios/courses/screens/revision_series_screen.dart';
+import 'package:pgme/features_ios/courses/screens/enrolled_course_detail_screen.dart';
+import 'package:pgme/features_ios/notifications/screens/notifications_screen.dart';
+import 'package:pgme/features_ios/settings/screens/help_screen.dart';
+import 'package:pgme/features_ios/settings/screens/about_screen.dart';
+import 'package:pgme/features_ios/settings/screens/my_records_screen.dart';
+import 'package:pgme/features_ios/settings/screens/careers_screen.dart';
+import 'package:pgme/features_ios/settings/screens/terms_and_conditions_screen.dart';
+import 'package:pgme/features_ios/settings/screens/privacy_policy_screen.dart';
+import 'package:pgme/features_ios/settings/screens/refund_policy_screen.dart';
+import 'package:pgme/features_ios/settings/screens/downloads_screen.dart';
+import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/features_ios/auth/screens/map_address_picker_screen.dart';
+import 'package:pgme/core_ios/widgets/app_scaffold.dart';
+
+class AppRouter {
+  static int _getNavIndex(String location) {
+    if (location.startsWith('/revision-series')) return 1;
+    if (location.startsWith('/practical-series')) return 2;
+    if (location.startsWith('/available-notes')) return 1;
+    if (location.startsWith('/your-notes') ||
+        location.startsWith('/notes')) return 3;
+
+    // Series sessions are always practical
+    if (location.startsWith('/series-sessions')) return 2;
+
+    // Child routes (series-detail, lecture) use packageType to determine tab
+    final uri = Uri.parse(location);
+    final packageType = uri.queryParameters['packageType'];
+    if (packageType == 'Practical') return 2;
+    if (packageType == 'Theory') return 1;
+
+    return 0;
+  }
+
+  static final GoRouter router = GoRouter(
+    navigatorKey: navigatorKey,
+    initialLocation: '/',
+    debugLogDiagnostics: true,
+    routes: [
+      // Splash Screen
+      GoRoute(
+        path: '/',
+        name: 'splash',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+
+      // Onboarding
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const OnboardingScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+
+      // Auth Flow
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/otp-verification',
+        name: 'otp-verification',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const OTPVerificationScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/data-collection',
+        name: 'data-collection',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const DataCollectionScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/subject-selection',
+        name: 'subject-selection',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SubjectSelectionScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/onboarding-complete',
+        name: 'onboarding-complete',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const onboarding.CongratulationsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/multiple-logins',
+        name: 'multiple-logins',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const MultipleLoginsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Package Access Flow (outside shell - no nav bar)
+      GoRoute(
+        path: '/package-access',
+        name: 'package-access',
+        pageBuilder: (context, state) {
+          final packageId = state.uri.queryParameters['packageId'];
+          final packageType = state.uri.queryParameters['packageType'];
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: PackageAccessScreen(packageId: packageId, packageType: packageType),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/success',
+        name: 'success',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SuccessScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/all-packages',
+        name: 'all-packages',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AllPackagesScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Notifications
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Help & Support
+      GoRoute(
+        path: '/help',
+        name: 'help',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const HelpScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // About
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AboutScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Terms and Conditions
+      GoRoute(
+        path: '/terms-and-conditions',
+        name: 'terms-and-conditions',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const TermsAndConditionsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Privacy Policy
+      GoRoute(
+        path: '/privacy-policy',
+        name: 'privacy-policy',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Refund Policy
+      GoRoute(
+        path: '/refund-policy',
+        name: 'refund-policy',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RefundPolicyScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      GoRoute(
+        path: '/manage-plans',
+        name: 'manage-plans',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const ManagePlansScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            );
+          },
+        ),
+      ),
+
+      // Video Player (fullscreen - no nav bar)
+      GoRoute(
+        path: '/video/:id',
+        name: 'video-player',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['id']!;
+          final resumeStr = state.uri.queryParameters['resume'];
+          final resumeFrom = resumeStr != null ? int.tryParse(resumeStr) : null;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: VideoPlayerScreen(videoId: videoId, resumeFromSeconds: resumeFrom),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      // Trailer Video Player (for package type trailers)
+      GoRoute(
+        path: '/trailer-video',
+        name: 'trailer-video',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final videoUrl = extra['videoUrl'] as String;
+          final videoTitle = extra['videoTitle'] as String;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: TrailerVideoPlayerScreen(
+              videoUrl: videoUrl,
+              videoTitle: videoTitle,
+            ),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+
+      // Shell Route - routes with persistent nav bar
+      ShellRoute(
+        builder: (context, state, child) {
+          final location = state.uri.toString();
+          final path = state.uri.path;
+
+          // Hide nav bar on profile, edit-profile, map-address-picker, and pdf-viewer screens
+          if (path.startsWith('/profile') ||
+              path.startsWith('/edit-profile') ||
+              path.startsWith('/map-address-picker') ||
+              path.startsWith('/pdf-viewer') ||
+              path.startsWith('/downloads')) return child;
+
+          final navIndex = _getNavIndex(location);
+          final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+          return AppScaffold(
+            currentIndex: navIndex,
+            isSubscribed: isSubscribed,
+            child: child,
+          );
+        },
+        routes: [
+          // Main App
+          GoRoute(
+            path: '/home',
+            name: 'home',
+            pageBuilder: (context, state) {
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: MainScreen(isSubscribed: isSubscribed),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+              );
+            },
+          ),
+
+          // Course Details
+          GoRoute(
+            path: '/course/:id',
+            name: 'course-detail',
+            pageBuilder: (context, state) {
+              final seriesId = state.pathParameters['id']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: CourseDetailScreen(seriesId: seriesId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Series Detail (for unpurchased users - shows demo video and sample PDF/live session options)
+          GoRoute(
+            path: '/series-detail/:id',
+            name: 'series-detail',
+            pageBuilder: (context, state) {
+              final seriesId = state.pathParameters['id']!;
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
+              final packageId = state.uri.queryParameters['packageId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EnrolledCourseDetailScreen(
+                  seriesId: seriesId,
+                  isSubscribed: isSubscribed,
+                  packageType: packageType,
+                  packageId: packageId,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Lecture Video Screen
+          GoRoute(
+            path: '/lecture/:id',
+            name: 'lecture-video',
+            pageBuilder: (context, state) {
+              final courseId = state.pathParameters['id']!;
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageType = state.uri.queryParameters['packageType'] ?? 'Theory';
+              final packageId = state.uri.queryParameters['packageId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: LectureVideoScreen(courseId: courseId, isSubscribed: isSubscribed, packageType: packageType, packageId: packageId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Notes
+          GoRoute(
+            path: '/notes',
+            name: 'notes',
+            pageBuilder: (context, state) {
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: NotesListScreen(isSubscribed: isSubscribed),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Available Notes
+          GoRoute(
+            path: '/available-notes',
+            name: 'available-notes',
+            pageBuilder: (context, state) {
+              final seriesId = state.uri.queryParameters['seriesId'] ?? '';
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: AvailableNotesScreen(seriesId: seriesId, isSubscribed: isSubscribed, packageId: packageId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // PDF Viewer
+          GoRoute(
+            path: '/pdf-viewer',
+            name: 'pdf-viewer',
+            pageBuilder: (context, state) {
+              final documentId = state.uri.queryParameters['documentId'];
+              final pdfUrl = state.uri.queryParameters['pdfUrl'];
+              final title = state.uri.queryParameters['title'] ?? 'PDF Viewer';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: PdfViewerScreen(documentId: documentId, pdfUrl: pdfUrl, title: title),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Your Notes (for subscribed users)
+          GoRoute(
+            path: '/your-notes',
+            name: 'your-notes',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const YourNotesScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Profile (no nav bar - handled in shell builder)
+          GoRoute(
+            path: '/profile',
+            name: 'profile',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const ProfileScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Downloads (no nav bar)
+          GoRoute(
+            path: '/downloads',
+            name: 'downloads',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const DownloadsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Edit Profile
+          GoRoute(
+            path: '/edit-profile',
+            name: 'edit-profile',
+            pageBuilder: (context, state) {
+              final user = state.extra as dynamic;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EditProfileScreen(user: user),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Map Address Picker
+          GoRoute(
+            path: '/map-address-picker',
+            name: 'map-address-picker',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const MapAddressPickerScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Settings
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const SettingsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Session Details
+          GoRoute(
+            path: '/session/:id',
+            name: 'session-details',
+            pageBuilder: (context, state) {
+              final sessionId = state.pathParameters['id']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: SessionDetailsScreen(sessionId: sessionId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Series Live Sessions (for practical packages)
+          GoRoute(
+            path: '/series-sessions/:id',
+            name: 'series-sessions',
+            pageBuilder: (context, state) {
+              final seriesId = state.pathParameters['id']!;
+              final seriesName = state.uri.queryParameters['seriesName'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: SeriesSessionsScreen(
+                  seriesId: seriesId,
+                  seriesName: seriesName,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Browse Physical Books
+          GoRoute(
+            path: '/browse-physical-books',
+            name: 'browse-physical-books',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const BrowsePhysicalBooksScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // eBook Store
+          GoRoute(
+            path: '/ebook-store',
+            name: 'ebook-store',
+            pageBuilder: (context, state) {
+              final bookId = state.uri.queryParameters['bookId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EbookListScreen(initialBookId: bookId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Book Requests List
+          GoRoute(
+            path: '/book-requests',
+            name: 'book-requests',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const BookRequestsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // My Records
+          GoRoute(
+            path: '/my-records',
+            name: 'my-records',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const MyRecordsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Careers
+          GoRoute(
+            path: '/careers',
+            name: 'careers',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const CareersScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Practical Series
+          GoRoute(
+            path: '/practical-series',
+            name: 'practical-series',
+            pageBuilder: (context, state) {
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: PracticalSeriesScreen(
+                  isSubscribed: isSubscribed,
+                  packageId: packageId,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Revision Series (Theory Packages)
+          GoRoute(
+            path: '/revision-series',
+            name: 'revision-series',
+            pageBuilder: (context, state) {
+              final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';
+              final packageId = state.uri.queryParameters['packageId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: RevisionSeriesScreen(
+                  isSubscribed: isSubscribed,
+                  packageId: packageId,
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+}
