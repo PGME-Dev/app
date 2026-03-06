@@ -211,7 +211,7 @@ class DashboardProvider with ChangeNotifier {
 
       // Filter faculty by primary subject's ID
       _facultyList = await _dashboardService.getFaculty(
-        limit: 10,
+        limit: 50,
         subjectId: _primarySubject?.subjectId,
       );
 
@@ -232,25 +232,16 @@ class DashboardProvider with ChangeNotifier {
       final allBanners = await _dashboardService.getBanners();
       debugPrint('✓ Banners fetched: ${allBanners.length}');
 
-      // App-level visibility filter (fallback for backend filtering)
-      List<String> userSubjectIds = [];
-      try {
-        final selections = await _dashboardService.getSubjectSelections();
-        userSubjectIds = selections.map((s) => s.subjectId).toList();
-      } catch (_) {
-        if (_primarySubject != null) {
-          userSubjectIds = [_primarySubject!.subjectId];
-        }
-      }
+      // Filter banners by selected subject
+      final selectedSubjectId = _primarySubject?.subjectId;
 
       _banners = allBanners.where((banner) {
-        if (banner.visibleTo == 'subject') {
-          if (banner.visibleToSubjects.isEmpty) return false;
-          if (userSubjectIds.isEmpty) return false;
-          return banner.visibleToSubjects.any(
-            (subjectId) => userSubjectIds.contains(subjectId),
-          );
+        // If banner has subject restrictions, only show if user's subject matches
+        if (banner.visibleToSubjects.isNotEmpty) {
+          if (selectedSubjectId == null) return false;
+          return banner.visibleToSubjects.contains(selectedSubjectId);
         }
+        // No subject restriction — show to everyone
         return true;
       }).toList();
 
