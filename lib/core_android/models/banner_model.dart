@@ -13,6 +13,12 @@ class BannerModel {
   final String? linkType; // 'internal', 'external', 'none'
   final bool isActive;
   final int displayOrder;
+  @JsonKey(defaultValue: 'all')
+  final String visibleTo;
+  @JsonKey(defaultValue: [])
+  final List<String> visibleToSubjects;
+  @JsonKey(defaultValue: [])
+  final List<String> visibleToPackages;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,6 +31,9 @@ class BannerModel {
     this.linkType,
     this.isActive = true,
     this.displayOrder = 0,
+    this.visibleTo = 'all',
+    this.visibleToSubjects = const [],
+    this.visibleToPackages = const [],
     this.createdAt,
     this.updatedAt,
   });

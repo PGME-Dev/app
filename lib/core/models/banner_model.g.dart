@@ -15,6 +15,15 @@ BannerModel _$BannerModelFromJson(Map<String, dynamic> json) => BannerModel(
       linkType: json['linkType'] as String?,
       isActive: json['isActive'] as bool? ?? true,
       displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+      visibleTo: json['visibleTo'] as String? ?? 'all',
+      visibleToSubjects: (json['visibleToSubjects'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      visibleToPackages: (json['visibleToPackages'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       createdAt: json['createdAt'] == null
           ? null
           : DateTime.parse(json['createdAt'] as String),
@@ -33,6 +42,9 @@ Map<String, dynamic> _$BannerModelToJson(BannerModel instance) =>
       'linkType': instance.linkType,
       'isActive': instance.isActive,
       'displayOrder': instance.displayOrder,
+      'visibleTo': instance.visibleTo,
+      'visibleToSubjects': instance.visibleToSubjects,
+      'visibleToPackages': instance.visibleToPackages,
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };

@@ -229,8 +229,32 @@ class DashboardProvider with ChangeNotifier {
   Future<void> _loadBanners() async {
     try {
       debugPrint('Loading banners...');
-      _banners = await _dashboardService.getBanners();
-      debugPrint('✓ Banners loaded: ${_banners.length}');
+      final allBanners = await _dashboardService.getBanners();
+      debugPrint('✓ Banners fetched: ${allBanners.length}');
+
+      // App-level visibility filter (fallback for backend filtering)
+      List<String> userSubjectIds = [];
+      try {
+        final selections = await _dashboardService.getSubjectSelections();
+        userSubjectIds = selections.map((s) => s.subjectId).toList();
+      } catch (_) {
+        if (_primarySubject != null) {
+          userSubjectIds = [_primarySubject!.subjectId];
+        }
+      }
+
+      _banners = allBanners.where((banner) {
+        if (banner.visibleTo == 'subject') {
+          if (banner.visibleToSubjects.isEmpty) return false;
+          if (userSubjectIds.isEmpty) return false;
+          return banner.visibleToSubjects.any(
+            (subjectId) => userSubjectIds.contains(subjectId),
+          );
+        }
+        return true;
+      }).toList();
+
+      debugPrint('✓ Banners after visibility filter: ${_banners.length}');
     } catch (e) {
       debugPrint('✗ Error loading banners: $e');
       _banners = []; // Keep empty list on error
