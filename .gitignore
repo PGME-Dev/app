@@ -24,10 +24,8 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
-#.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -60,3 +58,7 @@ ios/MobileRTC.xcframework/ios-arm64/MobileRTC.framework/MobileRTC
 ios/MobileRTC.xcframework/ios-arm64_x86_64-simulator/MobileRTC.framework/MobileRTC
 ios/MobileRTCScreenShare.xcframework/ios-arm64/MobileRTCScreenShare.framework/MobileRTCScreenShare
 ios/MobileRTCScreenShare.xcframework/ios-arm64_x86_64-simulator/MobileRTCScreenShare.framework/MobileRTCScreenShare
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
