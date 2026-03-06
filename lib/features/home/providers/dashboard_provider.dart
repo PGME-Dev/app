@@ -230,38 +230,49 @@ class DashboardProvider with ChangeNotifier {
     try {
       debugPrint('Loading banners...');
       final allBanners = await _dashboardService.getBanners();
-      debugPrint('✓ Banners fetched: ${allBanners.length}');
+      debugPrint('[BANNER_DEBUG] Fetched ${allBanners.length} banners from API');
+
+      // Log raw banner data
+      for (final b in allBanners) {
+        debugPrint('[BANNER_DEBUG] Banner "${b.title}": visibleTo="${b.visibleTo}", visibleToSubjects=${b.visibleToSubjects}, visibleToPackages=${b.visibleToPackages}');
+      }
 
       // App-level visibility filter (fallback for backend filtering)
-      // Get all user subject IDs for matching
       List<String> userSubjectIds = [];
       try {
         final selections = await _dashboardService.getSubjectSelections();
         userSubjectIds = selections.map((s) => s.subjectId).toList();
       } catch (_) {
-        // If we can't get selections, use primary subject as fallback
         if (_primarySubject != null) {
           userSubjectIds = [_primarySubject!.subjectId];
         }
       }
+      debugPrint('[BANNER_DEBUG] User subject IDs: $userSubjectIds');
 
       _banners = allBanners.where((banner) {
         if (banner.visibleTo == 'subject') {
-          if (banner.visibleToSubjects.isEmpty) return false;
-          if (userSubjectIds.isEmpty) return false;
-          return banner.visibleToSubjects.any(
+          if (banner.visibleToSubjects.isEmpty) {
+            debugPrint('[BANNER_DEBUG] HIDE "${banner.title}": visibleTo=subject but empty subjects list');
+            return false;
+          }
+          if (userSubjectIds.isEmpty) {
+            debugPrint('[BANNER_DEBUG] HIDE "${banner.title}": user has no subjects');
+            return false;
+          }
+          final match = banner.visibleToSubjects.any(
             (subjectId) => userSubjectIds.contains(subjectId),
           );
+          debugPrint('[BANNER_DEBUG] ${match ? "SHOW" : "HIDE"} "${banner.title}": bannerSubjects=${banner.visibleToSubjects} vs userSubjects=$userSubjectIds');
+          return match;
         }
-        // For 'package' visibility, trust backend filtering for now
-        // For 'all', always show
+        debugPrint('[BANNER_DEBUG] SHOW "${banner.title}": visibleTo="${banner.visibleTo}" (pass-through)');
         return true;
       }).toList();
 
-      debugPrint('✓ Banners after visibility filter: ${_banners.length}');
+      debugPrint('[BANNER_DEBUG] Final: ${_banners.length} banners after filter');
     } catch (e) {
       debugPrint('✗ Error loading banners: $e');
-      _banners = []; // Keep empty list on error
+      _banners = [];
     }
   }
 
