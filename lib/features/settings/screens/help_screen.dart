@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
-import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/app_settings_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
@@ -18,9 +16,7 @@ class HelpScreen extends StatefulWidget {
 
 class _HelpScreenState extends State<HelpScreen> {
   final AppSettingsService _appSettingsService = AppSettingsService();
-  final ApiService _apiService = ApiService();
   Map<String, dynamic> _appSettings = {};
-  Map<String, dynamic>? _selectedSubject;
   bool _isLoading = true;
 
   @override
@@ -30,51 +26,18 @@ class _HelpScreenState extends State<HelpScreen> {
   }
 
   Future<void> _loadData() async {
-    final settingsFuture = _appSettingsService.getSettings();
-    final subjectFuture = _loadSelectedSubject();
-
-    final settings = await settingsFuture;
-    final subject = await subjectFuture;
+    final settings = await _appSettingsService.getSettings();
 
     if (mounted) {
       setState(() {
         _appSettings = settings;
-        _selectedSubject = subject;
         _isLoading = false;
       });
     }
   }
 
-  Future<Map<String, dynamic>?> _loadSelectedSubject() async {
-    try {
-      final response = await _apiService.dio.get(
-        ApiConstants.subjectSelections,
-      );
-
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final selections = response.data['data']['selections'] as List?;
-        if (selections != null && selections.isNotEmpty) {
-          final primary = selections.firstWhere(
-            (s) => s['is_primary'] == true,
-            orElse: () => selections.first,
-          );
-          return primary as Map<String, dynamic>;
-        }
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Error loading selected subject: $e');
-      return null;
-    }
-  }
-
-  /// WhatsApp URL: prioritize subject-specific community link, fall back to app-level support
+  /// WhatsApp URL: always use app-level support number (not subject community)
   String? get _whatsAppUrl {
-    // Subject-specific WhatsApp community link takes priority
-    final subjectLink = _selectedSubject?['whatsapp_community_link']?.toString();
-    if (subjectLink != null && subjectLink.isNotEmpty) return subjectLink;
-
-    // Fall back to app-level support WhatsApp
     final url = _appSettings['whatsapp_support_url']?.toString();
     if (url != null && url.isNotEmpty) return url;
     final phone = _appSettings['whatsapp_support_number']?.toString() ??

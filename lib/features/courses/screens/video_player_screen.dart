@@ -32,7 +32,7 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
   final VideoReviewService _videoReviewService = VideoReviewService();
 
@@ -85,13 +85,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     debugPrint('VideoPlayer: init for videoId=${widget.videoId}');
     _loadVideoData();
     _loadMyReview();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _playerController?.pause();
+    }
+  }
+
+  @override
+  void deactivate() {
+    _playerController?.pause();
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     debugPrint('VideoPlayer: disposing');
     _isDisposed = true;
     _saveProgressOnExit();

@@ -17,7 +17,7 @@ class TrailerVideoPlayerScreen extends StatefulWidget {
   State<TrailerVideoPlayerScreen> createState() => _TrailerVideoPlayerScreenState();
 }
 
-class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
+class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> with WidgetsBindingObserver {
   BetterPlayerController? _playerController;
   bool _isLoading = true;
   String? _error;
@@ -25,7 +25,21 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializePlayer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _playerController?.pause();
+    }
+  }
+
+  @override
+  void deactivate() {
+    _playerController?.pause();
+    super.deactivate();
   }
 
   Future<void> _initializePlayer() async {
@@ -51,6 +65,7 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
         autoPlay: true,
         looping: false,
         fullScreenByDefault: false,
+        handleLifecycle: true,
         fit: BoxFit.contain,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
           enableProgressText: true,
@@ -100,6 +115,8 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> {
             DeviceOrientation.portraitDown,
           ]);
 
+    WidgetsBinding.instance.removeObserver(this);
+    _playerController?.pause();
     _playerController?.dispose();
     super.dispose();
   }
