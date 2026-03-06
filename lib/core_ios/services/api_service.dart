@@ -239,12 +239,8 @@ class ApiService {
     String deviceId = 'unknown';
 
     try {
-      
-        
-        
         final iosInfo = await deviceInfo.iosInfo;
         deviceId = iosInfo.identifierForVendor ?? 'unknown';
-      }
     } catch (e) {
       // Use default if device info fetch fails
     }

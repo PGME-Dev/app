@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git stash push -u -m \"notification fixes\")"
+      "Bash(git stash push -u -m \"notification fixes\")",
+      "Bash(jobs -l)",
+      "Bash(killall Xcode)",
+      "Bash(flutter doctor)",
+      "Bash(LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod deintegrate)",
+      "Bash(xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Debug -sdk iphoneos -destination 'id=00008110-000A503C3C63801E' ONLY_ACTIVE_ARCH=YES)",
+      "Bash(xcrun devicectl list devices)",
+      "Bash(xcrun devicectl device process launch --device F9259E8F-D543-5203-ABA3-AB35822A9825 --start-stopped com.pgme.app)"
     ]
   }
 }

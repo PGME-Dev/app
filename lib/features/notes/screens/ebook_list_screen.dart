@@ -783,7 +783,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                         crossAxisCount: isTablet ? 3 : 2,
                                         crossAxisSpacing: isTablet ? 16 : 12,
                                         mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: isTablet ? 0.56 : 0.53,
+                                        childAspectRatio: isTablet ? 0.56 : 0.48,
                                       ),
                                       itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
                                       itemBuilder: (context, index) {
@@ -918,8 +918,6 @@ class _EbookListScreenState extends State<EbookListScreen>
     final cardRadius = isTablet ? 16.0 : 12.0;
     final imgHeight = isTablet ? 160.0 : 130.0;
 
-    final hasDescription = book.description != null && book.description!.isNotEmpty;
-
     return GestureDetector(
       onTap: isPurchased
           ? () => _handleRead(book)
@@ -997,60 +995,29 @@ class _EbookListScreenState extends State<EbookListScreen>
                     // Subject badge
                     if (book.subject != null) ...[
                       SizedBox(height: isTablet ? 4 : 3),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 7 : 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: iconColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          book.subject!.name,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 10 : 9,
-                            color: iconColor,
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 7 : 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: iconColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-
-                    // Description
-                    if (hasDescription) ...[
-                      SizedBox(height: isTablet ? 6 : 4),
-                      Text(
-                        book.description!,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: isTablet ? 11 : 10,
-                          height: 1.3,
-                          color: secondaryTextColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (book.description!.length > 60)
-                        GestureDetector(
-                          onTap: () => _showBookDetailModal(book, isPurchased: isPurchased, isDark: isDark, isTablet: isTablet),
-                          child: Padding(
-                            padding: EdgeInsets.only(top: isTablet ? 3 : 2),
-                            child: Text(
-                              'Read More',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w500,
-                                fontSize: isTablet ? 11 : 10,
-                                color: iconColor,
-                              ),
+                          child: Text(
+                            book.subject!.name,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              fontSize: isTablet ? 10 : 9,
+                              color: iconColor,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                      ),
                     ],
 
-                    SizedBox(height: isTablet ? 8 : 6),
+                    const Spacer(),
 
                     // Format badge + pages
                     Row(
@@ -1073,12 +1040,15 @@ class _EbookListScreenState extends State<EbookListScreen>
                         ),
                         SizedBox(width: isTablet ? 8 : 6),
                         if (book.pages != null)
-                          Text(
-                            '${book.pages} pages',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: metaSize,
-                              color: secondaryTextColor,
+                          Flexible(
+                            child: Text(
+                              '${book.pages} pages',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: metaSize,
+                                color: secondaryTextColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                       ],
@@ -1120,6 +1090,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   _formatPrice(book.actualPrice),
@@ -1129,6 +1100,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                     fontSize: priceSize,
                                     color: textColor,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 if (book.hasDiscount)
                                   Text(
@@ -1139,6 +1111,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                       color: secondaryTextColor,
                                       decoration: TextDecoration.lineThrough,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                               ],
                             ),

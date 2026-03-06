@@ -42,22 +42,38 @@ class _SplashScreenState extends State<SplashScreen> {
 
     try {
       // Initialize core services first
+      debugPrint('SPLASH: Loading .env...');
       await dotenv.load(fileName: '.env');
+      debugPrint('SPLASH: .env loaded');
 
       // Firebase may already be initialized natively in AppDelegate.
       // Catch duplicate-init and continue safely.
       try {
+        debugPrint('SPLASH: Initializing Firebase...');
         await Firebase.initializeApp();
+        debugPrint('SPLASH: Firebase initialized');
       } catch (e) {
         // ignore: avoid_print
         print('Firebase already initialized (native): $e');
       }
 
-      await PushNotificationService().initialize();
+      debugPrint('SPLASH: Initializing push notifications...');
+      try {
+        await PushNotificationService().initialize().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('SPLASH: Push notification init timed out — continuing');
+          },
+        );
+      } catch (e) {
+        debugPrint('SPLASH: Push notification init failed: $e — continuing');
+      }
+      debugPrint('SPLASH: Push notifications done');
 
       if (!mounted) return;
 
       // Check app version before proceeding
+      debugPrint('SPLASH: Checking version...');
       final versionResult = await VersionCheckService().checkVersion();
       if (versionResult.updateRequired) {
         debugPrint('Force update required: current=${versionResult.currentVersion}, min=${versionResult.minVersion}');
@@ -68,14 +84,17 @@ class _SplashScreenState extends State<SplashScreen> {
         return; // Stop here — don't navigate, show the modal
       }
 
+      debugPrint('SPLASH: Version check done');
       final authProvider = context.read<AuthProvider>();
       final storageService = StorageService();
 
       // Run minimum splash duration and auth check concurrently
+      debugPrint('SPLASH: Starting auth check...');
       await Future.wait([
         Future.delayed(const Duration(milliseconds: 1500)), // Minimum splash time
         authProvider.checkAuthStatus(),
       ]);
+      debugPrint('SPLASH: Auth check complete');
 
       if (!mounted) return;
 

@@ -167,7 +167,6 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
         context.go('/home');
       }
     } else if (WebStoreLauncher.shouldUseWebStore) {
-      // iOS: redirect to web store to avoid Apple IAP requirement
       WebStoreLauncher.openProductPage(
         context,
         productType: 'packages',

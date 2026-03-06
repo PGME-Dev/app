@@ -180,6 +180,10 @@ class ApiConstants {
   static String activeRecordExport(String id) => '/records/$id';
   static String activeRecordPdf(String id) => '/records/$id/export';
 
+  // Tier Change Endpoints
+  static const String calculateUpgrade = '/payments/upgrade/calculate';
+  static const String activeTierPreview = '/content-access/tier-preview';
+
   // Notification Endpoints
   static const String notifications = '/users/notifications';
   static String markNotificationRead(String notificationId) =>

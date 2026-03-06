@@ -822,6 +822,32 @@ class DashboardService {
     }
   }
 
+  /// Calculate upgrade price for tier change
+  Future<Map<String, dynamic>> calculateUpgradePrice(
+    String packageId,
+    int targetTierIndex,
+  ) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.activeTierPreview,
+        data: {
+          'package_id': packageId,
+          'target_tier_index': targetTierIndex,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(response.data['message'] ?? 'Failed to calculate upgrade price');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
   /// Clear all caches
   void clearCache() {
     debugPrint('=== DashboardService: Clearing cache ===');

@@ -146,7 +146,6 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
   void _showPaymentPopup() async {
     if (_package == null) return;
 
-    // iOS: redirect to web store
     WebStoreLauncher.openProductPage(
       context,
       productType: 'packages',

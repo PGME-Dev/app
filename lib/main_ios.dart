@@ -18,7 +18,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Prevent screenshots and screen recording across the entire app
-  await NoScreenshot.instance.screenshotOff();
+  try {
+    await NoScreenshot.instance.screenshotOff().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        debugPrint('NoScreenshot.screenshotOff() timed out — continuing');
+        return false;
+      },
+    );
+  } catch (e) {
+    debugPrint('NoScreenshot init failed: $e');
+  }
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(

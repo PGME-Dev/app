@@ -180,7 +180,6 @@ class _EbookListScreenState extends State<EbookListScreen>
   Future<void> _handleBuy(BookModel book) async {
     if (_isPurchasing) return;
 
-    // Redirect to web store for purchase
     WebStoreLauncher.openProductPage(
       context,
       productType: 'ebooks',
@@ -257,7 +256,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                         ),
                         SizedBox(width: isTablet ? 16 : 12),
                         Text(
-                          'eBook Store',
+                          'eBooks',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
@@ -425,7 +424,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                         crossAxisCount: isTablet ? 3 : 2,
                                         crossAxisSpacing: isTablet ? 16 : 12,
                                         mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: isTablet ? 0.56 : 0.53,
+                                        childAspectRatio: isTablet ? 0.58 : 0.52,
                                       ),
                                       itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
                                       itemBuilder: (context, index) {
@@ -555,12 +554,9 @@ class _EbookListScreenState extends State<EbookListScreen>
 
     final titleSize = isTablet ? 15.0 : 13.0;
     final metaSize = isTablet ? 12.0 : 10.0;
-    final priceSize = isTablet ? 16.0 : 14.0;
     final btnFontSize = isTablet ? 14.0 : 12.0;
     final cardRadius = isTablet ? 16.0 : 12.0;
     final imgHeight = isTablet ? 160.0 : 130.0;
-
-    final hasDescription = book.description != null && book.description!.isNotEmpty;
 
     return GestureDetector(
       onTap: isPurchased
@@ -603,132 +599,124 @@ class _EbookListScreenState extends State<EbookListScreen>
             // Content
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(isTablet ? 12 : 10),
+                padding: EdgeInsets.fromLTRB(isTablet ? 12 : 10, isTablet ? 12 : 10, isTablet ? 12 : 10, isTablet ? 10 : 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Title
-                    Text(
-                      book.title,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        fontSize: titleSize,
-                        height: 1.2,
-                        color: textColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    SizedBox(height: isTablet ? 4 : 2),
-
-                    // Author
-                    Text(
-                      book.author,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w400,
-                        fontSize: metaSize,
-                        color: secondaryTextColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // Subject badge
-                    if (book.subject != null) ...[
-                      SizedBox(height: isTablet ? 4 : 3),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 7 : 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: iconColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          book.subject!.name,
+                    // Top section: title, author, description, subject, format
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          book.title,
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 10 : 9,
-                            color: iconColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: titleSize,
+                            height: 1.2,
+                            color: textColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        SizedBox(height: isTablet ? 4 : 2),
+
+                        // Author
+                        Text(
+                          book.author,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: metaSize,
+                            color: secondaryTextColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
 
-                    // Description
-                    if (hasDescription) ...[
-                      SizedBox(height: isTablet ? 6 : 4),
-                      Text(
-                        book.description!,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: isTablet ? 11 : 10,
-                          height: 1.3,
-                          color: secondaryTextColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (book.description!.length > 60)
-                        GestureDetector(
-                          onTap: () => _showBookDetailModal(book, isPurchased: isPurchased, isDark: isDark, isTablet: isTablet),
-                          child: Padding(
-                            padding: EdgeInsets.only(top: isTablet ? 3 : 2),
+                        // Description
+                        if (book.description != null && book.description!.isNotEmpty) ...[
+                          SizedBox(height: isTablet ? 4 : 2),
+                          Text(
+                            book.description!,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              fontSize: metaSize,
+                              height: 1.3,
+                              color: secondaryTextColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+
+                        // Subject badge
+                        if (book.subject != null) ...[
+                          SizedBox(height: isTablet ? 4 : 3),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 7 : 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: iconColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Text(
-                              'Read More',
+                              book.subject!.name,
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w500,
-                                fontSize: isTablet ? 11 : 10,
+                                fontSize: isTablet ? 10 : 9,
                                 color: iconColor,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                    ],
+                        ],
 
-                    SizedBox(height: isTablet ? 8 : 6),
+                        SizedBox(height: isTablet ? 6 : 4),
 
-                    // Format badge + pages
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 5, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: iconColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            (book.ebookFileFormat ?? 'PDF').toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: isTablet ? 10 : 9,
-                              fontWeight: FontWeight.w600,
-                              color: iconColor,
+                        // Format badge + pages
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: iconColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                (book.ebookFileFormat ?? 'PDF').toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 10 : 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: iconColor,
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(width: isTablet ? 8 : 6),
+                            if (book.pages != null)
+                              Flexible(
+                                child: Text(
+                                  '${book.pages} pages',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: metaSize,
+                                    color: secondaryTextColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
                         ),
-                        SizedBox(width: isTablet ? 8 : 6),
-                        if (book.pages != null)
-                          Text(
-                            '${book.pages} pages',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: metaSize,
-                              color: secondaryTextColor,
-                            ),
-                          ),
                       ],
                     ),
 
-                    SizedBox(height: isTablet ? 8 : 6),
-
-                    // Price + Buy/Read button
+                    // Button (always at bottom)
                     if (isPurchased)
                       SizedBox(
                         width: double.infinity,
@@ -756,60 +744,29 @@ class _EbookListScreenState extends State<EbookListScreen>
                         ),
                       )
                     else
-                      Row(
-                        children: [
-                          // Price
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _formatPrice(book.actualPrice),
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: priceSize,
-                                    color: textColor,
-                                  ),
-                                ),
-                                if (book.hasDiscount)
-                                  Text(
-                                    _formatPrice(book.originalPrice ?? book.price),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: metaSize,
-                                      color: secondaryTextColor,
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                  ),
-                              ],
+                      SizedBox(
+                        width: double.infinity,
+                        height: isTablet ? 36 : 32,
+                        child: ElevatedButton(
+                          onPressed: () => _handleBuy(book),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: buttonColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                            ),
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: Text(
+                            'View',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: btnFontSize,
                             ),
                           ),
-                          // Buy button
-                          SizedBox(
-                            height: isTablet ? 36 : 32,
-                            child: ElevatedButton(
-                              onPressed: () => _handleBuy(book),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: buttonColor,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
-                                ),
-                                elevation: 0,
-                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12),
-                              ),
-                              child: Text(
-                                'View',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: btnFontSize,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                   ],
                 ),
@@ -1120,7 +1077,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                 padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24),
                               ),
                               child: Text(
-                                'View in Store',
+                                'View',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w600,

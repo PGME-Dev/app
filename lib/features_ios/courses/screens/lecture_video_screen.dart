@@ -652,7 +652,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final avatarSize = isTablet ? 22.0 : 16.0;
     final itemRadius = isTablet ? 16.0 : 12.0;
     final itemHPadding = isTablet ? 16.0 : 12.0;
-    final downloadIconSize = isTablet ? 22.0 : 18.0;
+    final downloadIconSize = isTablet ? 28.0 : 24.0;
 
     // Determine which icon to show
     IconData iconData;

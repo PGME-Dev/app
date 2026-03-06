@@ -103,7 +103,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
   }
 
   String _formatPrice(num price) {
-    return '\u{20B9}${price.toStringAsFixed(price.truncateToDouble() == price ? 0 : 2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return '';
   }
 
   String _formatDuration(int days) {
@@ -121,7 +121,6 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
   Future<void> _processUpgrade() async {
     if (_selectedTierIndex == null) return;
 
-    // Redirect to web store for upgrade
     WebStoreLauncher.openProductPage(
       context,
       productType: 'packages',
