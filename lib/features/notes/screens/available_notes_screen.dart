@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
@@ -542,19 +543,52 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
           SizedBox(height: isTablet ? 29 : 22),
 
-          // Image placeholder
-          Container(
-            width: isTablet ? 500 : 408,
-            height: isTablet ? 240 : 196,
-            margin: const EdgeInsets.only(left: 0),
-            color: imagePlaceholderColor,
-            child: Center(
-              child: Icon(
-                Icons.image_outlined,
-                size: isTablet ? 75 : 60,
-                color: secondaryTextColor,
-              ),
-            ),
+          // Series banner image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+            child: _series?.thumbnailUrl != null && _series!.thumbnailUrl!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: _series!.thumbnailUrl!,
+                    width: isTablet ? 500 : 408,
+                    height: isTablet ? 240 : 196,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      width: isTablet ? 500 : 408,
+                      height: isTablet ? 240 : 196,
+                      color: imagePlaceholderColor,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: isTablet ? 75 : 60,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      width: isTablet ? 500 : 408,
+                      height: isTablet ? 240 : 196,
+                      color: imagePlaceholderColor,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: isTablet ? 75 : 60,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: isTablet ? 500 : 408,
+                    height: isTablet ? 240 : 196,
+                    color: imagePlaceholderColor,
+                    child: Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: isTablet ? 75 : 60,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ),
           ),
 
           SizedBox(height: isTablet ? 36 : 28),
@@ -733,23 +767,56 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image placeholder with lock overlay for locked items
+                  // Document thumbnail with lock overlay for locked items
                   Stack(
                     children: [
-                      Container(
-                        width: isTablet ? 100 : 80,
-                        height: isTablet ? 100 : 80,
-                        decoration: BoxDecoration(
-                          color: placeholderColor,
-                          borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.picture_as_pdf,
-                            size: isTablet ? 40 : 32,
-                            color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
-                          ),
-                        ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+                        child: document.thumbnailUrl != null && document.thumbnailUrl!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: document.thumbnailUrl!,
+                                width: isTablet ? 100 : 80,
+                                height: isTablet ? 100 : 80,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  width: isTablet ? 100 : 80,
+                                  height: isTablet ? 100 : 80,
+                                  color: placeholderColor,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.picture_as_pdf,
+                                      size: isTablet ? 40 : 32,
+                                      color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: isTablet ? 100 : 80,
+                                  height: isTablet ? 100 : 80,
+                                  color: placeholderColor,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.picture_as_pdf,
+                                      size: isTablet ? 40 : 32,
+                                      color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: isTablet ? 100 : 80,
+                                height: isTablet ? 100 : 80,
+                                decoration: BoxDecoration(
+                                  color: placeholderColor,
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.picture_as_pdf,
+                                    size: isTablet ? 40 : 32,
+                                    color: isDark ? AppColors.darkTextSecondary : const Color(0xFF666666),
+                                  ),
+                                ),
+                              ),
                       ),
                       if (isLocked)
                         Positioned.fill(

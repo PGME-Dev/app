@@ -376,16 +376,17 @@ class _FacultyDetailSheet extends StatelessWidget {
                       SizedBox(height: isTablet ? 8 : 4),
 
                       // Specialization
-                      Text(
-                        faculty.specialization,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: specSize,
-                          color: AppColors.primaryBlue,
+                      if (faculty.specialization.isNotEmpty)
+                        Text(
+                          faculty.specialization,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: specSize,
+                            color: AppColors.primaryBlue,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
 
                       SizedBox(height: isTablet ? 28 : 20),
 

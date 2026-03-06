@@ -43,95 +43,57 @@ class HomeSectionCard extends StatelessWidget {
   // Navigation Helpers
   // =====================
 
-  String _buildInternalRoute(String route, Map<String, dynamic>? params) {
-    if (params == null || params.isEmpty) return route;
+  /// Inject 'subscribed' query param for routes that need it.
+  String _injectSubscribed(BuildContext context, String url) {
+    const routesNeedingSubscribed = [
+      '/revision-series',
+      '/practical-series',
+      '/series-detail',
+      '/lecture',
+    ];
+    final routePath = url.split('?').first.split('/').take(3).join('/');
+    final matches = routesNeedingSubscribed.any((r) => routePath.startsWith(r));
+    if (!matches) return url;
 
-    // Separate path params (e.g. :id in /series-detail/:id) from query params
-    String resolvedRoute = route;
-    final queryParams = <String, String>{};
-
-    for (final entry in params.entries) {
-      final placeholder = ':${entry.key}';
-      if (resolvedRoute.contains(placeholder)) {
-        // Replace path parameter placeholder with actual value
-        resolvedRoute = resolvedRoute.replaceAll(placeholder, Uri.encodeComponent(entry.value.toString()));
-      } else {
-        // Remaining params go as query string
-        queryParams[entry.key] = entry.value.toString();
-      }
-    }
-
-    if (queryParams.isEmpty) return resolvedRoute;
-    final queryString = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-    final separator = resolvedRoute.contains('?') ? '&' : '?';
-    return '$resolvedRoute$separator$queryString';
+    final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+    final subscribed = dashboardProvider.hasActivePurchase == true ? 'true' : 'false';
+    final separator = url.contains('?') ? '&' : '?';
+    return '$url${separator}subscribed=$subscribed';
   }
 
   void _handlePrimaryTap(BuildContext context) {
-    _handleNavigation(
-      context,
-      linkType: item.linkType,
-      externalUrl: item.externalUrl,
-      internalRoute: item.internalRoute,
-      internalParams: item.internalParams,
-    );
+    _handleNavigation(context, linkType: item.linkType, linkUrl: item.linkUrl);
   }
 
   void _handleSecondaryTap(BuildContext context) {
-    _handleNavigation(
-      context,
-      linkType: item.secondaryLinkType,
-      externalUrl: item.secondaryExternalUrl,
-      internalRoute: item.secondaryInternalRoute,
-      internalParams: item.secondaryInternalParams,
-    );
+    _handleNavigation(context, linkType: item.secondaryLinkType, linkUrl: item.secondaryLinkUrl);
   }
 
+  /// Same pattern as promotional_banner.dart: backend constructs the URL,
+  /// Flutter just pushes it for internal or launches it for external.
   Future<void> _handleNavigation(
     BuildContext context, {
     String? linkType,
-    String? externalUrl,
-    String? internalRoute,
-    Map<String, dynamic>? internalParams,
+    String? linkUrl,
   }) async {
+    if (linkUrl == null || linkUrl.isEmpty) return;
+
     switch (linkType) {
       case 'internal':
-        if (internalRoute != null && internalRoute.isNotEmpty) {
-          try {
-            final params = Map<String, dynamic>.from(internalParams ?? {});
-
-            // Routes that require 'subscribed' query param — always inject it
-            // based on actual user subscription status, so admin never needs to set it
-            const routesNeedingSubscribed = [
-              '/revision-series',
-              '/practical-series',
-              '/series-detail',
-              '/lecture',
-            ];
-            final routeBase = internalRoute.split('/:').first;
-            if (routesNeedingSubscribed.contains(routeBase)) {
-              final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-              params['subscribed'] = dashboardProvider.hasActivePurchase == true ? 'true' : 'false';
-            }
-
-            context.push(_buildInternalRoute(internalRoute, params));
-          } catch (e) {
-            debugPrint('Navigation error: $e');
-          }
+        try {
+          context.push(_injectSubscribed(context, linkUrl));
+        } catch (e) {
+          debugPrint('Navigation error: $e');
         }
         break;
       case 'external':
-        if (externalUrl != null && externalUrl.isNotEmpty) {
-          try {
-            final url = Uri.tryParse(externalUrl);
-            if (url != null && await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
-          } catch (e) {
-            debugPrint('External URL launch error: $e');
+        try {
+          final url = Uri.tryParse(linkUrl);
+          if (url != null && await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
           }
+        } catch (e) {
+          debugPrint('External URL launch error: $e');
         }
         break;
       case 'none':
@@ -141,7 +103,7 @@ class HomeSectionCard extends StatelessWidget {
   }
 
   bool get _hasPrimaryAction =>
-      item.linkType != null && item.linkType != 'none';
+      item.linkType != null && item.linkType != 'none' && item.linkUrl != null;
 
   // =====================
   // Shared Helpers

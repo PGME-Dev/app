@@ -13,7 +13,7 @@ FacultyModel _$FacultyModelFromJson(Map<String, dynamic> json) => FacultyModel(
       bio: json['bio'] as String?,
       qualifications: json['qualifications'] as String?,
       experienceYears: (json['experience_years'] as num?)?.toInt(),
-      specialization: json['specialization'] as String,
+      specialization: json['specialization'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
       createdAt: json['createdAt'] as String?,
     );

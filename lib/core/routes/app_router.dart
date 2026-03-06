@@ -854,19 +854,22 @@ class AppRouter {
           GoRoute(
             path: '/ebook-store',
             name: 'ebook-store',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const EbookListScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                  child: child,
-                );
-              },
-            ),
+            pageBuilder: (context, state) {
+              final bookId = state.uri.queryParameters['bookId'];
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EbookListScreen(initialBookId: bookId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
           ),
 
           // Book Cart

@@ -62,6 +62,7 @@ PackageModel _$PackageModelFromJson(Map<String, dynamic> json) => PackageModel(
       features: _featuresFromJson(json['features']),
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
       isPurchased: json['is_purchased'] as bool? ?? false,
+      accessRevoked: json['access_revoked'] as bool? ?? false,
       expiresAt: json['expires_at'] as String?,
       hasTiers: json['has_tiers'] as bool? ?? false,
       tiers: (json['tiers'] as List<dynamic>?)
@@ -94,6 +95,7 @@ Map<String, dynamic> _$PackageModelToJson(PackageModel instance) =>
       'features': instance.features,
       'display_order': instance.displayOrder,
       'is_purchased': instance.isPurchased,
+      'access_revoked': instance.accessRevoked,
       'expires_at': instance.expiresAt,
       'has_tiers': instance.hasTiers,
       'tiers': instance.tiers,

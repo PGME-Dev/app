@@ -17,6 +17,9 @@ class SeriesDocumentModel {
   @JsonKey(name: 'preview_url')
   final String? previewUrl;
 
+  @JsonKey(name: 'thumbnail_url')
+  final String? thumbnailUrl;
+
   @JsonKey(name: 'file_format', defaultValue: 'pdf')
   final String fileFormat;
 
@@ -44,6 +47,7 @@ class SeriesDocumentModel {
     this.description,
     this.fileUrl,
     this.previewUrl,
+    this.thumbnailUrl,
     this.fileFormat = 'pdf',
     this.fileSizeMb,
     this.pageCount,

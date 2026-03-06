@@ -142,6 +142,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
 
       setState(() {
         _series = result.series;
+        // Update revoked status from fresh backend check
+        if (_theoryPackage != null && result.accessRevoked != _theoryPackage!.accessRevoked) {
+          _theoryPackage = _theoryPackage!.copyWith(accessRevoked: result.accessRevoked);
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -424,6 +428,31 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
               ),
             ),
 
+            // Revoked banner
+            if (_theoryPackage?.accessRevoked == true)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                child: Row(
+                  children: [
+                    const Icon(Icons.block, size: 18, color: Color(0xFFE53935)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Your access to this package has been revoked. Contact support for assistance.',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFB71C1C),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Content
             Expanded(
               child: _isLoading
@@ -468,13 +497,14 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
             children: [
               const SizedBox(height: 8),
 
-              // Two option cards
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: hPadding),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildOptionCard(
+              // Option cards — dynamic layout based on available content
+              if (_getTotalLectures() > 0 || _getTotalDocuments() > 0)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  child: Builder(builder: (_) {
+                    final cards = <Widget>[];
+                    if (_getTotalLectures() > 0) {
+                      cards.add(_buildOptionCard(
                         title: 'Watch\nVideo Lectures',
                         subtitle: '${_getTotalLectures()} Lectures',
                         icon: Icons.play_circle_outline_rounded,
@@ -483,11 +513,10 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
                         onTap: () => setState(() => _contentMode = 'lectures'),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 20 : 14),
-                    Expanded(
-                      child: _buildOptionCard(
+                      ));
+                    }
+                    if (_getTotalDocuments() > 0) {
+                      cards.add(_buildOptionCard(
                         title: 'Read\nNotes',
                         subtitle: '${_getTotalDocuments()} Notes',
                         icon: Icons.description_outlined,
@@ -496,11 +525,18 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
                         onTap: () => setState(() => _contentMode = 'documents'),
-                      ),
-                    ),
-                  ],
+                      ));
+                    }
+                    if (cards.length == 1) return cards[0];
+                    return Row(
+                      children: [
+                        Expanded(child: cards[0]),
+                        SizedBox(width: isTablet ? 20 : 14),
+                        Expanded(child: cards[1]),
+                      ],
+                    );
+                  }),
                 ),
-              ),
 
               const SizedBox(height: 28),
 
@@ -538,6 +574,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
         height: cardHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(cardRadius),

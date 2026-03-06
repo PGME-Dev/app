@@ -868,6 +868,77 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
     }
 
     final package = _package!;
+
+    // Show revoked state
+    if (package.accessRevoked) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: hPadding + 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: isTablet ? 100 : 80,
+                  height: isTablet ? 100 : 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.block,
+                    size: isTablet ? 50 : 40,
+                    color: const Color(0xFFE53935),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 28 : 24),
+                Text(
+                  'Access Revoked',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: isTablet ? 26 : 22,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                SizedBox(height: isTablet ? 14 : 12),
+                Text(
+                  'Your access to this package has been revoked.\nPlease contact support for assistance.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: isTablet ? 17 : 14,
+                    fontWeight: FontWeight.w400,
+                    color: secondaryTextColor,
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: isTablet ? 36 : 32),
+                ElevatedButton(
+                  onPressed: () => context.pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 32, vertical: isTablet ? 16 : 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    'Go Back',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isTablet ? 18 : 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final hasTiers = package.hasTiers && package.tiers != null && package.tiers!.isNotEmpty;
     final selectedTier = hasTiers ? package.tiers![_selectedTierIndex] : null;
     final displayPrice = hasTiers

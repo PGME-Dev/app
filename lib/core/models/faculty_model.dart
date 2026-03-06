@@ -19,6 +19,7 @@ class FacultyModel {
   @JsonKey(name: 'experience_years')
   final int? experienceYears;
 
+  @JsonKey(defaultValue: '')
   final String specialization;
 
   @JsonKey(name: 'is_active', defaultValue: true)

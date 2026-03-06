@@ -682,38 +682,40 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                           ),
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 9),
+                        if (_session?.facultyName != null) ...[
+                          const SizedBox(height: 9),
 
-                        // Faculty
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: isTablet ? 32 : 24, height: isTablet ? 32 : 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                          // Faculty
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: isTablet ? 32 : 24, height: isTablet ? 32 : 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                                ),
+                                child: ClipOval(
+                                  child: _session?.facultyPhotoUrl != null
+                                      ? Image.network(
+                                          _session!.facultyPhotoUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
+                                        )
+                                      : Icon(Icons.person, size: 16, color: secondaryTextColor),
+                                ),
                               ),
-                              child: ClipOval(
-                                child: _session?.facultyPhotoUrl != null
-                                    ? Image.network(
-                                        _session!.facultyPhotoUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
-                                      )
-                                    : Icon(Icons.person, size: 16, color: secondaryTextColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                _session!.facultyName!,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                  fontSize: isTablet ? 17 : 14, color: textColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _session?.facultyName ?? 'Faculty',
-                              style: TextStyle(
-                                fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                                fontSize: isTablet ? 17 : 14, color: textColor,
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 16),
 
                         // Badges
@@ -1327,14 +1329,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                     ),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    session.facultyName ?? 'Faculty',
-                    style: TextStyle(
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                      fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
+                  if (session.facultyName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      session.facultyName!,
+                      style: TextStyle(
+                        fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12, color: secondaryTextColor,
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 2),
                   Text(
                     _formatSessionDate(session.scheduledStartTime),

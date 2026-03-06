@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/models/book_model.dart';
+import 'package:pgme/core/models/subject_model.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
+import 'package:pgme/core/services/onboarding_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/books/providers/book_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
@@ -21,9 +23,13 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  List<SubjectModel> _subjects = [];
+  String? _selectedSubjectId;
+
   @override
   void initState() {
     super.initState();
+    _loadSubjects();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<BookProvider>(context, listen: false);
       if (provider.books.isEmpty) {
@@ -32,6 +38,17 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
     });
 
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final subjects = await OnboardingService().getSubjects();
+      if (mounted) {
+        setState(() => _subjects = subjects);
+      }
+    } catch (e) {
+      debugPrint('Error loading subjects: $e');
+    }
   }
 
   @override
@@ -51,7 +68,11 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
 
   void _onSearch(String query) {
     final provider = Provider.of<BookProvider>(context, listen: false);
-    provider.searchBooks(query);
+    if (query.isEmpty) {
+      provider.loadBooks(subjectId: _selectedSubjectId, refresh: true);
+    } else {
+      provider.loadBooks(subjectId: _selectedSubjectId, search: query, refresh: true);
+    }
   }
 
   @override
@@ -232,7 +253,71 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
             ),
           ),
 
-          SizedBox(height: isTablet ? 21 : 16),
+          // Subject filter chips
+          if (_subjects.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(bottom: isTablet ? 21 : 16),
+              child: SizedBox(
+                height: isTablet ? 44 : 36,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: hPadding),
+                  itemCount: _subjects.length + 1,
+                  itemBuilder: (context, index) {
+                    final isAll = index == 0;
+                    final isSelected = isAll
+                        ? _selectedSubjectId == null
+                        : _selectedSubjectId == _subjects[index - 1].subjectId;
+                    final label = isAll ? 'All' : _subjects[index - 1].name;
+
+                    return Padding(
+                      padding: EdgeInsets.only(right: isTablet ? 10 : 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedSubjectId = isAll ? null : _subjects[index - 1].subjectId;
+                          });
+                          final provider = Provider.of<BookProvider>(context, listen: false);
+                          provider.loadBooks(
+                            subjectId: _selectedSubjectId,
+                            search: _searchController.text.isNotEmpty ? _searchController.text : null,
+                            refresh: true,
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 10 : 7),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? iconColor
+                                : (isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5)),
+                            borderRadius: BorderRadius.circular(isTablet ? 22 : 18),
+                            border: Border.all(
+                              color: isSelected
+                                  ? iconColor
+                                  : borderColor,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              fontSize: isTablet ? 14 : 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : secondaryTextColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+          SizedBox(height: _subjects.isEmpty ? (isTablet ? 21 : 16) : 0),
 
           // Books Grid
           Expanded(
@@ -256,7 +341,7 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
                         ),
                         SizedBox(height: isTablet ? 21 : 16),
                         ElevatedButton(
-                          onPressed: () => provider.loadBooks(refresh: true),
+                          onPressed: () => provider.loadBooks(subjectId: _selectedSubjectId, refresh: true),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -284,7 +369,7 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => provider.loadBooks(refresh: true),
+                  onRefresh: () => provider.loadBooks(subjectId: _selectedSubjectId, refresh: true),
                   child: GridView.builder(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),

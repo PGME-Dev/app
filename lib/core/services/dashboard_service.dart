@@ -463,7 +463,7 @@ class DashboardService {
   /// Use forceRefresh to bypass cache
   Future<List<FacultyModel>> getFaculty({
     int limit = 10,
-    String? specialization,
+    String? subjectId,
     bool forceRefresh = false,
   }) async {
     try {
@@ -486,8 +486,8 @@ class DashboardService {
       final queryParams = <String, dynamic>{
         'limit': limit,
       };
-      if (specialization != null) {
-        queryParams['specialization'] = specialization;
+      if (subjectId != null) {
+        queryParams['subject_id'] = subjectId;
       }
 
       final response = await _apiService.dio.get(
@@ -547,7 +547,7 @@ class DashboardService {
   }
 
   /// Get series for a specific package
-  Future<({List<SeriesModel> series, bool isPurchased})> getPackageSeries(String packageId) async {
+  Future<({List<SeriesModel> series, bool isPurchased, bool accessRevoked})> getPackageSeries(String packageId) async {
     try {
       debugPrint('=== DashboardService: Getting package series ===');
       debugPrint('Package ID: $packageId');
@@ -561,16 +561,17 @@ class DashboardService {
 
         final data = response.data['data'];
         final isPurchased = data['is_purchased'] == true;
+        final accessRevoked = data['access_revoked'] == true;
         final seriesData = data['series'] as List;
         debugPrint('Series data list: $seriesData');
-        debugPrint('Is purchased: $isPurchased');
+        debugPrint('Is purchased: $isPurchased, Access revoked: $accessRevoked');
 
         final series = seriesData
             .map((json) => SeriesModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
         debugPrint('√ ${series.length} series retrieved');
-        return (series: series, isPurchased: isPurchased);
+        return (series: series, isPurchased: isPurchased, accessRevoked: accessRevoked);
       } else {
         debugPrint('✗ Failed to retrieve series');
         throw Exception('Failed to retrieve series');

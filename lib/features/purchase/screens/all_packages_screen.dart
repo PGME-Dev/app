@@ -137,6 +137,25 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
   }
 
   void _enrollPackage(PackageModel package) {
+    if (package.accessRevoked) {
+      // Show revoked message
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Access Revoked'),
+          content: const Text(
+            'Your access to this package has been revoked. Please contact support for assistance.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (package.isPurchased) {
       context.pop();
       // Navigate to appropriate series screen based on package type
@@ -361,15 +380,19 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                     width: isTablet ? 200 : 160,
                     height: isTablet ? 66 : 54,
                     decoration: BoxDecoration(
-                      color: _packages[_selectedIndex].isPurchased
-                          ? const Color(0xFF4CAF50)
-                          : buttonColor,
+                      color: _packages[_selectedIndex].accessRevoked
+                          ? const Color(0xFFE53935)
+                          : _packages[_selectedIndex].isPurchased
+                              ? const Color(0xFF4CAF50)
+                              : buttonColor,
                       borderRadius: BorderRadius.circular(isTablet ? 21 : 16),
                       boxShadow: [
                         BoxShadow(
-                          color: (_packages[_selectedIndex].isPurchased
-                              ? const Color(0xFF4CAF50)
-                              : buttonColor).withValues(alpha: 0.3),
+                          color: (_packages[_selectedIndex].accessRevoked
+                              ? const Color(0xFFE53935)
+                              : _packages[_selectedIndex].isPurchased
+                                  ? const Color(0xFF4CAF50)
+                                  : buttonColor).withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -379,22 +402,32 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (!_packages[_selectedIndex].isPurchased && WebStoreLauncher.shouldUseWebStore)
+                          if (_packages[_selectedIndex].accessRevoked)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Icon(Icons.block, color: Colors.white, size: isTablet ? 18 : 16),
+                            )
+                          else if (!_packages[_selectedIndex].isPurchased && WebStoreLauncher.shouldUseWebStore)
                             const Padding(
                               padding: EdgeInsets.only(right: 6),
                               child: Icon(Icons.open_in_new, color: Colors.white, size: 16),
                             ),
-                          Text(
-                            _packages[_selectedIndex].isPurchased
-                                ? 'Go to Content'
-                                : WebStoreLauncher.shouldUseWebStore
-                                    ? 'Learn More'
-                                    : (Platform.isIOS ? 'Learn More' : 'Enroll Now'),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: isTablet ? 20 : 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                          Flexible(
+                            child: Text(
+                              _packages[_selectedIndex].accessRevoked
+                                  ? 'Revoked'
+                                  : _packages[_selectedIndex].isPurchased
+                                      ? 'Go to Content'
+                                      : WebStoreLauncher.shouldUseWebStore
+                                          ? 'Learn More'
+                                          : (Platform.isIOS ? 'Learn More' : 'Enroll Now'),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 20 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -508,7 +541,32 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                     ),
                   ),
                   // Badges
-                  if (package.isPurchased)
+                  if (package.accessRevoked)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 7 : 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE53935),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.block, color: Colors.white, size: isTablet ? 15 : 12),
+                          SizedBox(width: isTablet ? 6 : 4),
+                          Text(
+                            'REVOKED',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isTablet ? 13 : 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (package.isPurchased)
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: isTablet ? 13 : 10, vertical: isTablet ? 7 : 5),
                       decoration: BoxDecoration(

@@ -15,6 +15,7 @@ class BookProvider extends ChangeNotifier {
   String? _booksError;
   PaginationInfo? _pagination;
   String? _currentCategory;
+  String? _currentSubjectId;
   String? _searchQuery;
 
   // Cart state
@@ -35,6 +36,7 @@ class BookProvider extends ChangeNotifier {
   String? get booksError => _booksError;
   PaginationInfo? get pagination => _pagination;
   String? get currentCategory => _currentCategory;
+  String? get currentSubjectId => _currentSubjectId;
   String? get searchQuery => _searchQuery;
 
   Map<String, CartItem> get cart => _cart;
@@ -61,6 +63,7 @@ class BookProvider extends ChangeNotifier {
   /// Load books from API
   Future<void> loadBooks({
     String? category,
+    String? subjectId,
     String? search,
     int page = 1,
     bool refresh = false,
@@ -76,10 +79,12 @@ class BookProvider extends ChangeNotifier {
 
     try {
       _currentCategory = category;
+      _currentSubjectId = subjectId;
       _searchQuery = search;
 
       final response = await _bookService.getBooks(
         category: category,
+        subjectId: subjectId,
         search: search,
         page: page,
       );
@@ -104,6 +109,7 @@ class BookProvider extends ChangeNotifier {
 
     await loadBooks(
       category: _currentCategory,
+      subjectId: _currentSubjectId,
       search: _searchQuery,
       page: _pagination!.currentPage + 1,
     );

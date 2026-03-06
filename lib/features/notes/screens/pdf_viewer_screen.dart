@@ -1269,12 +1269,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final subtitleColor =
         isDark ? AppColors.darkTextSecondary : Colors.grey[600]!;
 
-    // Combine highlights and underlines into a single list
-    final allAnnotationIds = <String>[
-      ..._highlightAnnotations.keys,
-      ..._underlineAnnotations.keys,
-    ];
-
     showModalBottomSheet(
       context: context,
       backgroundColor: bgColor,
@@ -1283,255 +1277,307 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: 12, bottom: 16),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.5,
+              minChildSize: 0.3,
+              maxChildSize: 0.85,
+              expand: false,
+              builder: (context, scrollController) {
+                final currentIds = <String>[
+                  ..._highlightAnnotations.keys,
+                  ..._underlineAnnotations.keys,
+                ];
+                return Column(
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(top: 12, bottom: 16),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                // Title
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 24 : 20),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.sticky_note_2_outlined,
-                        size: isTablet ? 24 : 22,
-                        color: AppColors.primaryBlue,
-                      ),
-                      SizedBox(width: isTablet ? 10 : 8),
-                      Text(
-                        'Your Notes & Highlights',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w700,
-                          fontSize: isTablet ? 20 : 18,
-                          color: textColor,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${allAnnotationIds.length}',
-                        style: TextStyle(
-                          fontSize: isTablet ? 15 : 13,
-                          color: subtitleColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: isTablet ? 12 : 10),
-                Divider(
-                  height: 1,
-                  color:
-                      isDark ? AppColors.darkDivider : const Color(0xFFF0F0F0),
-                ),
-                // List of annotations
-                Expanded(
-                  child: allAnnotationIds.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.note_alt_outlined,
-                                size: isTablet ? 48 : 40,
-                                color: subtitleColor,
-                              ),
-                              SizedBox(height: isTablet ? 12 : 8),
-                              Text(
-                                'No highlights or notes yet',
-                                style: TextStyle(
-                                  fontSize: isTablet ? 16 : 14,
-                                  color: subtitleColor,
-                                ),
-                              ),
-                              SizedBox(height: isTablet ? 6 : 4),
-                              Text(
-                                'Long press on text to highlight it',
-                                style: TextStyle(
-                                  fontSize: isTablet ? 13 : 12,
-                                  color: subtitleColor,
-                                ),
-                              ),
-                            ],
+                    // Title
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 24 : 20),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.sticky_note_2_outlined,
+                            size: isTablet ? 24 : 22,
+                            color: AppColors.primaryBlue,
                           ),
-                        )
-                      : ListView.separated(
-                          controller: scrollController,
-                          padding: EdgeInsets.symmetric(
-                            vertical: isTablet ? 10 : 8,
+                          SizedBox(width: isTablet ? 10 : 8),
+                          Text(
+                            'Your Notes & Highlights',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTablet ? 20 : 18,
+                              color: textColor,
+                            ),
                           ),
-                          itemCount: allAnnotationIds.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            indent: isTablet ? 70 : 60,
-                            endIndent: isTablet ? 24 : 20,
-                            color: isDark
-                                ? AppColors.darkDivider
-                                : const Color(0xFFF0F0F0),
+                          const Spacer(),
+                          Text(
+                            '${currentIds.length}',
+                            style: TextStyle(
+                              fontSize: isTablet ? 15 : 13,
+                              color: subtitleColor,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          itemBuilder: (context, index) {
-                            final id = allAnnotationIds[index];
-                            final isHighlight =
-                                _highlightAnnotations.containsKey(id);
-                            final annotation = isHighlight
-                                ? _highlightAnnotations[id]!
-                                : _underlineAnnotations[id]!;
-                            final highlightedText =
-                                _annotationTexts[id] ?? '';
-                            final note = _annotationNotes[id];
-                            final hasNote =
-                                note != null && note.isNotEmpty;
-
-                            Color accentColor;
-                            if (!isHighlight) {
-                              accentColor = underlineColor;
-                            } else if (annotation is HighlightAnnotation) {
-                              accentColor =
-                                  annotation.color.withValues(alpha: 1.0);
-                            } else {
-                              accentColor = highlightColors['yellow']!
-                                  .withValues(alpha: 1.0);
-                            }
-
-                            return InkWell(
-                              onTap: () {
-                                Navigator.pop(sheetContext);
-                                Future.delayed(
-                                    const Duration(milliseconds: 300), () {
-                                  if (mounted) _showNoteDialog(annotation);
-                                });
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isTablet ? 24 : 20,
-                                  vertical: isTablet ? 14 : 12,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    // Color indicator
-                                    Container(
-                                      width: isTablet ? 36 : 30,
-                                      height: isTablet ? 36 : 30,
-                                      margin: EdgeInsets.only(
-                                          right: isTablet ? 14 : 10),
-                                      decoration: BoxDecoration(
-                                        color: accentColor
-                                            .withValues(alpha: 0.15),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        isHighlight
-                                            ? Icons.border_color
-                                            : Icons.format_underlined,
-                                        size: isTablet ? 18 : 16,
-                                        color: accentColor,
-                                      ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: isTablet ? 12 : 10),
+                    Divider(
+                      height: 1,
+                      color:
+                          isDark ? AppColors.darkDivider : const Color(0xFFF0F0F0),
+                    ),
+                    // List of annotations
+                    Expanded(
+                      child: currentIds.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.note_alt_outlined,
+                                    size: isTablet ? 48 : 40,
+                                    color: subtitleColor,
+                                  ),
+                                  SizedBox(height: isTablet ? 12 : 8),
+                                  Text(
+                                    'No highlights or notes yet',
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 16 : 14,
+                                      color: subtitleColor,
                                     ),
-                                    // Text content
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            highlightedText,
-                                            style: TextStyle(
-                                              fontSize:
-                                                  isTablet ? 14 : 13,
-                                              color: textColor,
-                                              fontStyle:
-                                                  FontStyle.italic,
-                                              height: 1.3,
-                                            ),
-                                            maxLines: 2,
-                                            overflow:
-                                                TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: isTablet ? 6 : 4),
+                                  Text(
+                                    'Long press on text to highlight it',
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 13 : 12,
+                                      color: subtitleColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              controller: scrollController,
+                              padding: EdgeInsets.symmetric(
+                                vertical: isTablet ? 10 : 8,
+                              ),
+                              itemCount: currentIds.length,
+                              separatorBuilder: (_, __) => Divider(
+                                height: 1,
+                                indent: isTablet ? 70 : 60,
+                                endIndent: isTablet ? 24 : 20,
+                                color: isDark
+                                    ? AppColors.darkDivider
+                                    : const Color(0xFFF0F0F0),
+                              ),
+                              itemBuilder: (context, index) {
+                                final id = currentIds[index];
+                                final isHighlight =
+                                    _highlightAnnotations.containsKey(id);
+                                final annotation = isHighlight
+                                    ? _highlightAnnotations[id]!
+                                    : _underlineAnnotations[id]!;
+                                final highlightedText =
+                                    _annotationTexts[id] ?? '';
+                                final note = _annotationNotes[id];
+                                final hasNote =
+                                    note != null && note.isNotEmpty;
+
+                                Color accentColor;
+                                if (!isHighlight) {
+                                  accentColor = underlineColor;
+                                } else if (annotation is HighlightAnnotation) {
+                                  accentColor =
+                                      annotation.color.withValues(alpha: 1.0);
+                                } else {
+                                  accentColor = highlightColors['yellow']!
+                                      .withValues(alpha: 1.0);
+                                }
+
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.pop(sheetContext);
+                                    Future.delayed(
+                                        const Duration(milliseconds: 300), () {
+                                      if (mounted) _showNoteDialog(annotation);
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isTablet ? 24 : 20,
+                                      vertical: isTablet ? 14 : 12,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Color indicator
+                                        Container(
+                                          width: isTablet ? 36 : 30,
+                                          height: isTablet ? 36 : 30,
+                                          margin: EdgeInsets.only(
+                                              right: isTablet ? 14 : 10),
+                                          decoration: BoxDecoration(
+                                            color: accentColor
+                                                .withValues(alpha: 0.15),
+                                            shape: BoxShape.circle,
                                           ),
-                                          if (hasNote) ...[
-                                            SizedBox(
-                                                height:
-                                                    isTablet ? 6 : 4),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons
-                                                      .sticky_note_2_outlined,
-                                                  size:
-                                                      isTablet ? 14 : 12,
-                                                  color:
-                                                      AppColors.primaryBlue,
+                                          child: Icon(
+                                            isHighlight
+                                                ? Icons.border_color
+                                                : Icons.format_underlined,
+                                            size: isTablet ? 18 : 16,
+                                            color: accentColor,
+                                          ),
+                                        ),
+                                        // Text content
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                highlightedText,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      isTablet ? 14 : 13,
+                                                  color: textColor,
+                                                  fontStyle:
+                                                      FontStyle.italic,
+                                                  height: 1.3,
                                                 ),
+                                                maxLines: 2,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                              if (hasNote) ...[
                                                 SizedBox(
-                                                    width:
+                                                    height:
                                                         isTablet ? 6 : 4),
-                                                Expanded(
-                                                  child: Text(
-                                                    note,
-                                                    style: TextStyle(
-                                                      fontSize: isTablet
-                                                          ? 13
-                                                          : 12,
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .sticky_note_2_outlined,
+                                                      size:
+                                                          isTablet ? 14 : 12,
                                                       color:
                                                           AppColors.primaryBlue,
-                                                      height: 1.3,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow
-                                                        .ellipsis,
+                                                    SizedBox(
+                                                        width:
+                                                            isTablet ? 6 : 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        note,
+                                                        style: TextStyle(
+                                                          fontSize: isTablet
+                                                              ? 13
+                                                              : 12,
+                                                          color:
+                                                              AppColors.primaryBlue,
+                                                          height: 1.3,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ] else ...[
+                                                SizedBox(
+                                                    height:
+                                                        isTablet ? 4 : 2),
+                                                Text(
+                                                  'Tap to add note',
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        isTablet ? 12 : 11,
+                                                    color: subtitleColor,
                                                   ),
                                                 ),
                                               ],
-                                            ),
-                                          ] else ...[
-                                            SizedBox(
-                                                height:
-                                                    isTablet ? 4 : 2),
-                                            Text(
-                                              'Tap to add note',
-                                              style: TextStyle(
-                                                fontSize:
-                                                    isTablet ? 12 : 11,
-                                                color: subtitleColor,
+                                            ],
+                                          ),
+                                        ),
+                                        // Delete button
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: sheetContext,
+                                              builder: (dialogContext) => AlertDialog(
+                                                backgroundColor: bgColor,
+                                                title: Text(
+                                                  isHighlight ? 'Remove Highlight' : 'Remove Underline',
+                                                  style: TextStyle(color: textColor),
+                                                ),
+                                                content: Text(
+                                                  'Are you sure you want to remove this ${isHighlight ? 'highlight' : 'underline'}?',
+                                                  style: TextStyle(color: subtitleColor),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(dialogContext, false),
+                                                    child: Text(
+                                                      'Cancel',
+                                                      style: TextStyle(color: subtitleColor),
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(dialogContext, true),
+                                                    child: Text(
+                                                      'Remove',
+                                                      style: TextStyle(color: AppColors.error),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                            );
+                                            if (confirm == true) {
+                                              _removeHighlight(annotation);
+                                              setSheetState(() {});
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              left: isTablet ? 8 : 6,
                                             ),
-                                          ],
-                                        ],
-                                      ),
+                                            child: Icon(
+                                              Icons.delete_outline,
+                                              size: isTablet ? 22 : 20,
+                                              color: AppColors.error.withValues(alpha: 0.7),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    // Chevron
-                                    Icon(
-                                      Icons.chevron_right,
-                                      size: isTablet ? 20 : 18,
-                                      color: subtitleColor,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );

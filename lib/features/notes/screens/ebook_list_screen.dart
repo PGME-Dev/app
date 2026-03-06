@@ -16,9 +16,12 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/core/models/subject_model.dart';
+import 'package:pgme/core/services/onboarding_service.dart';
 
 class EbookListScreen extends StatefulWidget {
-  const EbookListScreen({super.key});
+  final String? initialBookId;
+  const EbookListScreen({super.key, this.initialBookId});
 
   @override
   State<EbookListScreen> createState() => _EbookListScreenState();
@@ -33,6 +36,8 @@ class _EbookListScreenState extends State<EbookListScreen>
 
   List<BookModel> _ebooks = [];
   Set<String> _purchasedBookIds = {};
+  List<SubjectModel> _subjects = [];
+  String? _selectedSubjectId;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _isPurchasing = false;
@@ -41,13 +46,36 @@ class _EbookListScreenState extends State<EbookListScreen>
   int _currentPage = 1;
   bool _hasMore = true;
 
+  bool _initialBookHandled = false;
+
   @override
   void initState() {
     super.initState();
     if (Platform.isIOS) WidgetsBinding.instance.addObserver(this);
-    _loadEbooks();
-    _loadPurchasedEbooks();
+    _loadInitialData();
+    _loadSubjects();
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadInitialData() async {
+    await Future.wait([_loadEbooks(), _loadPurchasedEbooks()]);
+    if (widget.initialBookId != null && !_initialBookHandled && mounted) {
+      _initialBookHandled = true;
+      _openInitialBook(widget.initialBookId!);
+    }
+  }
+
+  Future<void> _openInitialBook(String bookId) async {
+    try {
+      final book = await _bookService.getBookById(bookId);
+      if (!mounted) return;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isTablet = ResponsiveHelper.isTablet(context);
+      final isPurchased = _purchasedBookIds.contains(book.bookId);
+      _showBookDetailModal(book, isPurchased: isPurchased, isDark: isDark, isTablet: isTablet);
+    } catch (e) {
+      debugPrint('Error opening initial book: $e');
+    }
   }
 
   @override
@@ -78,6 +106,17 @@ class _EbookListScreenState extends State<EbookListScreen>
     }
   }
 
+  Future<void> _loadSubjects() async {
+    try {
+      final subjects = await OnboardingService().getSubjects();
+      if (mounted) {
+        setState(() => _subjects = subjects);
+      }
+    } catch (e) {
+      debugPrint('Error loading subjects: $e');
+    }
+  }
+
   Future<void> _loadEbooks({bool reset = true}) async {
     if (reset) {
       setState(() {
@@ -91,6 +130,7 @@ class _EbookListScreenState extends State<EbookListScreen>
       final response = await _bookService.getBooks(
         ebook: true,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        subjectId: _selectedSubjectId,
         page: _currentPage,
         limit: 20,
       );
@@ -662,7 +702,61 @@ class _EbookListScreenState extends State<EbookListScreen>
                     ),
                   ),
 
-                  SizedBox(height: isTablet ? 21 : 16),
+                  SizedBox(height: isTablet ? 12 : 8),
+
+                  // Subject filter chips
+                  if (_subjects.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: isTablet ? 12 : 8),
+                      child: SizedBox(
+                        height: isTablet ? 40 : 34,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(horizontal: hPadding),
+                          itemCount: _subjects.length + 1,
+                          separatorBuilder: (_, __) => SizedBox(width: isTablet ? 10 : 8),
+                          itemBuilder: (context, index) {
+                            final isAll = index == 0;
+                            final isSelected = isAll
+                                ? _selectedSubjectId == null
+                                : _selectedSubjectId == _subjects[index - 1].subjectId;
+                            final label = isAll ? 'All' : _subjects[index - 1].name;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedSubjectId = isAll ? null : _subjects[index - 1].subjectId;
+                                });
+                                _loadEbooks();
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12, vertical: isTablet ? 8 : 6),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? iconColor
+                                      : (isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5)),
+                                  borderRadius: BorderRadius.circular(isTablet ? 20 : 17),
+                                  border: isSelected
+                                      ? null
+                                      : Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0), width: 1),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    fontSize: isTablet ? 13 : 11,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark ? AppColors.darkTextSecondary : const Color(0xFF666666)),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
 
                   // Content
                   Expanded(
@@ -689,7 +783,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                         crossAxisCount: isTablet ? 3 : 2,
                                         crossAxisSpacing: isTablet ? 16 : 12,
                                         mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: isTablet ? 0.58 : 0.55,
+                                        childAspectRatio: isTablet ? 0.56 : 0.53,
                                       ),
                                       itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
                                       itemBuilder: (context, index) {
@@ -824,8 +918,12 @@ class _EbookListScreenState extends State<EbookListScreen>
     final cardRadius = isTablet ? 16.0 : 12.0;
     final imgHeight = isTablet ? 160.0 : 130.0;
 
+    final hasDescription = book.description != null && book.description!.isNotEmpty;
+
     return GestureDetector(
-      onTap: isPurchased ? () => _handleRead(book) : null,
+      onTap: isPurchased
+          ? () => _handleRead(book)
+          : () => _showBookDetailModal(book, isPurchased: isPurchased, isDark: isDark, isTablet: isTablet),
       child: Container(
         decoration: BoxDecoration(
           color: cardBgColor,
@@ -896,7 +994,63 @@ class _EbookListScreenState extends State<EbookListScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const Spacer(),
+                    // Subject badge
+                    if (book.subject != null) ...[
+                      SizedBox(height: isTablet ? 4 : 3),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 7 : 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: iconColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          book.subject!.name,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 10 : 9,
+                            color: iconColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+
+                    // Description
+                    if (hasDescription) ...[
+                      SizedBox(height: isTablet ? 6 : 4),
+                      Text(
+                        book.description!,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: isTablet ? 11 : 10,
+                          height: 1.3,
+                          color: secondaryTextColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (book.description!.length > 60)
+                        GestureDetector(
+                          onTap: () => _showBookDetailModal(book, isPurchased: isPurchased, isDark: isDark, isTablet: isTablet),
+                          child: Padding(
+                            padding: EdgeInsets.only(top: isTablet ? 3 : 2),
+                            child: Text(
+                              'Read More',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 11 : 10,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+
+                    SizedBox(height: isTablet ? 8 : 6),
 
                     // Format badge + pages
                     Row(
@@ -1022,6 +1176,324 @@ class _EbookListScreenState extends State<EbookListScreen>
           ],
         ),
       ),
+    );
+  }
+
+  void _showBookDetailModal(BookModel book, {required bool isPurchased, required bool isDark, required bool isTablet}) {
+    final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF000000);
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF666666);
+    final iconColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
+    final sheetBgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final buttonColor = isDark ? const Color(0xFF0047CF) : const Color(0xFF0000D1);
+    final borderColor = isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0);
+    const purchasedColor = Color(0xFF4CAF50);
+
+    final imgHeight = isTablet ? 200.0 : 160.0;
+    final hPad = isTablet ? 28.0 : 20.0;
+    final titleSize = isTablet ? 22.0 : 18.0;
+    final descSize = isTablet ? 15.0 : 13.0;
+    final metaSize = isTablet ? 13.0 : 11.0;
+    final priceSize = isTablet ? 26.0 : 20.0;
+    final btnFontSize = isTablet ? 18.0 : 15.0;
+    final btnRadius = isTablet ? 14.0 : 10.0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: sheetBgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Scrollable content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Book image (centered)
+                      Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                          child: book.thumbnailUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: book.thumbnailUrl!,
+                                  width: imgHeight * 0.75,
+                                  height: imgHeight,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: imgHeight * 0.75,
+                                    height: imgHeight,
+                                    color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                                    child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    width: imgHeight * 0.75,
+                                    height: imgHeight,
+                                    color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                                    child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                                  ),
+                                )
+                              : Container(
+                                  width: imgHeight * 0.75,
+                                  height: imgHeight,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
+                                    borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                                  ),
+                                  child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
+                                ),
+                        ),
+                      ),
+
+                      SizedBox(height: isTablet ? 20 : 16),
+
+                      // Title
+                      Text(
+                        book.title,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: titleSize,
+                          height: 1.3,
+                          color: textColor,
+                        ),
+                      ),
+
+                      SizedBox(height: isTablet ? 4 : 2),
+
+                      // Author
+                      Text(
+                        book.author,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: descSize,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+
+                      SizedBox(height: isTablet ? 12 : 8),
+
+                      // Meta row: format, pages, publisher
+                      Wrap(
+                        spacing: isTablet ? 12 : 8,
+                        runSpacing: 6,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: iconColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              (book.ebookFileFormat ?? 'PDF').toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: metaSize,
+                                fontWeight: FontWeight.w600,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                          if (book.pages != null)
+                            Text(
+                              '${book.pages} pages',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: metaSize,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          if (book.publisher != null)
+                            Text(
+                              book.publisher!,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: metaSize,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          if (book.subject != null)
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: iconColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                book.subject!.name,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: metaSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: iconColor,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      // Description
+                      if (book.description != null && book.description!.isNotEmpty) ...[
+                        SizedBox(height: isTablet ? 16 : 12),
+                        Divider(height: 1, color: borderColor),
+                        SizedBox(height: isTablet ? 16 : 12),
+                        Text(
+                          book.description!,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: descSize,
+                            height: 1.5,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+
+                      SizedBox(height: isTablet ? 24 : 20),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom action bar
+              Container(
+                padding: EdgeInsets.fromLTRB(hPad, isTablet ? 16 : 12, hPad, (isTablet ? 24.0 : 20.0) + MediaQuery.of(sheetContext).viewPadding.bottom),
+                decoration: BoxDecoration(
+                  color: sheetBgColor,
+                  border: Border(top: BorderSide(color: borderColor, width: 1)),
+                ),
+                child: isPurchased
+                    ? SizedBox(
+                        width: double.infinity,
+                        height: isTablet ? 52 : 46,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(sheetContext);
+                            _handleRead(book);
+                          },
+                          icon: Icon(Icons.menu_book, size: isTablet ? 20 : 18),
+                          label: Text(
+                            'Read Now',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              fontSize: btnFontSize,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: purchasedColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(btnRadius),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          // Price section
+                          if (!Platform.isIOS)
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _formatPrice(book.actualPrice),
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: priceSize,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  if (book.hasDiscount)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          _formatPrice(book.originalPrice ?? book.price),
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: metaSize,
+                                            color: secondaryTextColor,
+                                            decoration: TextDecoration.lineThrough,
+                                          ),
+                                        ),
+                                        SizedBox(width: isTablet ? 6 : 4),
+                                        Text(
+                                          '${book.discount}% OFF',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: isTablet ? 12 : 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF4CAF50),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (Platform.isIOS) const Spacer(),
+                          SizedBox(
+                            height: isTablet ? 52 : 46,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(sheetContext);
+                                _handleBuy(book);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: buttonColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(btnRadius),
+                                ),
+                                elevation: 0,
+                                padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24),
+                              ),
+                              child: Text(
+                                Platform.isIOS ? 'View in Store' : 'Buy Now',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: btnFontSize,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

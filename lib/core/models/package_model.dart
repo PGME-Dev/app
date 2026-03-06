@@ -122,6 +122,9 @@ class PackageModel {
   @JsonKey(name: 'is_purchased', defaultValue: false)
   final bool isPurchased;
 
+  @JsonKey(name: 'access_revoked', defaultValue: false)
+  final bool accessRevoked;
+
   @JsonKey(name: 'expires_at')
   final String? expiresAt;
 
@@ -160,6 +163,7 @@ class PackageModel {
     this.features,
     required this.displayOrder,
     required this.isPurchased,
+    required this.accessRevoked,
     this.expiresAt,
     required this.hasTiers,
     this.tiers,
@@ -200,6 +204,7 @@ class PackageModel {
     List<String>? features,
     int? displayOrder,
     bool? isPurchased,
+    bool? accessRevoked,
     String? expiresAt,
     bool? hasTiers,
     List<PackageTier>? tiers,
@@ -225,6 +230,7 @@ class PackageModel {
       features: features ?? this.features,
       displayOrder: displayOrder ?? this.displayOrder,
       isPurchased: isPurchased ?? this.isPurchased,
+      accessRevoked: accessRevoked ?? this.accessRevoked,
       expiresAt: expiresAt ?? this.expiresAt,
       hasTiers: hasTiers ?? this.hasTiers,
       tiers: tiers ?? this.tiers,

@@ -43,6 +43,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // Video metadata from API
   String? _videoUrl;
   String? _videoTitle;
+  String? _videoDescription;
   int _videoDurationSeconds = 0;
 
   // Progress tracking
@@ -186,6 +187,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       _videoUrl = videoUrl;
       _videoTitle = videoData['title'] as String? ?? 'Untitled';
+      _videoDescription = videoData['description'] as String?;
       _videoDurationSeconds = (videoData['duration_seconds'] as num?)?.toInt() ?? 0;
 
       debugPrint(
@@ -1319,6 +1321,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     color: Colors.white54,
                     fontSize: 13,
                     fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+              if (_videoDescription != null &&
+                  _videoDescription!.trim().isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _videoDescription!,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Poppins',
+                    height: 1.5,
                   ),
                 ),
               ],

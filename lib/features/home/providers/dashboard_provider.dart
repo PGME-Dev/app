@@ -209,10 +209,10 @@ class DashboardProvider with ChangeNotifier {
     try {
       debugPrint('Loading faculty list...');
 
-      // Filter faculty by primary subject's name (specialization)
+      // Filter faculty by primary subject's ID
       _facultyList = await _dashboardService.getFaculty(
         limit: 10,
-        specialization: _primarySubject?.subjectName,
+        subjectId: _primarySubject?.subjectId,
       );
 
       debugPrint('✓ Faculty list loaded: ${_facultyList.length} members'

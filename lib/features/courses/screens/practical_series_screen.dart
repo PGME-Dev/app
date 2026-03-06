@@ -119,6 +119,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
         if (result.isPurchased && !package.isPurchased) {
           _selectedPackage = package.copyWith(isPurchased: true);
         }
+        // Update revoked status from fresh backend check
+        if (result.accessRevoked != package.accessRevoked) {
+          _selectedPackage = (_selectedPackage ?? package).copyWith(accessRevoked: result.accessRevoked);
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -272,6 +276,31 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                 ],
               ),
             ),
+
+            // Revoked banner
+            if (_selectedPackage?.accessRevoked == true)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                child: Row(
+                  children: [
+                    const Icon(Icons.block, size: 18, color: Color(0xFFE53935)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Your access to this package has been revoked. Contact support for assistance.',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFFEF9A9A) : const Color(0xFFB71C1C),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // Content
             Expanded(
@@ -745,6 +774,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
         height: isTablet ? 280 : 180,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(isTablet ? 22 : 16),
@@ -828,13 +858,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
 
   Widget _buildOptionCardsLayout(List<Widget> cards, double gap) {
     if (cards.length == 1) {
-      return Row(
-        children: [
-          Expanded(child: cards[0]),
-          SizedBox(width: gap),
-          const Expanded(child: SizedBox()),
-        ],
-      );
+      return cards[0];
     }
     if (cards.length == 2) {
       return Row(
@@ -845,7 +869,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
         ],
       );
     }
-    // 3 cards: first two in a row, third below at half width
+    // 3 cards: first two in a row, third below full width
     return Column(
       children: [
         Row(
@@ -856,13 +880,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
           ],
         ),
         SizedBox(height: gap),
-        Row(
-          children: [
-            Expanded(child: cards[2]),
-            SizedBox(width: gap),
-            const Expanded(child: SizedBox()),
-          ],
-        ),
+        cards[2],
       ],
     );
   }

@@ -27,6 +27,7 @@ class HomeSectionItemModel {
   final String? buttonColor;
   final String? buttonTextColor;
   final String? linkType; // 'internal', 'external', 'none'
+  final String? linkUrl; // Pre-constructed URL (internal route or external URL)
   final String? externalUrl;
   final String? internalRoute;
   final Map<String, dynamic>? internalParams;
@@ -34,6 +35,7 @@ class HomeSectionItemModel {
   // Secondary action
   final String? secondaryButtonText;
   final String? secondaryLinkType; // 'internal', 'external', 'none'
+  final String? secondaryLinkUrl; // Pre-constructed URL for secondary action
   final String? secondaryExternalUrl;
   final String? secondaryInternalRoute;
   final Map<String, dynamic>? secondaryInternalParams;
@@ -63,11 +65,13 @@ class HomeSectionItemModel {
     this.buttonColor,
     this.buttonTextColor,
     this.linkType,
+    this.linkUrl,
     this.externalUrl,
     this.internalRoute,
     this.internalParams,
     this.secondaryButtonText,
     this.secondaryLinkType,
+    this.secondaryLinkUrl,
     this.secondaryExternalUrl,
     this.secondaryInternalRoute,
     this.secondaryInternalParams,
