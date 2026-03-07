@@ -543,12 +543,12 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
           SizedBox(height: isTablet ? 29 : 22),
 
-          // Series banner image
+          // Notes banner image (prefer package notes thumbnail, fall back to series thumbnail)
           ClipRRect(
             borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-            child: _series?.thumbnailUrl != null && _series!.thumbnailUrl!.isNotEmpty
+            child: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl) != null && (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!.isNotEmpty
                 ? CachedNetworkImage(
-                    imageUrl: _series!.thumbnailUrl!,
+                    imageUrl: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!,
                     width: isTablet ? 500 : 408,
                     height: isTablet ? 240 : 196,
                     fit: BoxFit.cover,

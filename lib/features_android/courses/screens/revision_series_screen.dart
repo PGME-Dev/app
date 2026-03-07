@@ -11,7 +11,6 @@ import 'package:pgme/core_android/models/package_model.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/core_android/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -980,21 +979,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
               color: isDark ? AppColors.darkCardBackground : const Color(0xFFE8F0FE),
               borderRadius: BorderRadius.circular(iconBoxRadius),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: series.thumbnailUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: series.thumbnailUrl!,
-                    fit: BoxFit.cover,
-                    width: iconBoxSize,
-                    height: iconBoxSize,
-                    placeholder: (context, url) => Center(
-                      child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
-                    ),
-                    errorWidget: (context, url, error) => Center(
-                      child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
-                    ),
-                  )
-                : Center(
+            child: Center(
                     child: Icon(Icons.menu_book_rounded, size: isTablet ? 26 : 18, color: iconColor),
                   ),
           ),
@@ -1140,29 +1125,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                 color: isDark ? AppColors.darkSurface : Colors.white,
                 borderRadius: BorderRadius.circular(iconBoxRadius),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: series.thumbnailUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: series.thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      width: iconBoxSize,
-                      height: iconBoxSize,
-                      placeholder: (context, url) => Center(
-                        child: Icon(
-                          isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
-                          size: contentIconSize,
-                          color: iconColor,
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Icon(
-                          isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
-                          size: contentIconSize,
-                          color: iconColor,
-                        ),
-                      ),
-                    )
-                  : Center(
+              child: Center(
                       child: Icon(
                         isLectureMode ? Icons.play_circle_outline_rounded : Icons.description_outlined,
                         size: contentIconSize,

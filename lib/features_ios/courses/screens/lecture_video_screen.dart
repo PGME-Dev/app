@@ -178,7 +178,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
           _series = results[0] as SeriesModel;
           _modules = results[1] as List<ModuleModel>;
           _trailerVideoUrl = packageDetails?.trailerVideoUrl;
-          _packageThumbnailUrl = packageDetails?.thumbnailUrl;
+          _packageThumbnailUrl = packageDetails?.videoLecturesThumbnailUrl ?? packageDetails?.thumbnailUrl;
           _isLoading = false;
 
           // Initialize expanded state - expand first module by default

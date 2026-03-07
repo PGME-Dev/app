@@ -158,7 +158,7 @@ class _EnrolledCourseDetailScreenState
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Center(
-                    child: ConstrainedBox(
+                      child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                       child: Padding(
                         padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
@@ -310,6 +310,7 @@ class _EnrolledCourseDetailScreenState
                     ),
                   ),
                 ),
+              ),
     );
   }
 

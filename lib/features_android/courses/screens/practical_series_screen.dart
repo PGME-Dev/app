@@ -12,7 +12,6 @@ import 'package:pgme/core_android/models/series_model.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/core_android/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class PracticalSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -647,20 +646,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                 borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: series.thumbnailUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: series.thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      width: isTablet ? 60 : 44,
-                      height: isTablet ? 60 : 44,
-                      placeholder: (context, url) => Center(
-                        child: Icon(Icons.play_circle_outline_rounded, size: isTablet ? 30 : 22, color: iconColor),
-                      ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Icon(Icons.play_circle_outline_rounded, size: isTablet ? 30 : 22, color: iconColor),
-                      ),
-                    )
-                  : Center(
+              child: Center(
                       child: Icon(Icons.play_circle_outline_rounded, size: isTablet ? 30 : 22, color: iconColor),
                     ),
             ),
@@ -1005,20 +991,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                 borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: series.thumbnailUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: series.thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      width: isTablet ? 60 : 44,
-                      height: isTablet ? 60 : 44,
-                      placeholder: (context, url) => Center(
-                        child: Icon(Icons.description_outlined, size: isTablet ? 30 : 22, color: iconColor),
-                      ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Icon(Icons.description_outlined, size: isTablet ? 30 : 22, color: iconColor),
-                      ),
-                    )
-                  : Center(
+              child: Center(
                       child: Icon(Icons.description_outlined, size: isTablet ? 30 : 22, color: iconColor),
                     ),
             ),

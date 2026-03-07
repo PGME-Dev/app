@@ -157,7 +157,7 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
               borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
               child: Stack(
                 children: [
-                  // Background image - use local asset
+                  // Background image - use thumbnail if available, else local asset
                   Positioned(
                     right: -5,
                     bottom: 5,
@@ -165,15 +165,30 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                       borderRadius: const BorderRadius.only(
                         bottomRight: Radius.circular(20),
                       ),
-                      child: Image.asset(
-                        'assets/illustrations/home.png',
-                        width: imageWidth,
-                        height: imageHeight,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return SizedBox(width: imageWidth, height: imageHeight);
-                        },
-                      ),
+                      child: widget.session.thumbnailUrl != null
+                          ? Image.network(
+                              widget.session.thumbnailUrl!,
+                              width: imageWidth,
+                              height: imageHeight,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/illustrations/home.png',
+                                  width: imageWidth,
+                                  height: imageHeight,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/illustrations/home.png',
+                              width: imageWidth,
+                              height: imageHeight,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return SizedBox(width: imageWidth, height: imageHeight);
+                              },
+                            ),
                     ),
                   ),
 
