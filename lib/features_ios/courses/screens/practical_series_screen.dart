@@ -1600,16 +1600,27 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
           child: Stack(
             children: [
               // Background illustration
-              Positioned(
-                right: -5,
-                bottom: 5,
-                child: Image.asset(
-                  'assets/illustrations/home.png',
-                  width: isTablet ? 180 : 130,
-                  height: isTablet ? 100 : 70,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => SizedBox(width: isTablet ? 180 : 130, height: isTablet ? 100 : 70),
-                ),
+              Positioned.fill(
+                child: session.thumbnailUrl != null
+                    ? Image.network(
+                        session.thumbnailUrl!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/illustrations/home.png',
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/illustrations/home.png',
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.expand(),
+                      ),
               ),
 
               // Content

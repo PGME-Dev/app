@@ -510,6 +510,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         title: 'Watch\nVideo Lectures',
                         subtitle: '${_getTotalLectures()} Lectures',
                         icon: Icons.play_circle_outline_rounded,
+                        imagePath: 'assets/illustrations/1.png',
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -521,6 +522,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         title: 'Read\nNotes',
                         subtitle: '${_getTotalDocuments()} Notes',
                         icon: Icons.description_outlined,
+                        imagePath: 'assets/illustrations/2.png',
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -553,6 +555,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     required String title,
     required String subtitle,
     required IconData icon,
+    required String imagePath,
+    String? imageUrl,
     required bool isDark,
     required Color gradientStart,
     required Color gradientEnd,
@@ -615,6 +619,50 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Illustration
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        width: isTablet ? 200 : 110,
+                        height: isTablet ? 160 : 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            imagePath,
+                            width: isTablet ? 200 : 110,
+                            height: isTablet ? 160 : 80,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        imagePath,
+                        width: isTablet ? 200 : 110,
+                        height: isTablet ? 160 : 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: isTablet ? 200 : 110,
+                            height: isTablet ? 160 : 80,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
+                              borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
+                            ),
+                            child: Icon(
+                              icon,
+                              size: isTablet ? 48 : 36,
+                              color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ),
           ],
