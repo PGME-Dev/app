@@ -35,7 +35,7 @@ class _CareersScreenState extends State<CareersScreen> {
 
   static const List<String> _roles = [
     'Lecturer',
-    'Medical Editor',
+    'Examiner',
     'Subject Coordinator',
     'Marketing & Growth',
     'Operations & Support',
