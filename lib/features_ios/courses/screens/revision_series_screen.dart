@@ -454,7 +454,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
 
             // Content
             Expanded(
-              child: _isLoading
+              child: RefreshIndicator(
+                onRefresh: _initializeAndLoad,
+                child: _isLoading
                   ? _buildLoadingShimmer(isDark)
                   : _error == 'no_content'
                       ? _buildComingSoonView(isDark, textColor, secondaryTextColor)
@@ -463,6 +465,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                           : isOnLanding
                               ? _buildLandingView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
                               : _buildSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+              ),
             ),
           ],
         ),
@@ -487,6 +490,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     final gradientEnd = isDark ? const Color(0xFF2D5A9E) : const Color(0xFF8FC6FF);
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(

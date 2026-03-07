@@ -953,10 +953,13 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
       body: Stack(
         children: [
           // Main scrollable content
-          SingleChildScrollView(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
+          RefreshIndicator(
+            onRefresh: _loadPackageData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1244,6 +1247,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
                 ),
               ),
             ),
+          ),
           ),
 
           // Loading overlay

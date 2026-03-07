@@ -175,8 +175,10 @@ class _CareersScreenState extends State<CareersScreen> {
 
           // Content
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+            child: RefreshIndicator(
+              onRefresh: _loadUserData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.all(hPadding),
               child: Center(
                 child: ConstrainedBox(
@@ -265,6 +267,7 @@ class _CareersScreenState extends State<CareersScreen> {
                   ),
                 ),
               ),
+            ),
             ),
           ),
         ],

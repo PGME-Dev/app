@@ -300,7 +300,9 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
-                child: ListView.builder(
+                child: RefreshIndicator(
+                  onRefresh: _loadPackages,
+                  child: ListView.builder(
                   padding: EdgeInsets.only(top: isTablet ? 26 : 20, left: hPadding, right: hPadding, bottom: bottomPadding + (isTablet ? 125 : 100)),
                   itemCount: _packages.length,
                   itemBuilder: (context, index) {
@@ -308,6 +310,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                     final isSelected = _selectedIndex == index;
                     return _buildPackageCard(package, index, isSelected, isDark, textColor, secondaryTextColor, cardBgColor, borderColor, isTablet: isTablet);
                   },
+                ),
                 ),
               ),
             ),

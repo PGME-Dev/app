@@ -303,7 +303,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
 
             // Content
             Expanded(
-              child: _isLoading
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: _isLoading
                   ? _buildLoadingShimmer(isDark)
                   : _error != null
                       ? _buildErrorView(textColor, secondaryTextColor, iconColor)
@@ -316,6 +318,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                                   : _contentMode == 'notes'
                                       ? _buildNotesSeriesListView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed)
                                       : _buildPackageDetailView(isDark, textColor, secondaryTextColor, iconColor, cardBgColor, isSubscribed),
+              ),
             ),
           ],
         ),
@@ -331,6 +334,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(
@@ -505,6 +509,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
     }
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 100),
       child: Center(
         child: ConstrainedBox(

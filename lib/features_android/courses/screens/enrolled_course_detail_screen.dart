@@ -153,8 +153,11 @@ class _EnrolledCourseDetailScreenState
                     ],
                   ),
                 )
-              : SingleChildScrollView(
-                  child: Center(
+              : RefreshIndicator(
+                  onRefresh: _loadSeriesData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
                       child: Padding(

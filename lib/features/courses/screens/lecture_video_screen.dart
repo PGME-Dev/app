@@ -571,32 +571,20 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
             ),
           ),
         ),
-        errorWidget: (context, url, error) => Image.asset(
-          'assets/illustrations/course.png',
-          width: double.infinity,
-          height: bannerHeight,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildBannerPlaceholder(
-            bannerHeight: bannerHeight,
-            isDark: isDark,
-            isTablet: isTablet,
-            secondaryTextColor: secondaryTextColor,
-          ),
+        errorWidget: (context, url, error) => _buildBannerPlaceholder(
+          bannerHeight: bannerHeight,
+          isDark: isDark,
+          isTablet: isTablet,
+          secondaryTextColor: secondaryTextColor,
         ),
       );
     }
 
-    return Image.asset(
-      'assets/illustrations/course.png',
-      width: double.infinity,
-      height: bannerHeight,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => _buildBannerPlaceholder(
-        bannerHeight: bannerHeight,
-        isDark: isDark,
-        isTablet: isTablet,
-        secondaryTextColor: secondaryTextColor,
-      ),
+    return _buildBannerPlaceholder(
+      bannerHeight: bannerHeight,
+      isDark: isDark,
+      isTablet: isTablet,
+      secondaryTextColor: secondaryTextColor,
     );
   }
 
