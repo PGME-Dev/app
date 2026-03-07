@@ -268,12 +268,27 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  /// Load dynamic home sections (public endpoint)
+  /// Load dynamic home sections (public endpoint) with client-side visibility filtering
   Future<void> _loadHomeSections() async {
     try {
       debugPrint('Loading home sections...');
-      _homeSections = await _dashboardService.getHomeSections();
-      debugPrint('✓ Home sections loaded: ${_homeSections.length}');
+      final allSections = await _dashboardService.getHomeSections();
+
+      // Client-side visibility filter — same logic as banners
+      final userSubjectIds = _primarySubject != null ? [_primarySubject!.subjectId] : <String>[];
+
+      _homeSections = allSections.where((section) {
+        if (section.visibleTo == 'subject') {
+          if (section.visibleToSubjects.isEmpty) return false;
+          if (userSubjectIds.isEmpty) return false;
+          return section.visibleToSubjects.any(
+            (subjectId) => userSubjectIds.contains(subjectId),
+          );
+        }
+        return true;
+      }).toList();
+
+      debugPrint('✓ Home sections loaded: ${_homeSections.length} (from ${allSections.length})');
     } catch (e) {
       debugPrint('✗ Error loading home sections: $e');
       _homeSections = [];

@@ -622,6 +622,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
   Widget _buildLessonItem({
     required bool isAccessible,
     required bool isWatched,
+    bool isUpcoming = false,
+    String? upcomingLabel,
     required String title,
     required String instructor,
     String? instructorPhotoUrl,
@@ -656,7 +658,9 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
     // Determine which icon to show
     IconData iconData;
-    if (!isAccessible) {
+    if (isUpcoming) {
+      iconData = Icons.schedule;
+    } else if (!isAccessible) {
       iconData = Icons.lock;
     } else if (isWatched) {
       iconData = Icons.check;
@@ -711,7 +715,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
         constraints: BoxConstraints(minHeight: lessonHeight),
         padding: EdgeInsets.symmetric(vertical: isTablet ? 10 : 8),
         decoration: BoxDecoration(
-          color: isAccessible ? lessonAccessibleBg : lessonLockedBg,
+          color: isUpcoming
+              ? (isDark
+                  ? Colors.orange.shade900.withOpacity(0.25)
+                  : Colors.orange.shade50)
+              : isAccessible ? lessonAccessibleBg : lessonLockedBg,
           borderRadius: BorderRadius.circular(itemRadius),
         ),
         child: Row(
@@ -723,13 +731,13 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
               height: iconContainerSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isAccessible ? iconColor : lockBgColor,
+                color: isUpcoming ? Colors.orange.shade300 : isAccessible ? iconColor : lockBgColor,
               ),
               child: Center(
                 child: Icon(
                   iconData,
-                  size: !isAccessible ? lockSize : iconSize,
-                  color: isAccessible ? Colors.white : iconColor,
+                  size: isUpcoming ? iconSize : !isAccessible ? lockSize : iconSize,
+                  color: isUpcoming ? Colors.white : isAccessible ? Colors.white : iconColor,
                 ),
               ),
             ),
@@ -752,6 +760,25 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: isTablet ? 6 : 4),
+                  if (isUpcoming) ...[
+                    Row(
+                      children: [
+                        Icon(Icons.schedule,
+                            size: metaSize + 1,
+                            color: Colors.orange.shade600),
+                        SizedBox(width: isTablet ? 4 : 3),
+                        Text(
+                          upcomingLabel != null ? 'Available $upcomingLabel' : 'Coming soon',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: metaSize,
+                            color: Colors.orange.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
                   Row(
                     children: [
                       // Doctor avatar - use faculty photo if available, fallback to placeholder
@@ -808,6 +835,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       ),
                     ],
                   ),
+                  ],
                   // Download status label
                   if (downloadStatusText != null) ...[
                     SizedBox(height: isTablet ? 6 : 4),
@@ -1039,10 +1067,11 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                     final video = entry.value;
 
                     // Access logic: Free videos are always accessible, paid videos require subscription
-                    final isAccessible = video.isFree || widget.isSubscribed;
+                    // Upcoming videos are never accessible regardless of payment status
+                    final isAccessible = (video.isFree || widget.isSubscribed) && !video.isUpcoming;
 
-                    // Check if video has been watched
-                    final isWatched = video.isCompleted;
+                    // Check if video has been watched (not applicable for upcoming)
+                    final isWatched = video.isCompleted && !video.isUpcoming;
 
                     return Padding(
                       padding: EdgeInsets.only(
@@ -1056,6 +1085,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                           return _buildLessonItem(
                             isAccessible: isAccessible,
                             isWatched: isWatched,
+                            isUpcoming: video.isUpcoming,
+                            upcomingLabel: video.formattedReleaseDate,
                             title: video.title,
                             instructor: video.facultyName,
                             instructorPhotoUrl: video.facultyPhotoUrl,

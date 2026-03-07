@@ -13,6 +13,12 @@ class HomeSectionModel {
   final String? textColor;
   @JsonKey(defaultValue: 0)
   final int displayOrder;
+  @JsonKey(defaultValue: 'all')
+  final String visibleTo;
+  @JsonKey(defaultValue: [])
+  final List<String> visibleToSubjects;
+  @JsonKey(defaultValue: [])
+  final List<String> visibleToPackages;
   @JsonKey(defaultValue: [])
   final List<HomeSectionItemModel> items;
 
@@ -23,6 +29,9 @@ class HomeSectionModel {
     this.backgroundColor,
     this.textColor,
     this.displayOrder = 0,
+    this.visibleTo = 'all',
+    this.visibleToSubjects = const [],
+    this.visibleToPackages = const [],
     this.items = const [],
   });
 

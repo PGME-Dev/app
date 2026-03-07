@@ -513,42 +513,56 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   ) {
     final completionIconSize = isTablet ? 40.0 : 32.0;
     final innerIconSize = isTablet ? 22.0 : 18.0;
+
+    // Priority: upcoming > locked > completed > default
+    final IconData statusIcon;
+    final Color statusIconColor;
+    final Color statusBgColor;
+    final bool tappable;
+    final String? subtitle;
+
+    if (video.isUpcoming) {
+      statusIcon = Icons.schedule;
+      statusIconColor = Colors.orange.shade700;
+      statusBgColor = Colors.orange.shade100.withOpacity(0.6);
+      tappable = false;
+      subtitle = video.formattedReleaseDate != null
+          ? 'Available ${video.formattedReleaseDate}'
+          : 'Coming soon';
+    } else if (video.isLocked) {
+      statusIcon = Icons.lock;
+      statusIconColor = secondaryTextColor;
+      statusBgColor = secondaryTextColor.withOpacity(0.1);
+      tappable = false;
+      subtitle = null;
+    } else if (video.isCompleted) {
+      statusIcon = Icons.check;
+      statusIconColor = Colors.green;
+      statusBgColor = Colors.green.withOpacity(0.1);
+      tappable = true;
+      subtitle = null;
+    } else {
+      statusIcon = Icons.play_arrow;
+      statusIconColor = iconColor;
+      statusBgColor = iconColor.withOpacity(0.1);
+      tappable = true;
+      subtitle = null;
+    }
+
     return InkWell(
-      onTap: video.isLocked
-          ? null
-          : () {
-              // Navigate to video player
-              context.push('/video/${video.videoId}');
-            },
+      onTap: tappable ? () => context.push('/video/${video.videoId}') : null,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: isTablet ? 22 : 16, vertical: 12),
         child: Row(
           children: [
-            // Completion/Lock status icon
             Container(
               width: completionIconSize,
               height: completionIconSize,
               decoration: BoxDecoration(
-                color: video.isCompleted
-                    ? Colors.green.withOpacity(0.1)
-                    : video.isLocked
-                        ? secondaryTextColor.withOpacity(0.1)
-                        : iconColor.withOpacity(0.1),
+                color: statusBgColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                video.isCompleted
-                    ? Icons.check
-                    : video.isLocked
-                        ? Icons.lock
-                        : Icons.play_arrow,
-                color: video.isCompleted
-                    ? Colors.green
-                    : video.isLocked
-                        ? secondaryTextColor
-                        : iconColor,
-                size: innerIconSize,
-              ),
+              child: Icon(statusIcon, color: statusIconColor, size: innerIconSize),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -561,38 +575,52 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
                       fontSize: isTablet ? 17 : 14,
-                      color: video.isLocked ? secondaryTextColor : textColor,
+                      color: video.isUpcoming || video.isLocked
+                          ? secondaryTextColor
+                          : textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, size: isTablet ? 15 : 12, color: secondaryTextColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        video.formattedDuration,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: isTablet ? 15 : 12,
-                          color: secondaryTextColor,
-                        ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: isTablet ? 13 : 11,
+                        color: video.isUpcoming
+                            ? Colors.orange.shade700
+                            : secondaryTextColor,
                       ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.person, size: isTablet ? 15 : 12, color: secondaryTextColor),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          video.facultyName,
+                    )
+                  else
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: isTablet ? 15 : 12, color: secondaryTextColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          video.formattedDuration,
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: isTablet ? 15 : 12,
                             color: secondaryTextColor,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.person, size: isTablet ? 15 : 12, color: secondaryTextColor),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            video.facultyName,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isTablet ? 15 : 12,
+                              color: secondaryTextColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

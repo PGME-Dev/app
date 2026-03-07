@@ -18,6 +18,8 @@ ModuleVideoModel _$ModuleVideoModelFromJson(Map<String, dynamic> json) =>
       isLocked: json['is_locked'] as bool? ?? false,
       isFree: json['is_free'] as bool? ?? false,
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      isUpcoming: json['is_upcoming'] as bool? ?? false,
+      scheduledReleaseAt: json['scheduled_release_at'] as String?,
     );
 
 Map<String, dynamic> _$ModuleVideoModelToJson(ModuleVideoModel instance) =>
@@ -32,6 +34,8 @@ Map<String, dynamic> _$ModuleVideoModelToJson(ModuleVideoModel instance) =>
       'is_locked': instance.isLocked,
       'is_free': instance.isFree,
       'display_order': instance.displayOrder,
+      'is_upcoming': instance.isUpcoming,
+      'scheduled_release_at': instance.scheduledReleaseAt,
     };
 
 ModuleModel _$ModuleModelFromJson(Map<String, dynamic> json) => ModuleModel(

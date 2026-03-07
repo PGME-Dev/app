@@ -33,6 +33,12 @@ class ModuleVideoModel {
   @JsonKey(name: 'display_order', defaultValue: 0)
   final int displayOrder;
 
+  @JsonKey(name: 'is_upcoming', defaultValue: false)
+  final bool isUpcoming;
+
+  @JsonKey(name: 'scheduled_release_at')
+  final String? scheduledReleaseAt;
+
   ModuleVideoModel({
     required this.videoId,
     required this.title,
@@ -44,6 +50,8 @@ class ModuleVideoModel {
     this.isLocked = false,
     this.isFree = false,
     this.displayOrder = 0,
+    this.isUpcoming = false,
+    this.scheduledReleaseAt,
   });
 
   factory ModuleVideoModel.fromJson(Map<String, dynamic> json) =>
@@ -61,6 +69,18 @@ class ModuleVideoModel {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String? get formattedReleaseDate {
+    if (scheduledReleaseAt == null) return null;
+    final dt = DateTime.tryParse(scheduledReleaseAt!);
+    if (dt == null) return null;
+    final local = dt.toLocal();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[local.month - 1]} ${local.day}, ${local.year}';
   }
 }
 
