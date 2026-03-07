@@ -237,17 +237,9 @@ class DashboardProvider with ChangeNotifier {
         debugPrint('[BANNER_DEBUG] Banner "${b.title}": visibleTo="${b.visibleTo}", visibleToSubjects=${b.visibleToSubjects}, visibleToPackages=${b.visibleToPackages}');
       }
 
-      // App-level visibility filter (fallback for backend filtering)
-      List<String> userSubjectIds = [];
-      try {
-        final selections = await _dashboardService.getSubjectSelections();
-        userSubjectIds = selections.map((s) => s.subjectId).toList();
-      } catch (_) {
-        if (_primarySubject != null) {
-          userSubjectIds = [_primarySubject!.subjectId];
-        }
-      }
-      debugPrint('[BANNER_DEBUG] User subject IDs: $userSubjectIds');
+      // App-level visibility filter — only use primary (current) subject
+      final userSubjectIds = _primarySubject != null ? [_primarySubject!.subjectId] : <String>[];
+      debugPrint('[BANNER_DEBUG] User primary subject: $userSubjectIds');
 
       _banners = allBanners.where((banner) {
         if (banner.visibleTo == 'subject') {
