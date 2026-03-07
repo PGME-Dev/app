@@ -125,8 +125,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Scrollable content
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+            child: RefreshIndicator(
+              onRefresh: _loadSettings,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
@@ -543,6 +545,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+            ),
             ),
           ),
         ],

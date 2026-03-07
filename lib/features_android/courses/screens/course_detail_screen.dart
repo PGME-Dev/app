@@ -157,7 +157,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                     ],
                   ),
                 )
-              : SingleChildScrollView(
+              : RefreshIndicator(
+                  onRefresh: _loadSeriesData,
+                  child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
@@ -267,6 +270,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                       ),
                     ),
                   ),
+                ),
                 ),
     );
   }

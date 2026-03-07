@@ -148,7 +148,10 @@ class _HelpScreenState extends State<HelpScreen> {
             ),
 
             Expanded(
-              child: SingleChildScrollView(
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: Center(
                   child: ConstrainedBox(
@@ -291,6 +294,7 @@ class _HelpScreenState extends State<HelpScreen> {
                     ),
                   ),
                 ),
+              ),
               ),
             ),
           ],

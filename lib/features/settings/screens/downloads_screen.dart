@@ -170,7 +170,12 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 child: !hasContent
                     ? _buildEmptyState(
                         isDark, isTablet, textColor, secondaryTextColor)
-                    : SingleChildScrollView(
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          await Provider.of<DownloadProvider>(context, listen: false).loadDownloads();
+                        },
+                        child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         child: Center(
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
@@ -257,6 +262,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                             ),
                           ),
                         ),
+                      ),
                       ),
               ),
             ],

@@ -569,53 +569,69 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
 
           // Notes List
           Expanded(
-            child: _isLoading
+            child: RefreshIndicator(
+              onRefresh: _loadData,
+              child: _isLoading
                 ? ListView.builder(
                     padding: EdgeInsets.symmetric(horizontal: hPadding),
                     itemCount: 5,
                     itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
                   )
                 : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
-                            SizedBox(height: isTablet ? 21 : 16),
-                            Text(
-                              'Failed to load notes',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: isTablet ? 20 : 16,
-                                color: textColor,
+                    ? ListView(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.5,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error_outline, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                                  SizedBox(height: isTablet ? 21 : 16),
+                                  Text(
+                                    'Failed to load notes',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: isTablet ? 20 : 16,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  SizedBox(height: isTablet ? 21 : 16),
+                                  ElevatedButton(
+                                    onPressed: _loadData,
+                                    style: ElevatedButton.styleFrom(backgroundColor: iconColor),
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
                               ),
                             ),
-                            SizedBox(height: isTablet ? 21 : 16),
-                            ElevatedButton(
-                              onPressed: _loadData,
-                              style: ElevatedButton.styleFrom(backgroundColor: iconColor),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       )
                     : _documents.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.description_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
-                                SizedBox(height: isTablet ? 21 : 16),
-                                Text(
-                                  'No notes available',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: isTablet ? 20 : 16,
-                                    color: textColor,
+                        ? ListView(
+                            children: [
+                              SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.5,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.description_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                                      SizedBox(height: isTablet ? 21 : 16),
+                                      Text(
+                                        'No notes available',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 20 : 16,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           )
                         : ClipRect(
                             clipBehavior: Clip.none,
@@ -639,6 +655,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                               },
                             ),
                           ),
+            ),
           ),
         ],
       ),

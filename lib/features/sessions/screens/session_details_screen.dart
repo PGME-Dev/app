@@ -589,10 +589,13 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
     final isFree = _session?.isFree ?? true;
     final price = _session?.price ?? 0;
 
-    return SingleChildScrollView(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
+    return RefreshIndicator(
+      onRefresh: _loadSessionDetails,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -843,6 +846,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

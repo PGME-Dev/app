@@ -86,7 +86,10 @@ class _NotesListScreenState extends State<NotesListScreen> {
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
-          child: SingleChildScrollView(
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -157,6 +160,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
           ],
         ),
       ),
+          ),
         ),
       ),
     );
