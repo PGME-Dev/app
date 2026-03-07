@@ -327,7 +327,6 @@ class _EnrolledCourseDetailScreenState
     VoidCallback? onTap,
   }) {
     final cardBorderRadius = isTablet ? 18.0 : 12.0;
-    final illustrationScale = isTablet ? 1.3 : 1.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -387,47 +386,6 @@ class _EnrolledCourseDetailScreenState
                 ),
               ),
 
-            // Illustration
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(cardBorderRadius),
-                ),
-                child: Image.asset(
-                  imagePath,
-                  width: ((title.contains('PDF') || title.contains('Documents')) ? 123 : 101) * illustrationScale,
-                  height: ((title.contains('PDF') || title.contains('Documents')) ? 85 : 78) * illustrationScale,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: ((title.contains('PDF') || title.contains('Documents')) ? 123 : 101) * illustrationScale,
-                      height: ((title.contains('PDF') || title.contains('Documents')) ? 85 : 78) * illustrationScale,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkCardBackground
-                            : const Color(0xFFDCEAF7),
-                        borderRadius: BorderRadius.only(
-                          bottomRight: Radius.circular(cardBorderRadius),
-                        ),
-                      ),
-                      child: Icon(
-                        (title.contains('PDF') || title.contains('Documents'))
-                            ? Icons.picture_as_pdf
-                            : title.contains('Live')
-                                ? Icons.live_tv
-                                : Icons.play_circle_outline,
-                        size: isTablet ? 52 : 40,
-                        color: isDark
-                            ? const Color(0xFF00BEFA)
-                            : const Color(0xFF2470E4),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
           ],
         ),
       ),

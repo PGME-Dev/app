@@ -127,8 +127,6 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
     final timeFontSize = isTablet ? 18.0 : 12.0;
     final buttonFontSize = isTablet ? 17.0 : 12.0;
     final titleMaxWidth = isTablet ? 420.0 : 180.0;
-    final imageWidth = isTablet ? 280.0 : 161.0;
-    final imageHeight = isTablet ? 160.0 : 83.0;
     final buttonPaddingH = isTablet ? 28.0 : 16.0;
     final buttonPaddingV = isTablet ? 12.0 : 6.0;
 
@@ -158,38 +156,31 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
               child: Stack(
                 children: [
                   // Background image - use thumbnail if available, else local asset
-                  Positioned(
-                    right: -5,
-                    bottom: 5,
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        bottomRight: Radius.circular(20),
-                      ),
-                      child: widget.session.thumbnailUrl != null
-                          ? Image.network(
-                              widget.session.thumbnailUrl!,
-                              width: imageWidth,
-                              height: imageHeight,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/illustrations/home.png',
-                                  width: imageWidth,
-                                  height: imageHeight,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
-                          : Image.asset(
-                              'assets/illustrations/home.png',
-                              width: imageWidth,
-                              height: imageHeight,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return SizedBox(width: imageWidth, height: imageHeight);
-                              },
-                            ),
-                    ),
+                  Positioned.fill(
+                    child: widget.session.thumbnailUrl != null
+                        ? Image.network(
+                            widget.session.thumbnailUrl!,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/illustrations/home.png',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            'assets/illustrations/home.png',
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const SizedBox.expand();
+                            },
+                          ),
                   ),
 
                   // Content

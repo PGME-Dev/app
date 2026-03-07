@@ -646,98 +646,98 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                     color: cardBgColor,
                     borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.all(isTablet ? 24 : 16),
-                    child: Column(
-                      children: [
-                        // Thumbnail
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: _session?.thumbnailUrl != null
-                              ? Image.network(
-                                  _session!.thumbnailUrl!,
-                                  width: isTablet ? 300 : 203, height: isTablet ? 185 : 125, fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
-                                )
-                              : _buildThumbnailPlaceholder(surfaceColor, iconColor),
-                        ),
-                        const SizedBox(height: 8),
-
-                        Opacity(
-                          opacity: 0.5,
-                          child: Text(
-                            'LIVE SESSION',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                              fontSize: isTablet ? 13 : 10, letterSpacing: 0.05, color: textColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        Text(
-                          _session?.title ?? 'Loading...',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Poppins', fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 26 : 20, height: 1.2, letterSpacing: -0.5, color: textColor,
-                          ),
-                          maxLines: 2, overflow: TextOverflow.ellipsis,
-                        ),
-                        if (_session?.facultyName != null) ...[
-                          const SizedBox(height: 9),
-
-                          // Faculty
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: isTablet ? 32 : 24, height: isTablet ? 32 : 24,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
-                                ),
-                                child: ClipOval(
-                                  child: _session?.facultyPhotoUrl != null
-                                      ? Image.network(
-                                          _session!.facultyPhotoUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
-                                        )
-                                      : Icon(Icons.person, size: 16, color: secondaryTextColor),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      // Thumbnail
+                      _session?.thumbnailUrl != null
+                          ? Image.network(
+                              _session!.thumbnailUrl!,
+                              width: double.infinity, height: isTablet ? 220 : 160, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                            )
+                          : _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                      Padding(
+                        padding: EdgeInsets.all(isTablet ? 24 : 16),
+                        child: Column(
+                          children: [
+                            Opacity(
+                              opacity: 0.5,
+                              child: Text(
+                                'LIVE SESSION',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 13 : 10, letterSpacing: 0.05, color: textColor,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _session!.facultyName!,
-                                style: TextStyle(
-                                  fontFamily: 'Poppins', fontWeight: FontWeight.w400,
-                                  fontSize: isTablet ? 17 : 14, color: textColor,
-                                ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            Text(
+                              _session?.title ?? 'Loading...',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Poppins', fontWeight: FontWeight.w500,
+                                fontSize: isTablet ? 26 : 20, height: 1.2, letterSpacing: -0.5, color: textColor,
+                              ),
+                              maxLines: 2, overflow: TextOverflow.ellipsis,
+                            ),
+                            if (_session?.facultyName != null) ...[
+                              const SizedBox(height: 9),
+
+                              // Faculty
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: isTablet ? 32 : 24, height: isTablet ? 32 : 24,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+                                    ),
+                                    child: ClipOval(
+                                      child: _session?.facultyPhotoUrl != null
+                                          ? Image.network(
+                                              _session!.facultyPhotoUrl!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Icon(Icons.person, size: 16, color: secondaryTextColor),
+                                            )
+                                          : Icon(Icons.person, size: 16, color: secondaryTextColor),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _session!.facultyName!,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                      fontSize: isTablet ? 17 : 14, color: textColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
-                        const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                        // Badges
-                        Wrap(
-                          spacing: 12, runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            _buildBadge(_getStatusText(), _getStatusColor(isDark)),
-                            _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
-                            if (!isFree)
-                              _buildBadge(
-                                _hasAccess ? 'PURCHASED' : _formatPrice(price),
-                                _hasAccess ? Colors.green : Colors.orange,
-                                icon: _hasAccess ? Icons.check_circle : Icons.lock,
-                              ),
+                            // Badges
+                            Wrap(
+                              spacing: 12, runSpacing: 8,
+                              alignment: WrapAlignment.center,
+                              children: [
+                                _buildBadge(_getStatusText(), _getStatusColor(isDark)),
+                                _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
+                                if (!isFree)
+                                  _buildBadge(
+                                    _hasAccess ? 'PURCHASED' : _formatPrice(price),
+                                    _hasAccess ? Colors.green : Colors.orange,
+                                    icon: _hasAccess ? Icons.check_circle : Icons.lock,
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1421,7 +1421,8 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
   Widget _buildThumbnailPlaceholder(Color surfaceColor, Color iconColor) {
     final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      width: isTablet ? 300 : 203, height: isTablet ? 185 : 125,
+      width: double.infinity, height: isTablet ? 220 : 160,
+
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),

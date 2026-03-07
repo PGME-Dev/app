@@ -511,8 +511,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         title: 'Watch\nVideo Lectures',
                         subtitle: '${_getTotalLectures()} Lectures',
                         icon: Icons.play_circle_outline_rounded,
-                        imagePath: 'assets/illustrations/1.png',
-                        imageUrl: _theoryPackage?.videoLecturesThumbnailUrl,
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -524,8 +522,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         title: 'Read\nNotes',
                         subtitle: '${_getTotalDocuments()} Notes',
                         icon: Icons.description_outlined,
-                        imagePath: 'assets/illustrations/2.png',
-                        imageUrl: _theoryPackage?.notesThumbnailUrl,
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -558,8 +554,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     required String title,
     required String subtitle,
     required IconData icon,
-    required String imagePath,
-    String? imageUrl,
     required bool isDark,
     required Color gradientStart,
     required Color gradientEnd,
@@ -567,15 +561,12 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
   }) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final cardHeight = isTablet ? 280.0 : 180.0;
-    final imgWidth = isTablet ? 200.0 : 110.0;
-    final imgHeight = isTablet ? 160.0 : 80.0;
     final cardRadius = isTablet ? 22.0 : 16.0;
     final cardPadding = isTablet ? 24.0 : 16.0;
     final titleSize = isTablet ? 22.0 : 16.0;
     final subtitleSize = isTablet ? 15.0 : 11.0;
     final pillPaddingH = isTablet ? 14.0 : 10.0;
     final pillPaddingV = isTablet ? 6.0 : 4.0;
-    final errorIconSize = isTablet ? 48.0 : 36.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -625,50 +616,6 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                     ),
                   ),
                 ],
-              ),
-            ),
-            // Illustration
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
-                child: imageUrl != null
-                    ? Image.network(
-                        imageUrl,
-                        width: imgWidth,
-                        height: imgHeight,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            imagePath,
-                            width: imgWidth,
-                            height: imgHeight,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      )
-                    : Image.asset(
-                        imagePath,
-                        width: imgWidth,
-                        height: imgHeight,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: imgWidth,
-                            height: imgHeight,
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                              borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
-                            ),
-                            child: Icon(
-                              icon,
-                              size: errorIconSize,
-                              color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
-                            ),
-                          );
-                        },
-                      ),
               ),
             ),
           ],
