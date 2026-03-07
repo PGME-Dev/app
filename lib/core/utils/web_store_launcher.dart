@@ -169,7 +169,7 @@ class WebStoreLauncher {
                 const SizedBox(height: 8),
                 // Message
                 Text(
-                  'You will be redirected to our website in your browser to continue.',
+                  'You will be redirected to our website to know more details about the item.',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,

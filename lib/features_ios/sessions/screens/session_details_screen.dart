@@ -1172,7 +1172,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'GET ACCESS - ${_formatPrice(price)}',
+                          'LEARN MORE',
                           style: TextStyle(
                             fontFamily: 'Poppins', fontWeight: FontWeight.w500,
                             fontSize: isTablet ? 20 : 16, height: 1.11, letterSpacing: 0.09, color: Colors.white,
