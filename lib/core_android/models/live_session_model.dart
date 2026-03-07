@@ -60,6 +60,15 @@ class LiveSessionModel {
   @JsonKey(name: 'thumbnail_url')
   final String? thumbnailUrl;
 
+  @JsonKey(name: 'visible_to', defaultValue: 'all')
+  final String visibleTo;
+
+  @JsonKey(name: 'visible_to_subjects', defaultValue: [])
+  final List<String> visibleToSubjects;
+
+  @JsonKey(name: 'visible_to_packages', defaultValue: [])
+  final List<String> visibleToPackages;
+
   final int price;
 
   @JsonKey(name: 'compare_at_price')
@@ -114,6 +123,9 @@ class LiveSessionModel {
     required this.status,
     this.maxAttendees,
     this.thumbnailUrl,
+    this.visibleTo = 'all',
+    this.visibleToSubjects = const [],
+    this.visibleToPackages = const [],
     this.price = 0,
     this.compareAtPrice,
     this.isFree = true,
@@ -153,6 +165,9 @@ class LiveSessionModel {
     String? status,
     int? maxAttendees,
     String? thumbnailUrl,
+    String? visibleTo,
+    List<String>? visibleToSubjects,
+    List<String>? visibleToPackages,
     int? price,
     int? compareAtPrice,
     bool? isFree,
@@ -186,6 +201,9 @@ class LiveSessionModel {
       status: status ?? this.status,
       maxAttendees: maxAttendees ?? this.maxAttendees,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      visibleTo: visibleTo ?? this.visibleTo,
+      visibleToSubjects: visibleToSubjects ?? this.visibleToSubjects,
+      visibleToPackages: visibleToPackages ?? this.visibleToPackages,
       price: price ?? this.price,
       compareAtPrice: compareAtPrice ?? this.compareAtPrice,
       isFree: isFree ?? this.isFree,

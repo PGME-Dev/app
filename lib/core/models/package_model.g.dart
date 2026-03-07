@@ -58,6 +58,9 @@ PackageModel _$PackageModelFromJson(Map<String, dynamic> json) => PackageModel(
       saleDiscountPercent: (json['sale_discount_percent'] as num?)?.toInt(),
       durationDays: (json['duration_days'] as num?)?.toInt(),
       thumbnailUrl: json['thumbnail_url'] as String?,
+      videoLecturesThumbnailUrl:
+          json['video_lectures_thumbnail_url'] as String?,
+      notesThumbnailUrl: json['notes_thumbnail_url'] as String?,
       trailerVideoUrl: json['trailer_video_url'] as String?,
       features: _featuresFromJson(json['features']),
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
@@ -91,6 +94,8 @@ Map<String, dynamic> _$PackageModelToJson(PackageModel instance) =>
       'sale_discount_percent': instance.saleDiscountPercent,
       'duration_days': instance.durationDays,
       'thumbnail_url': instance.thumbnailUrl,
+      'video_lectures_thumbnail_url': instance.videoLecturesThumbnailUrl,
+      'notes_thumbnail_url': instance.notesThumbnailUrl,
       'trailer_video_url': instance.trailerVideoUrl,
       'features': instance.features,
       'display_order': instance.displayOrder,

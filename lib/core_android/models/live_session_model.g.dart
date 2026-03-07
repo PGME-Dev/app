@@ -28,6 +28,15 @@ LiveSessionModel _$LiveSessionModelFromJson(Map<String, dynamic> json) =>
       status: json['status'] as String,
       maxAttendees: (json['max_attendees'] as num?)?.toInt(),
       thumbnailUrl: json['thumbnail_url'] as String?,
+      visibleTo: json['visible_to'] as String? ?? 'all',
+      visibleToSubjects: (json['visible_to_subjects'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      visibleToPackages: (json['visible_to_packages'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       price: (json['price'] as num?)?.toInt() ?? 0,
       compareAtPrice: (json['compare_at_price'] as num?)?.toInt(),
       isFree: json['is_free'] as bool? ?? true,
@@ -63,6 +72,9 @@ Map<String, dynamic> _$LiveSessionModelToJson(LiveSessionModel instance) =>
       'status': instance.status,
       'max_attendees': instance.maxAttendees,
       'thumbnail_url': instance.thumbnailUrl,
+      'visible_to': instance.visibleTo,
+      'visible_to_subjects': instance.visibleToSubjects,
+      'visible_to_packages': instance.visibleToPackages,
       'price': instance.price,
       'compare_at_price': instance.compareAtPrice,
       'is_free': instance.isFree,

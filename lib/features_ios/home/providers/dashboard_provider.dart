@@ -186,7 +186,15 @@ class DashboardProvider with ChangeNotifier {
         limit: 5,
       );
 
-      _upcomingSessions = sessions;
+      final userSubjectIds = _primarySubject != null ? [_primarySubject!.subjectId] : <String>[];
+      _upcomingSessions = sessions.where((session) {
+        if (session.visibleTo == 'subject') {
+          if (session.visibleToSubjects.isEmpty) return false;
+          if (userSubjectIds.isEmpty) return false;
+          return session.visibleToSubjects.any((id) => userSubjectIds.contains(id));
+        }
+        return true;
+      }).toList();
 
       if (sessions.isNotEmpty) {
         debugPrint('✓ ${sessions.length} upcoming sessions loaded');

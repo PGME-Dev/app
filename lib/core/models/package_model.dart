@@ -110,6 +110,12 @@ class PackageModel {
   @JsonKey(name: 'thumbnail_url')
   final String? thumbnailUrl;
 
+  @JsonKey(name: 'video_lectures_thumbnail_url')
+  final String? videoLecturesThumbnailUrl;
+
+  @JsonKey(name: 'notes_thumbnail_url')
+  final String? notesThumbnailUrl;
+
   @JsonKey(name: 'trailer_video_url')
   final String? trailerVideoUrl;
 
@@ -159,6 +165,8 @@ class PackageModel {
     this.saleDiscountPercent,
     this.durationDays,
     this.thumbnailUrl,
+    this.videoLecturesThumbnailUrl,
+    this.notesThumbnailUrl,
     this.trailerVideoUrl,
     this.features,
     required this.displayOrder,
@@ -200,6 +208,8 @@ class PackageModel {
     int? saleDiscountPercent,
     int? durationDays,
     String? thumbnailUrl,
+    String? videoLecturesThumbnailUrl,
+    String? notesThumbnailUrl,
     String? trailerVideoUrl,
     List<String>? features,
     int? displayOrder,
@@ -226,6 +236,8 @@ class PackageModel {
       saleDiscountPercent: saleDiscountPercent ?? this.saleDiscountPercent,
       durationDays: durationDays ?? this.durationDays,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      videoLecturesThumbnailUrl: videoLecturesThumbnailUrl ?? this.videoLecturesThumbnailUrl,
+      notesThumbnailUrl: notesThumbnailUrl ?? this.notesThumbnailUrl,
       trailerVideoUrl: trailerVideoUrl ?? this.trailerVideoUrl,
       features: features ?? this.features,
       displayOrder: displayOrder ?? this.displayOrder,

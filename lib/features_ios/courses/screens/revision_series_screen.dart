@@ -512,6 +512,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         subtitle: '${_getTotalLectures()} Lectures',
                         icon: Icons.play_circle_outline_rounded,
                         imagePath: 'assets/illustrations/1.png',
+                        imageUrl: _theoryPackage?.videoLecturesThumbnailUrl,
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -524,6 +525,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         subtitle: '${_getTotalDocuments()} Notes',
                         icon: Icons.description_outlined,
                         imagePath: 'assets/illustrations/2.png',
+                        imageUrl: _theoryPackage?.notesThumbnailUrl,
                         isDark: isDark,
                         gradientStart: gradientStart,
                         gradientEnd: gradientEnd,
@@ -557,6 +559,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     required String subtitle,
     required IconData icon,
     required String imagePath,
+    String? imageUrl,
     required bool isDark,
     required Color gradientStart,
     required Color gradientEnd,
@@ -630,27 +633,42 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
               bottom: 0,
               child: ClipRRect(
                 borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
-                child: Image.asset(
-                  imagePath,
-                  width: imgWidth,
-                  height: imgHeight,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: imgWidth,
-                      height: imgHeight,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
-                        borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        width: imgWidth,
+                        height: imgHeight,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            imagePath,
+                            width: imgWidth,
+                            height: imgHeight,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        imagePath,
+                        width: imgWidth,
+                        height: imgHeight,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: imgWidth,
+                            height: imgHeight,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkCardBackground : const Color(0xFFDCEAF7),
+                              borderRadius: BorderRadius.only(bottomRight: Radius.circular(cardRadius)),
+                            ),
+                            child: Icon(
+                              icon,
+                              size: errorIconSize,
+                              color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
+                            ),
+                          );
+                        },
                       ),
-                      child: Icon(
-                        icon,
-                        size: errorIconSize,
-                        color: isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4),
-                      ),
-                    );
-                  },
-                ),
               ),
             ),
           ],
