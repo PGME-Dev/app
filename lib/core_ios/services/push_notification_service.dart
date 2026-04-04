@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pgme/core_ios/services/user_service.dart';
 import 'package:pgme/core_ios/services/storage_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core_ios/widgets/in_app_notification.dart';
 
 /// Local notifications plugin (shared between foreground + background)
@@ -284,13 +286,22 @@ class PushNotificationService {
         message.data['body'] as String? ??
         message.data['message'] as String? ??
         '';
+    final clickUrl = message.data['click_url'] as String?;
 
     // ignore: avoid_print
-    print('Foreground FCM: $title - $body');
+    print('Foreground FCM: $title - $body (click_url: $clickUrl)');
 
     // Show in-app notification banner (works on both iOS and Android)
     if (title.isNotEmpty || body.isNotEmpty) {
-      showInAppNotification(title: title, body: body);
+      showInAppNotification(
+        title: title,
+        body: body,
+        onTap: (clickUrl != null && clickUrl.isNotEmpty)
+            ? () {
+                _navigateToUrl(clickUrl);
+              }
+            : null,
+      );
     }
   }
 
@@ -302,6 +313,18 @@ class PushNotificationService {
 
     if (clickUrl != null && clickUrl.toString().isNotEmpty) {
       _pendingNavigation = clickUrl.toString();
+    }
+  }
+
+  /// Navigate to a URL — opens external URLs in browser, internal routes via GoRouter.
+  void _navigateToUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null) {
+        GoRouter.of(ctx).push(url);
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core_ios/widgets/in_app_notification.dart';
 import 'package:pgme/features_ios/splash/screens/splash_screen.dart';
 import 'package:pgme/features_ios/onboarding/screens/onboarding_screen.dart';
@@ -33,6 +34,8 @@ import 'package:pgme/features_ios/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features_ios/courses/screens/revision_series_screen.dart';
 import 'package:pgme/features_ios/courses/screens/enrolled_course_detail_screen.dart';
 import 'package:pgme/features_ios/notifications/screens/notifications_screen.dart';
+import 'package:pgme/features_ios/notifications/screens/notification_detail_screen.dart';
+import 'package:pgme/core_ios/models/notification_model.dart';
 import 'package:pgme/features_ios/settings/screens/help_screen.dart';
 import 'package:pgme/features_ios/settings/screens/about_screen.dart';
 import 'package:pgme/features_ios/settings/screens/my_records_screen.dart';
@@ -43,7 +46,11 @@ import 'package:pgme/features_ios/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features_ios/settings/screens/downloads_screen.dart';
 import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/features_ios/auth/screens/map_address_picker_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/core/widgets/mini_player_widget.dart';
 import 'package:pgme/core_ios/widgets/app_scaffold.dart';
+import 'package:pgme/core_ios/services/push_notification_service.dart';
 
 class AppRouter {
   static int _getNavIndex(String location) {
@@ -69,6 +76,27 @@ class AppRouter {
     navigatorKey: navigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
+    redirect: (context, state) {
+      try {
+        final miniPlayer = Provider.of<MiniPlayerProvider>(context, listen: false);
+        miniPlayer.closeIfRouteRestricted(state.uri.path);
+      } catch (_) {}
+
+      // Consume pending push notification deep link when arriving at /home
+      if (state.uri.path == '/home') {
+        final pendingUrl = PushNotificationService().consumePendingNavigation();
+        if (pendingUrl != null && pendingUrl.isNotEmpty) {
+          debugPrint('Push redirect: /home → $pendingUrl');
+          if (pendingUrl.startsWith('http://') || pendingUrl.startsWith('https://')) {
+            launchUrl(Uri.parse(pendingUrl), mode: LaunchMode.externalApplication);
+            return null;
+          }
+          return pendingUrl;
+        }
+      }
+
+      return null;
+    },
     routes: [
       // Splash Screen
       GoRoute(
@@ -273,6 +301,28 @@ class AppRouter {
         ),
       ),
 
+      // Notification Detail
+      GoRoute(
+        path: '/notification-detail',
+        name: 'notification-detail',
+        pageBuilder: (context, state) {
+          final notification = state.extra as NotificationModel;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: NotificationDetailScreen(notification: notification),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
       // Help & Support
       GoRoute(
         path: '/help',
@@ -449,7 +499,20 @@ class AppRouter {
               path.startsWith('/edit-profile') ||
               path.startsWith('/map-address-picker') ||
               path.startsWith('/pdf-viewer') ||
-              path.startsWith('/downloads')) return child;
+              path.startsWith('/downloads')) {
+            final bottomPad = MediaQuery.of(context).padding.bottom;
+            return Stack(
+              children: [
+                child,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: bottomPad + 16,
+                  child: const MiniPlayerWidget(),
+                ),
+              ],
+            );
+          }
 
           final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';

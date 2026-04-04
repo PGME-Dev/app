@@ -36,6 +36,8 @@ import 'package:pgme/features/courses/screens/practical_series_screen.dart';
 import 'package:pgme/features/courses/screens/revision_series_screen.dart';
 import 'package:pgme/features/courses/screens/enrolled_course_detail_screen.dart';
 import 'package:pgme/features/notifications/screens/notifications_screen.dart';
+import 'package:pgme/features/notifications/screens/notification_detail_screen.dart';
+import 'package:pgme/core/models/notification_model.dart';
 import 'package:pgme/features/settings/screens/help_screen.dart';
 import 'package:pgme/features/settings/screens/about_screen.dart';
 import 'package:pgme/features/settings/screens/my_records_screen.dart';
@@ -46,7 +48,11 @@ import 'package:pgme/features/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features/settings/screens/downloads_screen.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/features/auth/screens/map_address_picker_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/core/widgets/mini_player_widget.dart';
 import 'package:pgme/core/widgets/app_scaffold.dart';
+import 'package:pgme/core/services/push_notification_service.dart';
 
 class AppRouter {
   static int _getNavIndex(String location) {
@@ -72,6 +78,29 @@ class AppRouter {
     navigatorKey: navigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
+    redirect: (context, state) {
+      // Close the mini player on routes where it shouldn't be visible
+      try {
+        final miniPlayer = Provider.of<MiniPlayerProvider>(context, listen: false);
+        miniPlayer.closeIfRouteRestricted(state.uri.path);
+      } catch (_) {
+        // Provider not yet available (e.g. splash before providers mount)
+      }
+
+      // Consume pending push notification deep link when arriving at /home
+      if (state.uri.path == '/home') {
+        final pendingUrl = PushNotificationService().consumePendingNavigation();
+        if (pendingUrl != null &&
+            pendingUrl.isNotEmpty &&
+            !pendingUrl.startsWith('http://') &&
+            !pendingUrl.startsWith('https://')) {
+          debugPrint('Push redirect: /home → $pendingUrl');
+          return pendingUrl;
+        }
+      }
+
+      return null;
+    },
     routes: [
       // Splash Screen
       GoRoute(
@@ -274,6 +303,28 @@ class AppRouter {
             );
           },
         ),
+      ),
+
+      // Notification Detail
+      GoRoute(
+        path: '/notification-detail',
+        name: 'notification-detail',
+        pageBuilder: (context, state) {
+          final notification = state.extra as NotificationModel;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: NotificationDetailScreen(notification: notification),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+          );
+        },
       ),
 
       // Help & Support
@@ -492,7 +543,20 @@ class AppRouter {
               path.startsWith('/edit-profile') ||
               path.startsWith('/map-address-picker') ||
               path.startsWith('/pdf-viewer') ||
-              path.startsWith('/downloads')) return child;
+              path.startsWith('/downloads')) {
+            final bottomPad = MediaQuery.of(context).padding.bottom;
+            return Stack(
+              children: [
+                child,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: bottomPad + 16,
+                  child: const MiniPlayerWidget(),
+                ),
+              ],
+            );
+          }
 
           final navIndex = _getNavIndex(location);
           final isSubscribed = state.uri.queryParameters['subscribed'] == 'true';

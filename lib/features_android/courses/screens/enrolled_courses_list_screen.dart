@@ -277,7 +277,6 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     Color borderColor,
     bool isTablet,
   ) {
-    final thumbnailHeight = isTablet ? 140.0 : 100.0;
     return GestureDetector(
       onTap: () {
         context.push('/video/${progress.lecture.lectureId}?resume=${progress.lastWatchedPositionSeconds}');
@@ -309,16 +308,16 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
                       ? Image.network(
                           progress.lecture.thumbnailUrl!,
                           width: double.infinity,
-                          height: thumbnailHeight,
+                          height: isTablet ? 140.0 : 100.0,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
-                            height: thumbnailHeight,
+                            height: isTablet ? 140.0 : 100.0,
                             color: borderColor,
                             child: Icon(Icons.play_circle_outline, size: 48, color: secondaryTextColor),
                           ),
                         )
                       : Container(
-                          height: thumbnailHeight,
+                          height: isTablet ? 140.0 : 100.0,
                           color: borderColor,
                           child: Icon(Icons.play_circle_outline, size: 48, color: secondaryTextColor),
                         ),
@@ -394,7 +393,6 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
     Color borderColor,
     bool isTablet,
   ) {
-    final thumbnailHeight = isTablet ? 200.0 : 150.0;
     return GestureDetector(
       onTap: () {
         final packageType = purchase.package.type?.toLowerCase() ?? '';
@@ -422,25 +420,25 @@ class _EnrolledCoursesListScreenState extends State<EnrolledCoursesListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 18 : 12)),
-              child: purchase.package.thumbnailUrl != null
-                  ? Image.network(
-                      purchase.package.thumbnailUrl!,
-                      width: double.infinity,
-                      height: thumbnailHeight,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        height: thumbnailHeight,
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 18 : 12)),
+                child: purchase.package.thumbnailUrl != null
+                    ? Image.network(
+                        purchase.package.thumbnailUrl!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: borderColor,
+                          child: Icon(Icons.book_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
+                        ),
+                      )
+                    : Container(
                         color: borderColor,
                         child: Icon(Icons.book_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
                       ),
-                    )
-                  : Container(
-                      height: thumbnailHeight,
-                      color: borderColor,
-                      child: Icon(Icons.book_outlined, size: isTablet ? 80 : 64, color: secondaryTextColor),
-                    ),
+              ),
             ),
             // Content
             Padding(

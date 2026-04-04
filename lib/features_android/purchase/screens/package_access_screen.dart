@@ -16,6 +16,7 @@ import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/core_android/utils/web_store_launcher.dart';
 import 'package:pgme/features_android/purchase/widgets/tier_change_sheet.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
 class PackageAccessScreen extends StatefulWidget {
   final String? packageId;
@@ -1199,45 +1200,75 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
 
                     SizedBox(height: isTablet ? 16 : 12),
 
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: hPadding),
-                      child: Text(
-                        package.description ?? 'Master your medical education with our comprehensive ${package.type?.toLowerCase() ?? ''} package. This course covers all essential topics with expert faculty guidance and structured learning paths.',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: isTablet ? 17 : 14,
-                          fontWeight: FontWeight.w400,
-                          color: secondaryTextColor,
-                          height: 1.5,
+                    // Rich description (new) or plain description + features (backward compat)
+                    if (package.hasRichDescription) ...[
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: HtmlWidget(
+                          package.richDescription!,
+                          textStyle: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 17 : 14,
+                            fontWeight: FontWeight.w400,
+                            color: secondaryTextColor,
+                            height: 1.5,
+                          ),
+                          customStylesBuilder: (element) {
+                            switch (element.localName) {
+                              case 'h1':
+                                return {'font-size': '${isTablet ? 24 : 20}px', 'font-weight': '700', 'color': '${_colorToHex(textColor)}', 'margin': '16px 0 8px 0'};
+                              case 'h2':
+                                return {'font-size': '${isTablet ? 20 : 17}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '14px 0 6px 0'};
+                              case 'h3':
+                                return {'font-size': '${isTablet ? 18 : 15}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '12px 0 4px 0'};
+                              case 'li':
+                                return {'margin': '4px 0'};
+                            }
+                            return null;
+                          },
                         ),
                       ),
-                    ),
-
-                    SizedBox(height: isTablet ? 30 : 24),
-
-                    // What's Included
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: hPadding),
-                      child: Text(
-                        'What\'s Included',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: isTablet ? 22 : 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
+                    ] else ...[
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: Text(
+                          package.description ?? 'Master your medical education with our comprehensive ${package.type?.toLowerCase() ?? ''} package. This course covers all essential topics with expert faculty guidance and structured learning paths.',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 17 : 14,
+                            fontWeight: FontWeight.w400,
+                            color: secondaryTextColor,
+                            height: 1.5,
+                          ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: isTablet ? 20 : 16),
+                      SizedBox(height: isTablet ? 30 : 24),
 
-                    // Feature Cards from package features
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: hPadding),
-                      child: Column(
-                        children: _buildFeatureCards(package, isDark, textColor, cardBgColor, borderColor, iconBgColor, iconColor, isTablet: isTablet),
+                      // What's Included
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: Text(
+                          'What\'s Included',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isTablet ? 22 : 18,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
                       ),
-                    ),
+
+                      SizedBox(height: isTablet ? 20 : 16),
+
+                      // Feature Cards from package features
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: Column(
+                          children: _buildFeatureCards(package, isDark, textColor, cardBgColor, borderColor, iconBgColor, iconColor, isTablet: isTablet),
+                        ),
+                      ),
+                    ],
 
                     SizedBox(height: isTablet ? 30 : 24),
 
@@ -1436,6 +1467,13 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
         ],
       ),
     );
+  }
+
+  String _colorToHex(Color color) {
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
+    return '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}';
   }
 
   List<Widget> _buildFeatureCards(

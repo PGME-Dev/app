@@ -12,6 +12,7 @@ import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
 class PracticalSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -889,7 +890,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
     final isTablet = ResponsiveHelper.isTablet(context);
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
-    if (_series.isEmpty) {
+    // Hide series with 0 documents unless admin marked as coming soon
+    final filteredSeries = _series.where((s) => (s.totalDocuments ?? 0) > 0 || s.documentsComingSoon).toList();
+
+    if (filteredSeries.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -897,7 +901,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
             Icon(Icons.description_outlined, size: isTablet ? 60 : 48, color: textColor.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
-              'Notes Coming Soon',
+              'No Documents Available',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: isTablet ? 20 : 16,
@@ -915,9 +919,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
         constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
-          itemCount: _series.length,
+          itemCount: filteredSeries.length,
           itemBuilder: (context, index) {
-            final series = _series[index];
+            final series = filteredSeries[index];
             final isItemLocked = isSubscribed ? false : series.isLocked;
 
             return GestureDetector(
@@ -992,15 +996,29 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${series.totalDocuments ?? 0} Documents',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: isTablet ? 15 : 12,
-                      color: textColor.withValues(alpha: 0.5),
+                  if ((series.totalDocuments ?? 0) > 0)
+                    Text(
+                      '${series.totalDocuments} Documents',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.5),
+                      ),
+                    )
+                  else
+                    Text(
+                      series.documentsReleaseAt != null
+                          ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'
+                          : 'Coming Soon',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.4),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -1021,6 +1039,13 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
         ),
       ),
     );
+  }
+
+  String _colorToHex(Color color) {
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
+    return '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}';
   }
 
   Widget _buildPackageInfoSection(
@@ -1054,7 +1079,32 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
               color: textColor,
             ),
           ),
-          if (pkg.description != null && pkg.description!.isNotEmpty) ...[
+          if (pkg.hasRichDescription) ...[
+            const SizedBox(height: 8),
+            HtmlWidget(
+              pkg.richDescription!,
+              textStyle: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: isTablet ? 17 : 14,
+                fontWeight: FontWeight.w400,
+                color: secondaryTextColor,
+                height: 1.5,
+              ),
+              customStylesBuilder: (element) {
+                switch (element.localName) {
+                  case 'h1':
+                    return {'font-size': '${isTablet ? 24 : 20}px', 'font-weight': '700', 'color': '${_colorToHex(textColor)}', 'margin': '16px 0 8px 0'};
+                  case 'h2':
+                    return {'font-size': '${isTablet ? 20 : 17}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '14px 0 6px 0'};
+                  case 'h3':
+                    return {'font-size': '${isTablet ? 18 : 15}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '12px 0 4px 0'};
+                  case 'li':
+                    return {'margin': '4px 0'};
+                }
+                return null;
+              },
+            ),
+          ] else if (pkg.description != null && pkg.description!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               pkg.description!,
@@ -1257,8 +1307,8 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
             const SizedBox(height: 20),
           ],
 
-          // What's included / Features
-          if (pkg.features != null && pkg.features!.isNotEmpty) ...[
+          // What's included / Features (only when no rich description)
+          if (!pkg.hasRichDescription && pkg.features != null && pkg.features!.isNotEmpty) ...[
             Text(
               "What's Included",
               style: TextStyle(
@@ -1271,24 +1321,15 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
             const SizedBox(height: 12),
             ...pkg.features!.map((feature) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.check_circle_rounded, size: isTablet ? 22 : 18, color: iconColor),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: isTablet ? 17 : 14,
-                            height: 1.4,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontSize: isTablet ? 17 : 14,
+                      height: 1.4,
+                      color: textColor,
+                    ),
                   ),
                 )),
             const SizedBox(height: 16),
@@ -1646,125 +1687,132 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
 
     return GestureDetector(
       onTap: () => context.push('/session/${session.sessionId}'),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isTablet ? 24 : 18),
-          gradient: LinearGradient(
-            begin: const Alignment(-0.85, 0),
-            end: const Alignment(0.85, 0),
-            colors: isDark
-                ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
-                : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
-            stops: const [0.35, 0.71],
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(isTablet ? 24 : 18),
-          child: Stack(
-            children: [
-              // Background illustration
-              Positioned.fill(
-                child: session.thumbnailUrl != null
-                    ? Image.network(
-                        session.thumbnailUrl!,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/illustrations/home.png',
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Image.asset(
-                        'assets/illustrations/home.png',
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.expand(),
-                      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 16:9 thumbnail with status badge
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                gradient: LinearGradient(
+                  begin: const Alignment(-0.85, 0),
+                  end: const Alignment(0.85, 0),
+                  colors: isDark
+                      ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
+                      : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
+                  stops: const [0.35, 0.71],
+                ),
               ),
-
-              // Content
-              Padding(
-                padding: EdgeInsets.all(isTablet ? 20 : 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                child: Stack(
                   children: [
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isLive
-                            ? Colors.red.withValues(alpha: 0.9)
-                            : Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: Text(
-                        isLive ? 'LIVE NOW' : 'LIVE CLASS',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTablet ? 13 : 10,
-                          color: Colors.white,
+                    Positioned.fill(
+                      child: session.thumbnailUrl != null
+                          ? Image.network(
+                              session.thumbnailUrl!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/illustrations/home.png',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/illustrations/home.png',
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox.expand(),
+                            ),
+                    ),
+                    Positioned(
+                      top: isTablet ? 14 : 8,
+                      left: isTablet ? 14 : 8,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 14 : 10,
+                          vertical: isTablet ? 6 : 4,
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Title
-                    Text(
-                      session.title,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 20 : 16,
-                        color: Colors.white,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    // Timing
-                    Text(
-                      isLive ? 'Live Now' : _formatSessionDateTime(session.scheduledStartTime),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w400,
-                        fontSize: isTablet ? 15 : 12,
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // View Details button
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 7 : 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
-                      ),
-                      child: Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTablet ? 14 : 11,
-                          color: const Color(0xFF1847A2),
+                        decoration: BoxDecoration(
+                          color: isLive
+                              ? Colors.red.withValues(alpha: 0.9)
+                              : Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                        ),
+                        child: Text(
+                          isLive ? 'LIVE NOW' : 'LIVE CLASS',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            fontSize: isTablet ? 13 : 10,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+
+          // Title, timing, button below image
+          Padding(
+            padding: EdgeInsets.only(top: isTablet ? 10 : 7, left: 2, right: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.title,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: isTablet ? 18 : 14,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isLive ? 'Live Now' : _formatSessionDateTime(session.scheduledStartTime),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    fontSize: isTablet ? 14 : 11,
+                    color: isDark ? Colors.white70 : const Color(0xFF666666),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 10 : 6),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 18 : 14,
+                    vertical: isTablet ? 7 : 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2470E4),
+                    borderRadius: BorderRadius.circular(isTablet ? 10 : 7),
+                  ),
+                  child: Text(
+                    'View Details',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w500,
+                      fontSize: isTablet ? 14 : 11,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2117,6 +2165,16 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
   }
 
   // ── Helper Methods ───────────────────────────────────────────────────────
+
+  String _formatReleaseDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } catch (_) {
+      return 'Soon';
+    }
+  }
 
   String _getTotalDuration() {
     int totalMinutes = 0;

@@ -94,6 +94,9 @@ class ApiConstants {
   // Home Sections Endpoint (public, no auth)
   static const String homeSections = '/home-sections';
 
+  // Tutorials Endpoint (public, free tutorials)
+  static const String tutorials = '/tutorials';
+
   // Library Endpoints
   static const String userLibrary = '/users/library';
   static String libraryItem(String libraryId) => '/users/library/$libraryId';

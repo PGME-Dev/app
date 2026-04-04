@@ -16,12 +16,13 @@ import 'package:pgme/features_android/settings/providers/access_record_provider.
 import 'package:pgme/features_android/notifications/providers/notification_provider.dart';
 import 'package:pgme/features_android/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features_android/courses/providers/download_provider.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Prevent screenshots and screen recording across the entire app
-  await NoScreenshot.instance.screenshotOff();
+  // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
+  await NoScreenshot.instance.screenshotOn();
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(
@@ -70,6 +71,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => EnrolledCoursesProvider()),
         ChangeNotifierProvider(create: (_) => DownloadProvider()),
+        ChangeNotifierProvider(create: (_) => MiniPlayerProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

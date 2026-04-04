@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core_android/providers/theme_provider.dart';
 import 'package:pgme/core_android/theme/app_theme.dart';
+import 'package:pgme/core_android/widgets/how_to_section.dart';
 import 'package:pgme/core_android/services/dashboard_service.dart';
 import 'package:pgme/core_android/utils/web_store_launcher.dart';
 import 'package:pgme/core_android/models/series_model.dart';
@@ -11,6 +12,7 @@ import 'package:pgme/core_android/models/package_model.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/core_android/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
 class RevisionSeriesScreen extends StatefulWidget {
   final bool isSubscribed;
@@ -310,6 +312,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                   ),
                 ),
               ),
+              const HowToSection(screen: 'theory'),
               const SizedBox(height: 100),
             ],
           ),
@@ -672,6 +675,13 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
     );
   }
 
+  String _colorToHex(Color color) {
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
+    return '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}';
+  }
+
   Widget _buildPackageInfoSection(
     bool isDark,
     Color textColor,
@@ -702,7 +712,32 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
               color: textColor,
             ),
           ),
-          if (pkg?.description != null && pkg!.description!.isNotEmpty) ...[
+          if (pkg != null && pkg.hasRichDescription) ...[
+            const SizedBox(height: 8),
+            HtmlWidget(
+              pkg.richDescription!,
+              textStyle: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: isTablet ? 17 : 14,
+                fontWeight: FontWeight.w400,
+                color: secondaryTextColor,
+                height: 1.5,
+              ),
+              customStylesBuilder: (element) {
+                switch (element.localName) {
+                  case 'h1':
+                    return {'font-size': '${isTablet ? 24 : 20}px', 'font-weight': '700', 'color': '${_colorToHex(textColor)}', 'margin': '16px 0 8px 0'};
+                  case 'h2':
+                    return {'font-size': '${isTablet ? 20 : 17}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '14px 0 6px 0'};
+                  case 'h3':
+                    return {'font-size': '${isTablet ? 18 : 15}px', 'font-weight': '600', 'color': '${_colorToHex(textColor)}', 'margin': '12px 0 4px 0'};
+                  case 'li':
+                    return {'margin': '4px 0'};
+                }
+                return null;
+              },
+            ),
+          ] else if (pkg?.description != null && pkg!.description!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               pkg.description!,
@@ -774,8 +809,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
           _buildEnrollButton(isDark, isTablet, isSubscribed: isSubscribed),
           const SizedBox(height: 20),
 
-          // What's included / Features
-          if (pkg?.features != null && pkg!.features!.isNotEmpty) ...[
+          // What's included / Features (only when no rich description)
+          if (!(pkg != null && pkg.hasRichDescription) && pkg?.features != null && pkg!.features!.isNotEmpty) ...[
             Text(
               "What's Included",
               style: TextStyle(
@@ -788,24 +823,15 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
             const SizedBox(height: 12),
             ...pkg.features!.map((feature) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.check_circle_rounded, size: isTablet ? 22 : 18, color: iconColor),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: isTablet ? 17 : 14,
-                            height: 1.4,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontSize: isTablet ? 17 : 14,
+                      height: 1.4,
+                      color: textColor,
+                    ),
                   ),
                 )),
             const SizedBox(height: 16),
@@ -1043,14 +1069,36 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
       );
     }
 
+    // In document mode, hide series with 0 documents unless admin marked as coming soon
+    final isDocMode = _contentMode == 'documents';
+    final filteredSeries = isDocMode
+        ? _series.where((s) => (s.totalDocuments ?? 0) > 0 || s.documentsComingSoon).toList()
+        : _series;
+
+    if (filteredSeries.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.description_outlined, size: isTablet ? 64 : 48, color: textColor.withValues(alpha: 0.5)),
+            SizedBox(height: isTablet ? 20 : 16),
+            Text(
+              'No Documents Available',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: isTablet ? 20 : 16, fontWeight: FontWeight.w600, color: textColor),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
-          itemCount: _series.length,
+          itemCount: filteredSeries.length,
           itemBuilder: (context, index) {
-            final series = _series[index];
+            final series = filteredSeries[index];
             final isItemLocked = series.isLocked;
 
             return GestureDetector(
@@ -1147,17 +1195,39 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: isTablet ? 6 : 4),
-                  Text(
-                    isLectureMode
-                        ? '${series.totalLectures ?? 0} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}'
-                        : '${series.totalDocuments ?? 0} Documents',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: isTablet ? 15 : 12,
-                      color: textColor.withValues(alpha: 0.5),
+                  if (isLectureMode)
+                    Text(
+                      '${series.totalLectures ?? 0} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.5),
+                      ),
+                    )
+                  else if ((series.totalDocuments ?? 0) > 0)
+                    Text(
+                      '${series.totalDocuments} Documents',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.5),
+                      ),
+                    )
+                  else
+                    Text(
+                      series.documentsReleaseAt != null
+                          ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'
+                          : 'Coming Soon',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.4),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -1353,6 +1423,16 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────
+
+  String _formatReleaseDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } catch (_) {
+      return 'Soon';
+    }
+  }
 
   int _getTotalLectures() {
     int total = 0;

@@ -620,8 +620,24 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Features
-                  if (package.features != null && package.features!.isNotEmpty)
+                  // Features or rich description excerpt
+                  if (package.hasRichDescription)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: isTablet ? 13 : 10),
+                      child: Text(
+                        package.richDescription!.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim(),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 17 : 14,
+                          fontWeight: FontWeight.w400,
+                          color: featureTextColor,
+                          height: 1.4,
+                        ),
+                      ),
+                    )
+                  else if (package.features != null && package.features!.isNotEmpty)
                     ...package.features!.take(4).map((feature) => Padding(
                       padding: EdgeInsets.only(bottom: isTablet ? 13 : 10),
                       child: Row(

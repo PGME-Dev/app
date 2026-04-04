@@ -548,13 +548,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                   child: Column(
                     children: [
                       // Thumbnail
-                      _session?.thumbnailUrl != null
-                          ? Image.network(
-                              _session!.thumbnailUrl!,
-                              width: double.infinity, height: isTablet ? 220 : 160, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
-                            )
-                          : _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: _session?.thumbnailUrl != null
+                            ? Image.network(
+                                _session!.thumbnailUrl!,
+                                width: double.infinity, height: double.infinity, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                              )
+                            : _buildThumbnailPlaceholder(surfaceColor, iconColor),
+                      ),
                       Padding(
                         padding: EdgeInsets.all(isTablet ? 24 : 16),
                         child: Column(
@@ -1211,7 +1214,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
               child: session.thumbnailUrl != null
                   ? Image.network(
                       session.thumbnailUrl!,
-                      width: isTablet ? 80 : 60, height: isTablet ? 80 : 60, fit: BoxFit.cover,
+                      width: isTablet ? 80 : 60, height: isTablet ? 45 : 34, fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _buildSmallPlaceholder(iconColor),
                     )
                   : _buildSmallPlaceholder(iconColor),
@@ -1315,9 +1318,8 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
   }
 
   Widget _buildThumbnailPlaceholder(Color surfaceColor, Color iconColor) {
-    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      width: double.infinity, height: isTablet ? 220 : 160,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
@@ -1329,7 +1331,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
   Widget _buildSmallPlaceholder(Color iconColor) {
     final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      width: isTablet ? 80 : 60, height: isTablet ? 80 : 60,
+      width: isTablet ? 80 : 60, height: isTablet ? 45 : 34,
       decoration: BoxDecoration(
         color: iconColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(isTablet ? 16 : 12),

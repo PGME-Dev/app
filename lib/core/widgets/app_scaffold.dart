@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/mini_player_widget.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
 import 'package:pgme/features/auth/widgets/session_invalidated_modal.dart';
 
@@ -174,6 +175,15 @@ class AppScaffold extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+
+          // Mini Player (above nav bar)
+          // Positioned MUST be the direct Stack child — Consumer goes inside
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottomPadding + 12 + navBarHeight + 8,
+            child: const MiniPlayerWidget(),
           ),
 
           // Session Invalidated Modal (blocks entire screen)

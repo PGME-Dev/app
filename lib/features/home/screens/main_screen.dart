@@ -56,6 +56,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           context.read<DashboardProvider>().refresh();
         }
       }
+      // Consume pending push notification navigation (background → foreground tap)
+      final pendingUrl = PushNotificationService().consumePendingNavigation();
+      if (pendingUrl != null && pendingUrl.isNotEmpty && mounted) {
+        debugPrint('Push resume navigate: $pendingUrl');
+        context.push(pendingUrl);
+      }
     }
   }
 

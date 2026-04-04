@@ -38,8 +38,6 @@ class PromotionalBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
-    final bannerHeight = ResponsiveHelper.carouselHeight(context);
-
     return GestureDetector(
       onTap: () => _handleBannerTap(context),
       child: Padding(
@@ -65,7 +63,7 @@ class PromotionalBanner extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: banner.imageUrl,
                   width: double.infinity,
-                  height: bannerHeight,
+                  height: double.infinity,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     color: Colors.grey[200],

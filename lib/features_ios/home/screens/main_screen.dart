@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core_ios/providers/theme_provider.dart';
 import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/utils/web_store_launcher.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/features_ios/home/screens/dashboard_screen.dart';
 import 'package:pgme/features_ios/home/screens/guest_dashboard_screen.dart';
 import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
@@ -54,6 +55,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         WebStoreLauncher.clearAwaitingPurchase();
         if (mounted) {
           context.read<DashboardProvider>().refresh();
+        }
+      }
+      // Consume pending push notification navigation (background → foreground tap)
+      final pendingUrl = PushNotificationService().consumePendingNavigation();
+      if (pendingUrl != null && pendingUrl.isNotEmpty && mounted) {
+        debugPrint('Push resume navigate: $pendingUrl');
+        if (pendingUrl.startsWith('http://') || pendingUrl.startsWith('https://')) {
+          launchUrl(Uri.parse(pendingUrl), mode: LaunchMode.externalApplication);
+        } else {
+          context.push(pendingUrl);
         }
       }
     }

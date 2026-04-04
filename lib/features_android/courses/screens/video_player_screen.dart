@@ -15,6 +15,12 @@ import 'package:pgme/features_android/courses/providers/download_provider.dart';
 import 'package:pgme/features_android/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features_android/courses/widgets/star_rating_input.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/features/courses/widgets/document_picker_sheet.dart';
+import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+import 'package:pgme/core/models/selectable_document.dart';
+import 'package:pgme/core/widgets/resizable_split_view.dart';
+
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoId;
@@ -76,17 +82,46 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   bool _isSubmittingRating = false;
   bool _isSubmittingFeedback = false;
 
+  // Split-view PDF state
+  bool _isSplitViewActive = false;
+  SelectableDocument? _activeDocument;
   // Fullscreen overlay
   OverlayEntry? _fullscreenBackButtonOverlay;
   bool _isFullscreen = false;
   bool _controlsVisible = true;
   Timer? _controlsHideTimer;
 
+  // Mini player support: when true, dispose() will NOT destroy the controller
+  bool _isMinimizing = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     debugPrint('VideoPlayer: init for videoId=${widget.videoId}');
+
+    // Check if MiniPlayerProvider already has a live controller for this video
+    final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
+    if (miniProvider.videoId == widget.videoId && miniProvider.controller != null) {
+      // Reuse the existing controller — player was expanded from mini mode
+      debugPrint('VideoPlayer: adopting controller from MiniPlayerProvider');
+      _playerController = miniProvider.controller;
+      _videoTitle = miniProvider.videoTitle;
+      _videoDescription = miniProvider.videoDescription;
+      _videoDurationSeconds = miniProvider.videoDurationSeconds;
+      _watchTimeSeconds = miniProvider.watchTimeSeconds;
+      _isLoading = false;
+      _isPlayerInitialized = true;
+      miniProvider.expand(); // mark as no longer minimized
+
+      _playerController!.addEventsListener(_onPlayerEvent);
+      _startProgressTimer();
+      _startFullscreenMonitoring();
+
+      _loadMyReview();
+      return;
+    }
+
     _loadVideoData();
     _loadMyReview();
   }
@@ -100,14 +135,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   @override
   void deactivate() {
-    _playerController?.pause();
+    // Don't pause when minimizing — the mini player should keep playing
+    if (!_isMinimizing) {
+      _playerController?.pause();
+    }
     super.deactivate();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    debugPrint('VideoPlayer: disposing');
+    debugPrint('VideoPlayer: disposing (minimizing=$_isMinimizing)');
     _isDisposed = true;
     _saveProgressOnExit();
     _progressTimer?.cancel();
@@ -118,10 +156,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     _controlsHideTimer = null;
     _removeFullscreenOverlay();
     _playerController?.removeEventsListener(_onPlayerEvent);
-    // Pause first to stop audio immediately, then dispose
-    _playerController?.pause();
-    _playerController?.dispose();
-    _playerController = null;
+
+    if (_isMinimizing) {
+      // Controller ownership transferred to MiniPlayerProvider — do NOT dispose it
+      _playerController = null;
+    } else {
+      // Normal exit — destroy the player
+      _playerController?.pause();
+      _playerController?.dispose();
+      _playerController = null;
+      // Also close the mini player provider if it was referencing this controller
+      try {
+        final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
+        if (miniProvider.videoId == widget.videoId) {
+          miniProvider.unregister();
+        }
+      } catch (_) {}
+    }
     // Restore orientation - allow landscape on tablets, portrait-only on phones
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
@@ -414,6 +465,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       });
     }
 
+    // Register with MiniPlayerProvider so controller survives minimize
+    try {
+      final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
+      miniProvider.registerController(
+        controller: _playerController!,
+        videoId: widget.videoId,
+        videoTitle: _videoTitle,
+        videoDescription: _videoDescription,
+        videoDurationSeconds: _videoDurationSeconds,
+        watchTimeSeconds: _watchTimeSeconds,
+      );
+    } catch (_) {}
+
     _startProgressTimer();
     _startFullscreenMonitoring();
   }
@@ -655,6 +719,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   // Navigation
   // ---------------------------------------------------------------------------
 
+  /// Minimize the player into the mini-player bar and navigate back.
+  void _minimizeAndGoBack() {
+    if (_playerController == null) return;
+
+    // Hand ownership to the MiniPlayerProvider
+    _accumulateWatchTime();
+    final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
+    miniProvider.updateWatchTime(_watchTimeSeconds);
+    miniProvider.updateMetadata(
+      videoTitle: _videoTitle,
+      videoDescription: _videoDescription,
+      videoDurationSeconds: _videoDurationSeconds,
+    );
+    miniProvider.minimize();
+
+    // Set _isMinimizing via setState so the widget rebuilds with canPop: true.
+    // PopScope(canPop: false) blocks Navigator.pop() in modern Flutter, so we
+    // must flip canPop first, then pop in a post-frame callback.
+    setState(() {
+      _isMinimizing = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
   Future<void> _stopAndGoBack() async {
     _playerController?.pause();
     await _saveProgressBeforeExit();
@@ -843,6 +934,106 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   }
 
   // ---------------------------------------------------------------------------
+  // Split-View PDF
+  // ---------------------------------------------------------------------------
+
+  void _openDocumentPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DocumentPickerSheet(
+        onDocumentSelected: (doc) {
+          // Allow landscape rotation for split view
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]);
+          setState(() {
+            _activeDocument = doc;
+            _isSplitViewActive = true;
+          });
+        },
+      ),
+    );
+  }
+
+  void _closeSplitView() {
+    // Lock back to portrait when split view closes
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    setState(() {
+      _isSplitViewActive = false;
+      _activeDocument = null;
+    });
+  }
+
+  Widget _buildSplitView() {
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final axis = orientation == Orientation.portrait
+            ? Axis.vertical
+            : Axis.horizontal;
+        return ResizableSplitView(
+          key: const ValueKey('video-pdf-split'),
+          axis: axis,
+          initialRatio: 0.4,
+          minRatio: 0.25,
+          maxRatio: 0.75,
+          firstChild: _buildSplitPlayerArea(),
+          secondChild: InlinePdfViewer(
+            document: _activeDocument!,
+            onClose: _closeSplitView,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSplitPlayerArea() {
+    if (_playerController != null && _isPlayerInitialized) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: BetterPlayer(controller: _playerController!),
+          ),
+        ),
+      );
+    }
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildOpenDocumentButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _openDocumentPicker,
+        icon: const Icon(Icons.menu_book, size: 18),
+        label: const Text('Read Notes Alongside'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white70,
+          side: const BorderSide(color: Colors.white24),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // UI
   // ---------------------------------------------------------------------------
 
@@ -861,6 +1052,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           return;
         }
 
+        // Close split view first, then back exits the screen
+        if (_isSplitViewActive) {
+          _closeSplitView();
+          return;
+        }
+
         // Save progress, then navigate back
         _playerController?.pause();
         await _saveProgressBeforeExit();
@@ -871,12 +1068,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: Column(
-            children: [
-              _buildPlayerArea(),
-              if (!_isLoading && _error == null) _buildVideoInfo(),
-            ],
-          ),
+          child: _isSplitViewActive && _activeDocument != null
+              ? _buildSplitView()
+              : Column(
+                  children: [
+                    _buildPlayerArea(),
+                    if (!_isLoading && _error == null) _buildVideoInfo(),
+                  ],
+                ),
         ),
       ),
     );
@@ -1326,6 +1525,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // TODO: Minimize button — disabled until mini player pop issue is resolved
+                  // GestureDetector(
+                  //   onTap: _minimizeAndGoBack,
+                  //   child: Container(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.white12,
+                  //       borderRadius: BorderRadius.circular(8),
+                  //     ),
+                  //     child: const Text(
+                  //       'Minimize',
+                  //       style: TextStyle(
+                  //         color: Colors.white,
+                  //         fontSize: 13,
+                  //         fontWeight: FontWeight.w500,
+                  //         fontFamily: 'Poppins',
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
               if (_videoDurationSeconds > 0) ...[
@@ -1352,6 +1571,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+              _buildOpenDocumentButton(),
               const SizedBox(height: 28),
               _buildRatingSection(),
               const SizedBox(height: 24),

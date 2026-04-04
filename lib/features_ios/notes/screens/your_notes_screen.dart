@@ -11,6 +11,7 @@ import 'package:pgme/core_ios/services/download_service.dart';
 import 'package:pgme/core_ios/services/ebook_access_service.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
 import 'package:pgme/core_ios/widgets/app_dialog.dart';
+import 'package:pgme/core_ios/widgets/how_to_section.dart';
 import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
 
 class YourNotesScreen extends StatefulWidget {
@@ -218,6 +219,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
           context.pushNamed(
             'pdf-viewer',
             queryParameters: {
+              'documentId': item.documentId,
               'pdfUrl': url,
               'title': title,
             },
@@ -567,78 +569,86 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                           ],
                         ),
                       )
-                    : _filteredItems.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.menu_book_outlined,
-                                  size: isTablet ? 80 : 64,
-                                  color: secondaryTextColor,
-                                ),
-                                SizedBox(height: isTablet ? 21 : 16),
-                                Text(
-                                  _showBookmarkedOnly
-                                      ? 'No bookmarked notes yet'
-                                      : 'No notes in your library',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: isTablet ? 20 : 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: textColor,
+                    : RefreshIndicator(
+                        onRefresh: _loadLibrary,
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                          slivers: [
+                            // Notes list (or empty state)
+                            if (_filteredItems.isEmpty)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: isTablet ? 48 : 40),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.menu_book_outlined,
+                                        size: isTablet ? 80 : 64,
+                                        color: secondaryTextColor,
+                                      ),
+                                      SizedBox(height: isTablet ? 21 : 16),
+                                      Text(
+                                        _showBookmarkedOnly
+                                            ? 'No bookmarked notes yet'
+                                            : 'No notes in your library',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 20 : 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      SizedBox(height: isTablet ? 10 : 8),
+                                      Text(
+                                        'Add notes to your library from series',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 17 : 14,
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(height: isTablet ? 10 : 8),
-                                Text(
-                                  'Add notes to your library from series',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: isTablet ? 17 : 14,
-                                    color: secondaryTextColor,
-                                  ),
+                              )
+                            else if (isTablet)
+                              SliverPadding(
+                                padding: EdgeInsets.only(
+                                  left: hPadding,
+                                  right: hPadding,
                                 ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadLibrary,
-                            child: isTablet
-                              ? GridView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-                                  padding: EdgeInsets.only(
-                                    left: hPadding,
-                                    right: hPadding,
-                                    bottom: 130,
-                                  ),
+                                sliver: SliverGrid(
                                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 16,
                                     mainAxisSpacing: 16,
-                                    childAspectRatio: 1.4,
+                                    childAspectRatio: 16 / 9,
                                   ),
-                                  itemCount: _filteredItems.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _filteredItems[index];
-                                    return _buildBookCard(
-                                      item: item,
-                                      isDark: isDark,
-                                      isTablet: isTablet,
-                                      textColor: textColor,
-                                      secondaryTextColor: secondaryTextColor,
-                                      cardBgColor: cardBgColor,
-                                      dividerColor: dividerColor,
-                                      badgeColor: badgeColor,
-                                      iconColor: iconColor,
-                                      hPadding: 0,
-                                    );
-                                  },
-                                )
-                              : ListView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-                                  padding: const EdgeInsets.only(bottom: 100),
-                                  itemCount: _filteredItems.length,
-                                  itemBuilder: (context, index) {
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      final item = _filteredItems[index];
+                                      return _buildBookCard(
+                                        item: item,
+                                        isDark: isDark,
+                                        isTablet: isTablet,
+                                        textColor: textColor,
+                                        secondaryTextColor: secondaryTextColor,
+                                        cardBgColor: cardBgColor,
+                                        dividerColor: dividerColor,
+                                        badgeColor: badgeColor,
+                                        iconColor: iconColor,
+                                        hPadding: 0,
+                                      );
+                                    },
+                                    childCount: _filteredItems.length,
+                                  ),
+                                ),
+                              )
+                            else
+                              SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
                                     final item = _filteredItems[index];
                                     return Padding(
                                       padding: const EdgeInsets.only(bottom: 12),
@@ -656,8 +666,23 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                                       ),
                                     );
                                   },
+                                  childCount: _filteredItems.length,
                                 ),
-                          ),
+                              ),
+
+                            // How To Section (only in All Notes tab)
+                            if (!_showBookmarkedOnly)
+                              const SliverToBoxAdapter(
+                                child: HowToSection(screen: 'notes'),
+                              ),
+
+                            // Bottom padding
+                            const SliverPadding(
+                              padding: EdgeInsets.only(bottom: 130),
+                            ),
+                          ],
+                        ),
+                      ),
           ),
         ],
       ),

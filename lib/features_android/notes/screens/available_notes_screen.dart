@@ -13,6 +13,7 @@ import 'package:pgme/core_android/models/package_model.dart';
 import 'package:pgme/core_android/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
+import 'package:pgme/core_android/widgets/tutorial_section_widget.dart';
 
 class AvailableNotesScreen extends StatefulWidget {
   final String seriesId;
@@ -544,17 +545,38 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
           SizedBox(height: isTablet ? 29 : 22),
 
           // Notes banner image (prefer package notes thumbnail, fall back to series thumbnail)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-            child: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl) != null && (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!,
-                    width: isTablet ? 500 : 408,
-                    height: isTablet ? 240 : 196,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: isTablet ? 500 : 408,
-                      height: isTablet ? 240 : 196,
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+              child: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl) != null && (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: imagePlaceholderColor,
+                        child: Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: isTablet ? 75 : 60,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: imagePlaceholderColor,
+                        child: Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: isTablet ? 75 : 60,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
                       color: imagePlaceholderColor,
                       child: Center(
                         child: Icon(
@@ -564,31 +586,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                         ),
                       ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      width: isTablet ? 500 : 408,
-                      height: isTablet ? 240 : 196,
-                      color: imagePlaceholderColor,
-                      child: Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: isTablet ? 75 : 60,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ),
-                  )
-                : Container(
-                    width: isTablet ? 500 : 408,
-                    height: isTablet ? 240 : 196,
-                    color: imagePlaceholderColor,
-                    child: Center(
-                      child: Icon(
-                        Icons.image_outlined,
-                        size: isTablet ? 75 : 60,
-                        color: secondaryTextColor,
-                      ),
-                    ),
-                  ),
+            ),
           ),
 
           SizedBox(height: isTablet ? 36 : 28),
@@ -643,14 +641,26 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.description_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
+                                      Icon(Icons.upcoming_outlined, size: isTablet ? 64 : 48, color: secondaryTextColor),
                                       SizedBox(height: isTablet ? 21 : 16),
                                       Text(
-                                        'No notes available',
+                                        'Notes Coming Soon',
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
                                           fontSize: isTablet ? 20 : 16,
+                                          fontWeight: FontWeight.w600,
                                           color: textColor,
+                                        ),
+                                      ),
+                                      SizedBox(height: isTablet ? 8 : 6),
+                                      Text(
+                                        _series?.documentsReleaseAt != null
+                                            ? 'Expected on ${_formatReleaseDate(_series!.documentsReleaseAt!)}'
+                                            : 'Documents will be available soon',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: isTablet ? 15 : 13,
+                                          color: secondaryTextColor,
                                         ),
                                       ),
                                     ],
@@ -664,8 +674,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             child: ListView.builder(
                               padding: EdgeInsets.only(left: hPadding, right: hPadding, top: isTablet ? 16 : 12, bottom: isTablet ? 150 : 120),
                               clipBehavior: Clip.none,
-                              itemCount: _documents.length,
+                              itemCount: _documents.length + 1,
                               itemBuilder: (context, index) {
+                                if (index == _documents.length) {
+                                  return const TutorialSectionWidget();
+                                }
                                 final document = _documents[index];
                                 return _buildNoteCard(
                                   context,
@@ -793,11 +806,11 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                             ? CachedNetworkImage(
                                 imageUrl: document.thumbnailUrl!,
                                 width: isTablet ? 100 : 80,
-                                height: isTablet ? 100 : 80,
+                                height: isTablet ? 56 : 45,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
                                   width: isTablet ? 100 : 80,
-                                  height: isTablet ? 100 : 80,
+                                  height: isTablet ? 56 : 45,
                                   color: placeholderColor,
                                   child: Center(
                                     child: Icon(
@@ -809,7 +822,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                                 ),
                                 errorWidget: (context, url, error) => Container(
                                   width: isTablet ? 100 : 80,
-                                  height: isTablet ? 100 : 80,
+                                  height: isTablet ? 56 : 45,
                                   color: placeholderColor,
                                   child: Center(
                                     child: Icon(
@@ -822,7 +835,7 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                               )
                             : Container(
                                 width: isTablet ? 100 : 80,
-                                height: isTablet ? 100 : 80,
+                                height: isTablet ? 56 : 45,
                                 decoration: BoxDecoration(
                                   color: placeholderColor,
                                 ),
@@ -1230,5 +1243,15 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
         ),
       ),
     );
+  }
+
+  String _formatReleaseDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } catch (_) {
+      return 'Soon';
+    }
   }
 }

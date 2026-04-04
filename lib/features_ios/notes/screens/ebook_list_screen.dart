@@ -424,7 +424,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                         crossAxisCount: isTablet ? 3 : 2,
                                         crossAxisSpacing: isTablet ? 16 : 12,
                                         mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: isTablet ? 0.58 : 0.52,
+                                        childAspectRatio: 16 / 9,
                                       ),
                                       itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
                                       itemBuilder: (context, index) {
@@ -840,24 +840,24 @@ class _EbookListScreenState extends State<EbookListScreen>
                           child: book.thumbnailUrl != null
                               ? CachedNetworkImage(
                                   imageUrl: book.thumbnailUrl!,
-                                  width: imgHeight * 0.75,
+                                  width: imgHeight * 16 / 9,
                                   height: imgHeight,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) => Container(
-                                    width: imgHeight * 0.75,
+                                    width: imgHeight * 16 / 9,
                                     height: imgHeight,
                                     color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
                                     child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
                                   ),
                                   errorWidget: (context, url, error) => Container(
-                                    width: imgHeight * 0.75,
+                                    width: imgHeight * 16 / 9,
                                     height: imgHeight,
                                     color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),
                                     child: Icon(Icons.menu_book, size: isTablet ? 40 : 30, color: secondaryTextColor),
                                   ),
                                 )
                               : Container(
-                                  width: imgHeight * 0.75,
+                                  width: imgHeight * 16 / 9,
                                   height: imgHeight,
                                   decoration: BoxDecoration(
                                     color: isDark ? AppColors.darkCardBackground : const Color(0xFFF0F0F0),

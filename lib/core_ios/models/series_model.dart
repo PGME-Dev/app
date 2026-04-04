@@ -50,6 +50,12 @@ class SeriesModel {
   @JsonKey(name: 'is_locked', defaultValue: false)
   final bool isLocked;
 
+  @JsonKey(name: 'documents_coming_soon', defaultValue: false)
+  final bool documentsComingSoon;
+
+  @JsonKey(name: 'documents_release_at')
+  final String? documentsReleaseAt;
+
   SeriesModel({
     required this.seriesId,
     this.packageId,
@@ -67,6 +73,8 @@ class SeriesModel {
     this.totalDurationMinutes,
     this.isFree,
     this.isLocked = false,
+    this.documentsComingSoon = false,
+    this.documentsReleaseAt,
   });
 
   factory SeriesModel.fromJson(Map<String, dynamic> json) =>

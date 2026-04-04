@@ -13,16 +13,17 @@ import 'package:pgme/features_ios/settings/providers/access_record_provider.dart
 import 'package:pgme/features_ios/notifications/providers/notification_provider.dart';
 import 'package:pgme/features_ios/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features_ios/courses/providers/download_provider.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Prevent screenshots and screen recording across the entire app
+  // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
   try {
-    await NoScreenshot.instance.screenshotOff().timeout(
+    await NoScreenshot.instance.screenshotOn().timeout(
       const Duration(seconds: 5),
       onTimeout: () {
-        debugPrint('NoScreenshot.screenshotOff() timed out — continuing');
+        debugPrint('NoScreenshot.screenshotOn() timed out — continuing');
         return false;
       },
     );
@@ -75,6 +76,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => EnrolledCoursesProvider()),
         ChangeNotifierProvider(create: (_) => DownloadProvider()),
+        ChangeNotifierProvider(create: (_) => MiniPlayerProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

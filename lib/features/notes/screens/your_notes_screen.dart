@@ -220,6 +220,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
           context.pushNamed(
             'pdf-viewer',
             queryParameters: {
+              'documentId': item.documentId,
               'pdfUrl': url,
               'title': title,
             },
@@ -617,7 +618,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 16,
                                     mainAxisSpacing: 16,
-                                    childAspectRatio: 1.4,
+                                    childAspectRatio: 16 / 9,
                                   ),
                                   itemCount: _filteredItems.length,
                                   itemBuilder: (context, index) {

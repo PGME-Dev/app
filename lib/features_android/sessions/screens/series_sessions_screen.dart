@@ -311,35 +311,34 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 22 : 16)),
               child: Stack(
                 children: [
-                  session.thumbnailUrl != null
-                      ? Image.network(
-                          session.thumbnailUrl!,
-                          width: double.infinity,
-                          height: isTablet ? 200 : 140,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: double.infinity,
-                              height: isTablet ? 200 : 140,
-                              color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                              child: Icon(
-                                Icons.videocam_outlined,
-                                size: 48,
-                                color: secondaryTextColor,
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: double.infinity,
-                          height: isTablet ? 200 : 140,
-                          color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
-                          child: Icon(
-                            Icons.videocam_outlined,
-                            size: 48,
-                            color: secondaryTextColor,
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: session.thumbnailUrl != null
+                        ? Image.network(
+                            session.thumbnailUrl!,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                                child: Icon(
+                                  Icons.videocam_outlined,
+                                  size: 48,
+                                  color: secondaryTextColor,
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
+                            child: Icon(
+                              Icons.videocam_outlined,
+                              size: 48,
+                              color: secondaryTextColor,
+                            ),
                           ),
-                        ),
+                  ),
                   // Status badge
                   Positioned(
                     top: 12,

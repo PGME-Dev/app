@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core_android/models/live_session_model.dart';
 import 'package:pgme/core_android/models/banner_model.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/features_android/home/widgets/live_class_banner.dart';
-import 'package:pgme/features_android/home/widgets/promotional_banner.dart';
 
 class LiveClassCarousel extends StatefulWidget {
   final List<LiveSessionModel> sessions;
@@ -25,15 +27,12 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
   int _currentPage = 0;
   Timer? _autoSlideTimer;
 
-  // Get total count of all items (sessions + banners)
   int get _totalItems => widget.sessions.length + widget.banners.length;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
-
-    // Start auto-slide if there are multiple items
     if (_totalItems > 1) {
       _startAutoSlide();
     }
@@ -65,36 +64,52 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
     });
   }
 
+  /// Fixed carousel height: image (4:5 on available width) + text/buttons area below.
+  double _getCarouselHeight(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final horizontalPadding = isTablet ? 24.0 * 2 : 16.0 * 2;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxContentWidth = ResponsiveHelper.getMaxContentWidth(context);
+    final availableWidth = (screenWidth - horizontalPadding).clamp(0.0, maxContentWidth);
+
+    // Image height at 4:5 ratio
+    final imageHeight = availableWidth * (9 / 16);
+
+    // Fixed space below image for title + time + buttons
+    final belowImageHeight = isTablet ? 86.0 : 68.0;
+
+    return imageHeight + belowImageHeight;
+  }
+
   Widget _buildCarouselItem(int index) {
-    // Show sessions first, then banners
     if (index < widget.sessions.length) {
       return LiveClassBanner(session: widget.sessions[index]);
     } else {
       final bannerIndex = index - widget.sessions.length;
-      return PromotionalBanner(banner: widget.banners[bannerIndex]);
+      return _PromotionalBannerWrapper(banner: widget.banners[bannerIndex]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // If no items at all, don't show anything
     if (_totalItems == 0) {
       return const SizedBox.shrink();
     }
 
-    final carouselHeight = ResponsiveHelper.carouselHeight(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final dotSize = isTablet ? 12.0 : 8.0;
     final activeDotWidth = isTablet ? 36.0 : 24.0;
+    final carouselHeight = _getCarouselHeight(context);
 
-    // Single item - no carousel needed
     if (_totalItems == 1) {
-      return widget.sessions.isNotEmpty
-          ? LiveClassBanner(session: widget.sessions.first)
-          : PromotionalBanner(banner: widget.banners.first);
+      return SizedBox(
+        height: carouselHeight,
+        child: widget.sessions.isNotEmpty
+            ? LiveClassBanner(session: widget.sessions.first)
+            : _PromotionalBannerWrapper(banner: widget.banners.first),
+      );
     }
 
-    // Multiple items - show carousel
     return Column(
       children: [
         SizedBox(
@@ -107,8 +122,6 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
           ),
         ),
         SizedBox(height: isTablet ? 18 : 12),
-
-        // Indicator dots
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
@@ -127,6 +140,143 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PromotionalBannerWrapper extends StatelessWidget {
+  final BannerModel banner;
+  const _PromotionalBannerWrapper({required this.banner});
+
+  bool get _hasLink =>
+      banner.linkType != null &&
+      banner.linkType != 'none' &&
+      banner.linkUrl != null &&
+      banner.linkUrl!.isNotEmpty;
+
+  Future<void> _handleTap(BuildContext context) async {
+    if (!_hasLink) return;
+    switch (banner.linkType) {
+      case 'internal':
+        context.push(banner.linkUrl!);
+        break;
+      case 'external':
+        final url = Uri.parse(banner.linkUrl!);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final belowImageHeight = isTablet ? 86.0 : 68.0;
+    final titleSize = isTablet ? 20.0 : 14.0;
+    final buttonFontSize = isTablet ? 15.0 : 11.0;
+    final buttonPaddingH = isTablet ? 24.0 : 14.0;
+    final buttonPaddingV = isTablet ? 10.0 : 6.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Banner image
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _handleTap(context),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: isTablet ? 12 : 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                      child: CachedNetworkImage(
+                        imageUrl: banner.imageUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(color: Colors.grey[200]),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[200],
+                          child: Icon(Icons.image_not_supported, size: 48, color: Colors.grey[400]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Title + optional button below image (same height as live session text area)
+              SizedBox(
+                height: belowImageHeight,
+                child: Padding(
+                  padding: EdgeInsets.only(top: isTablet ? 10 : 7, left: 2, right: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (banner.title.isNotEmpty) ...[
+                        Text(
+                          banner.title,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                            fontSize: titleSize,
+                            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: isTablet ? 8 : 5),
+                      ],
+                      if (_hasLink) ...[
+                        GestureDetector(
+                          onTap: () => _handleTap(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: buttonPaddingH,
+                              vertical: buttonPaddingV,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2470E4),
+                              borderRadius: BorderRadius.circular(isTablet ? 10 : 7),
+                            ),
+                            child: Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                                fontSize: buttonFontSize,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -223,6 +223,18 @@ class _DataCollectionScreenState extends State<DataCollectionScreen> {
     if (_addressController.text.trim().isEmpty) {
       errors.add('Address');
     }
+    if (_ugCollegeController.text.trim().isEmpty) {
+      errors.add('UG College');
+    }
+    if (_pgCollegeController.text.trim().isEmpty) {
+      errors.add('PG College');
+    }
+    if (_organisationController.text.trim().isEmpty) {
+      errors.add('Affiliated Organisation');
+    }
+    if (_designationController.text.trim().isEmpty) {
+      errors.add('Current Designation');
+    }
 
     if (errors.isNotEmpty) {
       showAppDialog(context, message: 'Please fill in: ${errors.join(', ')}');

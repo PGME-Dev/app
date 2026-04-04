@@ -92,9 +92,28 @@ class _SplashScreenState extends State<SplashScreen> {
           debugPrint('Onboarding completed, navigating to home');
           context.go('/home');
         } else {
-          // Onboarding not completed - go to subject selection
-          debugPrint('Onboarding not completed, navigating to subject-selection');
-          context.go('/subject-selection');
+          // Onboarding not completed - check if profile data is filled
+          final user = authProvider.user;
+          final hasProfileData = user != null &&
+              (user.name ?? '').trim().isNotEmpty &&
+              (user.email ?? '').trim().isNotEmpty &&
+              (user.dateOfBirth ?? '').trim().isNotEmpty &&
+              (user.gender ?? '').trim().isNotEmpty &&
+              (user.address ?? '').trim().isNotEmpty &&
+              (user.ugCollege ?? '').trim().isNotEmpty &&
+              (user.pgCollege ?? '').trim().isNotEmpty &&
+              (user.affiliatedOrganisation ?? '').trim().isNotEmpty &&
+              (user.currentDesignation ?? '').trim().isNotEmpty;
+
+          if (hasProfileData) {
+            // Profile complete but subject not selected - go to subject selection
+            debugPrint('Profile complete, navigating to subject-selection');
+            context.go('/subject-selection');
+          } else {
+            // Profile incomplete - go to data collection
+            debugPrint('Profile incomplete, navigating to data-collection');
+            context.go('/data-collection');
+          }
         }
       } else {
         // User is not authenticated - check if intro was seen

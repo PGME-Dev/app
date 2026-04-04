@@ -329,13 +329,16 @@ class HomeSectionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (item.imageUrl != null)
-              _buildImage(
-                item.imageUrl!,
-                width: double.infinity,
-                height: isTablet ? 200 : 160,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(radius),
-                  topRight: Radius.circular(radius),
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _buildImage(
+                  item.imageUrl!,
+                  width: double.infinity,
+                  height: double.infinity,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(radius),
+                    topRight: Radius.circular(radius),
+                  ),
                 ),
               ),
             Padding(
@@ -430,17 +433,19 @@ class HomeSectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (item.imageUrl != null)
-            Stack(
-              children: [
-                _buildImage(
-                  item.imageUrl!,
-                  width: double.infinity,
-                  height: isTablet ? 260 : 200,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(radius),
-                    topRight: Radius.circular(radius),
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                children: [
+                  _buildImage(
+                    item.imageUrl!,
+                    width: double.infinity,
+                    height: double.infinity,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(radius),
+                      topRight: Radius.circular(radius),
+                    ),
                   ),
-                ),
                 if (item.tagLabel != null)
                   Positioned(
                     top: isTablet ? 16 : 12,
@@ -466,6 +471,7 @@ class HomeSectionCard extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
             ),
           Padding(
             padding: EdgeInsets.all(isTablet ? 20 : 14),
@@ -551,13 +557,16 @@ class HomeSectionCard extends StatelessWidget {
         child: Row(
           children: [
             if (item.imageUrl != null)
-              _buildImage(
-                item.imageUrl!,
-                width: cardHeight * 0.85,
-                height: cardHeight,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(radius),
-                  bottomLeft: Radius.circular(radius),
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _buildImage(
+                  item.imageUrl!,
+                  width: double.infinity,
+                  height: cardHeight,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(radius),
+                    bottomLeft: Radius.circular(radius),
+                  ),
                 ),
               ),
             Expanded(
@@ -634,7 +643,6 @@ class HomeSectionCard extends StatelessWidget {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
     final radius = isTablet ? 22.0 : 16.0;
-    final cardHeight = isTablet ? 300.0 : 220.0;
     final overlayTextColor = parseHexColor(
       item.textColor,
       fallback: Colors.white,
@@ -642,22 +650,23 @@ class HomeSectionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: _hasPrimaryAction ? () => _handlePrimaryTap(context) : null,
-      child: Container(
-        height: cardHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(radius),
-          color: isDark ? AppColors.darkCardBackground : Colors.grey[300],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (item.imageUrl != null)
-              _buildImage(
-                item.imageUrl!,
-                width: double.infinity,
-                height: cardHeight,
-              ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(radius),
+            color: isDark ? AppColors.darkCardBackground : Colors.grey[300],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (item.imageUrl != null)
+                _buildImage(
+                  item.imageUrl!,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
             // Gradient overlay
             Container(
               decoration: BoxDecoration(
@@ -733,6 +742,7 @@ class HomeSectionCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -1052,27 +1062,28 @@ class HomeSectionCard extends StatelessWidget {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
     final radius = isTablet ? 22.0 : 14.0;
-    final bannerHeight = isTablet ? 220.0 : 160.0;
-
     if (item.imageUrl != null) {
       return GestureDetector(
         onTap: _hasPrimaryAction ? () => _handlePrimaryTap(context) : null,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: _buildImage(
-            item.imageUrl!,
-            width: double.infinity,
-            height: bannerHeight,
-            borderRadius: BorderRadius.circular(radius),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: _buildImage(
+              item.imageUrl!,
+              width: double.infinity,
+              height: double.infinity,
+              borderRadius: BorderRadius.circular(radius),
+            ),
           ),
         ),
       );
@@ -1087,8 +1098,9 @@ class HomeSectionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: _hasPrimaryAction ? () => _handlePrimaryTap(context) : null,
-      child: Container(
-        height: bannerHeight,
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(radius),
@@ -1106,6 +1118,7 @@ class HomeSectionCard extends StatelessWidget {
                 textAlign: TextAlign.center,
               )
             : null,
+        ),
       ),
     );
   }

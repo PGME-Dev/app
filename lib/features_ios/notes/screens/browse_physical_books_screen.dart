@@ -376,7 +376,7 @@ class _BrowsePhysicalBooksScreenState extends State<BrowsePhysicalBooksScreen> {
                       crossAxisCount: isTablet ? 3 : 2,
                       crossAxisSpacing: isTablet ? 20 : 16,
                       mainAxisSpacing: isTablet ? 20 : 16,
-                      childAspectRatio: isTablet ? 170 / 310 : 170 / 284,
+                      childAspectRatio: 16 / 9,
                     ),
                     itemCount: provider.books.length + (provider.pagination?.hasNext == true ? 1 : 0),
                     itemBuilder: (context, index) {

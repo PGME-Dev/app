@@ -5,6 +5,7 @@ import 'package:pgme/core_android/theme/app_theme.dart';
 import 'package:pgme/core_android/models/subject_model.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
+import 'package:pgme/features_android/auth/providers/auth_provider.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/features_android/onboarding/providers/onboarding_provider.dart';
 
@@ -80,10 +81,29 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
             context.pop(true);
           }
         } else {
-          // Initial onboarding — complete onboarding and navigate to home
-          await provider.completeOnboarding();
-          if (mounted) {
-            context.go('/home');
+          // Initial onboarding — verify profile is complete before finishing
+          final user = context.read<AuthProvider>().user;
+          final hasProfileData = user != null &&
+              (user.name ?? '').trim().isNotEmpty &&
+              (user.email ?? '').trim().isNotEmpty &&
+              (user.dateOfBirth ?? '').trim().isNotEmpty &&
+              (user.gender ?? '').trim().isNotEmpty &&
+              (user.address ?? '').trim().isNotEmpty &&
+              (user.ugCollege ?? '').trim().isNotEmpty &&
+              (user.pgCollege ?? '').trim().isNotEmpty &&
+              (user.affiliatedOrganisation ?? '').trim().isNotEmpty &&
+              (user.currentDesignation ?? '').trim().isNotEmpty;
+
+          if (!hasProfileData) {
+            // Profile incomplete — send to data collection first
+            if (mounted) {
+              context.go('/data-collection');
+            }
+          } else {
+            await provider.completeOnboarding();
+            if (mounted) {
+              context.go('/home');
+            }
           }
         }
       }

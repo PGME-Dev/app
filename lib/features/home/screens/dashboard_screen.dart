@@ -262,13 +262,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       SizedBox(height: isTablet ? 40 : 25),
 
                       // Live Class Carousel (auto-sliding with multiple sessions and banners)
-                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                      if (dashboardProvider.banners.isNotEmpty)
                         LiveClassCarousel(
-                          sessions: dashboardProvider.upcomingSessions,
+                          sessions: const [], // Disabled: live sessions now shown via banners
                           banners: dashboardProvider.banners,
                         ),
 
-                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                      if (dashboardProvider.banners.isNotEmpty)
                         SizedBox(height: isTablet ? 36 : 24),
 
                       // Subject Section (if available)

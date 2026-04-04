@@ -103,7 +103,7 @@ class DashboardProvider with ChangeNotifier {
 
     // Load all other sections in parallel (don't stop on first error)
     await Future.wait([
-      _loadUpcomingSession(),
+      // _loadUpcomingSession(), // Disabled: live sessions now shown via banners
       _loadFacultyList(),
       _loadContentSection(),
       _loadBanners(),
@@ -450,7 +450,7 @@ class DashboardProvider with ChangeNotifier {
   /// Retry loading upcoming session
   Future<void> retrySession() async {
     debugPrint('=== Retrying upcoming session ===');
-    await _loadUpcomingSession();
+    // await _loadUpcomingSession(); // Disabled: live sessions now shown via banners
     notifyListeners();
   }
 
@@ -522,7 +522,7 @@ class DashboardProvider with ChangeNotifier {
 
       // Reload all subject-dependent sections in parallel
       await Future.wait([
-        _loadUpcomingSession(),
+        // _loadUpcomingSession(), // Disabled: live sessions now shown via banners
         _loadContentSection(),
         _loadFacultyList(),
       ]);
@@ -567,7 +567,7 @@ class DashboardProvider with ChangeNotifier {
 
       // Reload sessions, content, and faculty with new subject
       await Future.wait([
-        _loadUpcomingSession(),
+        // _loadUpcomingSession(), // Disabled: live sessions now shown via banners
         _loadContentSection(),
         _loadFacultyList(),
       ]);

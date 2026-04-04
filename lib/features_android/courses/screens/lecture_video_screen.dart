@@ -220,7 +220,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     final hPadding = isTablet ? 24.0 : 16.0;
     final headerIconSize = isTablet ? 30.0 : 24.0;
     final titleFontSize = isTablet ? 24.0 : 20.0;
-    final bannerHeight = isTablet ? 320.0 : 242.0;
     final videoTitleSize = isTablet ? 22.0 : 18.0;
     final descFontSize = isTablet ? 17.0 : 14.0;
     final enrollBtnHeight = isTablet ? 68.0 : 54.0;
@@ -314,9 +313,8 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                       borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: bannerHeight,
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
                           child: ClipRRect(
                             borderRadius: isTablet ? BorderRadius.circular(16) : BorderRadius.zero,
                             child: Stack(
@@ -324,7 +322,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
                               children: [
                                 // Thumbnail: prefer package thumbnail, then series thumbnail, then fallback
                                 _buildBannerImage(
-                                  bannerHeight: bannerHeight,
                                   isDark: isDark,
                                   isTablet: isTablet,
                                   secondaryTextColor: secondaryTextColor,
@@ -548,7 +545,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
 
   /// Build the banner image with fallback: package thumbnail > series thumbnail > asset > icon
   Widget _buildBannerImage({
-    required double bannerHeight,
     required bool isDark,
     required bool isTablet,
     required Color secondaryTextColor,
@@ -560,7 +556,7 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
       return CachedNetworkImage(
         imageUrl: thumbnailUrl,
         width: double.infinity,
-        height: bannerHeight,
+        height: double.infinity,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(
           color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
@@ -572,7 +568,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
           ),
         ),
         errorWidget: (context, url, error) => _buildBannerPlaceholder(
-          bannerHeight: bannerHeight,
           isDark: isDark,
           isTablet: isTablet,
           secondaryTextColor: secondaryTextColor,
@@ -581,7 +576,6 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
     }
 
     return _buildBannerPlaceholder(
-      bannerHeight: bannerHeight,
       isDark: isDark,
       isTablet: isTablet,
       secondaryTextColor: secondaryTextColor,
@@ -589,14 +583,12 @@ class _LectureVideoScreenState extends State<LectureVideoScreen> with TickerProv
   }
 
   Widget _buildBannerPlaceholder({
-    required double bannerHeight,
     required bool isDark,
     required bool isTablet,
     required Color secondaryTextColor,
   }) {
     return Container(
       width: double.infinity,
-      height: bannerHeight,
       color: isDark ? AppColors.darkSurface : const Color(0xFFE0E0E0),
       child: Center(
         child: Icon(

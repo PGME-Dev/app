@@ -122,6 +122,9 @@ class PackageModel {
   @JsonKey(fromJson: _featuresFromJson)
   final List<String>? features;
 
+  @JsonKey(name: 'rich_description')
+  final String? richDescription;
+
   @JsonKey(name: 'display_order', defaultValue: 0)
   final int displayOrder;
 
@@ -169,6 +172,7 @@ class PackageModel {
     this.notesThumbnailUrl,
     this.trailerVideoUrl,
     this.features,
+    this.richDescription,
     required this.displayOrder,
     required this.isPurchased,
     required this.accessRevoked,
@@ -185,6 +189,10 @@ class PackageModel {
       _$PackageModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PackageModelToJson(this);
+
+  /// Whether this package has rich HTML content
+  bool get hasRichDescription =>
+      richDescription != null && richDescription!.isNotEmpty;
 
   /// Get the display price (first tier effective price or sale price or regular price)
   int get displayPrice {
@@ -212,6 +220,7 @@ class PackageModel {
     String? notesThumbnailUrl,
     String? trailerVideoUrl,
     List<String>? features,
+    String? richDescription,
     int? displayOrder,
     bool? isPurchased,
     bool? accessRevoked,
@@ -240,6 +249,7 @@ class PackageModel {
       notesThumbnailUrl: notesThumbnailUrl ?? this.notesThumbnailUrl,
       trailerVideoUrl: trailerVideoUrl ?? this.trailerVideoUrl,
       features: features ?? this.features,
+      richDescription: richDescription ?? this.richDescription,
       displayOrder: displayOrder ?? this.displayOrder,
       isPurchased: isPurchased ?? this.isPurchased,
       accessRevoked: accessRevoked ?? this.accessRevoked,

@@ -6,6 +6,7 @@ class NotificationModel {
   final DateTime sentAt;
   final DateTime? readAt;
   final String? clickUrl;
+  final String? imageUrl;
 
   NotificationModel({
     required this.notificationId,
@@ -15,9 +16,15 @@ class NotificationModel {
     required this.sentAt,
     this.readAt,
     this.clickUrl,
+    this.imageUrl,
   });
 
   bool get isRead => readAt != null;
+
+  /// Whether the click URL points to an external website (http/https).
+  bool get isExternalUrl =>
+      clickUrl != null &&
+      (clickUrl!.startsWith('http://') || clickUrl!.startsWith('https://'));
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
@@ -28,6 +35,7 @@ class NotificationModel {
       sentAt: DateTime.parse(json['sent_at'] as String),
       readAt: json['read_at'] != null ? DateTime.parse(json['read_at'] as String) : null,
       clickUrl: json['click_url'] as String?,
+      imageUrl: json['image_url'] as String?,
     );
   }
 
@@ -40,6 +48,7 @@ class NotificationModel {
       'sent_at': sentAt.toIso8601String(),
       'read_at': readAt?.toIso8601String(),
       'click_url': clickUrl,
+      'image_url': imageUrl,
     };
   }
 
@@ -51,6 +60,7 @@ class NotificationModel {
     DateTime? sentAt,
     DateTime? readAt,
     String? clickUrl,
+    String? imageUrl,
   }) {
     return NotificationModel(
       notificationId: notificationId ?? this.notificationId,
@@ -60,6 +70,7 @@ class NotificationModel {
       sentAt: sentAt ?? this.sentAt,
       readAt: readAt ?? this.readAt,
       clickUrl: clickUrl ?? this.clickUrl,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

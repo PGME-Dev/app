@@ -16,6 +16,7 @@ import 'package:pgme/core_android/services/download_service.dart';
 import 'package:pgme/core_android/services/progress_service.dart';
 import 'package:pgme/core_android/theme/app_theme.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
 import 'package:pgme/features_android/notes/widgets/bookmarks_drawer.dart';
 
@@ -73,6 +74,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   // Track annotation text: annotationId -> highlighted text
   final Map<String, String> _annotationTexts = {};
 
+  // Store text bounds per annotation for reliable toggle matching
+  // (Syncfusion does not re-expose textBoundsCollection after construction)
+  final Map<String, List<PdfTextLine>> _annotationTextBounds = {};
+
   // Context menu overlay (for highlight color picker + delete)
   OverlayEntry? _contextMenuOverlay;
 
@@ -84,13 +89,29 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   // Feature 2: Progress tracking
   final ValueNotifier<int> _currentPage = ValueNotifier(1);
   Timer? _progressDebounceTimer;
+  Timer? _contextMenuDebounce;
 
   // Feature 3: PDF content dark mode
   bool _isPdfDarkMode = false;
 
-  // Quick action buttons visibility (toggle on single tap)
-  bool _showQuickActions = true;
-  bool _isAnnotationSelected = false;
+  // Keep screen on while reading
+  bool _keepScreenOn = false;
+
+  // Orientation lock
+  bool _orientationLocked = false;
+
+  // Standalone notes (annotation_type: 'note') — noteId -> {page, note}
+  final Map<String, Map<String, dynamic>> _standaloneNotes = {};
+
+  // Undo stack — stores annotation IDs + types for multi-level undo
+  final List<({String id, String type})> _undoStack = [];
+
+  // Guards against duplicate loads from multiple onDocumentLoaded calls
+  bool _highlightsLoaded = false;
+  bool _bookmarksLoaded = false;
+
+  // Cached PDF viewer widget — prevents rebuilds when parent calls setState
+  Widget? _cachedPdfViewer;
 
   static const Map<String, Color> highlightColors = {
     'yellow': Color(0x80FFEB3B),
@@ -109,9 +130,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     0, 0, 0, 1, 0,
   ]);
 
+
   @override
   void initState() {
     super.initState();
+    // Allow rotation in PDF viewer
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     // Initialize PDF dark mode from system theme
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -128,10 +157,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   void dispose() {
     _contextMenuOverlay?.remove();
-    // Save final progress before disposing
+    _contextMenuOverlay = null;
+    _contextMenuDebounce?.cancel();
+    // Save final progress before disposing — capture values before dispose
     _progressDebounceTimer?.cancel();
-    if (widget.documentId != null && _currentPage.value > 0) {
-      _saveProgress(_currentPage.value);
+    final documentId = widget.documentId;
+    final lastPage = _currentPage.value;
+    if (documentId != null && lastPage > 0) {
+      // Fire-and-forget: use a captured reference so no widget state is accessed
+      _progressService.updateDocumentProgress(
+        documentId: documentId,
+        pageNumber: lastPage,
+      );
+    }
+    if (_keepScreenOn) WakelockPlus.disable();
+    // Restore portrait-only for non-tablet devices
+    final shortestSide = MediaQuery.of(context).size.shortestSide;
+    if (shortestSide < 600) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
     }
     _currentPage.dispose();
     _pdfController.dispose();
@@ -275,7 +321,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   // ── Feature 1: Bookmarks ──────────────────────────────────────────
 
   Future<void> _loadBookmarks() async {
-    if (widget.documentId == null) return;
+    if (widget.documentId == null || _bookmarksLoaded) return;
+    _bookmarksLoaded = true;
     try {
       final bookmarks =
           await _bookmarkService.getBookmarks(widget.documentId!);
@@ -303,6 +350,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (_bookmarkedPages.containsKey(page)) {
       // Remove bookmark — optimistic UI
       final bookmarkId = _bookmarkedPages[page]!;
+      final savedNote = _bookmarkNotes[bookmarkId];
       setState(() {
         _bookmarkedPages.remove(page);
         _bookmarkNotes.remove(bookmarkId);
@@ -310,9 +358,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       try {
         await _bookmarkService.deleteBookmark(bookmarkId);
       } catch (e) {
-        // Restore on failure
+        // Restore on failure — including the note
         if (mounted) {
-          setState(() => _bookmarkedPages[page] = bookmarkId);
+          setState(() {
+            _bookmarkedPages[page] = bookmarkId;
+            _bookmarkNotes[bookmarkId] = savedNote;
+          });
           showAppDialog(context, message: 'Failed to remove bookmark', type: AppDialogType.info);
         }
       }
@@ -342,7 +393,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   /// Load saved highlights/underlines from backend and apply as annotations
   Future<void> _loadHighlights() async {
-    if (widget.documentId == null) return;
+    if (widget.documentId == null || _highlightsLoaded) return;
+    _highlightsLoaded = true;
 
     // Small delay to ensure PDF viewer is fully ready for annotations
     await Future.delayed(const Duration(milliseconds: 500));
@@ -362,6 +414,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           final annotationType =
               (h['annotation_type'] as String?) ?? 'highlight';
           final note = h['note'] as String?;
+
+          // Standalone notes have no bounds — just track in _standaloneNotes
+          if (annotationType == 'note') {
+            _standaloneNotes[highlightId] = {
+              'page_number': h['page_number'] as int? ?? 1,
+              'note': note ?? '',
+            };
+            continue;
+          }
 
           if (boundsData == null || boundsData.isEmpty) continue;
 
@@ -397,10 +458,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             _highlightAnnotations[highlightId] = annotation;
           }
 
-          // Track note and text
+          // Track note, text, and bounds for toggle matching
           _annotationNotes[highlightId] = note;
           _annotationTexts[highlightId] =
               (h['highlighted_text'] as String?) ?? '';
+          _annotationTextBounds[highlightId] = textLines;
         } catch (e) {
           debugPrint('Failed to restore highlight: $e');
         }
@@ -420,12 +482,28 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final isTablet = ResponsiveHelper.isTablet(context);
     final screenSize = MediaQuery.of(context).size;
 
-    // Adjust position to stay within screen bounds
-    double left = position.dx - 100;
-    double top = position.dy - 60;
-    if (left < 8) left = 8;
-    if (left + 200 > screenSize.width) left = screenSize.width - 208;
-    if (top < 8) top = 60;
+    final safePadding = MediaQuery.of(context).padding;
+    // Menu is 4 color circles + divider + underline + note button + padding
+    final menuWidth = isTablet ? 310.0 : 260.0;
+    final menuHeight = isTablet ? 56.0 : 46.0;
+
+    // Center menu on selection, clamped to screen bounds
+    double left = position.dx - menuWidth / 2;
+    double top = position.dy - menuHeight - 12;
+
+    // Horizontal: keep within safe area + margin
+    final minLeft = safePadding.left + 8;
+    final maxLeft = screenSize.width - safePadding.right - menuWidth - 8;
+    left = left.clamp(minLeft, maxLeft);
+
+    // Vertical: if clipped at top, flip below the selection
+    if (top < safePadding.top + 8) {
+      top = position.dy + 12;
+    }
+    // If clipped at bottom, push up
+    if (top + menuHeight > screenSize.height - safePadding.bottom - 8) {
+      top = screenSize.height - safePadding.bottom - menuHeight - 8;
+    }
 
     _contextMenuOverlay = OverlayEntry(
       builder: (context) => Positioned(
@@ -537,6 +615,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   void _removeContextMenu() {
+    _contextMenuDebounce?.cancel();
     _contextMenuOverlay?.remove();
     _contextMenuOverlay = null;
   }
@@ -592,14 +671,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
         // Track the annotation with its backend ID
         final highlightId = result['highlight_id'] as String;
+        debugPrint('[HIGHLIGHT] Created highlight_id=$highlightId');
         _highlightAnnotations[highlightId] = annotation;
         _annotationNotes[highlightId] = null;
         _annotationTexts[highlightId] = highlightedText;
+        _annotationTextBounds[highlightId] = textLines;
+        _undoStack.add((id: highlightId, type: 'highlight'));
+        debugPrint('[HIGHLIGHT] pushed to undo stack: $highlightId');
+        setState(() {});
       } catch (e) {
         debugPrint('Failed to save highlight: $e');
+        // Remove the annotation since it wasn't persisted — prevents ghost annotations
+        _pdfController.removeAnnotation(annotation);
         if (mounted) {
           showAppDialog(context, message: 'Failed to save highlight', type: AppDialogType.info);
         }
+        _pdfController.clearSelection();
+        return null;
       }
     }
 
@@ -625,12 +713,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final textLines = _pdfViewerKey.currentState?.getSelectedTextLines();
     if (textLines == null || textLines.isEmpty) return;
 
+    // Toggle: if selected text exactly matches an existing underline, remove it.
+    final selectedText = textLines.map((l) => l.text).join(' ').trim();
+    for (final entry in _underlineAnnotations.entries) {
+      final storedText = _annotationTexts[entry.key]?.trim();
+      if (storedText != null && storedText == selectedText) {
+        _pdfController.clearSelection();
+        _removeHighlight(entry.value);
+        return;
+      }
+    }
+
     final annotation = UnderlineAnnotation(
       textBoundsCollection: textLines,
     );
     annotation.color = underlineColor;
 
+    debugPrint('[UNDERLINE] Adding new underline. Existing underlines: ${_underlineAnnotations.length}');
     _pdfController.addAnnotation(annotation);
+    debugPrint('[UNDERLINE] After addAnnotation. Existing underlines: ${_underlineAnnotations.length}');
 
     // Save to backend
     if (widget.documentId != null) {
@@ -668,8 +769,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _underlineAnnotations[highlightId] = annotation;
         _annotationNotes[highlightId] = null;
         _annotationTexts[highlightId] = highlightedText;
+        _annotationTextBounds[highlightId] = textLines;
+        _undoStack.add((id: highlightId, type: 'underline'));
+        debugPrint('[UNDERLINE] pushed to undo stack: $highlightId');
+        setState(() {});
       } catch (e) {
         debugPrint('Failed to save underline: $e');
+        // Remove the annotation since it wasn't persisted — prevents ghost annotations
+        _pdfController.removeAnnotation(annotation);
         if (mounted) {
           showAppDialog(context, message: 'Failed to save underline', type: AppDialogType.info);
         }
@@ -1260,6 +1367,464 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   /// Show a bottom sheet with all highlights/notes for this document
+  // ── Standalone notes ───────────────────────────────────────────────
+
+  void _showAddStandaloneNoteDialog(StateSetter setSheetState) {
+    final isDark =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
+    final pageController = TextEditingController();
+    final noteController = TextEditingController();
+    final totalPages = _pdfController.pageCount;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36, height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: Text('Add Note',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 20 : 18,
+                        color: textColor,
+                      )),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: TextField(
+                    controller: pageController,
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: textColor, fontSize: isTablet ? 15 : 14),
+                    decoration: InputDecoration(
+                      hintText: 'Page number (1-$totalPages)',
+                      hintStyle: TextStyle(
+                        color: isDark ? AppColors.darkTextTertiary : Colors.grey[400],
+                        fontSize: isTablet ? 15 : 14,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FE),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 12 : 8),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: TextField(
+                    controller: noteController,
+                    maxLines: 4,
+                    maxLength: 500,
+                    autofocus: true,
+                    style: TextStyle(color: textColor, fontSize: isTablet ? 15 : 14, height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: 'Write your note...',
+                      hintStyle: TextStyle(
+                        color: isDark ? AppColors.darkTextTertiary : Colors.grey[400],
+                        fontSize: isTablet ? 15 : 14,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FE),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                      ),
+                      counterStyle: TextStyle(
+                        color: isDark ? AppColors.darkTextTertiary : Colors.grey,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text('Cancel',
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextSecondary : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            )),
+                      ),
+                      SizedBox(width: isTablet ? 12 : 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.blueGradient,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () {
+                              final pageNum = int.tryParse(pageController.text.trim());
+                              final note = noteController.text.trim();
+                              if (pageNum == null || pageNum < 1 || pageNum > totalPages) {
+                                showAppDialog(context,
+                                    message: 'Enter a valid page number (1-$totalPages)',
+                                    type: AppDialogType.info);
+                                return;
+                              }
+                              if (note.isEmpty) {
+                                showAppDialog(context,
+                                    message: 'Note cannot be empty',
+                                    type: AppDialogType.info);
+                                return;
+                              }
+                              Navigator.pop(ctx);
+                              _saveStandaloneNote(pageNum, note, setSheetState);
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 28 : 24,
+                                  vertical: isTablet ? 12 : 10),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check, size: isTablet ? 18 : 16, color: Colors.white),
+                                  SizedBox(width: isTablet ? 6 : 4),
+                                  Text('Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 15 : 14,
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveStandaloneNote(int pageNumber, String note, StateSetter setSheetState) async {
+    if (widget.documentId == null) return;
+    try {
+      final result = await _highlightService.addHighlight(
+        documentId: widget.documentId!,
+        pageNumber: pageNumber,
+        startOffset: 0,
+        endOffset: 0,
+        highlightedText: '',
+        color: 'yellow',
+        annotationType: 'note',
+        note: note,
+      );
+      final noteId = result['highlight_id'] as String;
+      debugPrint('[NOTE] Created note_id=$noteId');
+      _standaloneNotes[noteId] = {
+        'page_number': pageNumber,
+        'note': note,
+      };
+      _undoStack.add((id: noteId, type: 'note'));
+      debugPrint('[NOTE] pushed to undo stack: $noteId');
+      setSheetState(() {});
+      setState(() {});
+    } catch (e) {
+      debugPrint('Failed to save standalone note: $e');
+      if (mounted) {
+        showAppDialog(context, message: 'Failed to save note', type: AppDialogType.info);
+      }
+    }
+  }
+
+  // ── Edit standalone note ──────────────────────────────────────────
+
+  void _showEditStandaloneNoteDialog(String noteId, StateSetter setSheetState) {
+    final noteData = _standaloneNotes[noteId];
+    if (noteData == null) return;
+    final isDark =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
+    final noteController = TextEditingController(text: noteData['note'] as String);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36, height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('Edit Note  ·  Page ${noteData['page_number']}',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTablet ? 20 : 18,
+                              color: textColor,
+                            )),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _deleteStandaloneNote(noteId, setSheetState);
+                        },
+                        child: Icon(Icons.delete_outline,
+                            size: isTablet ? 22 : 20,
+                            color: AppColors.error),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: TextField(
+                    controller: noteController,
+                    maxLines: 4,
+                    maxLength: 500,
+                    autofocus: true,
+                    style: TextStyle(color: textColor, fontSize: isTablet ? 15 : 14, height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: 'Write your note...',
+                      hintStyle: TextStyle(
+                        color: isDark ? AppColors.darkTextTertiary : Colors.grey[400],
+                        fontSize: isTablet ? 15 : 14,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FE),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                      ),
+                      counterStyle: TextStyle(
+                        color: isDark ? AppColors.darkTextTertiary : Colors.grey,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 20),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text('Cancel',
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextSecondary : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            )),
+                      ),
+                      SizedBox(width: isTablet ? 12 : 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.blueGradient,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () async {
+                              final note = noteController.text.trim();
+                              if (note.isEmpty) {
+                                showAppDialog(context,
+                                    message: 'Note cannot be empty',
+                                    type: AppDialogType.info);
+                                return;
+                              }
+                              Navigator.pop(ctx);
+                              try {
+                                await _highlightService.updateHighlightNote(noteId, note);
+                                _standaloneNotes[noteId]!['note'] = note;
+                                setSheetState(() {});
+                              } catch (e) {
+                                debugPrint('Failed to update note: $e');
+                                if (mounted) {
+                                  showAppDialog(context,
+                                      message: 'Failed to update note',
+                                      type: AppDialogType.info);
+                                }
+                              }
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 28 : 24,
+                                  vertical: isTablet ? 12 : 10),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check, size: isTablet ? 18 : 16, color: Colors.white),
+                                  SizedBox(width: isTablet ? 6 : 4),
+                                  Text('Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 15 : 14,
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteStandaloneNote(String noteId, StateSetter setSheetState) async {
+    final backup = _standaloneNotes[noteId];
+    _standaloneNotes.remove(noteId);
+    setSheetState(() {});
+    setState(() {});
+    try {
+      await _highlightService.deleteHighlight(noteId);
+    } catch (e) {
+      debugPrint('Failed to delete note: $e');
+      // Restore on failure
+      if (backup != null) {
+        _standaloneNotes[noteId] = backup;
+        setSheetState(() {});
+        setState(() {});
+      }
+      if (mounted) {
+        showAppDialog(context, message: 'Failed to delete note', type: AppDialogType.info);
+      }
+    }
+  }
+
+  // ── Undo last annotation ──────────────────────────────────────────
+
+  Future<void> _undoLastAnnotation() async {
+    if (_undoStack.isEmpty) return;
+    final entry = _undoStack.removeLast();
+    final id = entry.id;
+    final type = entry.type;
+    debugPrint('[UNDO] Popped from stack: id=$id type=$type (${_undoStack.length} remaining)');
+
+    try {
+      // Remove from viewer if it's a highlight/underline
+      if (type == 'highlight' && _highlightAnnotations.containsKey(id)) {
+        try {
+          _pdfController.removeAnnotation(_highlightAnnotations[id]!);
+        } catch (_) {}
+      } else if (type == 'underline' && _underlineAnnotations.containsKey(id)) {
+        try {
+          _pdfController.removeAnnotation(_underlineAnnotations[id]!);
+        } catch (_) {}
+      } else if (type == 'note') {
+        _standaloneNotes.remove(id);
+      }
+
+      // Delete from backend (404 means already gone — treat as success)
+      try {
+        await _highlightService.deleteHighlight(id);
+        debugPrint('[UNDO] Backend delete success for id=$id');
+      } catch (e) {
+        debugPrint('[UNDO] Backend delete failed for id=$id: $e');
+      }
+
+      // Clean up local state
+      _highlightAnnotations.remove(id);
+      _underlineAnnotations.remove(id);
+      _annotationNotes.remove(id);
+      _annotationTexts.remove(id);
+      _annotationTextBounds.remove(id);
+      _standaloneNotes.remove(id);
+
+      setState(() {});
+    } catch (e) {
+      debugPrint('Failed to undo: $e');
+      if (mounted) {
+        showAppDialog(context, message: 'Failed to undo: $e', type: AppDialogType.info);
+      }
+    }
+  }
+
   void _showAllNotesPanel() {
     final isDark =
         Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
@@ -1288,7 +1853,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 final currentIds = <String>[
                   ..._highlightAnnotations.keys,
                   ..._underlineAnnotations.keys,
-                ];
+                  ..._standaloneNotes.keys,
+                ]..sort((a, b) => b.compareTo(a));
                 return Column(
                   children: [
                     // Drag handle
@@ -1303,7 +1869,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         ),
                       ),
                     ),
-                    // Title
+                    // Title + action buttons
                     Padding(
                       padding: EdgeInsets.symmetric(
                           horizontal: isTablet ? 24 : 20),
@@ -1325,12 +1891,31 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             ),
                           ),
                           const Spacer(),
-                          Text(
-                            '${currentIds.length}',
-                            style: TextStyle(
-                              fontSize: isTablet ? 15 : 13,
-                              color: subtitleColor,
-                              fontWeight: FontWeight.w500,
+                          // Add Note button
+                          GestureDetector(
+                            onTap: () => _showAddStandaloneNoteDialog(setSheetState),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 10 : 8,
+                                  vertical: isTablet ? 6 : 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add, size: isTablet ? 16 : 14,
+                                      color: AppColors.primaryBlue),
+                                  SizedBox(width: isTablet ? 4 : 3),
+                                  Text('Add Note',
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 12 : 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.primaryBlue,
+                                      )),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -1389,8 +1974,90 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                               ),
                               itemBuilder: (context, index) {
                                 final id = currentIds[index];
+                                final isStandaloneNote =
+                                    _standaloneNotes.containsKey(id);
                                 final isHighlight =
                                     _highlightAnnotations.containsKey(id);
+
+                                // Standalone note rendering
+                                if (isStandaloneNote) {
+                                  final noteData = _standaloneNotes[id]!;
+                                  final noteText = noteData['note'] as String;
+                                  final pageNum = noteData['page_number'] as int;
+                                  return InkWell(
+                                    onTap: () {
+                                      _showEditStandaloneNoteDialog(id, setSheetState);
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 24 : 20,
+                                        vertical: isTablet ? 14 : 12,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: isTablet ? 36 : 30,
+                                            height: isTablet ? 36 : 30,
+                                            margin: EdgeInsets.only(right: isTablet ? 14 : 10),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(Icons.note_outlined,
+                                                size: isTablet ? 18 : 16,
+                                                color: AppColors.primaryBlue),
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Page $pageNum',
+                                                    style: TextStyle(
+                                                      fontSize: isTablet ? 12 : 11,
+                                                      color: subtitleColor,
+                                                      fontWeight: FontWeight.w500,
+                                                    )),
+                                                SizedBox(height: isTablet ? 4 : 2),
+                                                Text(noteText,
+                                                    style: TextStyle(
+                                                      fontSize: isTablet ? 14 : 13,
+                                                      color: textColor,
+                                                      height: 1.3,
+                                                    ),
+                                                    maxLines: 3,
+                                                    overflow: TextOverflow.ellipsis),
+                                              ],
+                                            ),
+                                          ),
+                                          // Go to page button
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.pop(sheetContext);
+                                              _pdfController.jumpToPage(pageNum);
+                                            },
+                                            child: Padding(
+                                              padding: EdgeInsets.only(left: isTablet ? 8 : 6),
+                                              child: Icon(Icons.my_location,
+                                                  size: isTablet ? 22 : 20,
+                                                  color: AppColors.primaryBlue.withValues(alpha: 0.7)),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () => _deleteStandaloneNote(id, setSheetState),
+                                            child: Padding(
+                                              padding: EdgeInsets.only(left: isTablet ? 8 : 6),
+                                              child: Icon(Icons.delete_outline,
+                                                  size: isTablet ? 22 : 20,
+                                                  color: AppColors.error.withValues(alpha: 0.7)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
                                 final annotation = isHighlight
                                     ? _highlightAnnotations[id]!
                                     : _underlineAnnotations[id]!;
@@ -1518,6 +2185,26 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                             ],
                                           ),
                                         ),
+                                        // Go to page button
+                                        GestureDetector(
+                                          onTap: () {
+                                            final bounds = _annotationTextBounds[id];
+                                            if (bounds != null && bounds.isNotEmpty) {
+                                              Navigator.pop(sheetContext);
+                                              _pdfController.jumpToPage(bounds.first.pageNumber);
+                                            }
+                                          },
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              left: isTablet ? 8 : 6,
+                                            ),
+                                            child: Icon(
+                                              Icons.my_location,
+                                              size: isTablet ? 22 : 20,
+                                              color: AppColors.primaryBlue.withValues(alpha: 0.7),
+                                            ),
+                                          ),
+                                        ),
                                         // Delete button
                                         GestureDetector(
                                           onTap: () async {
@@ -1587,11 +2274,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   /// Remove a highlight/underline annotation and delete from backend
   Future<void> _removeHighlight(Annotation annotation) async {
+    debugPrint('[REMOVE] Explicitly removing annotation: ${annotation.runtimeType}');
     _pdfController.removeAnnotation(annotation);
   }
 
   /// Handle annotation removal — delete from backend
   Future<void> _handleAnnotationRemoved(Annotation annotation) async {
+    debugPrint('[REMOVED_CB] onAnnotationRemoved fired for ${annotation.runtimeType}');
     String? annotationId;
     _highlightAnnotations.forEach((id, ann) {
       if (ann == annotation) annotationId = id;
@@ -1609,6 +2298,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _underlineAnnotations.remove(annotationId);
         _annotationNotes.remove(annotationId);
         _annotationTexts.remove(annotationId);
+        _annotationTextBounds.remove(annotationId);
       } catch (e) {
         debugPrint('Failed to delete annotation from backend: $e');
       }
@@ -1703,75 +2393,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         Expanded(
                           child: _buildPdfViewer(),
                         ),
+
+                        // Fixed bottom action bar
+                        if (_isPdfReady)
+                          _buildBottomActionBar(isDark, isTablet),
                       ],
                     ),
-                    // Quick action buttons (left side, toggle on single tap)
-                    if (_isPdfReady)
-                      Positioned(
-                        left: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: IgnorePointer(
-                          ignoring: !_showQuickActions,
-                          child: AnimatedOpacity(
-                            opacity: _showQuickActions ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 300),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.black.withValues(alpha: 0.55)
-                                      : Colors.white.withValues(alpha: 0.88),
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.18),
-                                      blurRadius: 8,
-                                      offset: const Offset(1, 2),
-                                    ),
-                                  ],
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  vertical: isTablet ? 10 : 8,
-                                  horizontal: isTablet ? 6 : 4,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _buildQuickActionButton(
-                                      icon: Icons.border_color,
-                                      color: const Color(0xFFFFEB3B),
-                                      tooltip: 'Highlight',
-                                      onTap: () => _highlightSelectedText('yellow'),
-                                      isDark: isDark,
-                                      isTablet: isTablet,
-                                    ),
-                                    SizedBox(height: isTablet ? 8 : 6),
-                                    _buildQuickActionButton(
-                                      icon: Icons.format_underlined,
-                                      color: const Color(0xFF1565C0),
-                                      tooltip: 'Underline',
-                                      onTap: _underlineSelectedText,
-                                      isDark: isDark,
-                                      isTablet: isTablet,
-                                    ),
-                                    SizedBox(height: isTablet ? 8 : 6),
-                                    _buildQuickActionButton(
-                                      icon: Icons.sticky_note_2_outlined,
-                                      color: const Color(0xFF43A047),
-                                      tooltip: 'Notes',
-                                      onTap: _showAllNotesPanel,
-                                      isDark: isDark,
-                                      isTablet: isTablet,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                     // Loading overlay while PDF is parsing
                     if (!_isPdfReady)
                       Positioned.fill(
@@ -1779,7 +2406,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                           color: isDark
                               ? AppColors.darkBackground
                               : Colors.white,
-                          child: Center(
+                          child: const Center(
                             child: CircularProgressIndicator(
                               color: AppColors.primaryBlue,
                             ),
@@ -1792,19 +2419,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Widget _buildPdfViewer() {
-    Widget viewer = SfPdfViewer.file(
+    // Cache the SfPdfViewer widget so setState calls never recreate it.
+    // This is the key fix: Flutter sees the same widget instance and skips
+    // the update, preserving scroll position and internal state.
+    _cachedPdfViewer ??= SfPdfViewer.file(
       File(_localPath!),
       key: _pdfViewerKey,
       controller: _pdfController,
       canShowTextSelectionMenu: false,
+      pageSpacing: 2,
       onTap: (PdfGestureDetails details) {
         _removeContextMenu();
-        // Only toggle if no annotation is currently selected
-        if (!_isAnnotationSelected) {
-          setState(() {
-            _showQuickActions = !_showQuickActions;
-          });
-        }
       },
       onDocumentLoaded: (PdfDocumentLoadedDetails details) {
         if (!_isPdfReady) {
@@ -1823,22 +2448,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
         if (details.selectedText != null &&
             details.selectedText!.isNotEmpty) {
-          if (details.globalSelectedRegion != null) {
-            _showContextMenu(Offset(
-              details.globalSelectedRegion!.center.dx,
-              details.globalSelectedRegion!.top,
-            ));
+          // Debounce: don't rebuild the overlay on every pixel of handle drag.
+          // Wait until the user pauses, then show the context menu.
+          _contextMenuDebounce?.cancel();
+          _removeContextMenu();
+          final region = details.globalSelectedRegion;
+          if (region != null) {
+            _contextMenuDebounce =
+                Timer(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                _showContextMenu(Offset(region.center.dx, region.top));
+              }
+            });
           }
         } else {
           _removeContextMenu();
         }
       },
       onAnnotationSelected: (Annotation annotation) {
-        _isAnnotationSelected = true;
         _showAnnotationMenu(annotation);
       },
       onAnnotationDeselected: (Annotation annotation) {
-        _isAnnotationSelected = false;
         _removeContextMenu();
       },
       onAnnotationRemoved: (Annotation annotation) {
@@ -1846,14 +2476,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       },
     );
 
-    // Feature 3: PDF dark mode via color inversion
+    // RepaintBoundary isolates the viewer's render tree — toolbar / bottom bar
+    // repaints won't cascade into the PDF rendering pipeline during scrolling.
+    final viewer = RepaintBoundary(child: _cachedPdfViewer!);
+
     if (_isPdfDarkMode) {
-      viewer = ColorFiltered(
+      return ColorFiltered(
         colorFilter: _invertColorFilter,
         child: viewer,
       );
     }
-
     return viewer;
   }
 
@@ -1880,21 +2512,24 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             Row(
               children: [
                 // Back button
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    width: isTablet ? 44 : 36,
-                    height: isTablet ? 44 : 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark
-                          ? AppColors.darkSurface
-                          : const Color(0xFFF5F5F5),
-                    ),
-                    child: Icon(
-                      Icons.arrow_back,
-                      size: isTablet ? 22 : 18,
-                      color: textColor,
+                Tooltip(
+                  message: 'Go back',
+                  child: GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: isTablet ? 44 : 36,
+                      height: isTablet ? 44 : 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark
+                            ? AppColors.darkSurface
+                            : const Color(0xFFF5F5F5),
+                      ),
+                      child: Icon(
+                        Icons.arrow_back,
+                        size: isTablet ? 22 : 18,
+                        color: textColor,
+                      ),
                     ),
                   ),
                 ),
@@ -1919,28 +2554,31 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     valueListenable: _currentPage,
                     builder: (context, currentPage, _) {
                       final isBookmarked = _bookmarkedPages.containsKey(currentPage);
-                      return GestureDetector(
-                        onTap: _toggleBookmark,
-                        child: Container(
-                          width: isTablet ? 44 : 36,
-                          height: isTablet ? 44 : 36,
-                          margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isBookmarked
-                                ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                                : (isDark
-                                    ? AppColors.darkSurface
-                                    : const Color(0xFFF5F5F5)),
-                          ),
-                          child: Icon(
-                            isBookmarked
-                                ? Icons.bookmark
-                                : Icons.bookmark_border,
-                            size: isTablet ? 22 : 18,
-                            color: isBookmarked
-                                ? AppColors.primaryBlue
-                                : textColor,
+                      return Tooltip(
+                        message: isBookmarked ? 'Remove bookmark' : 'Bookmark page',
+                        child: GestureDetector(
+                          onTap: _toggleBookmark,
+                          child: Container(
+                            width: isTablet ? 44 : 36,
+                            height: isTablet ? 44 : 36,
+                            margin: EdgeInsets.only(right: isTablet ? 4 : 2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isBookmarked
+                                  ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                                  : (isDark
+                                      ? AppColors.darkSurface
+                                      : const Color(0xFFF5F5F5)),
+                            ),
+                            child: Icon(
+                              isBookmarked
+                                  ? Icons.bookmark
+                                  : Icons.bookmark_border,
+                              size: isTablet ? 22 : 18,
+                              color: isBookmarked
+                                  ? AppColors.primaryBlue
+                                  : textColor,
+                            ),
                           ),
                         ),
                       );
@@ -1948,70 +2586,162 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   ),
                   // Bookmarks list button (show when bookmarks exist)
                   if (_bookmarkedPages.isNotEmpty)
-                    GestureDetector(
-                      onTap: () =>
-                          _scaffoldKey.currentState?.openEndDrawer(),
-                      child: Container(
-                        width: isTablet ? 44 : 36,
-                        height: isTablet ? 44 : 36,
-                        margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDark
-                              ? AppColors.darkSurface
-                              : const Color(0xFFF5F5F5),
-                        ),
-                        child: Icon(
-                          Icons.collections_bookmark_outlined,
-                          size: isTablet ? 22 : 18,
-                          color: textColor,
+                    Tooltip(
+                      message: 'Bookmarks',
+                      child: GestureDetector(
+                        onTap: () =>
+                            _scaffoldKey.currentState?.openEndDrawer(),
+                        child: Container(
+                          width: isTablet ? 44 : 36,
+                          height: isTablet ? 44 : 36,
+                          margin: EdgeInsets.only(right: isTablet ? 4 : 2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF5F5F5),
+                          ),
+                          child: Icon(
+                            Icons.collections_bookmark_outlined,
+                            size: isTablet ? 22 : 18,
+                            color: textColor,
+                          ),
                         ),
                       ),
                     ),
                 ],
-                // PDF dark mode toggle
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _isPdfDarkMode = !_isPdfDarkMode),
-                  child: Container(
-                    width: isTablet ? 44 : 36,
-                    height: isTablet ? 44 : 36,
-                    margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isPdfDarkMode
-                          ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                          : (isDark
-                              ? AppColors.darkSurface
-                              : const Color(0xFFF5F5F5)),
+                // Keep screen on toggle
+                Tooltip(
+                  message: _keepScreenOn ? 'Screen always on' : 'Keep screen on',
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _keepScreenOn = !_keepScreenOn);
+                      if (_keepScreenOn) {
+                        WakelockPlus.enable();
+                      } else {
+                        WakelockPlus.disable();
+                      }
+                    },
+                    child: Container(
+                      width: isTablet ? 44 : 36,
+                      height: isTablet ? 44 : 36,
+                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _keepScreenOn
+                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                            : (isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF5F5F5)),
+                      ),
+                      child: Icon(
+                        _keepScreenOn ? Icons.lightbulb : Icons.lightbulb_outline,
+                        size: isTablet ? 22 : 18,
+                        color:
+                            _keepScreenOn ? AppColors.primaryBlue : textColor,
+                      ),
                     ),
-                    child: Icon(
-                      _isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
-                      size: isTablet ? 22 : 18,
-                      color:
-                          _isPdfDarkMode ? AppColors.primaryBlue : textColor,
+                  ),
+                ),
+                // Lock orientation toggle
+                Tooltip(
+                  message: _orientationLocked ? 'Unlock rotation' : 'Lock rotation',
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _orientationLocked = !_orientationLocked);
+                      if (_orientationLocked) {
+                        // Lock to current orientation
+                        final orientation = MediaQuery.of(context).orientation;
+                        if (orientation == Orientation.landscape) {
+                          SystemChrome.setPreferredOrientations([
+                            DeviceOrientation.landscapeLeft,
+                            DeviceOrientation.landscapeRight,
+                          ]);
+                        } else {
+                          SystemChrome.setPreferredOrientations([
+                            DeviceOrientation.portraitUp,
+                            DeviceOrientation.portraitDown,
+                          ]);
+                        }
+                      } else {
+                        SystemChrome.setPreferredOrientations([
+                          DeviceOrientation.portraitUp,
+                          DeviceOrientation.portraitDown,
+                          DeviceOrientation.landscapeLeft,
+                          DeviceOrientation.landscapeRight,
+                        ]);
+                      }
+                    },
+                    child: Container(
+                      width: isTablet ? 44 : 36,
+                      height: isTablet ? 44 : 36,
+                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _orientationLocked
+                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                            : (isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF5F5F5)),
+                      ),
+                      child: Icon(
+                        _orientationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
+                        size: isTablet ? 22 : 18,
+                        color:
+                            _orientationLocked ? AppColors.primaryBlue : textColor,
+                      ),
+                    ),
+                  ),
+                ),
+                // PDF dark mode toggle
+                Tooltip(
+                  message: _isPdfDarkMode ? 'Light mode' : 'Dark mode',
+                  child: GestureDetector(
+                    onTap: () =>
+                        setState(() => _isPdfDarkMode = !_isPdfDarkMode),
+                    child: Container(
+                      width: isTablet ? 44 : 36,
+                      height: isTablet ? 44 : 36,
+                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isPdfDarkMode
+                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                            : (isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF5F5F5)),
+                      ),
+                      child: Icon(
+                        _isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
+                        size: isTablet ? 22 : 18,
+                        color:
+                            _isPdfDarkMode ? AppColors.primaryBlue : textColor,
+                      ),
                     ),
                   ),
                 ),
                 // Search button
-                GestureDetector(
-                  onTap: _toggleSearch,
-                  child: Container(
-                    width: isTablet ? 44 : 36,
-                    height: isTablet ? 44 : 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isSearchOpen
-                          ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                          : (isDark
-                              ? AppColors.darkSurface
-                              : const Color(0xFFF5F5F5)),
-                    ),
-                    child: Icon(
-                      _isSearchOpen ? Icons.close : Icons.search,
-                      size: isTablet ? 22 : 18,
-                      color:
-                          _isSearchOpen ? AppColors.primaryBlue : textColor,
+                Tooltip(
+                  message: _isSearchOpen ? 'Close search' : 'Search',
+                  child: GestureDetector(
+                    onTap: _toggleSearch,
+                    child: Container(
+                      width: isTablet ? 44 : 36,
+                      height: isTablet ? 44 : 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isSearchOpen
+                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
+                            : (isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF5F5F5)),
+                      ),
+                      child: Icon(
+                        _isSearchOpen ? Icons.close : Icons.search,
+                        size: isTablet ? 22 : 18,
+                        color:
+                            _isSearchOpen ? AppColors.primaryBlue : textColor,
+                      ),
                     ),
                   ),
                 ),
@@ -2057,7 +2787,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             onSubmitted: (value) {
               if (value.isNotEmpty) {
                 _searchResult?.dispose();
-                _searchResult = _pdfController.searchText(value);
+                setState(() {
+                  _searchResult = _pdfController.searchText(value);
+                });
               }
             },
           ),
@@ -2079,29 +2811,123 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     );
   }
 
-  Widget _buildQuickActionButton({
+  void _requireSelectionOr(VoidCallback action) {
+    final textLines = _pdfViewerKey.currentState?.getSelectedTextLines();
+    if (textLines == null || textLines.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: const Text('Select text first by long-pressing on it'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          ),
+        );
+      return;
+    }
+    action();
+  }
+
+  Widget _buildBottomActionBar(bool isDark, bool isTablet) {
+    final barColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24 : 16,
+        vertical: isTablet ? 8 : 6,
+      ),
+      decoration: BoxDecoration(
+        color: barColor,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.darkDivider : const Color(0xFFE0E0E0),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildBottomAction(
+              icon: Icons.border_color,
+              label: 'Highlight',
+              color: const Color(0xFFFF6D00),
+              onTap: () =>
+                  _requireSelectionOr(() => _highlightSelectedText('yellow')),
+              isDark: isDark,
+              isTablet: isTablet,
+            ),
+            _buildBottomAction(
+              icon: Icons.format_underlined,
+              label: 'Underline',
+              color: const Color(0xFF1565C0),
+              onTap: () => _requireSelectionOr(_underlineSelectedText),
+              isDark: isDark,
+              isTablet: isTablet,
+            ),
+            _buildBottomAction(
+              icon: Icons.sticky_note_2_outlined,
+              label: 'Notes',
+              color: const Color(0xFF43A047),
+              onTap: _showAllNotesPanel,
+              isDark: isDark,
+              isTablet: isTablet,
+            ),
+            if (_undoStack.isNotEmpty)
+              _buildBottomAction(
+                icon: Icons.undo,
+                label: 'Undo',
+                color: AppColors.error,
+                onTap: _undoLastAnnotation,
+                isDark: isDark,
+                isTablet: isTablet,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomAction({
     required IconData icon,
+    required String label,
     required Color color,
-    required String tooltip,
     required VoidCallback onTap,
     required bool isDark,
     required bool isTablet,
   }) {
-    final size = isTablet ? 44.0 : 36.0;
-    final iconSize = isTablet ? 22.0 : 18.0;
-    return Tooltip(
-      message: tooltip,
-      preferBelow: false,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: isDark ? 0.22 : 0.14),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: iconSize, color: color),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 12 : 8,
+          vertical: isTablet ? 4 : 2,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: isTablet ? 40 : 32,
+              height: isTablet ? 40 : 32,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: isDark ? 0.22 : 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: isTablet ? 20 : 16, color: color),
+            ),
+            SizedBox(height: isTablet ? 4 : 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: isTablet ? 11 : 9,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.darkTextSecondary : Colors.grey[700],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -2124,7 +2950,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               setState(() {
                 _error = null;
                 _isLoading = true;
+                _isPdfReady = false;
                 _downloadProgress = 0;
+                _cachedPdfViewer = null;
+                _highlightsLoaded = false;
+                _bookmarksLoaded = false;
               });
               _loadPdf();
             },

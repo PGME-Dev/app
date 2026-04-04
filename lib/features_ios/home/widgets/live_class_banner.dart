@@ -38,8 +38,6 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
 
   void _startCountdown() {
     _updateTimeUntilStart();
-
-    // Update every second
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         _updateTimeUntilStart();
@@ -50,11 +48,8 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
   void _updateTimeUntilStart() {
     final now = DateTime.now();
     final startTime = DateTime.parse(widget.session.scheduledStartTime).toLocal();
-
     setState(() {
       _timeUntilStart = startTime.difference(now);
-
-      // Can join if: status is "live" OR 10 minutes or less until start
       _canJoin = widget.session.status == 'live' ||
           (_timeUntilStart.inMinutes <= 10 && _timeUntilStart.inSeconds > 0);
     });
@@ -64,8 +59,6 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
     try {
       final startTime = DateTime.parse(widget.session.scheduledStartTime).toLocal();
       final now = DateTime.now();
-
-      // Check if today
       if (startTime.year == now.year &&
           startTime.month == now.month &&
           startTime.day == now.day) {
@@ -73,10 +66,8 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
         final minute = startTime.minute.toString().padLeft(2, '0');
         final period = hour >= 12 ? 'PM' : 'AM';
         final hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-
         return 'Starts Today - $hour12:$minute $period';
       } else {
-        // Tomorrow or later
         final day = startTime.day;
         final month = _getMonthName(startTime.month);
         return 'Starts $month $day';
@@ -87,30 +78,15 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
   }
 
   String _getMonthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[month - 1];
   }
 
   void _joinSession() {
-    // Navigate to session details - it handles enrollment/payment/join flow
     context.push('/session/${widget.session.sessionId}');
   }
 
   void _viewDetails() {
-    // Navigate to session details screen with session ID
     context.push('/session/${widget.session.sessionId}');
   }
 
@@ -119,204 +95,193 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
-    final bannerHeight = ResponsiveHelper.carouselHeight(context);
-
-    // Responsive sizes
-    final titleSize = isTablet ? 28.0 : 18.0;
-    final badgeFontSize = isTablet ? 16.0 : 11.0;
-    final timeFontSize = isTablet ? 18.0 : 12.0;
-    final buttonFontSize = isTablet ? 17.0 : 12.0;
-    final titleMaxWidth = isTablet ? 420.0 : 180.0;
-    final buttonPaddingH = isTablet ? 28.0 : 16.0;
-    final buttonPaddingV = isTablet ? 12.0 : 6.0;
+    final titleSize = isTablet ? 20.0 : 14.0;
+    final badgeFontSize = isTablet ? 14.0 : 10.0;
+    final timeFontSize = isTablet ? 15.0 : 11.0;
+    final buttonFontSize = isTablet ? 15.0 : 11.0;
+    final buttonPaddingH = isTablet ? 24.0 : 14.0;
+    final buttonPaddingV = isTablet ? 10.0 : 6.0;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 19),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: ResponsiveHelper.getMaxContentWidth(context),
           ),
-          child: Container(
-            width: double.infinity,
-            height: bannerHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
-              gradient: LinearGradient(
-                begin: const Alignment(-0.85, 0),
-                end: const Alignment(0.85, 0),
-                colors: isDark
-                    ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
-                    : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
-                stops: const [0.3469, 0.7087],
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(isTablet ? 28 : 20),
-              child: Stack(
-                children: [
-                  // Background image - use thumbnail if available, else local asset
-                  Positioned.fill(
-                    child: widget.session.thumbnailUrl != null
-                        ? Image.network(
-                            widget.session.thumbnailUrl!,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/illustrations/home.png',
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                        : Image.asset(
-                            'assets/illustrations/home.png',
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const SizedBox.expand();
-                            },
-                          ),
-                  ),
-
-                  // Content
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: isTablet ? 30 : 13,
-                      top: isTablet ? 24 : 10,
-                      right: isTablet ? 30 : 13,
-                      bottom: isTablet ? 24 : 10,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Banner image with status badge overlay
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                    gradient: LinearGradient(
+                      begin: const Alignment(-0.85, 0),
+                      end: const Alignment(0.85, 0),
+                      colors: isDark
+                          ? [const Color(0xFF0D2A5C), const Color(0xFF2D5A9E)]
+                          : [const Color(0xFF1847A2), const Color(0xFF8EC6FF)],
+                      stops: const [0.3469, 0.7087],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Status Badge
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 18 : 10,
-                          vertical: isTablet ? 8 : 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: widget.session.status == 'live'
-                              ? Colors.red.withValues(alpha: 0.9)
-                              : Colors.white.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(isTablet ? 10 : 7.15),
-                        ),
-                        child: Text(
-                          widget.session.status == 'live'
-                              ? 'LIVE NOW'
-                              : 'LIVE CLASS',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: badgeFontSize,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 12 : 6),
-
-                      // Title
-                      SizedBox(
-                        width: titleMaxWidth,
-                        child: Text(
-                          widget.session.title,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            fontSize: titleSize,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-
-                      // Timing
-                      Text(
-                        widget.session.status == 'live'
-                            ? 'Live Now'
-                            : _formatScheduledTime(),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          fontSize: timeFontSize,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // Buttons
-                      Row(
-                        children: [
-                          // Join Button
-                          GestureDetector(
-                            onTap: _canJoin ? _joinSession : null,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: buttonPaddingH,
-                                vertical: buttonPaddingV,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _canJoin
-                                    ? (widget.session.status == 'live'
-                                        ? Colors.green
-                                        : const Color(0xFF2470E4))
-                                    : Colors.grey,
-                                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
-                              ),
-                              child: Text(
-                                widget.session.status == 'live'
-                                    ? 'Join Now'
-                                    : 'Join Live',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: buttonFontSize,
-                                  color: Colors.white,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: widget.session.thumbnailUrl != null
+                              ? Image.network(
+                                  widget.session.thumbnailUrl!,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/illustrations/home.png',
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                )
+                              : Image.asset(
+                                  'assets/illustrations/home.png',
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SizedBox.expand();
+                                  },
                                 ),
-                              ),
+                        ),
+                        // Status badge in top-left
+                        Positioned(
+                          top: isTablet ? 14 : 8,
+                          left: isTablet ? 14 : 8,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 14 : 8,
+                              vertical: isTablet ? 6 : 3,
                             ),
-                          ),
-                          SizedBox(width: isTablet ? 14 : 8),
-
-                          // View Details Button
-                          GestureDetector(
-                            onTap: _viewDetails,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: buttonPaddingH,
-                                vertical: buttonPaddingV,
-                              ),
-                              decoration: BoxDecoration(
+                            decoration: BoxDecoration(
+                              color: widget.session.status == 'live'
+                                  ? Colors.red.withValues(alpha: 0.9)
+                                  : Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                            ),
+                            child: Text(
+                              widget.session.status == 'live' ? 'LIVE NOW' : 'LIVE CLASS',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                                fontSize: badgeFontSize,
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
-                              ),
-                              child: Text(
-                                'View Details',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: buttonFontSize,
-                                  color: AppColors.primaryBlue,
-                                ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+
+              // Text content + buttons below the image
+              Padding(
+                padding: EdgeInsets.only(
+                  top: isTablet ? 10 : 7,
+                  left: 2,
+                  right: 2,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.session.title,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: titleSize,
+                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: isTablet ? 2 : 1),
+                    Text(
+                      widget.session.status == 'live'
+                          ? 'Live Now'
+                          : _formatScheduledTime(),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: timeFontSize,
+                        color: isDark ? Colors.white70 : const Color(0xFF666666),
+                      ),
+                    ),
+                    SizedBox(height: isTablet ? 10 : 6),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _canJoin ? _joinSession : null,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: buttonPaddingH,
+                              vertical: buttonPaddingV,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _canJoin
+                                  ? (widget.session.status == 'live'
+                                      ? Colors.green
+                                      : const Color(0xFF2470E4))
+                                  : Colors.grey,
+                              borderRadius: BorderRadius.circular(isTablet ? 10 : 7),
+                            ),
+                            child: Text(
+                              widget.session.status == 'live' ? 'Join Now' : 'Join Live',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                                fontSize: buttonFontSize,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 12 : 8),
+                        GestureDetector(
+                          onTap: _viewDetails,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: buttonPaddingH,
+                              vertical: buttonPaddingV,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.15)
+                                  : const Color(0xFFF0F0F0),
+                              borderRadius: BorderRadius.circular(isTablet ? 10 : 7),
+                            ),
+                            child: Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                                fontSize: buttonFontSize,
+                                color: isDark ? Colors.white : AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

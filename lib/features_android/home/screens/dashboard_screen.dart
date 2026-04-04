@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:pgme/core_android/providers/theme_provider.dart';
 import 'package:pgme/core_android/theme/app_theme.dart';
 
+import 'package:pgme/core_android/widgets/how_to_section.dart';
 import 'package:pgme/features_android/auth/providers/auth_provider.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/features_android/home/widgets/live_class_carousel.dart';
@@ -262,13 +263,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       SizedBox(height: isTablet ? 40 : 25),
 
                       // Live Class Carousel (auto-sliding with multiple sessions and banners)
-                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                      if (dashboardProvider.banners.isNotEmpty)
                         LiveClassCarousel(
-                          sessions: dashboardProvider.upcomingSessions,
+                          sessions: const [], // Disabled: live sessions now shown via banners
                           banners: dashboardProvider.banners,
                         ),
 
-                      if (dashboardProvider.upcomingSessions.isNotEmpty || dashboardProvider.banners.isNotEmpty)
+                      if (dashboardProvider.banners.isNotEmpty)
                         SizedBox(height: isTablet ? 36 : 24),
 
                       // Subject Section (if available)
@@ -444,6 +445,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onRetry: dashboardProvider.retryFaculty,
                       ),
 
+                      const HowToSection(screen: 'home'),
                       const SizedBox(height: 100), // Space for bottom nav
                     ],
                   ),

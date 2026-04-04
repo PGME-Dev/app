@@ -7,6 +7,7 @@ import 'package:pgme/core_ios/providers/theme_provider.dart';
 import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/widgets/app_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pgme/core_ios/widgets/how_to_section.dart';
 import 'package:pgme/features_ios/auth/providers/auth_provider.dart';
 import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
 import 'package:pgme/features_ios/home/widgets/live_class_carousel.dart';
@@ -188,13 +189,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   SizedBox(height: isTablet ? 40 : 25),
 
                   // Live Class Carousel (auto-sliding with multiple sessions and banners)
-                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty)
+                  if (provider.banners.isNotEmpty)
                     LiveClassCarousel(
-                      sessions: provider.upcomingSessions,
+                      sessions: const [], // Disabled: live sessions now shown via banners
                       banners: provider.banners,
                     ),
 
-                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
+                  if (provider.banners.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Subject Section (if available)
                   if (provider.primarySubject != null)
@@ -292,6 +293,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     error: provider.facultyError,
                     onRetry: provider.retryFaculty,
                   ),
+
+                  const HowToSection(screen: 'home'),
 
                   SizedBox(height: isTablet ? 120.0 : 100.0), // Space for bottom nav
                 ],
@@ -463,8 +466,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // Phone: horizontal scroll
           LayoutBuilder(
             builder: (context, constraints) {
-              final screenHeight = MediaQuery.of(context).size.height;
-              final cardHeight = screenHeight * 0.42;
+              final cardWidth = MediaQuery.of(context).size.width * 0.75;
+              final cardHeight = cardWidth * (9 / 16) + (isTablet ? 200 : 160);
 
               return SizedBox(
                 height: cardHeight,

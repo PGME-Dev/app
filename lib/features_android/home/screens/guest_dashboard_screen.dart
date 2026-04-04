@@ -8,6 +8,7 @@ import 'package:pgme/core_android/providers/theme_provider.dart';
 import 'package:pgme/core_android/theme/app_theme.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pgme/core_android/widgets/how_to_section.dart';
 import 'package:pgme/features_android/auth/providers/auth_provider.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/features_android/home/widgets/live_class_carousel.dart';
@@ -189,13 +190,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   SizedBox(height: isTablet ? 40 : 25),
 
                   // Live Class Carousel (auto-sliding with multiple sessions and banners)
-                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty)
+                  if (provider.banners.isNotEmpty)
                     LiveClassCarousel(
-                      sessions: provider.upcomingSessions,
+                      sessions: const [], // Disabled: live sessions now shown via banners
                       banners: provider.banners,
                     ),
 
-                  if (provider.upcomingSessions.isNotEmpty || provider.banners.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
+                  if (provider.banners.isNotEmpty) SizedBox(height: isTablet ? 36.0 : 24.0),
 
                   // Subject Section (if available)
                   if (provider.primarySubject != null)
@@ -293,6 +294,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     error: provider.facultyError,
                     onRetry: provider.retryFaculty,
                   ),
+
+                  const HowToSection(screen: 'home'),
 
                   SizedBox(height: isTablet ? 120.0 : 100.0), // Space for bottom nav
                 ],
@@ -464,8 +467,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           // Phone: horizontal scroll
           LayoutBuilder(
             builder: (context, constraints) {
-              final screenHeight = MediaQuery.of(context).size.height;
-              final cardHeight = screenHeight * 0.42;
+              final cardWidth = MediaQuery.of(context).size.width * 0.75;
+              final cardHeight = cardWidth * (9 / 16) + (isTablet ? 200 : 160);
 
               return SizedBox(
                 height: cardHeight,
@@ -614,39 +617,42 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           ),
 
           // Content Section
-          Padding(
-            padding: EdgeInsets.all(contentPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Package Type Name
-                Text(
-                  packageType.name ?? 'Package',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: titleSize,
-                    color: textColor,
+          Flexible(
+            child: Padding(
+              padding: EdgeInsets.all(contentPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Package Type Name
+                  Text(
+                    packageType.name ?? 'Package',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: titleSize,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: isTablet ? 12.0 : 8.0),
+                  SizedBox(height: isTablet ? 12.0 : 8.0),
 
-                // Package Description
-                Text(
-                  packageType.description ?? 'Explore our comprehensive courses designed to help you succeed.',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                    fontSize: descSize,
-                    height: 1.5,
-                    color: secondaryTextColor,
+                  // Package Description
+                  Flexible(
+                    child: Text(
+                      packageType.description ?? 'Explore our comprehensive courses designed to help you succeed.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: descSize,
+                        height: 1.5,
+                        color: secondaryTextColor,
+                      ),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
 
                 SizedBox(height: isTablet ? 18.0 : 12.0),
 
@@ -680,6 +686,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

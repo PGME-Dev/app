@@ -36,6 +36,7 @@ dependencies:
   shimmer: ^3.0.0
   path_provider: ^2.1.2
   syncfusion_flutter_pdfviewer: ^28.1.33
+  pdfrx: ^1.0.100
   firebase_core: ^3.12.1
   firebase_messaging: ^15.2.4
   flutter_map: ^6.1.0
@@ -43,6 +44,8 @@ dependencies:
   font_awesome_flutter: ^10.6.0
   flutter_local_notifications: ^19.4.1
   no_screenshot: ^0.10.0
+  flutter_widget_from_html_core: ^0.17.0
+  wakelock_plus: ^1.2.8
 
 dev_dependencies:
   flutter_test:
