@@ -102,8 +102,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         isDark ? const Color(0xFF00BEFA) : const Color(0xFF2470E4);
 
     final hPadding = isTablet ? 24.0 : 16.0;
-    final headerIconSize = isTablet ? 30.0 : 24.0;
-    final titleFontSize = isTablet ? 24.0 : 20.0;
+    final headerIconSize = isTablet ? 36.0 : 28.0;
+    final titleFontSize = isTablet ? 26.0 : 22.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -327,8 +327,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     children: [
                       // Spinner icon
                       SizedBox(
-                        width: isTablet ? 22.0 : 18.0,
-                        height: isTablet ? 22.0 : 18.0,
+                        width: isTablet ? 28.0 : 22.0,
+                        height: isTablet ? 28.0 : 22.0,
                         child: CircularProgressIndicator(
                           value: progress > 0 ? progress : null,
                           strokeWidth: 2,
@@ -365,7 +365,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         onTap: () => dp.cancelDownload(videoId),
                         child: Icon(
                           Icons.close,
-                          size: isTablet ? 22.0 : 18.0,
+                          size: isTablet ? 28.0 : 22.0,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -445,7 +445,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 children: [
                   Icon(
                     Icons.pause_circle_outline,
-                    size: isTablet ? 22.0 : 18.0,
+                    size: isTablet ? 28.0 : 22.0,
                     color: pauseColor,
                   ),
                   SizedBox(width: isTablet ? 14 : 10),
@@ -512,7 +512,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       padding: EdgeInsets.all(isTablet ? 6.0 : 4.0),
                       child: Icon(
                         Icons.close,
-                        size: isTablet ? 20 : 16,
+                        size: isTablet ? 24 : 20,
                         color: secondaryTextColor,
                       ),
                     ),
@@ -581,7 +581,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 children: [
                   Icon(
                     Icons.error_outline,
-                    size: isTablet ? 22.0 : 18.0,
+                    size: isTablet ? 28.0 : 22.0,
                     color: Colors.red.shade400,
                   ),
                   SizedBox(width: isTablet ? 14 : 10),
@@ -649,7 +649,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       padding: EdgeInsets.all(isTablet ? 6.0 : 4.0),
                       child: Icon(
                         Icons.close,
-                        size: isTablet ? 20 : 16,
+                        size: isTablet ? 24 : 20,
                         color: secondaryTextColor,
                       ),
                     ),
@@ -674,7 +674,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           children: [
             Icon(
               Icons.download_for_offline_outlined,
-              size: isTablet ? 80 : 64,
+              size: isTablet ? 100 : 80,
               color: secondaryTextColor.withValues(alpha: 0.4),
             ),
             SizedBox(height: isTablet ? 24 : 16),
@@ -725,16 +725,16 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         child: Row(
           children: [
             Container(
-              width: isTablet ? 48 : 40,
-              height: isTablet ? 48 : 40,
+              width: isTablet ? 56 : 46,
+              height: isTablet ? 56 : 46,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
+                borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
               ),
               child: Center(
                 child: Icon(
                   Icons.folder_outlined,
-                  size: isTablet ? 24 : 20,
+                  size: isTablet ? 30 : 24,
                   color: iconColor,
                 ),
               ),
@@ -816,8 +816,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     color: Colors.red.shade400,
                     borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                   ),
-                  child: const Icon(Icons.delete_outline,
-                      color: Colors.white, size: 24),
+                  child: Icon(Icons.delete_outline,
+                      color: Colors.white, size: isTablet ? 30 : 26),
                 ),
                 confirmDismiss: (_) async {
                   await _confirmDelete(downloadProvider, video);
@@ -849,11 +849,11 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     required Color secondaryTextColor,
     required Color iconColor,
   }) {
-    final thumbnailSize = isTablet ? 80.0 : 64.0;
-    final titleSize = isTablet ? 15.0 : 13.0;
-    final metaSize = isTablet ? 13.0 : 11.0;
+    final thumbnailSize = isTablet ? 90.0 : 72.0;
+    final titleSize = isTablet ? 16.0 : 14.0;
+    final metaSize = isTablet ? 14.0 : 12.0;
     final cardRadius = isTablet ? 16.0 : 12.0;
-    final cardPadding = isTablet ? 14.0 : 10.0;
+    final cardPadding = isTablet ? 16.0 : 12.0;
 
     return GestureDetector(
       onTap: () => context.push('/video/${video.videoId}'),
@@ -881,7 +881,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                               : const Color(0xFFE0E0E0),
                           child: Center(
                             child: Icon(Icons.play_circle_outline,
-                                size: isTablet ? 30 : 24,
+                                size: isTablet ? 36 : 28,
                                 color: secondaryTextColor),
                           ),
                         ),
@@ -891,7 +891,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                               : const Color(0xFFE0E0E0),
                           child: Center(
                             child: Icon(Icons.play_circle_outline,
-                                size: isTablet ? 30 : 24,
+                                size: isTablet ? 36 : 28,
                                 color: secondaryTextColor),
                           ),
                         ),
@@ -959,7 +959,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 padding: EdgeInsets.all(isTablet ? 8.0 : 6.0),
                 child: Icon(
                   Icons.delete_outline,
-                  size: isTablet ? 22 : 18,
+                  size: isTablet ? 28 : 22,
                   color: secondaryTextColor,
                 ),
               ),
