@@ -45,6 +45,7 @@ import 'package:pgme/features_ios/settings/screens/privacy_policy_screen.dart';
 import 'package:pgme/features_ios/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features_ios/settings/screens/downloads_screen.dart';
 import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/features_ios/notes/screens/epub_viewer_screen.dart';
 import 'package:pgme/features_ios/auth/screens/map_address_picker_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/mini_player_provider.dart';
@@ -499,6 +500,7 @@ class AppRouter {
               path.startsWith('/edit-profile') ||
               path.startsWith('/map-address-picker') ||
               path.startsWith('/pdf-viewer') ||
+              path.startsWith('/epub-viewer') ||
               path.startsWith('/downloads')) {
             final bottomPad = MediaQuery.of(context).padding.bottom;
             return Stack(
@@ -673,6 +675,30 @@ class AppRouter {
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: PdfViewerScreen(documentId: documentId, pdfUrl: pdfUrl, title: title),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // EPUB Viewer
+          GoRoute(
+            path: '/epub-viewer',
+            name: 'epub-viewer',
+            pageBuilder: (context, state) {
+              final documentId = state.uri.queryParameters['documentId'];
+              final epubUrl = state.uri.queryParameters['epubUrl'];
+              final title = state.uri.queryParameters['title'] ?? 'Reader';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: EpubViewerScreen(documentId: documentId, epubUrl: epubUrl, title: title),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(

@@ -215,15 +215,27 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
       if (mounted) {
         final url = data['url'] as String?;
         final title = data['title'] as String? ?? item.title;
+        final fileFormat = (data['file_format'] as String?) ?? 'pdf';
         if (url != null) {
-          context.pushNamed(
-            'pdf-viewer',
-            queryParameters: {
-              'documentId': item.documentId,
-              'pdfUrl': url,
-              'title': title,
-            },
-          );
+          if (fileFormat == 'epub') {
+            context.pushNamed(
+              'epub-viewer',
+              queryParameters: {
+                'documentId': item.documentId,
+                'epubUrl': url,
+                'title': title,
+              },
+            );
+          } else {
+            context.pushNamed(
+              'pdf-viewer',
+              queryParameters: {
+                'documentId': item.documentId,
+                'pdfUrl': url,
+                'title': title,
+              },
+            );
+          }
         }
       }
     } catch (e) {

@@ -370,10 +370,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     } else {
       // Add bookmark
       try {
+        debugPrint('[BOOKMARK] Adding bookmark: documentId=${widget.documentId}, page=$page');
         final result = await _bookmarkService.addBookmark(
           documentId: widget.documentId!,
           pageNumber: page,
         );
+        debugPrint('[BOOKMARK] Success: ${result.toString()}');
         if (mounted) {
           setState(() {
             final bookmarkId = result['bookmark_id'] as String;
@@ -382,6 +384,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           });
         }
       } catch (e) {
+        debugPrint('[BOOKMARK] Failed: $e');
         if (mounted) {
           showAppDialog(context, message: 'Failed to add bookmark', type: AppDialogType.info);
         }
@@ -2411,6 +2414,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       key: _pdfViewerKey,
       controller: _pdfController,
       canShowTextSelectionMenu: false,
+      interactionMode: PdfInteractionMode.pan,
       pageSpacing: 2,
       onTap: (PdfGestureDetails details) {
         _removeContextMenu();

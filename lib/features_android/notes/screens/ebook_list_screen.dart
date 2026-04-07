@@ -16,6 +16,7 @@ import 'package:pgme/core_android/services/user_service.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/core_android/utils/web_store_launcher.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
+import 'package:pgme/core_android/widgets/how_to_section.dart';
 import 'package:pgme/core_android/models/subject_model.dart';
 import 'package:pgme/core_android/services/onboarding_service.dart';
 
@@ -292,14 +293,27 @@ class _EbookListScreenState extends State<EbookListScreen>
       if (mounted) {
         final url = data['url'] as String?;
         final title = data['title'] as String? ?? book.title;
+        final fileFormat = (data['file_format'] as String?) ?? 'pdf';
         if (url != null) {
-          context.pushNamed(
-            'pdf-viewer',
-            queryParameters: {
-              'pdfUrl': url,
-              'title': title,
-            },
-          );
+          if (fileFormat == 'epub') {
+            context.pushNamed(
+              'epub-viewer',
+              queryParameters: {
+                'documentId': book.bookId,
+                'epubUrl': url,
+                'title': title,
+              },
+            );
+          } else {
+            context.pushNamed(
+              'pdf-viewer',
+              queryParameters: {
+                'documentId': book.bookId,
+                'pdfUrl': url,
+                'title': title,
+              },
+            );
+          }
         }
       }
     } catch (e) {
@@ -771,39 +785,49 @@ class _EbookListScreenState extends State<EbookListScreen>
                                       await _loadEbooks();
                                       await _loadPurchasedEbooks();
                                     },
-                                    child: GridView.builder(
+                                    child: CustomScrollView(
                                       controller: _scrollController,
                                       physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-                                      padding: EdgeInsets.only(
-                                        left: hPadding,
-                                        right: hPadding,
-                                        bottom: 100,
-                                      ),
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: isTablet ? 3 : 2,
-                                        crossAxisSpacing: isTablet ? 16 : 12,
-                                        mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: 16 / 9,
-                                      ),
-                                      itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
-                                      itemBuilder: (context, index) {
-                                        if (index == _ebooks.length) {
-                                          return Center(
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: CircularProgressIndicator(color: iconColor),
+                                      slivers: [
+                                        SliverPadding(
+                                          padding: EdgeInsets.symmetric(horizontal: hPadding),
+                                          sliver: SliverGrid(
+                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: isTablet ? 3 : 2,
+                                              crossAxisSpacing: isTablet ? 16 : 12,
+                                              mainAxisSpacing: isTablet ? 16 : 12,
+                                              childAspectRatio: 0.58,
                                             ),
-                                          );
-                                        }
-                                        return _buildEbookCard(
-                                          _ebooks[index],
-                                          isDark: isDark,
-                                          isTablet: isTablet,
-                                          textColor: textColor,
-                                          secondaryTextColor: secondaryTextColor,
-                                          iconColor: iconColor,
-                                        );
-                                      },
+                                            delegate: SliverChildBuilderDelegate(
+                                              (context, index) {
+                                                if (index == _ebooks.length) {
+                                                  return Center(
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(16),
+                                                      child: CircularProgressIndicator(color: iconColor),
+                                                    ),
+                                                  );
+                                                }
+                                                return _buildEbookCard(
+                                                  _ebooks[index],
+                                                  isDark: isDark,
+                                                  isTablet: isTablet,
+                                                  textColor: textColor,
+                                                  secondaryTextColor: secondaryTextColor,
+                                                  iconColor: iconColor,
+                                                );
+                                              },
+                                              childCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
+                                            ),
+                                          ),
+                                        ),
+                                        const SliverToBoxAdapter(
+                                          child: HowToSection(screen: 'ebook-store'),
+                                        ),
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(height: 100),
+                                        ),
+                                      ],
                                     ),
                                   ),
                   ),

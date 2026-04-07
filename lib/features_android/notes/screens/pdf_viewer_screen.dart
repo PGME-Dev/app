@@ -370,10 +370,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     } else {
       // Add bookmark
       try {
+        debugPrint('[BOOKMARK] Adding bookmark: documentId=${widget.documentId}, page=$page');
         final result = await _bookmarkService.addBookmark(
           documentId: widget.documentId!,
           pageNumber: page,
         );
+        debugPrint('[BOOKMARK] Success: ${result.toString()}');
         if (mounted) {
           setState(() {
             final bookmarkId = result['bookmark_id'] as String;
@@ -382,6 +384,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           });
         }
       } catch (e) {
+        debugPrint('[BOOKMARK] Failed: $e');
         if (mounted) {
           showAppDialog(context, message: 'Failed to add bookmark', type: AppDialogType.info);
         }
@@ -671,13 +674,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
         // Track the annotation with its backend ID
         final highlightId = result['highlight_id'] as String;
-        debugPrint('[HIGHLIGHT] Created highlight_id=$highlightId');
         _highlightAnnotations[highlightId] = annotation;
         _annotationNotes[highlightId] = null;
         _annotationTexts[highlightId] = highlightedText;
         _annotationTextBounds[highlightId] = textLines;
         _undoStack.add((id: highlightId, type: 'highlight'));
-        debugPrint('[HIGHLIGHT] pushed to undo stack: $highlightId');
         setState(() {});
       } catch (e) {
         debugPrint('Failed to save highlight: $e');
@@ -729,9 +730,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     );
     annotation.color = underlineColor;
 
-    debugPrint('[UNDERLINE] Adding new underline. Existing underlines: ${_underlineAnnotations.length}');
     _pdfController.addAnnotation(annotation);
-    debugPrint('[UNDERLINE] After addAnnotation. Existing underlines: ${_underlineAnnotations.length}');
 
     // Save to backend
     if (widget.documentId != null) {
@@ -771,7 +770,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _annotationTexts[highlightId] = highlightedText;
         _annotationTextBounds[highlightId] = textLines;
         _undoStack.add((id: highlightId, type: 'underline'));
-        debugPrint('[UNDERLINE] pushed to undo stack: $highlightId');
         setState(() {});
       } catch (e) {
         debugPrint('Failed to save underline: $e');
@@ -1562,13 +1560,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         note: note,
       );
       final noteId = result['highlight_id'] as String;
-      debugPrint('[NOTE] Created note_id=$noteId');
       _standaloneNotes[noteId] = {
         'page_number': pageNumber,
         'note': note,
       };
       _undoStack.add((id: noteId, type: 'note'));
-      debugPrint('[NOTE] pushed to undo stack: $noteId');
       setSheetState(() {});
       setState(() {});
     } catch (e) {
@@ -1784,10 +1780,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final entry = _undoStack.removeLast();
     final id = entry.id;
     final type = entry.type;
-    debugPrint('[UNDO] Popped from stack: id=$id type=$type (${_undoStack.length} remaining)');
 
     try {
-      // Remove from viewer if it's a highlight/underline
       if (type == 'highlight' && _highlightAnnotations.containsKey(id)) {
         try {
           _pdfController.removeAnnotation(_highlightAnnotations[id]!);
@@ -1800,15 +1794,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _standaloneNotes.remove(id);
       }
 
-      // Delete from backend (404 means already gone — treat as success)
       try {
         await _highlightService.deleteHighlight(id);
-        debugPrint('[UNDO] Backend delete success for id=$id');
-      } catch (e) {
-        debugPrint('[UNDO] Backend delete failed for id=$id: $e');
-      }
+      } catch (_) {}
 
-      // Clean up local state
       _highlightAnnotations.remove(id);
       _underlineAnnotations.remove(id);
       _annotationNotes.remove(id);
@@ -2274,13 +2263,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   /// Remove a highlight/underline annotation and delete from backend
   Future<void> _removeHighlight(Annotation annotation) async {
-    debugPrint('[REMOVE] Explicitly removing annotation: ${annotation.runtimeType}');
     _pdfController.removeAnnotation(annotation);
   }
 
   /// Handle annotation removal — delete from backend
   Future<void> _handleAnnotationRemoved(Annotation annotation) async {
-    debugPrint('[REMOVED_CB] onAnnotationRemoved fired for ${annotation.runtimeType}');
     String? annotationId;
     _highlightAnnotations.forEach((id, ann) {
       if (ann == annotation) annotationId = id;
@@ -2427,6 +2414,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       key: _pdfViewerKey,
       controller: _pdfController,
       canShowTextSelectionMenu: false,
+      interactionMode: PdfInteractionMode.pan,
       pageSpacing: 2,
       onTap: (PdfGestureDetails details) {
         _removeContextMenu();
@@ -2650,7 +2638,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     onTap: () {
                       setState(() => _orientationLocked = !_orientationLocked);
                       if (_orientationLocked) {
-                        // Lock to current orientation
                         final orientation = MediaQuery.of(context).orientation;
                         if (orientation == Orientation.landscape) {
                           SystemChrome.setPreferredOrientations([
