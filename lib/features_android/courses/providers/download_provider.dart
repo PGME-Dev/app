@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pgme/core_android/models/offline_video_model.dart';
-import 'package:pgme/core_android/services/background_task_service.dart';
 import 'package:pgme/core_android/services/download_service.dart';
 import 'package:pgme/core_android/services/download_notification_service.dart';
 import 'package:pgme/core_android/services/offline_storage_service.dart';
@@ -65,7 +63,6 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   final OfflineStorageService _offlineStorage = OfflineStorageService();
   final DownloadNotificationService _notificationService =
       DownloadNotificationService();
-  final BackgroundTaskService _backgroundTaskService = BackgroundTaskService();
 
   static const String _pendingParamsKey = 'pgme_pending_download_params';
 
@@ -74,8 +71,9 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
   final Map<String, double> _activeDownloads = {}; // videoId -> progress 0.0..1.0
   final Map<String, String> _failedDownloads = {}; // videoId -> error message
   final Map<String, DownloadParams> _downloadParams = {}; // for retry
-  final Map<String, CancelToken> _cancelTokens = {}; // for cancellation
-  final Set<String> _backgroundPaused = {}; // downloads interrupted by app backgrounding
+  // Kept for UI API compatibility — the OS-managed downloader no longer
+  // produces "background-paused" states the way Dio did, so this stays empty.
+  final Set<String> _backgroundPaused = {};
   double _totalStorageUsedMb = 0;
   bool _isLoaded = false;
   bool _isInitializing = false;
@@ -309,10 +307,6 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     // Persist params so they survive app restart
     _persistPendingParams();
 
-    // Create cancel token for this download
-    final cancelToken = CancelToken();
-    _cancelTokens[videoId] = cancelToken;
-
     // Clear any previous failure
     _failedDownloads.remove(videoId);
     _backgroundPaused.remove(videoId);
@@ -321,59 +315,64 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
     _activeDownloads[videoId] = 0.0;
     notifyListeners();
 
-    // Request background execution time on iOS so the download can
-    // continue briefly after the user switches apps (~30s).
-    await _backgroundTaskService.beginBackgroundTask();
-
-    // Show initial notification
-    await _notificationService.showProgress(
-      videoId: videoId,
-      title: title,
-      progress: 0.0,
-    );
+    final fileName = 'video_$videoId.mp4';
 
     try {
       // 1. Get signed download URL from backend
       final data = await _downloadService.getVideoDownloadUrl(videoId);
       final url = data['download_url'] as String;
 
-      // Check if cancelled during URL fetch
-      if (cancelToken.isCancelled) return;
-
       // Extract metadata from API response (backend now provides these)
       final apiThumbnail = data['thumbnail_url'] as String?;
       final apiDuration =
           (data['duration_seconds'] as num?)?.toInt() ?? durationSeconds;
 
-      // 2. Download the file with progress tracking
-      int lastNotifiedPct = 0;
-      final filePath = await _downloadService.downloadFile(
+      // 2. Hand off to OS-managed background downloader.
+      // This survives app backgrounding, screen-off, and (mostly) app kill.
+      // Resume on retry works on networks/CDNs that honor HTTP Range (S3, Cloudinary do).
+      // The plugin shows its own OS notification with progress + speed + ETA.
+      final result = await _downloadService.downloadVideoFile(
         url: url,
-        fileName: 'video_$videoId.mp4',
-        cancelToken: cancelToken,
+        videoId: videoId,
+        fileName: fileName,
+        title: title,
         onProgress: (progress) {
           _activeDownloads[videoId] = progress;
           notifyListeners();
-
-          // Update notification every 5% to avoid flooding
-          final pct = (progress * 100).round();
-          if (pct - lastNotifiedPct >= 5 || pct >= 100) {
-            lastNotifiedPct = pct;
-            _notificationService.showProgress(
-              videoId: videoId,
-              title: title,
-              progress: progress,
-            );
-          }
         },
       );
 
-      // 3. Get actual file size from disk (backend file_size_mb is often 0)
+      if (result.canceled) {
+        debugPrint('DownloadProvider: Download cancelled for $videoId');
+        _activeDownloads.remove(videoId);
+        _downloadParams.remove(videoId);
+        _persistPendingParams();
+        notifyListeners();
+        await _downloadService.deleteDownload(fileName);
+        return;
+      }
+
+      if (!result.success) {
+        final errorMsg = result.errorMessage ?? 'Download failed';
+        _activeDownloads.remove(videoId);
+        _failedDownloads[videoId] = errorMsg;
+        notifyListeners();
+        debugPrint('DownloadProvider: Download failed for $videoId: $errorMsg');
+        await _downloadService.deleteDownload(fileName);
+        onDownloadFailed?.call(DownloadFailureInfo(
+          videoId: videoId,
+          title: title,
+          errorMessage: errorMsg,
+        ));
+        return;
+      }
+
+      // 3. Success — persist metadata
+      final filePath = result.filePath!;
       final fileOnDisk = File(filePath);
       final fileSizeBytes = await fileOnDisk.length();
       final actualFileSizeMb = fileSizeBytes / (1024 * 1024);
 
-      // 4. Persist metadata
       final offlineVideo = OfflineVideoModel(
         videoId: videoId,
         title: title,
@@ -392,145 +391,40 @@ class DownloadProvider with ChangeNotifier, WidgetsBindingObserver {
       _totalStorageUsedMb = await _offlineStorage.getTotalStorageUsedMb();
 
       _activeDownloads.remove(videoId);
-      _cancelTokens.remove(videoId);
       _downloadParams.remove(videoId);
       _persistPendingParams();
       notifyListeners();
 
-      // Show completion notification
-      await _notificationService.showComplete(videoId: videoId, title: title);
-
       debugPrint(
           'DownloadProvider: Download complete for $videoId (${actualFileSizeMb.toStringAsFixed(1)} MB)');
-
-      // End background task if no more active downloads
-      if (_activeDownloads.isEmpty) {
-        _backgroundTaskService.endBackgroundTask();
-      }
-    } on DioException catch (e) {
-      _activeDownloads.remove(videoId);
-      _cancelTokens.remove(videoId);
-
-      if (e.type == DioExceptionType.cancel) {
-        // User cancelled - don't treat as failure
-        debugPrint('DownloadProvider: Download cancelled for $videoId');
-        _downloadParams.remove(videoId);
-        _persistPendingParams();
-        notifyListeners();
-        await _notificationService.cancel(videoId);
-      } else if (_isBackgroundInterruption(e)) {
-        debugPrint('DownloadProvider: Download paused (app backgrounded) for $videoId');
-        _backgroundPaused.add(videoId);
-        _failedDownloads[videoId] = 'Paused';
-        notifyListeners();
-        await _notificationService.cancel(videoId);
-      } else {
-        final errorMsg = e.message ?? 'Download failed';
-        _failedDownloads[videoId] = errorMsg;
-        notifyListeners();
-        debugPrint('DownloadProvider: Download failed for $videoId: $e');
-        await _notificationService.showFailed(
-            videoId: videoId, title: title);
-        // Notify UI to show retry dialog
-        onDownloadFailed?.call(DownloadFailureInfo(
-          videoId: videoId,
-          title: title,
-          errorMessage: errorMsg,
-        ));
-      }
-
-      // Clean up partial file
-      await _downloadService.deleteDownload('video_$videoId.mp4');
-
-      // End background task if no more active downloads
-      if (_activeDownloads.isEmpty) {
-        _backgroundTaskService.endBackgroundTask();
-      }
     } catch (e) {
       _activeDownloads.remove(videoId);
-      _cancelTokens.remove(videoId);
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       _failedDownloads[videoId] = errorMsg;
       notifyListeners();
       debugPrint('DownloadProvider: Download failed for $videoId: $e');
 
-      // Show failure notification
-      await _notificationService.showFailed(
-          videoId: videoId, title: title);
+      await _downloadService.deleteDownload(fileName);
 
-      // Notify UI to show retry dialog
       onDownloadFailed?.call(DownloadFailureInfo(
         videoId: videoId,
         title: title,
         errorMessage: errorMsg,
       ));
-
-      // Clean up partial file left by failed download
-      await _downloadService.deleteDownload('video_$videoId.mp4');
-
-      // End background task if no more active downloads
-      if (_activeDownloads.isEmpty) {
-        _backgroundTaskService.endBackgroundTask();
-      }
     }
-  }
-
-  /// Detect if a DioException was caused by the app going to background.
-  /// iOS and Android produce different error messages when the OS suspends
-  /// the HTTP connection.
-  bool _isBackgroundInterruption(DioException e) {
-    if (e.type == DioExceptionType.cancel) return false;
-
-    final errorStr = (e.error?.toString() ?? '') + (e.message ?? '');
-    final lowerError = errorStr.toLowerCase();
-
-    // Common patterns when OS kills the connection:
-    // Android: "HttpConnection closed"
-    // iOS: "The Internet connection appears to be offline",
-    //       "The network connection was lost",
-    //       "A server with the specified hostname could not be found"
-    //       "Connection reset by peer"
-    //       "Socket closed"
-    const backgroundPatterns = [
-      'httpconnection closed',
-      'connection was lost',
-      'network connection was lost',
-      'internet connection appears to be offline',
-      'connection reset by peer',
-      'socket closed',
-      'broken pipe',
-      'software caused connection abort',
-      'operation timed out',
-    ];
-
-    for (final pattern in backgroundPatterns) {
-      if (lowerError.contains(pattern)) return true;
-    }
-
-    // Also treat connectionError as background interruption if there was
-    // an active download (likely the app was suspended)
-    if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.unknown) {
-      // If it's a connection-level failure (not HTTP status), likely backgrounded
-      if (e.response == null) return true;
-    }
-
-    return false;
   }
 
   /// Cancel an active download
   Future<void> cancelDownload(String videoId) async {
-    final cancelToken = _cancelTokens[videoId];
-    if (cancelToken != null && !cancelToken.isCancelled) {
-      cancelToken.cancel('User cancelled');
-    }
-    // If the token wasn't set yet (still fetching URL), clean up manually
-    if (_activeDownloads.containsKey(videoId) && cancelToken == null) {
+    await _downloadService.cancelVideoDownload(videoId);
+    // The awaiting downloadVideoFile() future will return canceledByUser
+    // and clean up state. As a safety net, clean up here too in case the
+    // task was still in the URL-fetch phase.
+    if (_activeDownloads.containsKey(videoId)) {
       _activeDownloads.remove(videoId);
-      _cancelTokens.remove(videoId);
       _downloadParams.remove(videoId);
+      _persistPendingParams();
       notifyListeners();
-      await _notificationService.cancel(videoId);
       await _downloadService.deleteDownload('video_$videoId.mp4');
     }
   }

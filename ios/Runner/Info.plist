@@ -79,7 +79,15 @@
 	<array>
 		<string>remote-notification</string>
 		<string>fetch</string>
+		<string>processing</string>
 	</array>
+	<key>BDPluginBackgroundDownloader</key>
+	<dict>
+		<key>Resource Timeout</key>
+		<integer>300</integer>
+		<key>Request Timeout</key>
+		<integer>300</integer>
+	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -47,6 +47,7 @@ dependencies:
   no_screenshot: ^0.10.0
   flutter_widget_from_html_core: ^0.17.0
   wakelock_plus: ^1.2.8
+  background_downloader: ^9.0.0
 
 dev_dependencies:
   flutter_test:

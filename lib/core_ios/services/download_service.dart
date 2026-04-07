@@ -1,8 +1,32 @@
 import 'dart:io';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pgme/core_ios/constants/api_constants.dart';
 import 'package:pgme/core_ios/services/api_service.dart';
+
+/// Result of a video download performed via the OS-managed background engine.
+class VideoDownloadResult {
+  final bool success;
+  final bool canceled;
+  final String? filePath;
+  final String? errorMessage;
+
+  const VideoDownloadResult._({
+    required this.success,
+    required this.canceled,
+    this.filePath,
+    this.errorMessage,
+  });
+
+  factory VideoDownloadResult.success(String filePath) =>
+      VideoDownloadResult._(success: true, canceled: false, filePath: filePath);
+  factory VideoDownloadResult.canceledByUser() =>
+      const VideoDownloadResult._(success: false, canceled: true);
+  factory VideoDownloadResult.failure(String message) =>
+      VideoDownloadResult._(success: false, canceled: false, errorMessage: message);
+}
 
 class DownloadService {
   static final DownloadService _instance = DownloadService._internal();
@@ -10,6 +34,40 @@ class DownloadService {
   DownloadService._internal();
 
   final ApiService _apiService = ApiService();
+  bool _bgInitialized = false;
+
+  /// Initialize the background downloader plugin (notifications, FG service).
+  /// Safe to call multiple times — only the first call takes effect.
+  Future<void> initializeBackgroundDownloader() async {
+    if (_bgInitialized) return;
+    _bgInitialized = true;
+    try {
+      await FileDownloader().configureNotification(
+        running: const TaskNotification(
+          'Downloading {displayName}',
+          '{progress} • {networkSpeed} • {timeRemaining}',
+        ),
+        complete: const TaskNotification(
+          'Download complete',
+          '{displayName}',
+        ),
+        error: const TaskNotification(
+          'Download failed',
+          '{displayName}',
+        ),
+        paused: const TaskNotification(
+          'Download paused',
+          '{displayName}',
+        ),
+        progressBar: true,
+        tapOpensFile: false,
+      );
+      await _getDownloadsDir();
+      debugPrint('DownloadService: background downloader initialized');
+    } catch (e) {
+      debugPrint('DownloadService: failed to init background downloader - $e');
+    }
+  }
 
   /// Get the persistent downloads directory
   Future<Directory> _getDownloadsDir() async {
@@ -96,6 +154,73 @@ class DownloadService {
     final file = File('${dir.path}/$fileName');
     if (await file.exists()) {
       await file.delete();
+    }
+  }
+
+  /// Download a video via OS-managed background task (URLSession on iOS).
+  /// Survives app backgrounding, screen-off, and (mostly) app process kill.
+  /// Supports HTTP Range resume on networks/CDNs that honor it.
+  Future<VideoDownloadResult> downloadVideoFile({
+    required String url,
+    required String videoId,
+    required String fileName,
+    required String title,
+    required void Function(double progress) onProgress,
+  }) async {
+    await initializeBackgroundDownloader();
+    await _getDownloadsDir();
+
+    final task = DownloadTask(
+      taskId: videoId,
+      url: url,
+      filename: fileName,
+      baseDirectory: BaseDirectory.applicationDocuments,
+      directory: 'pgme_downloads',
+      updates: Updates.statusAndProgress,
+      allowPause: true,
+      retries: 3,
+      requiresWiFi: false,
+      displayName: title,
+    );
+
+    try {
+      final result = await FileDownloader().download(
+        task,
+        onProgress: (p) {
+          if (p >= 0 && p <= 1) onProgress(p);
+        },
+      );
+
+      switch (result.status) {
+        case TaskStatus.complete:
+          final filePath = await task.filePath();
+          return VideoDownloadResult.success(filePath);
+        case TaskStatus.canceled:
+          return VideoDownloadResult.canceledByUser();
+        case TaskStatus.failed:
+          return VideoDownloadResult.failure(
+            result.exception?.description ?? 'Download failed',
+          );
+        case TaskStatus.notFound:
+          return VideoDownloadResult.failure('File not found on server');
+        default:
+          return VideoDownloadResult.failure(
+            'Unexpected download state: ${result.status}',
+          );
+      }
+    } catch (e) {
+      return VideoDownloadResult.failure(
+        e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
+  /// Cancel an active video download by videoId (= taskId).
+  Future<void> cancelVideoDownload(String videoId) async {
+    try {
+      await FileDownloader().cancelTaskWithId(videoId);
+    } catch (e) {
+      debugPrint('DownloadService: cancel failed for $videoId - $e');
     }
   }
 }
