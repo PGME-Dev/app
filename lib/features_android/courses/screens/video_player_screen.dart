@@ -85,6 +85,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   // Split-view PDF state
   bool _isSplitViewActive = false;
   SelectableDocument? _activeDocument;
+  // Stable keys preserve PlatformView Element identity across orientation
+  // changes / divider drags so BetterPlayer and SfPdfViewer are NOT recreated
+  // (which previously caused ANRs on tablets).
+  final GlobalKey _splitVideoKey = GlobalKey(debugLabel: 'split-video');
+  final GlobalKey _splitPdfKey = GlobalKey(debugLabel: 'split-pdf');
   // Fullscreen overlay
   OverlayEntry? _fullscreenBackButtonOverlay;
   bool _isFullscreen = false;
@@ -543,6 +548,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         debugPrint('VideoPlayer: exception - $errorMsg');
         break;
 
+      case BetterPlayerEventType.openFullscreen:
+        if (!_isFullscreen) {
+          _isFullscreen = true;
+          _showFullscreenOverlay();
+        }
+        break;
+
+      case BetterPlayerEventType.hideFullscreen:
+        if (_isFullscreen) {
+          _isFullscreen = false;
+          _removeFullscreenOverlay();
+        }
+        break;
+
       default:
         break;
     }
@@ -823,23 +842,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   // Fullscreen Overlay Management
   // ---------------------------------------------------------------------------
 
+  // Fullscreen state is now driven by BetterPlayer's openFullscreen /
+  // hideFullscreen events in [_onPlayerEvent]. The previous 300ms polling
+  // timer ran continuously (even during split-view) and contributed to ANRs
+  // by repeatedly rebuilding overlays while heavy PlatformViews were laying
+  // out. Kept as a no-op so existing call sites stay valid.
   void _startFullscreenMonitoring() {
-    _fullscreenCheckTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
-      if (_isDisposed || !mounted) {
-        timer.cancel();
-        return;
-      }
-
-      final isFullscreen = _playerController?.isFullScreen ?? false;
-      if (isFullscreen != _isFullscreen) {
-        _isFullscreen = isFullscreen;
-        if (isFullscreen) {
-          _showFullscreenOverlay();
-        } else {
-          _removeFullscreenOverlay();
-        }
-      }
-    });
+    _fullscreenCheckTimer?.cancel();
+    _fullscreenCheckTimer = null;
   }
 
   void _showFullscreenOverlay() {
@@ -973,6 +983,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   }
 
   Widget _buildSplitView() {
+    // OrientationBuilder is required here — the parent build() does not
+    // otherwise subscribe to MediaQuery, so without it the screen would not
+    // re-layout on rotation. The PlatformView rebuild cost is mitigated by
+    // the stable GlobalKeys on the children below.
     return OrientationBuilder(
       builder: (context, orientation) {
         final axis = orientation == Orientation.portrait
@@ -984,8 +998,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           initialRatio: 0.4,
           minRatio: 0.25,
           maxRatio: 0.75,
-          firstChild: _buildSplitPlayerArea(),
+          firstChild: KeyedSubtree(
+            key: _splitVideoKey,
+            child: _buildSplitPlayerArea(),
+          ),
           secondChild: InlinePdfViewer(
+            key: _splitPdfKey,
             document: _activeDocument!,
             onClose: _closeSplitView,
           ),
@@ -996,14 +1014,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   Widget _buildSplitPlayerArea() {
     if (_playerController != null && _isPlayerInitialized) {
+      // BetterPlayer enforces its own aspect ratio internally; the previous
+      // Center+AspectRatio wrap double-constrained the layout and forced extra
+      // measurement passes on every constraint change.
       return Container(
         color: Colors.black,
-        child: Center(
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: BetterPlayer(controller: _playerController!),
-          ),
-        ),
+        child: BetterPlayer(controller: _playerController!),
       );
     }
     return Container(

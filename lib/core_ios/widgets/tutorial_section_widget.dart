@@ -38,37 +38,67 @@ class TutorialSectionWidget extends StatefulWidget {
 }
 
 class _TutorialSectionWidgetState extends State<TutorialSectionWidget> {
-  List<TutorialItem> _tutorials = [];
+  // Session-level cache so the API is hit at most once per app launch and
+  // re-entering the screen never re-triggers a load (which previously caused
+  // the list to "freeze" while the request was in flight).
+  static List<TutorialItem>? _cache;
+  static Future<List<TutorialItem>>? _inflight;
+
+  List<TutorialItem> _tutorials = const [];
+  bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadTutorials();
+    if (_cache != null) {
+      _tutorials = _cache!;
+      _loaded = true;
+    } else {
+      _loadTutorials();
+    }
   }
 
   Future<void> _loadTutorials() async {
     try {
-      final response = await ApiService().dio.get(ApiConstants.tutorials);
-      final data = response.data?['data'];
-      if (data is Map<String, dynamic> && data['tutorials'] is List) {
-        final List<dynamic> list = data['tutorials'];
-        final parsed = list
-            .whereType<Map<String, dynamic>>()
-            .map((json) => TutorialItem.fromJson(json))
-            .where((t) => t.url.isNotEmpty)
-            .toList();
-        if (mounted) {
-          setState(() => _tutorials = parsed);
-        }
+      _inflight ??= _fetch();
+      final parsed = await _inflight!;
+      if (mounted) {
+        setState(() {
+          _tutorials = parsed;
+          _loaded = true;
+        });
       }
     } catch (e) {
       debugPrint('Error loading tutorials: $e');
+      if (mounted) setState(() => _loaded = true);
     }
+  }
+
+  Future<List<TutorialItem>> _fetch() async {
+    final response = await ApiService().dio.get(ApiConstants.tutorials);
+    final data = response.data?['data'];
+    if (data is Map<String, dynamic> && data['tutorials'] is List) {
+      final List<dynamic> list = data['tutorials'];
+      final parsed = list
+          .whereType<Map<String, dynamic>>()
+          .map((json) => TutorialItem.fromJson(json))
+          .where((t) => t.url.isNotEmpty)
+          .toList();
+      _cache = parsed;
+      return parsed;
+    }
+    _cache = const [];
+    return const [];
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_tutorials.isEmpty) return const SizedBox.shrink();
+    // Reserve a stable placeholder while loading so the surrounding ListView
+    // doesn't jump when tutorials arrive. Once loaded and empty, collapse.
+    if (_tutorials.isEmpty) {
+      if (_loaded) return const SizedBox.shrink();
+      return const SizedBox(height: 120);
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isTablet = ResponsiveHelper.isTablet(context);

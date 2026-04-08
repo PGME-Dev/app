@@ -542,70 +542,30 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
             ),
           ),
 
-          SizedBox(height: isTablet ? 29 : 22),
-
-          // Notes banner image (prefer package notes thumbnail, fall back to series thumbnail)
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-              child: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl) != null && (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: imagePlaceholderColor,
-                        child: Center(
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: isTablet ? 75 : 60,
-                            color: secondaryTextColor,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: imagePlaceholderColor,
-                        child: Center(
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: isTablet ? 75 : 60,
-                            color: secondaryTextColor,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: imagePlaceholderColor,
-                      child: Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: isTablet ? 75 : 60,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-
-          SizedBox(height: isTablet ? 36 : 28),
-
-          // Notes List
+          // Notes List (banner is now the first scrollable item)
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadData,
               child: _isLoading
-                ? ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: hPadding),
-                    itemCount: 5,
-                    itemBuilder: (context, index) => ShimmerWidgets.listItemShimmer(isDark: isDark),
+                ? ListView(
+                    padding: EdgeInsets.only(top: isTablet ? 29 : 22),
+                    children: [
+                      _buildNotesBanner(isTablet, hPadding, imagePlaceholderColor, secondaryTextColor),
+                      SizedBox(height: isTablet ? 36 : 28),
+                      ...List.generate(5, (index) => Padding(
+                        padding: EdgeInsets.symmetric(horizontal: hPadding),
+                        child: ShimmerWidgets.listItemShimmer(isDark: isDark),
+                      )),
+                    ],
                   )
                 : _error != null
                     ? ListView(
+                        padding: EdgeInsets.only(top: isTablet ? 29 : 22),
                         children: [
+                          _buildNotesBanner(isTablet, hPadding, imagePlaceholderColor, secondaryTextColor),
+                          SizedBox(height: isTablet ? 36 : 28),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.5,
+                            height: MediaQuery.of(context).size.height * 0.4,
                             child: Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -634,9 +594,12 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                       )
                     : _documents.isEmpty
                         ? ListView(
+                            padding: EdgeInsets.only(top: isTablet ? 29 : 22),
                             children: [
+                              _buildNotesBanner(isTablet, hPadding, imagePlaceholderColor, secondaryTextColor),
+                              SizedBox(height: isTablet ? 36 : 28),
                               SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.5,
+                                height: MediaQuery.of(context).size.height * 0.4,
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -669,35 +632,89 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                               ),
                             ],
                           )
-                        : ClipRect(
-                            clipBehavior: Clip.none,
-                            child: ListView.builder(
-                              padding: EdgeInsets.only(left: hPadding, right: hPadding, top: isTablet ? 16 : 12, bottom: isTablet ? 150 : 120),
-                              clipBehavior: Clip.none,
-                              itemCount: _documents.length + 1,
-                              itemBuilder: (context, index) {
-                                if (index == _documents.length) {
-                                  return const TutorialSectionWidget();
-                                }
-                                final document = _documents[index];
-                                return _buildNoteCard(
+                        : ListView.builder(
+                            padding: EdgeInsets.only(top: isTablet ? 29 : 22, bottom: isTablet ? 150 : 120),
+                            itemCount: _documents.length + 2,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: isTablet ? 36 : 28),
+                                  child: _buildNotesBanner(isTablet, hPadding, imagePlaceholderColor, secondaryTextColor),
+                                );
+                              }
+                              if (index == _documents.length + 1) {
+                                return const TutorialSectionWidget();
+                              }
+                              final document = _documents[index - 1];
+                              return Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                                child: _buildNoteCard(
                                   context,
                                   document: document,
-                                  index: index,
-                                  isExpanded: _expandedIndex == index,
+                                  index: index - 1,
+                                  isExpanded: _expandedIndex == (index - 1),
                                   isDark: isDark,
                                   isTablet: isTablet,
                                   textColor: textColor,
                                   cardBgColor: cardBgColor,
                                   iconColor: iconColor,
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            },
                           ),
             ),
           ),
         ],
       ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotesBanner(bool isTablet, double hPadding, Color imagePlaceholderColor, Color secondaryTextColor) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPadding),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+          child: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl) != null && (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: (_package?.notesThumbnailUrl ?? _series?.thumbnailUrl)!,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: imagePlaceholderColor,
+                    child: Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: isTablet ? 75 : 60,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: imagePlaceholderColor,
+                    child: Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: isTablet ? 75 : 60,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ),
+                )
+              : Container(
+                  color: imagePlaceholderColor,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: isTablet ? 75 : 60,
+                      color: secondaryTextColor,
+                    ),
+                  ),
+                ),
         ),
       ),
     );

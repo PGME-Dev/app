@@ -31,6 +31,7 @@ class _CareersScreenState extends State<CareersScreen> {
   String? _selectedRole;
   bool _isSubmitting = false;
   bool _isSubmitted = false;
+  bool _agreedToTerms = true;
   String? _error;
 
   static const List<String> _roles = [
@@ -76,6 +77,12 @@ class _CareersScreenState extends State<CareersScreen> {
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms and Conditions to continue')),
+      );
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -531,6 +538,73 @@ class _CareersScreenState extends State<CareersScreen> {
               secondaryTextColor: secondaryTextColor,
               fieldFillColor: fieldFillColor,
               borderColor: borderColor,
+            ),
+
+            SizedBox(height: isTablet ? 20 : 16),
+
+            // Terms and Conditions checkbox
+            GestureDetector(
+              onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: isTablet ? 26.0 : 22.0,
+                    height: isTablet ? 26.0 : 22.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(isTablet ? 7.0 : 6.0),
+                        border: Border.all(
+                          color: _agreedToTerms ? AppColors.primaryBlue : const Color(0xFFD0D5DD),
+                          width: 1.5,
+                        ),
+                        color: _agreedToTerms ? AppColors.primaryBlue : Colors.transparent,
+                      ),
+                      child: _agreedToTerms
+                          ? Icon(
+                              Icons.check,
+                              size: isTablet ? 18.0 : 14.0,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
+                  ),
+                  SizedBox(width: isTablet ? 12.0 : 8.0),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'I agree to the ',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: isTablet ? 15.0 : 12.0,
+                          fontWeight: FontWeight.w400,
+                          color: secondaryTextColor,
+                        ),
+                        children: [
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.baseline,
+                            baseline: TextBaseline.alphabetic,
+                            child: GestureDetector(
+                              onTap: () => context.push('/terms-and-conditions'),
+                              child: Text(
+                                'Terms and Conditions',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isTablet ? 15.0 : 12.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryBlue,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.primaryBlue,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             SizedBox(height: isTablet ? 28 : 24),

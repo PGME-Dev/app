@@ -107,13 +107,14 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+            maxWidth: ResponsiveHelper.getBannerMaxWidth(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Banner image with status badge overlay
-              Expanded(
+              // Banner image with status badge overlay — strict 16:9
+              AspectRatio(
+                aspectRatio: 16 / 9,
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(

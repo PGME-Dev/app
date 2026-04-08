@@ -463,87 +463,7 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
 
           SizedBox(height: isTablet ? 23 : 18),
 
-          // eBook & Physical Cards
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: isTablet ? hPadding : 15),
-            child: GestureDetector(
-              onTap: () => context.push('/ebook-store'),
-              child: Container(
-                width: double.infinity,
-                height: ResponsiveHelper.orderBookCardHeight(context),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [const Color(0xFF1A3A2E), const Color(0xFF0D2A1C)]
-                        : [const Color(0xFF00875A), const Color(0xFF00C853)],
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 24 : 16,
-                    vertical: isTablet ? 20 : 14,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: isTablet ? 52 : 40,
-                        height: isTablet ? 52 : 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(isTablet ? 14 : 10),
-                        ),
-                        child: Icon(
-                          Icons.menu_book_rounded,
-                          size: isTablet ? 28 : 22,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: isTablet ? 16 : 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              Platform.isIOS ? 'E-Books' : 'Buy E-Books',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: isTablet ? 22 * scale : 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: isTablet ? 4 : 2),
-                            Text(
-                              Platform.isIOS ? 'Browse study materials' : 'Browse and purchase study materials',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                fontSize: isTablet ? 15 * scale : 12,
-                                color: Colors.white.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: isTablet ? 22 : 16,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(height: isTablet ? 21 : 16),
-
-          // Content
+          // Content (eBook card now lives inside the scrollable as the first sliver)
           Expanded(
             child: _isLoading
                 ? Center(
@@ -588,6 +508,89 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                           slivers: [
+                            // eBook store CTA — scrolls with the rest of the list
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  isTablet ? hPadding : 15,
+                                  0,
+                                  isTablet ? hPadding : 15,
+                                  isTablet ? 21 : 16,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => context.push('/ebook-store'),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: isDark
+                                            ? [const Color(0xFF1A3A2E), const Color(0xFF0D2A1C)]
+                                            : [const Color(0xFF00875A), const Color(0xFF00C853)],
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 20 : 14,
+                                        vertical: isTablet ? 14 : 10,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: isTablet ? 44 : 36,
+                                            height: isTablet ? 44 : 36,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(alpha: 0.2),
+                                              borderRadius: BorderRadius.circular(isTablet ? 12 : 9),
+                                            ),
+                                            child: Icon(
+                                              Icons.menu_book_rounded,
+                                              size: isTablet ? 24 : 20,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          SizedBox(width: isTablet ? 14 : 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  Platform.isIOS ? 'E-Books' : 'Buy E-Books',
+                                                  style: TextStyle(
+                                                    fontFamily: 'Poppins',
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: isTablet ? 20 * scale : 15,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                SizedBox(height: isTablet ? 3 : 2),
+                                                Text(
+                                                  Platform.isIOS ? 'Browse study materials' : 'Browse and purchase study materials',
+                                                  style: TextStyle(
+                                                    fontFamily: 'Poppins',
+                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: isTablet ? 14 * scale : 11,
+                                                    color: Colors.white.withValues(alpha: 0.75),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: isTablet ? 20 : 14,
+                                            color: Colors.white.withValues(alpha: 0.6),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                             // Notes list (or empty state)
                             if (_filteredItems.isEmpty)
                               SliverToBoxAdapter(

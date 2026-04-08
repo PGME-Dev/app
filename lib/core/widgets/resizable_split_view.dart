@@ -28,20 +28,30 @@ class ResizableSplitView extends StatefulWidget {
 }
 
 class _ResizableSplitViewState extends State<ResizableSplitView> {
-  late double _ratio;
+  // ValueNotifier so divider drags rebuild ONLY the layout shell — not the
+  // expensive PlatformView children (BetterPlayer, SfPdfViewer). Previously
+  // setState on every drag delta was recreating the entire native view tree
+  // and tripping the Android ANR watchdog on tablets.
+  late final ValueNotifier<double> _ratio;
 
   static const _dividerThickness = 20.0;
 
   @override
   void initState() {
     super.initState();
-    _ratio = widget.initialRatio;
+    _ratio = ValueNotifier<double>(widget.initialRatio);
   }
 
   @override
   void didUpdateWidget(ResizableSplitView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _ratio = _ratio.clamp(widget.minRatio, widget.maxRatio);
+    _ratio.value = _ratio.value.clamp(widget.minRatio, widget.maxRatio);
+  }
+
+  @override
+  void dispose() {
+    _ratio.dispose();
+    super.dispose();
   }
 
   @override
@@ -53,24 +63,36 @@ class _ResizableSplitViewState extends State<ResizableSplitView> {
         final totalSize =
             isVertical ? constraints.maxHeight : constraints.maxWidth;
         final available = totalSize - _dividerThickness;
-        final firstSize = (available * _ratio).clamp(0.0, available);
-        final secondSize = (available - firstSize).clamp(0.0, available);
 
-        return Flex(
-          direction: widget.axis,
-          children: [
-            SizedBox(
-              width: isVertical ? constraints.maxWidth : firstSize,
-              height: isVertical ? firstSize : constraints.maxHeight,
-              child: widget.firstChild,
-            ),
-            _buildDivider(isVertical, totalSize),
-            SizedBox(
-              width: isVertical ? constraints.maxWidth : secondSize,
-              height: isVertical ? secondSize : constraints.maxHeight,
-              child: widget.secondChild,
-            ),
-          ],
+        // Children are captured ONCE per layout pass and reused across every
+        // ratio change — the ValueListenableBuilder only rebuilds the Flex
+        // wrapper, not the children themselves.
+        final firstChild = widget.firstChild;
+        final secondChild = widget.secondChild;
+        final divider = _buildDivider(isVertical, totalSize);
+
+        return ValueListenableBuilder<double>(
+          valueListenable: _ratio,
+          builder: (context, ratio, _) {
+            final firstSize = (available * ratio).clamp(0.0, available);
+            final secondSize = (available - firstSize).clamp(0.0, available);
+            return Flex(
+              direction: widget.axis,
+              children: [
+                SizedBox(
+                  width: isVertical ? constraints.maxWidth : firstSize,
+                  height: isVertical ? firstSize : constraints.maxHeight,
+                  child: firstChild,
+                ),
+                divider,
+                SizedBox(
+                  width: isVertical ? constraints.maxWidth : secondSize,
+                  height: isVertical ? secondSize : constraints.maxHeight,
+                  child: secondChild,
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -105,9 +127,7 @@ class _ResizableSplitViewState extends State<ResizableSplitView> {
 
   void _onDrag(double delta, double totalSize) {
     if (totalSize <= 0) return;
-    setState(() {
-      _ratio = (_ratio + delta / totalSize)
-          .clamp(widget.minRatio, widget.maxRatio);
-    });
+    _ratio.value =
+        (_ratio.value + delta / totalSize).clamp(widget.minRatio, widget.maxRatio);
   }
 }

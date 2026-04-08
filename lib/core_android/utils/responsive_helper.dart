@@ -101,6 +101,17 @@ class ResponsiveHelper {
     return _dynamicMaxContentWidth(context);
   }
 
+  /// Max width for a 16:9 hero/banner so its derived height never exceeds
+  /// ~35% of the screen height. Prevents the home carousel from consuming
+  /// the entire viewport in landscape on tablets.
+  static double getBannerMaxWidth(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final widthBudget = getMaxContentWidth(context);
+    final maxFromHeight = size.height * 0.35 * (16 / 9);
+    final cap = widthBudget.isFinite ? widthBudget : size.width;
+    return cap < maxFromHeight ? cap : maxFromHeight;
+  }
+
   /// Get constrained content width (prevents content from being too wide on tablets)
   static double contentWidth(BuildContext context) {
     final width = screenWidth(context);

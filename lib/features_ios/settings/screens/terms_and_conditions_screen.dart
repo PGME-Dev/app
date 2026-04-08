@@ -85,12 +85,27 @@ class TermsAndConditionsScreen extends StatelessWidget {
             'These Terms shall be governed by the laws of India.\nAll disputes shall be subject to the exclusive jurisdiction of courts located in Jalandhar, Punjab.',
       },
       {
-        'title': '14. Modifications',
+        'title': '14. Examinee Policy',
+        'content':
+            'Participation is subject to eligibility and compliance with all guidelines shared during registration.\nAttendance, timely submission of required materials, and professional conduct are mandatory.\nAny misconduct or violation of guidelines may lead to removal without refund.\nAccess is restricted to the registered examinee only; sharing credentials is strictly prohibited.\nAll session content, including recordings, remains the intellectual property of PGME and must not be shared or reproduced.\nPGME is not liable for technical or connectivity issues at the participant\'s end.',
+      },
+      {
+        'title': '15. Examiner Policy',
+        'content':
+            'Participation is subject to adherence to all guidelines shared during onboarding and form submission.\nExaminers are expected to maintain professional conduct throughout all sessions.\nAll session content, including recordings, remains the intellectual property of PGME and must not be shared or reproduced.\nAccess is restricted to the registered examiner only; sharing credentials is strictly prohibited.\nPGME is not liable for technical or connectivity issues at the participant\'s end.',
+      },
+      {
+        'title': '16. eBook Policy',
+        'content':
+            'The eBook is available exclusively within the app for reading and in-app download only.\nNo PDF, external soft copy, or hard copy will be provided.\nAccess is strictly limited to the registered user for personal academic use.\nNo refund will be provided if the eBook is already included in a purchased package.\nAny technical issue must be reported within 72 hours of purchase; no claims will be entertained thereafter.',
+      },
+      {
+        'title': '17. Modifications',
         'content':
             'PGME may modify these Terms at any time. Continued use constitutes acceptance of revised Terms.',
       },
       {
-        'title': '15. Contact',
+        'title': '18. Contact',
         'content': 'Email: support@pgmemedicalteaching.com',
       },
     ];
@@ -164,12 +179,27 @@ class TermsAndConditionsScreen extends StatelessWidget {
             'These Terms shall be governed by the laws of India.\nAll disputes shall be subject to the exclusive jurisdiction of courts located in Jalandhar, Punjab.',
       },
       {
-        'title': '13. Modifications',
+        'title': '13. Examinee Policy',
+        'content':
+            'Participation is subject to eligibility and compliance with all guidelines shared during registration.\nAttendance, timely submission of required materials, and professional conduct are mandatory.\nAny misconduct or violation of guidelines may lead to removal without refund.\nAccess is restricted to the registered examinee only; sharing credentials is strictly prohibited.\nAll session content, including recordings, remains the intellectual property of PGME and must not be shared or reproduced.\nPGME is not liable for technical or connectivity issues at the participant\'s end.',
+      },
+      {
+        'title': '14. Examiner Policy',
+        'content':
+            'Participation is subject to adherence to all guidelines shared during onboarding and form submission.\nExaminers are expected to maintain professional conduct throughout all sessions.\nAll session content, including recordings, remains the intellectual property of PGME and must not be shared or reproduced.\nAccess is restricted to the registered examiner only; sharing credentials is strictly prohibited.\nPGME is not liable for technical or connectivity issues at the participant\'s end.',
+      },
+      {
+        'title': '15. eBook Policy',
+        'content':
+            'The eBook is available exclusively within the app for reading and in-app download only.\nNo PDF, external soft copy, or hard copy will be provided.\nAccess is strictly limited to the registered user for personal academic use.\nNo refund will be provided if the eBook is already included in a purchased package.\nAny technical issue must be reported within 72 hours of purchase; no claims will be entertained thereafter.',
+      },
+      {
+        'title': '16. Modifications',
         'content':
             'PGME may modify these Terms at any time. Continued use constitutes acceptance of revised Terms.',
       },
       {
-        'title': '14. Contact',
+        'title': '17. Contact',
         'content': 'Email: support@pgmemedicalteaching.com',
       },
     ];

@@ -64,19 +64,22 @@ class _LiveClassCarouselState extends State<LiveClassCarousel> {
     });
   }
 
-  /// Fixed carousel height: image (4:5 on available width) + text/buttons area below.
+  /// Fixed carousel height: 16:9 image + text/buttons area below.
+  /// Image width is capped by ResponsiveHelper.getBannerMaxWidth so landscape
+  /// on tablets doesn't produce a banner that consumes the entire viewport.
   double _getCarouselHeight(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final horizontalPadding = isTablet ? 24.0 * 2 : 16.0 * 2;
     final screenWidth = MediaQuery.of(context).size.width;
-    final maxContentWidth = ResponsiveHelper.getMaxContentWidth(context);
-    final availableWidth = (screenWidth - horizontalPadding).clamp(0.0, maxContentWidth);
+    final bannerMaxWidth = ResponsiveHelper.getBannerMaxWidth(context);
+    final availableWidth =
+        (screenWidth - horizontalPadding).clamp(0.0, bannerMaxWidth);
 
-    // Image height at 16:9 ratio
     final imageHeight = availableWidth * (9 / 16);
 
-    // Fixed space below image for title + time + buttons
-    final belowImageHeight = isTablet ? 86.0 : 68.0;
+    // Below-image area for title + time + buttons (bumped to fix 8px overflow
+    // at larger text scales).
+    final belowImageHeight = isTablet ? 100.0 : 80.0;
 
     return imageHeight + belowImageHeight;
   }
@@ -172,7 +175,7 @@ class _PromotionalBannerWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
-    final belowImageHeight = isTablet ? 86.0 : 68.0;
+    final belowImageHeight = isTablet ? 100.0 : 80.0;
     final titleSize = isTablet ? 20.0 : 14.0;
     final buttonFontSize = isTablet ? 15.0 : 11.0;
     final buttonPaddingH = isTablet ? 24.0 : 14.0;
@@ -184,15 +187,16 @@ class _PromotionalBannerWrapper extends StatelessWidget {
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+            maxWidth: ResponsiveHelper.getBannerMaxWidth(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Banner image
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _handleTap(context),
+              // Banner image — strict 16:9, never crops regardless of parent size
+              GestureDetector(
+                onTap: () => _handleTap(context),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -210,7 +214,6 @@ class _PromotionalBannerWrapper extends StatelessWidget {
                       child: CachedNetworkImage(
                         imageUrl: banner.imageUrl,
                         width: double.infinity,
-                        height: double.infinity,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(color: Colors.grey[200]),
                         errorWidget: (context, url, error) => Container(
