@@ -148,6 +148,13 @@ class ZoomMeetingService {
       final zoomSignature = await getZoomSignature(sessionId);
       debugPrint('Joining meeting: ${zoomSignature.meetingNumber}');
 
+      // IMPORTANT: subscribe to onAuthenticationReturn BEFORE calling authZoom.
+      // On Android the SDK can fire the auth-return event almost immediately,
+      // and if we attach `.first` after authZoom() the event is already gone —
+      // the listener then sits idle until the 10s timeout (the "first click"
+      // failure). Capturing the future first guarantees the listener is live.
+      final authEventFuture = _zoomSdk.onAuthenticationReturn.first;
+
       // Authenticate with SDK using JWT token
       debugPrint('Authenticating with Zoom SDK...');
       final authResult = await _zoomSdk.authZoom(jwtToken: zoomSignature.signature);
@@ -164,10 +171,7 @@ class ZoomMeetingService {
       debugPrint('Zoom SDK auth request sent, waiting for completion...');
 
       // Wait for the actual authentication to complete via event stream.
-      // authZoom() only sends the request — the real result arrives on
-      // onAuthenticationReturn. Without this, joinMeeting() fires before
-      // the SDK is ready, causing the first-click failure.
-      final authEvent = await _zoomSdk.onAuthenticationReturn.first.timeout(
+      final authEvent = await authEventFuture.timeout(
         const Duration(seconds: 10),
         onTimeout: () => throw ZoomJoinException(
           type: ZoomErrorType.authenticationFailed,

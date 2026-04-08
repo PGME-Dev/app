@@ -62,16 +62,18 @@ import FirebaseMessaging
       }
     }
 
-    // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
-    // NotificationCenter.default.addObserver(
-    //   self,
-    //   selector: #selector(screenCaptureChanged),
-    //   name: UIScreen.capturedDidChangeNotification,
-    //   object: nil
-    // )
-    // if UIScreen.main.isCaptured {
-    //   screenCaptureChanged()
-    // }
+    // Detect screen recording — show black overlay
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(screenCaptureChanged),
+      name: UIScreen.capturedDidChangeNotification,
+      object: nil
+    )
+
+    // Check if already recording on launch
+    if UIScreen.main.isCaptured {
+      screenCaptureChanged()
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

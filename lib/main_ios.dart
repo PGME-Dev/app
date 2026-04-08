@@ -18,12 +18,12 @@ import 'package:pgme/core/providers/mini_player_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
+  // Prevent screenshots and screen recording across the entire app
   try {
-    await NoScreenshot.instance.screenshotOn().timeout(
+    await NoScreenshot.instance.screenshotOff().timeout(
       const Duration(seconds: 5),
       onTimeout: () {
-        debugPrint('NoScreenshot.screenshotOn() timed out — continuing');
+        debugPrint('NoScreenshot.screenshotOff() timed out — continuing');
         return false;
       },
     );
