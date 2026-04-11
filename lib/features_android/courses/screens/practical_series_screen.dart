@@ -672,15 +672,37 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${series.totalLectures ?? 0} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w400,
-                      fontSize: isTablet ? 15 : 12,
-                      color: textColor.withValues(alpha: 0.5),
+                  if ((series.totalLectures ?? 0) > 0)
+                    Text(
+                      '${series.totalLectures} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.5),
+                      ),
+                    )
+                  else if ((series.totalDocuments ?? 0) > 0)
+                    Text(
+                      '${series.totalDocuments} Documents',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.5),
+                      ),
+                    )
+                  else
+                    Text(
+                      'Coming Soon',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                        fontSize: isTablet ? 15 : 12,
+                        color: textColor.withValues(alpha: 0.4),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -1484,15 +1506,37 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '${series.totalLectures ?? 0} lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                    fontSize: isTablet ? 14 : 11,
-                    color: secondaryTextColor,
+                if ((series.totalLectures ?? 0) > 0)
+                  Text(
+                    '${series.totalLectures} lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontSize: isTablet ? 14 : 11,
+                      color: secondaryTextColor,
+                    ),
+                  )
+                else if ((series.totalDocuments ?? 0) > 0)
+                  Text(
+                    '${series.totalDocuments} documents',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontSize: isTablet ? 14 : 11,
+                      color: secondaryTextColor,
+                    ),
+                  )
+                else
+                  Text(
+                    'Coming soon',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      fontStyle: FontStyle.italic,
+                      fontSize: isTablet ? 14 : 11,
+                      color: secondaryTextColor,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

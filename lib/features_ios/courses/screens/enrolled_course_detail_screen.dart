@@ -279,14 +279,14 @@ class _EnrolledCourseDetailScreenState
                                 isTablet: isTablet,
                               ),
                             if (_series?.moduleCount != null) const SizedBox(height: 12),
-                            if (_series?.totalLectures != null)
+                            if ((_series?.totalLectures ?? 0) > 0)
                               _buildInclusionItem(
                                 '${_series!.totalLectures} Video Lectures',
                                 secondaryTextColor,
                                 icon: Icons.play_circle_outline,
                                 isTablet: isTablet,
                               ),
-                            if (_series?.totalLectures != null) const SizedBox(height: 12),
+                            if ((_series?.totalLectures ?? 0) > 0) const SizedBox(height: 12),
                             if (_series?.totalDocuments != null)
                               _buildInclusionItem(
                                 '${_series!.totalDocuments} Study Documents',

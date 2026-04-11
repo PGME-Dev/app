@@ -1022,7 +1022,14 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                 ),
                 SizedBox(height: isTablet ? 4 : 2),
                 Text(
-                  '${series.totalLectures ?? 0} lectures · ${series.totalDocuments ?? 0} docs',
+                  () {
+                    final lec = series.totalLectures ?? 0;
+                    final doc = series.totalDocuments ?? 0;
+                    if (lec > 0 && doc > 0) return '$lec lectures · $doc docs';
+                    if (lec > 0) return '$lec lectures';
+                    if (doc > 0) return '$doc docs';
+                    return 'Coming soon';
+                  }(),
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
@@ -1195,9 +1202,9 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: isTablet ? 6 : 4),
-                  if (isLectureMode)
+                  if (isLectureMode && (series.totalLectures ?? 0) > 0)
                     Text(
-                      '${series.totalLectures ?? 0} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
+                      '${series.totalLectures} Lectures${series.formattedDuration != 'N/A' ? ' · ${series.formattedDuration}' : ''}',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
