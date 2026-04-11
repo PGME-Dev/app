@@ -1028,7 +1028,8 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                     if (lec > 0 && doc > 0) return '$lec lectures · $doc docs';
                     if (lec > 0) return '$lec lectures';
                     if (doc > 0) return '$doc docs';
-                    return 'Coming soon';
+                    if (series.documentsComingSoon) return series.documentsReleaseAt != null ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}' : 'Coming soon';
+                    return '';
                   }(),
                   style: TextStyle(
                     fontFamily: 'Poppins',
@@ -1076,11 +1077,11 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
       );
     }
 
-    // In document mode, hide series with 0 documents unless admin marked as coming soon
+    // Hide series with no content in the active mode
     final isDocMode = _contentMode == 'documents';
     final filteredSeries = isDocMode
         ? _series.where((s) => (s.totalDocuments ?? 0) > 0 || s.documentsComingSoon).toList()
-        : _series;
+        : _series.where((s) => (s.totalLectures ?? 0) > 0).toList();
 
     if (filteredSeries.isEmpty) {
       return Center(
@@ -1222,7 +1223,7 @@ class _RevisionSeriesScreenState extends State<RevisionSeriesScreen>
                         color: textColor.withValues(alpha: 0.5),
                       ),
                     )
-                  else
+                  else if (series.documentsComingSoon)
                     Text(
                       series.documentsReleaseAt != null
                           ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'

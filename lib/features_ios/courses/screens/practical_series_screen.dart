@@ -565,7 +565,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
     final isTablet = ResponsiveHelper.isTablet(context);
     final hPadding = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
 
-    if (_series.isEmpty) {
+    // Hide series with 0 lectures on the Video Lectures screen
+    final filteredSeries = _series.where((s) => (s.totalLectures ?? 0) > 0).toList();
+
+    if (filteredSeries.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -591,9 +594,9 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
         constraints: BoxConstraints(maxWidth: ResponsiveHelper.getMaxContentWidth(context)),
         child: ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: hPadding).copyWith(bottom: 100),
-          itemCount: _series.length,
+          itemCount: filteredSeries.length,
           itemBuilder: (context, index) {
-            final series = _series[index];
+            final series = filteredSeries[index];
             final isItemLocked = isSubscribed ? false : series.isLocked;
 
             return GestureDetector(
@@ -691,9 +694,11 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                         color: textColor.withValues(alpha: 0.5),
                       ),
                     )
-                  else
+                  else if (series.documentsComingSoon)
                     Text(
-                      'Coming Soon',
+                      series.documentsReleaseAt != null
+                          ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'
+                          : 'Coming Soon',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w400,
@@ -1048,7 +1053,7 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                         color: textColor.withValues(alpha: 0.5),
                       ),
                     )
-                  else
+                  else if (series.documentsComingSoon)
                     Text(
                       series.documentsReleaseAt != null
                           ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'
@@ -1489,9 +1494,11 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                       color: secondaryTextColor,
                     ),
                   )
-                else
+                else if (series.documentsComingSoon)
                   Text(
-                    'Coming soon',
+                    series.documentsReleaseAt != null
+                        ? 'Coming ${_formatReleaseDate(series.documentsReleaseAt!)}'
+                        : 'Coming soon',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w400,

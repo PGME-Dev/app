@@ -1,7 +1,7 @@
 name: pgme
 description: Post Graduate Medical Education - A complete medical education platform
 publish_to: 'none'
-version: 2.0.0
+version: 2.0.1+7
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -73,6 +73,7 @@ flutter:
     - assets/illustrations/
     - .env
     - assets/zoho_payment.html
+    - shorebird.yaml
 
   # fonts:
   #   - family: Inter
