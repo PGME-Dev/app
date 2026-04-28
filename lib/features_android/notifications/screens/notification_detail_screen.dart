@@ -49,7 +49,7 @@ class NotificationDetailScreen extends StatelessWidget {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } else {
-      context.push(url);
+      context.go(url);
     }
   }
 

@@ -1,12 +1,53 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pgme/core/models/access_record_model.dart';
 import 'package:pgme/core/models/series_model.dart';
 import 'package:pgme/core/models/progress_model.dart';
 import 'package:pgme/core/models/library_model.dart';
 import 'package:pgme/core/services/enrolled_courses_service.dart';
 
-class EnrolledCoursesProvider with ChangeNotifier {
+class EnrolledCoursesProvider with ChangeNotifier, WidgetsBindingObserver {
   final EnrolledCoursesService _enrolledCoursesService = EnrolledCoursesService();
+
+  EnrolledCoursesProvider() {
+    // Listen for the Android low-memory signal (onTrimMemory ->
+    // didHaveMemoryPressure). When it fires we drop the heaviest cached
+    // lists so the active screen (PDF viewer / video player) gets that
+    // headroom back. Lists are reloaded from API on next visit.
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    _trimInMemoryCaches();
+  }
+
+  /// Drop big in-memory lists that can be re-fetched from the API. Keeps
+  /// `_purchases` and `_selectedPurchase` so the courses screen scaffolding
+  /// renders without a flicker on resume. The bulky per-purchase data
+  /// (series, progress, library) is the part that actually moves the heap.
+  void _trimInMemoryCaches() {
+    final hadAnything = _theorySeries.isNotEmpty ||
+        _practicalSeries.isNotEmpty ||
+        _progressList.isNotEmpty ||
+        _continueWatchingList.isNotEmpty ||
+        _libraryItems.isNotEmpty;
+    if (!hadAnything) return;
+    debugPrint(
+        '[MEM-TRIM] EnrolledCoursesProvider: dropping cached lists under memory pressure');
+    _theorySeries = const [];
+    _practicalSeries = const [];
+    _progressList = const [];
+    _continueWatchingList = const [];
+    _libraryItems = const [];
+    _enrolledCoursesService.clearCache();
+    notifyListeners();
+  }
 
   // State - Purchases
   List<AccessRecordModel> _purchases = [];

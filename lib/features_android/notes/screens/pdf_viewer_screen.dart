@@ -18,6 +18,7 @@ import 'package:pgme/core_android/theme/app_theme.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pgme/core_android/widgets/app_dialog.dart';
+import 'package:pgme/core/providers/mini_player_provider.dart';
 import 'package:pgme/features_android/notes/widgets/bookmarks_drawer.dart';
 
 class PdfViewerScreen extends StatefulWidget {
@@ -141,6 +142,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    // Free RAM for the PDF: kill any active video player BEFORE Syncfusion
+    // starts allocating. A 60MB textbook + a live ExoPlayer + image cache
+    // pushes mid-tier Android tablets past their per-app heap cap → ANR.
+    try {
+      final miniProvider =
+          Provider.of<MiniPlayerProvider>(context, listen: false);
+      if (miniProvider.isActive) miniProvider.close();
+    } catch (_) {}
     // Initialize PDF dark mode from system theme
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

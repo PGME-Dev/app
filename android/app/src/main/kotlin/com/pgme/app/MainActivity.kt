@@ -1,6 +1,9 @@
 package com.pgme.app
 
+import android.app.ActivityManager
+import android.content.Context
 import android.os.Bundle
+import android.os.Debug
 import android.os.Environment
 import android.os.StatFs
 import android.view.WindowManager
@@ -10,6 +13,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val STORAGE_CHANNEL = "com.pgme.app/storage_info"
+    private val MEMORY_CHANNEL = "com.pgme.app/memory_info"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +32,14 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "getFreeDiskSpace" -> result.success(getFreeDiskSpaceMB())
                     "getTotalDiskSpace" -> result.success(getTotalDiskSpaceMB())
+                    else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MEMORY_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getHeapInfo" -> result.success(getHeapInfo())
                     else -> result.notImplemented()
                 }
             }
@@ -51,5 +63,46 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             -1.0
         }
+    }
+
+    /// Returns a snapshot of this process's memory state.
+    /// All sizes in bytes — Dart side converts to MB for display.
+    ///
+    /// - dartHeapMaxBytes / dartHeapUsedBytes: the JVM (Dalvik) heap that
+    ///   holds Java/Kotlin allocations. This is the cap that triggers OOM.
+    /// - nativeHeapAllocatedBytes: malloc'd memory (decoded video frames,
+    ///   loaded PDF buffers, image bitmaps). Counts against process RSS but
+    ///   not against the JVM heap cap.
+    /// - memoryClassMb / largeMemoryClassMb: Android's nominal per-app heap
+    ///   class for this device. largeMemoryClass applies because the manifest
+    ///   sets android:largeHeap="true".
+    /// - isLowMemory: system-reported low-memory state.
+    private fun getHeapInfo(): Map<String, Any> {
+        val runtime = Runtime.getRuntime()
+        val maxBytes = runtime.maxMemory()
+        val totalBytes = runtime.totalMemory()
+        val freeBytes = runtime.freeMemory()
+        val usedBytes = totalBytes - freeBytes
+
+        val nativeAllocated = Debug.getNativeHeapAllocatedSize()
+        val nativeSize = Debug.getNativeHeapSize()
+
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val memInfo = ActivityManager.MemoryInfo()
+        am.getMemoryInfo(memInfo)
+
+        return mapOf(
+            "dartHeapMaxBytes" to maxBytes,
+            "dartHeapUsedBytes" to usedBytes,
+            "dartHeapTotalBytes" to totalBytes,
+            "nativeHeapAllocatedBytes" to nativeAllocated,
+            "nativeHeapSizeBytes" to nativeSize,
+            "memoryClassMb" to am.memoryClass,
+            "largeMemoryClassMb" to am.largeMemoryClass,
+            "systemAvailMemBytes" to memInfo.availMem,
+            "systemTotalMemBytes" to memInfo.totalMem,
+            "systemThresholdBytes" to memInfo.threshold,
+            "isLowMemory" to memInfo.lowMemory
+        )
     }
 }

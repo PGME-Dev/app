@@ -324,7 +324,7 @@ class PushNotificationService {
     } else {
       final ctx = navigatorKey.currentContext;
       if (ctx != null) {
-        GoRouter.of(ctx).push(url);
+        GoRouter.of(ctx).go(url);
       }
     }
   }

@@ -17,9 +17,27 @@ import 'package:pgme/features/notifications/providers/notification_provider.dart
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/core/services/memory_monitor.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cap Flutter's in-memory image cache. Without this, the cache is
+  // effectively unbounded (default ~100MB bytes / 1000 entries) and on a
+  // heavy scrolling session it balloons to 150-250MB of decoded bitmaps —
+  // which is the primary contributor to OOMs on mid-tier Android tablets
+  // whose per-app heap is capped at 256-384MB by the OEM. 80MB is enough
+  // for two screens of full-resolution thumbnails; anything older gets
+  // evicted LRU-style and re-decoded from CachedNetworkImage's disk cache.
+  // Flutter automatically clears this cache on `didHaveMemoryPressure`, so
+  // this is a long-term ceiling, not a one-shot.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 80 << 20; // 80 MB
+  PaintingBinding.instance.imageCache.maximumSize = 150;
+
+  // Tag-prefixed heap logging so we can track per-app heap headroom in adb
+  // logcat. Surfaces growth toward the OEM cap (256-384MB on mid-tier
+  // Android) and warns at 80% / 95%. Filter with: adb logcat | findstr MEM
+  MemoryMonitor.instance.start();
 
   // Prevent screenshots and screen recording across the entire app
   await NoScreenshot.instance.screenshotOff();

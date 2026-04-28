@@ -22,6 +22,11 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> wit
   bool _isLoading = true;
   String? _error;
 
+  // Preserves the user's chosen playback speed across pause/resume.
+  // better_player_plus can reset the native playback rate on pause; we cache
+  // the value set via the controls and reapply on play.
+  double _currentSpeed = 1.0;
+
   @override
   void initState() {
     super.initState();
@@ -75,11 +80,13 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> wit
           enableSkips: false,
           enableProgressBar: true,
           enablePlaybackSpeed: true,
+          enableAudioTracks: false,
           enableOverflowMenu: true,
         ),
       );
 
       _playerController = BetterPlayerController(configuration);
+      _playerController!.addEventsListener(_onPlayerEvent);
       await _playerController!.setupDataSource(dataSource);
 
       if (mounted) {
@@ -94,6 +101,26 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> wit
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _onPlayerEvent(BetterPlayerEvent event) {
+    switch (event.betterPlayerEventType) {
+      case BetterPlayerEventType.setSpeed:
+        final speed = (event.parameters?['speed'] as num?)?.toDouble();
+        if (speed != null && speed > 0) {
+          _currentSpeed = speed;
+        }
+        break;
+      case BetterPlayerEventType.play:
+        final actualSpeed =
+            _playerController?.videoPlayerController?.value.speed ?? 1.0;
+        if ((actualSpeed - _currentSpeed).abs() > 0.001) {
+          _playerController?.setSpeed(_currentSpeed);
+        }
+        break;
+      default:
+        break;
     }
   }
 

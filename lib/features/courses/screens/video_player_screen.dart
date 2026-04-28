@@ -16,7 +16,10 @@ import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features/courses/widgets/star_rating_input.dart';
 import 'package:pgme/features/courses/widgets/document_picker_sheet.dart';
-import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+// Swapped to the pdfrx-backed inline viewer for split-view testing.
+// Original Syncfusion-based viewer remains available at:
+//   import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+import 'package:pgme/features/courses/widgets/inline_pdf_viewer_pdfrx.dart';
 import 'package:pgme/core/models/selectable_document.dart';
 import 'package:pgme/core/widgets/resizable_split_view.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
@@ -56,6 +59,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   int _lastSavedPositionSeconds = 0;
   DateTime? _playStartTime;
   bool _isProgressSaving = false;
+
+  // Preserves the user's chosen playback speed across pause/resume.
+  // better_player_plus can reset the native playback rate on pause; we cache
+  // the value set via the controls and reapply on play.
+  double _currentSpeed = 1.0;
+
+  // Mutable list passed into the data source as `asmsTrackNames`. The
+  // better_player_plus controls read this list by index when building the
+  // quality menu — we populate it once the HLS manifest is parsed so the menu
+  // shows simple labels ("Low"/"Medium"/"High") instead of bare resolutions.
+  final List<String> _qualityLabels = [];
+  bool _qualityLabelsApplied = false;
 
   // UI state
   bool _isLoading = true;
@@ -462,12 +477,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     if (_isLocalFile) {
       dataSource = BetterPlayerDataSource.file(_videoUrl!);
     } else {
-      dataSource = BetterPlayerDataSource.network(
+      dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
         _videoUrl!,
         videoFormat: BetterPlayerVideoFormat.hls,
         useAsmsTracks: true,
         useAsmsSubtitles: true,
-        useAsmsAudioTracks: true,
+        useAsmsAudioTracks: false,
+        asmsTrackNames: _qualityLabels,
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
           minBufferMs: 2000,
           maxBufferMs: 30000,
@@ -503,6 +520,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           enableSkips: true,
           enablePlaybackSpeed: true,
           enableQualities: true,
+          enableAudioTracks: false,
           enableMute: true,
           enableProgressText: true,
           enableOverflowMenu: true,
@@ -555,6 +573,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   void _onPlayerEvent(BetterPlayerEvent event) {
     if (_isDisposed) return;
 
+    // Populate the quality menu labels lazily — by the time the controls are
+    // visible, the HLS manifest has typically been parsed.
+    _ensureQualityLabels();
+
     switch (event.betterPlayerEventType) {
       case BetterPlayerEventType.initialized:
         debugPrint('VideoPlayer: player initialized');
@@ -590,12 +612,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         // (e.g., during seeks or buffering).
         _accumulateWatchTime();
         _playStartTime = DateTime.now();
+        // Reapply the user's chosen speed if the native player reset it.
+        final actualSpeed =
+            _playerController?.videoPlayerController?.value.speed ?? 1.0;
+        if ((actualSpeed - _currentSpeed).abs() > 0.001) {
+          _playerController?.setSpeed(_currentSpeed);
+        }
         break;
 
       case BetterPlayerEventType.pause:
         debugPrint('VideoPlayer: paused');
         _accumulateWatchTime();
         _saveProgress();
+        break;
+
+      case BetterPlayerEventType.setSpeed:
+        final speed = (event.parameters?['speed'] as num?)?.toDouble();
+        if (speed != null && speed > 0) {
+          _currentSpeed = speed;
+        }
         break;
 
       case BetterPlayerEventType.finished:
@@ -612,6 +647,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       default:
         break;
     }
+  }
+
+  // Map a track's pixel height to a simple quality label. Bucketing means two
+  // adjacent renditions can collide on the same label — acceptable for a UI
+  // that hides bitrate detail; the underlying track is still distinct.
+  String _qualityLabelForHeight(int height) {
+    if (height >= 720) return 'High';
+    if (height >= 480) return 'Medium';
+    return 'Low';
+  }
+
+  void _ensureQualityLabels() {
+    if (_qualityLabelsApplied) return;
+    final tracks = _playerController?.betterPlayerAsmsTracks;
+    if (tracks == null || tracks.isEmpty) return;
+    final labels = tracks.map((t) {
+      final h = t.height ?? 0;
+      // Auto track is all-zero — leave blank so the controls fall back to the
+      // built-in `qualityAuto` translation ("Auto").
+      if (h <= 0) return '';
+      return _qualityLabelForHeight(h);
+    }).toList();
+    _qualityLabels
+      ..clear()
+      ..addAll(labels);
+    _qualityLabelsApplied = true;
   }
 
   // ---------------------------------------------------------------------------
@@ -1049,7 +1110,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           minRatio: 0.25,
           maxRatio: 0.75,
           firstChild: _buildSplitPlayerArea(),
-          secondChild: InlinePdfViewer(
+          secondChild: InlinePdfViewerPdfrx(
             document: _activeDocument!,
             onClose: _closeSplitView,
           ),

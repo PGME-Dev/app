@@ -15,11 +15,16 @@ import 'package:pgme/core/services/ebook_access_service.dart';
 class InlinePdfViewer extends StatefulWidget {
   final SelectableDocument document;
   final VoidCallback onClose;
+  /// Fires when the PDF has finished downloading AND Syncfusion has parsed
+  /// the document and rendered the first page. Used by the split-view host
+  /// to resume the video player once the heavy PDF-load phase is over.
+  final VoidCallback? onPdfReady;
 
   const InlinePdfViewer({
     super.key,
     required this.document,
     required this.onClose,
+    this.onPdfReady,
   });
 
   @override
@@ -191,6 +196,9 @@ class _InlinePdfViewerState extends State<InlinePdfViewer> {
       enableDoubleTapZooming: true,
       maxZoomLevel: 3.0,
       pageSpacing: 2,
+      onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+        widget.onPdfReady?.call();
+      },
     );
     return _cachedViewer!;
   }

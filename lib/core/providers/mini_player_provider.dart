@@ -201,7 +201,10 @@ class MiniPlayerProvider extends ChangeNotifier with WidgetsBindingObserver {
     '/my-records',
     '/careers',
     '/video', // VideoPlayerScreen handles adoption/replacement itself
-    '/pdf-viewer', // allow watching video while reading notes/documents
+    // NOTE: '/pdf-viewer' intentionally NOT in this list. Opening a fullscreen
+    // PDF must release the video player so the heap has room for Syncfusion.
+    // The PDF viewer screens additionally call MiniPlayerProvider.close() in
+    // initState as a belt-and-suspenders.
   ];
 
   /// Called on every route change. Closes the mini player if the new route

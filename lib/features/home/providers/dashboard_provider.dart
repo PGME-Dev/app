@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/package_model.dart';
@@ -17,11 +17,53 @@ import 'package:pgme/core/services/storage_service.dart';
 import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/core/services/push_notification_service.dart';
 
-class DashboardProvider with ChangeNotifier {
+class DashboardProvider with ChangeNotifier, WidgetsBindingObserver {
   final DashboardService _dashboardService = DashboardService();
   final StorageService _storageService = StorageService();
   final UserService _userService = UserService();
   final ApiService _apiService = ApiService();
+
+  DashboardProvider() {
+    // Listen for the Android low-memory signal (onTrimMemory ->
+    // didHaveMemoryPressure). When it fires we drop the heaviest cached
+    // lists so the active screen (PDF viewer / video player) gets that
+    // headroom back. Lists are reloaded from API on next visit to home.
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    _trimInMemoryCaches();
+  }
+
+  /// Drop big in-memory lists that can be re-fetched from the API. Keeps
+  /// small flags (`_primarySubject`, subscription booleans, packages) which
+  /// the home screen needs to render its scaffolding without a flicker.
+  /// Safe to call while user is NOT on the home screen — the lists are
+  /// repopulated by `loadDashboard()` on next visit.
+  void _trimInMemoryCaches() {
+    final hadAnything = _facultyList.isNotEmpty ||
+        _allSubjects.isNotEmpty ||
+        _homeSections.isNotEmpty ||
+        _banners.isNotEmpty ||
+        _upcomingSessions.isNotEmpty;
+    if (!hadAnything) return;
+    debugPrint(
+        '[MEM-TRIM] DashboardProvider: dropping cached lists under memory pressure');
+    _facultyList = const [];
+    _allSubjects = const [];
+    _homeSections = const [];
+    _banners = const [];
+    _upcomingSessions = const [];
+    _dashboardService.clearCache();
+    notifyListeners();
+  }
 
   // State
   String? _userName;

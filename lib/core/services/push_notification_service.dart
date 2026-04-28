@@ -300,7 +300,7 @@ class PushNotificationService {
             ? () {
                 final ctx = navigatorKey.currentContext;
                 if (ctx != null) {
-                  GoRouter.of(ctx).push(clickUrl);
+                  GoRouter.of(ctx).go(clickUrl);
                 }
               }
             : null,

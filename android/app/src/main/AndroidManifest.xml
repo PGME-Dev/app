@@ -82,6 +82,20 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="pgme_default" />
+
+        <!-- Strip the Zoom SDK's auto-merged URL-handling activity from our
+             merged manifest. mobilertc.aar registers JoinByURLActivity with
+             intent-filters for https://zoom.us/j/* and zoomus://* — meaning
+             ANY user tapping a Zoom join link anywhere on the device may
+             route the intent to our app, where ZMActivity.onCreate runs
+             before our code has called ZoomSDK.initialize() and crashes
+             with "Please initialize the _ZmRouter at first." We never want
+             our app to be the system handler for Zoom URLs; we have our own
+             authenticated joinMeeting() flow. The tools:node="remove" is the
+             AGP-supported way to delete a merged-manifest entry. -->
+        <activity
+            android:name="com.zipow.videobox.JoinByURLActivity"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -16,8 +16,12 @@ import 'package:pgme/features_android/courses/providers/enrolled_courses_provide
 import 'package:pgme/features_android/courses/widgets/star_rating_input.dart';
 import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/core/services/memory_monitor.dart';
 import 'package:pgme/features/courses/widgets/document_picker_sheet.dart';
-import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+// Swapped to the pdfrx-backed inline viewer for split-view testing.
+// Original Syncfusion-based viewer remains available at:
+//   import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+import 'package:pgme/features/courses/widgets/inline_pdf_viewer_pdfrx.dart';
 import 'package:pgme/core/models/selectable_document.dart';
 import 'package:pgme/core/widgets/resizable_split_view.dart';
 
@@ -58,6 +62,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   DateTime? _playStartTime;
   bool _isProgressSaving = false;
 
+  // Preserves the user's chosen playback speed across pause/resume.
+  // better_player_plus can reset the native playback rate on pause; we cache
+  // the value set via the controls and reapply on play.
+  double _currentSpeed = 1.0;
+
+  // Mutable list passed into the data source as `asmsTrackNames`. The
+  // better_player_plus controls read this list by index when building the
+  // quality menu — we populate it once the HLS manifest is parsed so the menu
+  // shows simple labels ("Low"/"Medium"/"High") instead of bare resolutions.
+  final List<String> _qualityLabels = [];
+  bool _qualityLabelsApplied = false;
+
   // UI state
   bool _isLoading = true;
   String? _error;
@@ -90,14 +106,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   // (which previously caused ANRs on tablets).
   final GlobalKey _splitVideoKey = GlobalKey(debugLabel: 'split-video');
   final GlobalKey _splitPdfKey = GlobalKey(debugLabel: 'split-pdf');
+  // Split-view memory coordination: while the PDF is downloading + Syncfusion
+  // is parsing it (the heavy-allocation phase), pause the video so ExoPlayer
+  // doesn't compete for CPU/heap. Once the PDF reports ready, both run
+  // simultaneously — that's the whole point of split view.
+  bool _pdfLoadingInSplit = false;
   // Fullscreen overlay
   OverlayEntry? _fullscreenBackButtonOverlay;
   bool _isFullscreen = false;
   bool _controlsVisible = true;
   Timer? _controlsHideTimer;
-
-  // Mini player support: when true, dispose() will NOT destroy the controller
-  bool _isMinimizing = false;
 
   @override
   void initState() {
@@ -105,27 +123,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     WidgetsBinding.instance.addObserver(this);
     debugPrint('VideoPlayer: init for videoId=${widget.videoId}');
 
-    // Check if MiniPlayerProvider already has a live controller for this video
-    final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
-    if (miniProvider.videoId == widget.videoId && miniProvider.controller != null) {
-      // Reuse the existing controller — player was expanded from mini mode
-      debugPrint('VideoPlayer: adopting controller from MiniPlayerProvider');
-      _playerController = miniProvider.controller;
-      _videoTitle = miniProvider.videoTitle;
-      _videoDescription = miniProvider.videoDescription;
-      _videoDurationSeconds = miniProvider.videoDurationSeconds;
-      _watchTimeSeconds = miniProvider.watchTimeSeconds;
-      _isLoading = false;
-      _isPlayerInitialized = true;
-      miniProvider.expand(); // mark as no longer minimized
-
-      _playerController!.addEventsListener(_onPlayerEvent);
-      _startProgressTimer();
-      _startFullscreenMonitoring();
-
-      _loadMyReview();
-      return;
-    }
+    // Defensive: kill any stale controller in MiniPlayerProvider before we
+    // build a fresh one. We don't use mini-player keep-alive anymore.
+    try {
+      final miniProvider =
+          Provider.of<MiniPlayerProvider>(context, listen: false);
+      if (miniProvider.isActive) miniProvider.close();
+    } catch (_) {}
 
     _loadVideoData();
     _loadMyReview();
@@ -140,17 +144,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   @override
   void deactivate() {
-    // Don't pause when minimizing — the mini player should keep playing
-    if (!_isMinimizing) {
-      _playerController?.pause();
-    }
+    _playerController?.pause();
     super.deactivate();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    debugPrint('VideoPlayer: disposing (minimizing=$_isMinimizing)');
+    debugPrint('VideoPlayer: disposing');
     _isDisposed = true;
     _saveProgressOnExit();
     _progressTimer?.cancel();
@@ -162,22 +163,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     _removeFullscreenOverlay();
     _playerController?.removeEventsListener(_onPlayerEvent);
 
-    if (_isMinimizing) {
-      // Controller ownership transferred to MiniPlayerProvider — do NOT dispose it
-      _playerController = null;
-    } else {
-      // Normal exit — destroy the player
-      _playerController?.pause();
-      _playerController?.dispose();
-      _playerController = null;
-      // Also close the mini player provider if it was referencing this controller
-      try {
-        final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
-        if (miniProvider.videoId == widget.videoId) {
-          miniProvider.unregister();
-        }
-      } catch (_) {}
-    }
+    // Always destroy the player on screen exit — no mini-player keep-alive.
+    _playerController?.pause();
+    _playerController?.dispose();
+    _playerController = null;
+    // Defensive: close any leftover state in MiniPlayerProvider.
+    try {
+      final miniProvider =
+          Provider.of<MiniPlayerProvider>(context, listen: false);
+      if (miniProvider.isActive) miniProvider.close();
+    } catch (_) {}
     // Restore orientation - allow landscape on tablets, portrait-only on phones
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
@@ -407,12 +402,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     if (_isLocalFile) {
       dataSource = BetterPlayerDataSource.file(_videoUrl!);
     } else {
-      dataSource = BetterPlayerDataSource.network(
+      dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
         _videoUrl!,
         videoFormat: BetterPlayerVideoFormat.hls,
         useAsmsTracks: true,
         useAsmsSubtitles: true,
-        useAsmsAudioTracks: true,
+        useAsmsAudioTracks: false,
+        asmsTrackNames: _qualityLabels,
       );
     }
 
@@ -442,6 +439,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           enableSkips: true,
           enablePlaybackSpeed: true,
           enableQualities: true,
+          enableAudioTracks: false,
           enableMute: true,
           enableProgressText: true,
           enableOverflowMenu: true,
@@ -470,19 +468,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       });
     }
 
-    // Register with MiniPlayerProvider so controller survives minimize
-    try {
-      final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
-      miniProvider.registerController(
-        controller: _playerController!,
-        videoId: widget.videoId,
-        videoTitle: _videoTitle,
-        videoDescription: _videoDescription,
-        videoDurationSeconds: _videoDurationSeconds,
-        watchTimeSeconds: _watchTimeSeconds,
-      );
-    } catch (_) {}
-
     _startProgressTimer();
     _startFullscreenMonitoring();
   }
@@ -493,6 +478,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   void _onPlayerEvent(BetterPlayerEvent event) {
     if (_isDisposed) return;
+
+    // Populate the quality menu labels lazily — by the time the controls are
+    // visible, the HLS manifest has typically been parsed.
+    _ensureQualityLabels();
 
     switch (event.betterPlayerEventType) {
       case BetterPlayerEventType.initialized:
@@ -529,12 +518,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         // (e.g., during seeks or buffering).
         _accumulateWatchTime();
         _playStartTime = DateTime.now();
+        // Reapply the user's chosen speed if the native player reset it.
+        final actualSpeed =
+            _playerController?.videoPlayerController?.value.speed ?? 1.0;
+        if ((actualSpeed - _currentSpeed).abs() > 0.001) {
+          _playerController?.setSpeed(_currentSpeed);
+        }
         break;
 
       case BetterPlayerEventType.pause:
         debugPrint('VideoPlayer: paused');
         _accumulateWatchTime();
         _saveProgress();
+        break;
+
+      case BetterPlayerEventType.setSpeed:
+        final speed = (event.parameters?['speed'] as num?)?.toDouble();
+        if (speed != null && speed > 0) {
+          _currentSpeed = speed;
+        }
         break;
 
       case BetterPlayerEventType.finished:
@@ -544,7 +546,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         break;
 
       case BetterPlayerEventType.exception:
-        final errorMsg = event.parameters?['exception'];
+        final errorMsg = event.parameters?['exception']?.toString();
         debugPrint('VideoPlayer: exception - $errorMsg');
         break;
 
@@ -565,6 +567,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       default:
         break;
     }
+  }
+
+  // Map a track's pixel height to a simple quality label. Bucketing means two
+  // adjacent renditions can collide on the same label — acceptable for a UI
+  // that hides bitrate detail; the underlying track is still distinct.
+  String _qualityLabelForHeight(int height) {
+    if (height >= 720) return 'High';
+    if (height >= 480) return 'Medium';
+    return 'Low';
+  }
+
+  void _ensureQualityLabels() {
+    if (_qualityLabelsApplied) return;
+    final tracks = _playerController?.betterPlayerAsmsTracks;
+    if (tracks == null || tracks.isEmpty) return;
+    final labels = tracks.map((t) {
+      final h = t.height ?? 0;
+      // Auto track is all-zero — leave blank so the controls fall back to the
+      // built-in `qualityAuto` translation ("Auto").
+      if (h <= 0) return '';
+      return _qualityLabelForHeight(h);
+    }).toList();
+    _qualityLabels
+      ..clear()
+      ..addAll(labels);
+    _qualityLabelsApplied = true;
   }
 
   // ---------------------------------------------------------------------------
@@ -738,32 +766,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   // Navigation
   // ---------------------------------------------------------------------------
 
-  /// Minimize the player into the mini-player bar and navigate back.
-  void _minimizeAndGoBack() {
-    if (_playerController == null) return;
-
-    // Hand ownership to the MiniPlayerProvider
-    _accumulateWatchTime();
-    final miniProvider = Provider.of<MiniPlayerProvider>(context, listen: false);
-    miniProvider.updateWatchTime(_watchTimeSeconds);
-    miniProvider.updateMetadata(
-      videoTitle: _videoTitle,
-      videoDescription: _videoDescription,
-      videoDurationSeconds: _videoDurationSeconds,
-    );
-    miniProvider.minimize();
-
-    // Set _isMinimizing via setState so the widget rebuilds with canPop: true.
-    // PopScope(canPop: false) blocks Navigator.pop() in modern Flutter, so we
-    // must flip canPop first, then pop in a post-frame callback.
-    setState(() {
-      _isMinimizing = true;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pop();
-    });
-  }
 
   Future<void> _stopAndGoBack() async {
     _playerController?.pause();
@@ -961,9 +963,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
             DeviceOrientation.landscapeLeft,
             DeviceOrientation.landscapeRight,
           ]);
+          // Pause video while the PDF downloads + Syncfusion parses it.
+          // ExoPlayer running concurrently with the heavy PDF allocation peak
+          // is what triggers the OOM/ANR on mid-tier tablets. The controller
+          // stays ALIVE so we can resume instantly on onPdfReady with no
+          // codec re-init penalty (which fails on Snapdragon 4xx chips).
+          debugPrint(
+              '[SPLIT-MEM] Split opening: pausing video while PDF loads');
+          MemoryMonitor.instance.logNow('split-open');
+          _playerController?.pause();
           setState(() {
             _activeDocument = doc;
             _isSplitViewActive = true;
+            _pdfLoadingInSplit = true;
           });
         },
       ),
@@ -979,7 +991,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     setState(() {
       _isSplitViewActive = false;
       _activeDocument = null;
+      _pdfLoadingInSplit = false;
     });
+  }
+
+  /// Fired by [InlinePdfViewerPdfrx] once the PDF has both downloaded AND
+  /// Syncfusion has rendered the first page. The heavy allocation peak is
+  /// over; it's now safe for the video to resume and both panels to run
+  /// simultaneously — which is the whole point of split view.
+  void _onPdfReadyInSplit() {
+    if (!_isSplitViewActive || !_pdfLoadingInSplit) return;
+    debugPrint(
+        '[SPLIT-MEM] PDF ready — resuming video for simultaneous playback');
+    MemoryMonitor.instance.logNow('split-pdf-ready');
+    if (!mounted) return;
+    setState(() => _pdfLoadingInSplit = false);
+    _playerController?.play();
   }
 
   Widget _buildSplitView() {
@@ -1002,10 +1029,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
             key: _splitVideoKey,
             child: _buildSplitPlayerArea(),
           ),
-          secondChild: InlinePdfViewer(
+          secondChild: InlinePdfViewerPdfrx(
             key: _splitPdfKey,
             document: _activeDocument!,
             onClose: _closeSplitView,
+            onPdfReady: _onPdfReadyInSplit,
           ),
         );
       },

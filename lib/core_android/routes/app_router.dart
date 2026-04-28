@@ -47,7 +47,11 @@ import 'package:pgme/features_android/settings/screens/terms_and_conditions_scre
 import 'package:pgme/features_android/settings/screens/privacy_policy_screen.dart';
 import 'package:pgme/features_android/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features_android/settings/screens/downloads_screen.dart';
-import 'package:pgme/features_android/notes/screens/pdf_viewer_screen.dart';
+// pdfrx-based PDF viewer is now production. The Syncfusion file
+// (pdf_viewer_screen.dart) is left in place unreferenced so a regression
+// can be undone with a one-line import revert; planned for deletion in a
+// follow-up cleanup once production has validated for a few days.
+import 'package:pgme/features_android/notes/screens/pdf_viewer_screen_pdfrx.dart';
 import 'package:pgme/features_android/notes/screens/epub_viewer_screen.dart';
 import 'package:pgme/features_android/auth/screens/map_address_picker_screen.dart';
 import 'package:provider/provider.dart';
