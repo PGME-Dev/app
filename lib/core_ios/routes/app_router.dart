@@ -44,7 +44,7 @@ import 'package:pgme/features_ios/settings/screens/terms_and_conditions_screen.d
 import 'package:pgme/features_ios/settings/screens/privacy_policy_screen.dart';
 import 'package:pgme/features_ios/settings/screens/refund_policy_screen.dart';
 import 'package:pgme/features_ios/settings/screens/downloads_screen.dart';
-import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen_pdfrx.dart';
 import 'package:pgme/features_ios/notes/screens/epub_viewer_screen.dart';
 import 'package:pgme/features_ios/auth/screens/map_address_picker_screen.dart';
 import 'package:provider/provider.dart';

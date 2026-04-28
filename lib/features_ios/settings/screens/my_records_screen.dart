@@ -11,7 +11,7 @@ import 'package:pgme/core_ios/services/access_record_service.dart';
 import 'package:pgme/core_ios/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
 import 'package:pgme/core_ios/utils/web_store_launcher.dart';
-import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen.dart';
+import 'package:pgme/features_ios/notes/screens/pdf_viewer_screen_pdfrx.dart';
 import 'package:pgme/core_ios/widgets/app_dialog.dart';
 
 class MyRecordsScreen extends StatefulWidget {

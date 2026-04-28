@@ -1724,23 +1724,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                     noteText != null && noteText.isNotEmpty;
 
                                 return InkWell(
-                                  // Tap on body — for highlights/underlines
-                                  // open the note editor (existing behavior).
-                                  // Standalone notes have no editor here, so
-                                  // tapping just goes to the page.
-                                  onTap: () {
-                                    if (isStandalone) {
-                                      _jumpToPageFromSheet(
-                                          sheetContext, pageNum);
-                                    } else {
-                                      Navigator.pop(sheetContext);
-                                      Future.delayed(
-                                          const Duration(milliseconds: 300),
-                                          () {
-                                        if (mounted) _showNoteDialog(id);
-                                      });
-                                    }
-                                  },
+                                  // Tap on body always jumps to the page —
+                                  // editing now lives behind the pen icon on
+                                  // the right.
+                                  onTap: () => _jumpToPageFromSheet(
+                                      sheetContext, pageNum),
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
                                         horizontal: isTablet ? 24 : 20,
@@ -1874,17 +1862,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                             ],
                                           ),
                                         ),
-                                        // "Locate" / Go-to-page — what the
-                                        // user asked for: jumps the viewer
-                                        // to this annotation's page.
+                                        // Edit — opens the note editor for
+                                        // the annotation. Highlights/underlines
+                                        // reuse the existing dialog; standalone
+                                        // notes get a dedicated edit sheet.
                                         IconButton(
-                                          tooltip: 'Go to page $pageNum',
-                                          onPressed: pageNum == null
-                                              ? null
-                                              : () => _jumpToPageFromSheet(
-                                                  sheetContext, pageNum),
-                                          icon: Icon(
-                                              Icons.my_location_outlined,
+                                          tooltip: 'Edit note',
+                                          onPressed: () {
+                                            Navigator.pop(sheetContext);
+                                            Future.delayed(
+                                                const Duration(
+                                                    milliseconds: 300), () {
+                                              if (!mounted) return;
+                                              if (isStandalone) {
+                                                _showEditStandaloneNoteDialog(
+                                                    id);
+                                              } else {
+                                                _showNoteDialog(id);
+                                              }
+                                            });
+                                          },
+                                          icon: Icon(Icons.edit_outlined,
                                               size: isTablet ? 22 : 20,
                                               color: AppColors.primaryBlue),
                                           padding: EdgeInsets.zero,
@@ -2086,45 +2084,68 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             ),
             Divider(height: 1, color: dividerColor),
             Expanded(
-              child: outline.isEmpty
+              // Three states: loading, empty (no outline in the PDF), tree.
+              child: _outline == null
                   ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.list_alt_outlined,
-                                size: isTablet ? 48 : 40,
-                                color: subtitleColor),
-                            SizedBox(height: isTablet ? 12 : 8),
-                            Text('No table of contents',
-                                style: TextStyle(
-                                  fontSize: isTablet ? 16 : 14,
-                                  color: subtitleColor,
-                                )),
-                            SizedBox(height: isTablet ? 6 : 4),
-                            Text(
-                              'This PDF doesn\'t include an embedded outline',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: isTablet ? 13 : 12,
-                                color: subtitleColor,
-                              ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.primaryBlue,
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: isTablet ? 14 : 10),
+                          Text('Loading outline…',
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12,
+                                color: subtitleColor,
+                              )),
+                        ],
                       ),
                     )
-                  : ListView(
-                      padding: EdgeInsets.symmetric(
-                          vertical: isTablet ? 8 : 6),
-                      children: outline
-                          .map((node) => _buildOutlineNode(
-                              node, 0, isDark, isTablet,
-                              textColor: textColor,
-                              subtitleColor: subtitleColor))
-                          .toList(),
-                    ),
+                  : outline.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.list_alt_outlined,
+                                    size: isTablet ? 48 : 40,
+                                    color: subtitleColor),
+                                SizedBox(height: isTablet ? 12 : 8),
+                                Text('No table of contents',
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 16 : 14,
+                                      color: subtitleColor,
+                                    )),
+                                SizedBox(height: isTablet ? 6 : 4),
+                                Text(
+                                  'This PDF doesn\'t include an embedded outline',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 13 : 12,
+                                    color: subtitleColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView(
+                          padding: EdgeInsets.symmetric(
+                              vertical: isTablet ? 8 : 6),
+                          children: outline
+                              .map((node) => _buildOutlineNode(
+                                  node, 0, isDark, isTablet,
+                                  textColor: textColor,
+                                  subtitleColor: subtitleColor))
+                              .toList(),
+                        ),
             ),
           ],
         ),
@@ -2525,6 +2546,186 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     );
   }
 
+  /// Edits an existing standalone note's text. Page number stays put —
+  /// there's no UX precedent for moving a saved note to a different
+  /// page in this app, and the page badge already shows where it lives.
+  void _showEditStandaloneNoteDialog(String noteId) {
+    final entry = _standaloneNotes[noteId];
+    if (entry == null) return;
+    final existingNote = entry['note'] as String? ?? '';
+    final pageNum = entry['page_number'] as int?;
+
+    final isDark =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
+    final controller = TextEditingController(text: existingNote);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: isTablet ? 24 : 20),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_note,
+                          size: isTablet ? 24 : 22,
+                          color: AppColors.primaryBlue),
+                      SizedBox(width: isTablet ? 10 : 8),
+                      Text(
+                          pageNum != null
+                              ? 'Edit Note · p. $pageNum'
+                              : 'Edit Note',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w700,
+                            fontSize: isTablet ? 20 : 18,
+                            color: textColor,
+                          )),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 14),
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: isTablet ? 24 : 20),
+                  child: TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    maxLength: 500,
+                    autofocus: true,
+                    style: TextStyle(
+                        color: textColor,
+                        fontSize: isTablet ? 15 : 14,
+                        height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: 'Write your thoughts...',
+                      hintStyle: TextStyle(
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : Colors.grey[400],
+                        fontSize: isTablet ? 15 : 14,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? AppColors.darkSurface
+                          : const Color(0xFFF8F9FE),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryBlue, width: 1.5),
+                      ),
+                      counterStyle: TextStyle(
+                          color: isDark
+                              ? AppColors.darkTextTertiary
+                              : Colors.grey,
+                          fontSize: 11),
+                    ),
+                  ),
+                ),
+                SizedBox(height: isTablet ? 18 : 14),
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: isTablet ? 24 : 20),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: Text('Cancel',
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            )),
+                      ),
+                      SizedBox(width: isTablet ? 12 : 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final note = controller.text.trim();
+                          if (note.isEmpty) {
+                            showAppDialog(context,
+                                message: 'Note cannot be empty',
+                                type: AppDialogType.info);
+                            return;
+                          }
+                          Navigator.pop(sheetContext);
+                          _updateStandaloneNoteText(noteId, note);
+                        },
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text('Save'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 24 : 20,
+                              vertical: isTablet ? 12 : 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isTablet ? 16 : 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateStandaloneNoteText(String noteId, String note) async {
+    try {
+      await _highlightService.updateHighlightNote(noteId, note);
+      if (mounted) {
+        setState(() {
+          final entry = _standaloneNotes[noteId];
+          if (entry != null) entry['note'] = note;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to update standalone note: $e');
+      if (mounted) {
+        showAppDialog(context,
+            message: 'Failed to save note', type: AppDialogType.info);
+      }
+    }
+  }
+
   // ── Search ────────────────────────────────────────────────────────
 
   void _toggleSearch() {
@@ -2572,10 +2773,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: backgroundColor,
-      // Left drawer is the PDF outline / TOC. Shown only when the
-      // document has an embedded outline (otherwise the toolbar TOC
-      // button is hidden, so the drawer can never be opened anyway).
-      drawer: (_outline != null && _outline!.isNotEmpty)
+      // Left drawer is the PDF outline / TOC. Always available once the
+      // document is loaded; the drawer itself renders one of three states:
+      //   - loading (outline fetch in flight)
+      //   - empty   (PDF has no embedded outline — explicit "no contents")
+      //   - tree    (the chapter list)
+      drawer: _document != null
           ? _buildOutlineDrawer(isDark, isTablet)
           : null,
       endDrawer: widget.documentId != null
@@ -2908,25 +3111,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ),
-                // TOC button — only appears once the outline is loaded
-                // AND the PDF actually contains one.
-                if (_outline != null && _outline!.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    child: Container(
-                      width: isTablet ? 44 : 36,
-                      height: isTablet ? 44 : 36,
-                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isDark
-                            ? AppColors.darkSurface
-                            : const Color(0xFFF5F5F5),
-                      ),
-                      child: Icon(Icons.menu_book_outlined,
-                          size: isTablet ? 22 : 18, color: textColor),
-                    ),
-                  ),
                 // Tappable page-indicator badge — opens "Go to page" dialog.
                 // Hidden until _totalPages is known (avoids "1 / 0" flash).
                 if (_totalPages > 0)
@@ -2959,7 +3143,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       );
                     },
                   ),
-                if (widget.documentId != null) ...[
+                // Current-page bookmark toggle stays on the toolbar — it's
+                // the only one-tap action that depends on which page you're
+                // on, so it earns its slot.
+                if (widget.documentId != null)
                   ValueListenableBuilder<int>(
                     valueListenable: _currentPage,
                     builder: (context, currentPage, _) {
@@ -2993,53 +3180,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       );
                     },
                   ),
-                  if (_bookmarkedPages.isNotEmpty)
-                    GestureDetector(
-                      onTap: () =>
-                          _scaffoldKey.currentState?.openEndDrawer(),
-                      child: Container(
-                        width: isTablet ? 44 : 36,
-                        height: isTablet ? 44 : 36,
-                        margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDark
-                              ? AppColors.darkSurface
-                              : const Color(0xFFF5F5F5),
-                        ),
-                        child: Icon(Icons.collections_bookmark_outlined,
-                            size: isTablet ? 22 : 18, color: textColor),
-                      ),
-                    ),
-                ],
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _isPdfDarkMode = !_isPdfDarkMode),
-                  child: Container(
-                    width: isTablet ? 44 : 36,
-                    height: isTablet ? 44 : 36,
-                    margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isPdfDarkMode
-                          ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                          : (isDark
-                              ? AppColors.darkSurface
-                              : const Color(0xFFF5F5F5)),
-                    ),
-                    child: Icon(
-                      _isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
-                      size: isTablet ? 22 : 18,
-                      color:
-                          _isPdfDarkMode ? AppColors.primaryBlue : textColor,
-                    ),
-                  ),
-                ),
                 GestureDetector(
                   onTap: _toggleSearch,
                   child: Container(
                     width: isTablet ? 44 : 36,
                     height: isTablet ? 44 : 36,
+                    margin: EdgeInsets.only(right: isTablet ? 4 : 2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _isSearchOpen
@@ -3056,6 +3202,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     ),
                   ),
                 ),
+                // Overflow / hamburger — TOC, all-bookmarks list, and the
+                // dark-reader toggle live here so the toolbar stays uncluttered.
+                _buildOverflowMenu(isDark, textColor, isTablet),
               ],
             ),
             if (_isSearchOpen) ...[
@@ -3064,6 +3213,101 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Overflow menu for the toolbar — keeps the row uncluttered by housing
+  /// affordances that don't need one-tap access: TOC drawer, the bookmarks
+  /// list (when there's at least one), and the dark-reader toggle.
+  Widget _buildOverflowMenu(bool isDark, Color textColor, bool isTablet) {
+    final hasBookmarks =
+        widget.documentId != null && _bookmarkedPages.isNotEmpty;
+    final hasDocument = _document != null;
+    final menuTextColor =
+        isDark ? AppColors.darkTextPrimary : Colors.black87;
+    return Container(
+      width: isTablet ? 44 : 36,
+      height: isTablet ? 44 : 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+      ),
+      child: PopupMenuButton<String>(
+        padding: EdgeInsets.zero,
+        icon:
+            Icon(Icons.more_vert, size: isTablet ? 22 : 18, color: textColor),
+        tooltip: 'More',
+        color: isDark ? AppColors.darkCardBackground : Colors.white,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        onSelected: (value) {
+          switch (value) {
+            case 'toc':
+              _scaffoldKey.currentState?.openDrawer();
+              break;
+            case 'bookmarks':
+              _scaffoldKey.currentState?.openEndDrawer();
+              break;
+            case 'theme':
+              setState(() => _isPdfDarkMode = !_isPdfDarkMode);
+              break;
+          }
+        },
+        itemBuilder: (context) => [
+          if (hasDocument)
+            PopupMenuItem<String>(
+              value: 'toc',
+              child: Row(
+                children: [
+                  Icon(Icons.menu_book_outlined,
+                      size: 20, color: menuTextColor),
+                  const SizedBox(width: 12),
+                  Text('Table of contents',
+                      style: TextStyle(
+                        color: menuTextColor,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ],
+              ),
+            ),
+          if (hasBookmarks)
+            PopupMenuItem<String>(
+              value: 'bookmarks',
+              child: Row(
+                children: [
+                  Icon(Icons.collections_bookmark_outlined,
+                      size: 20, color: menuTextColor),
+                  const SizedBox(width: 12),
+                  Text('All bookmarks',
+                      style: TextStyle(
+                        color: menuTextColor,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ],
+              ),
+            ),
+          PopupMenuItem<String>(
+            value: 'theme',
+            child: Row(
+              children: [
+                Icon(_isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    size: 20,
+                    color: _isPdfDarkMode
+                        ? AppColors.primaryBlue
+                        : menuTextColor),
+                const SizedBox(width: 12),
+                Text(_isPdfDarkMode ? 'Light reader' : 'Dark reader',
+                    style: TextStyle(
+                      color: _isPdfDarkMode
+                          ? AppColors.primaryBlue
+                          : menuTextColor,
+                      fontWeight: FontWeight.w500,
+                    )),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

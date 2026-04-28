@@ -18,7 +18,7 @@ import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/providers/mini_player_provider.dart';
 import 'package:pgme/core/services/memory_monitor.dart';
 import 'package:pgme/features/courses/widgets/document_picker_sheet.dart';
-import 'package:pgme/features/courses/widgets/inline_pdf_viewer.dart';
+import 'package:pgme/features/courses/widgets/inline_pdf_viewer_pdfrx.dart';
 import 'package:pgme/core/models/selectable_document.dart';
 import 'package:pgme/core/widgets/resizable_split_view.dart';
 
@@ -1021,7 +1021,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
             key: _splitVideoKey,
             child: _buildSplitPlayerArea(),
           ),
-          secondChild: InlinePdfViewer(
+          secondChild: InlinePdfViewerPdfrx(
             key: _splitPdfKey,
             document: _activeDocument!,
             onClose: _closeSplitView,
