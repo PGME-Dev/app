@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,9 @@ import 'package:no_screenshot/no_screenshot.dart';
 import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/routes/app_router.dart';
 import 'package:pgme/core_ios/providers/theme_provider.dart';
+import 'package:pgme/core/services/pdf_cache_service.dart';
+import 'package:pgme/core_ios/utils/responsive_helper.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pgme/features_ios/auth/providers/auth_provider.dart';
 import 'package:pgme/features_ios/onboarding/providers/onboarding_provider.dart';
 import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
@@ -60,8 +65,44 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _orientationSet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Keep the screen awake while the app is in use. Per-screen consumers
+    // (BetterPlayer fullscreen) may briefly toggle this off; the video
+    // player re-asserts via WakelockPlus.enable() on hideFullscreen.
+    WakelockPlus.enable();
+    // Drop expired PDF cache entries and enforce the size cap. Lazy
+    // fire-and-forget — failures are swallowed inside the service.
+    unawaited(PdfCacheService.cleanupExpired());
+    unawaited(PdfCacheService.pruneToSizeLimit());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Best-effort release on app teardown.
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Only hold the wakelock while we're actually visible. Holding it in
+    // the background drains battery on iOS even though the app is suspended.
+    if (state == AppLifecycleState.resumed) {
+      WakelockPlus.enable();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      WakelockPlus.disable();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +133,13 @@ class _MyAppState extends State<MyApp> {
               overscroll: false,
             ),
             builder: (context, child) {
-              // Lock orientation based on device type once MediaQuery is available
+              // Apply the device-appropriate orientation policy once. Using
+              // ResponsiveHelper.isTabletDevice() (looser than the layout
+              // breakpoint) so borderline tablets like the Lenovo Yoga Tab 11
+              // don't get portrait-locked.
               if (!_orientationSet) {
                 _orientationSet = true;
-                final shortestSide = MediaQuery.of(context).size.shortestSide;
-                final isTablet = shortestSide >= 600;
-                if (!isTablet) {
+                if (!ResponsiveHelper.isTabletDevice()) {
                   SystemChrome.setPreferredOrientations([
                     DeviceOrientation.portraitUp,
                     DeviceOrientation.portraitDown,

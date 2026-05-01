@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Responsive helper for tablet optimization.
 /// Provides device type detection and responsive scaling utilities.
 class ResponsiveHelper {
   /// Tablet breakpoint: devices with shortest side >= 600dp
   static const double tabletBreakpoint = 600.0;
+
+  /// Lower breakpoint used *only* for orientation policy decisions.
+  /// Several real tablets fall well below Material's 600-dp tablet line
+  /// once density rounding and system insets are subtracted: the Lenovo
+  /// Yoga Tab line lands at ~480-599 dp, smaller 7-8" Android tablets
+  /// can report ~440-480 dp, and we want all of them to auto-rotate.
+  /// For layout we still want them at the phone tier (their screens
+  /// really are narrow), but for orientation policy a low threshold
+  /// keeps the "tablets rotate, phones don't" intent intact while not
+  /// locking out borderline devices. Phones max out around 430 dp
+  /// (iPhone 15 Pro Max, Galaxy S24 Ultra), so 460 leaves a small gap.
+  static const double rotationTabletBreakpoint = 460.0;
 
   /// Large tablet breakpoint: width >= 900dp (e.g. iPad Pro 13-inch)
   static const double largeTabletBreakpoint = 900.0;
@@ -22,6 +35,45 @@ class ResponsiveHelper {
   static bool isTablet(BuildContext context) {
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     return shortestSide >= tabletBreakpoint;
+  }
+
+  /// Context-free check used by orientation policy. Returns true if the
+  /// device should be allowed to rotate into landscape. Uses the looser
+  /// [rotationTabletBreakpoint] (540 dp) so borderline tablets like the
+  /// Lenovo Yoga Tab 11 (which reports ~599 dp shortestSide) are not
+  /// mistakenly portrait-locked. Reads the implicit view directly so it
+  /// works from `dispose()`, async callbacks, and other places that run
+  /// outside the widget tree.
+  static bool isTabletDevice() {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final logicalShortestSide =
+        view.physicalSize.shortestSide / view.devicePixelRatio;
+    final isTablet = logicalShortestSide >= rotationTabletBreakpoint;
+    debugPrint(
+        '[ResponsiveHelper] isTabletDevice: shortestSide=${logicalShortestSide.toStringAsFixed(1)}dp '
+        '(physical=${view.physicalSize.shortestSide.toStringAsFixed(0)}px / dpr=${view.devicePixelRatio}) '
+        'threshold=$rotationTabletBreakpoint → $isTablet');
+    return isTablet;
+  }
+
+  /// Orientations the app should advertise for the current device. Tablets
+  /// get all four; phones stay portrait-only. Mirrors the global startup
+  /// policy in `main_*.dart` so per-screen restorations don't accidentally
+  /// downgrade a tablet to portrait. Always pair landscape transitions
+  /// (e.g. video fullscreen, split view) with this on the way out.
+  static List<DeviceOrientation> supportedOrientationsForDevice() {
+    if (isTabletDevice()) {
+      return const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ];
+    }
+    return const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ];
   }
 
   /// Check if the device is a large tablet (iPad Pro 13-inch, etc.)

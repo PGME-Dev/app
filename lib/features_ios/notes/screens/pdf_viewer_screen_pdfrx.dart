@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:provider/provider.dart';
+import 'package:pgme/core/services/pdf_cache_service.dart';
 import 'package:pgme/core_ios/constants/api_constants.dart';
 import 'package:pgme/core_ios/models/annotation_bounds.dart';
 import 'package:pgme/core_ios/providers/theme_provider.dart';
@@ -263,22 +262,22 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       if (!mounted) return;
 
-      final dir = await getTemporaryDirectory();
-      final fileName = 'pgme_${widget.documentId ?? pdfUrl.hashCode}.pdf';
-      final filePath = '${dir.path}/$fileName';
-
-      final file = File(filePath);
-      if (await file.exists()) {
+      // Persistent on-device cache (TTL + LRU). Same key whether the URL
+      // was a fresh signed S3 link or the static one — documentId is
+      // preferred so URL rotation doesn't invalidate the cached copy.
+      final cacheKey = widget.documentId ?? 'url_${pdfUrl.hashCode}';
+      final cached = await PdfCacheService.getCachedFile(cacheKey);
+      if (cached != null) {
         if (mounted) {
           setState(() => _isLoading = false);
-          _loadDocumentFully(filePath);
+          _loadDocumentFully(cached.path);
         }
         return;
       }
 
-      await Dio().download(
+      final downloaded = await PdfCacheService.cacheFromUrl(
+        cacheKey,
         pdfUrl,
-        filePath,
         onReceiveProgress: (received, total) {
           if (total > 0 && mounted) {
             setState(() => _downloadProgress = received / total);
@@ -288,7 +287,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       if (mounted) {
         setState(() => _isLoading = false);
-        _loadDocumentFully(filePath);
+        _loadDocumentFully(downloaded.path);
       }
     } catch (e) {
       debugPrint('PDF load error: $e');

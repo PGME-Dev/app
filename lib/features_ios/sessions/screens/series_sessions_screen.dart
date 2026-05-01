@@ -6,6 +6,7 @@ import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/models/live_session_model.dart';
 import 'package:pgme/core_ios/services/dashboard_service.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/live_label.dart';
 
 class SeriesSessionsScreen extends StatefulWidget {
   final String seriesId;
@@ -343,44 +344,29 @@ class _SeriesSessionsScreenState extends State<SeriesSessionsScreen> {
                   Positioned(
                     top: 12,
                     left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getStatusLabel(session.status),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: isTablet ? 14 : 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Live indicator
-                  if (session.status == 'live')
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        width: isTablet ? 16 : 12,
-                        height: isTablet ? 16 : 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withValues(alpha: 0.5),
-                              blurRadius: 8,
-                              spreadRadius: 2,
+                    child: (session.status == 'live' || session.status == 'scheduled')
+                        ? LiveLabel(
+                            isLive: session.status == 'live',
+                            fontSize: isTablet ? 13 : 11,
+                            borderRadius: 12,
+                          )
+                        : Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                            child: Text(
+                              _getStatusLabel(session.status),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isTablet ? 14 : 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                  ),
                 ],
               ),
             ),

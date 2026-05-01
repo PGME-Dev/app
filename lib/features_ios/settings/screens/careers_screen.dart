@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core_ios/constants/api_constants.dart';
+import 'package:pgme/core_ios/models/subject_model.dart';
 import 'package:pgme/core_ios/providers/theme_provider.dart';
 import 'package:pgme/core_ios/services/api_service.dart';
+import 'package:pgme/core_ios/services/onboarding_service.dart';
 import 'package:pgme/core_ios/services/user_service.dart';
 import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
@@ -20,6 +22,7 @@ class _CareersScreenState extends State<CareersScreen> {
   final _formKey = GlobalKey<FormState>();
   final UserService _userService = UserService();
   final ApiService _apiService = ApiService();
+  final OnboardingService _onboardingService = OnboardingService();
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -29,6 +32,8 @@ class _CareersScreenState extends State<CareersScreen> {
   final _messageController = TextEditingController();
 
   String? _selectedRole;
+  String? _selectedSubject;
+  List<SubjectModel> _subjects = [];
   bool _isSubmitting = false;
   bool _isSubmitted = false;
   bool _agreedToTerms = true;
@@ -47,6 +52,7 @@ class _CareersScreenState extends State<CareersScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadSubjects();
   }
 
   @override
@@ -75,6 +81,19 @@ class _CareersScreenState extends State<CareersScreen> {
     }
   }
 
+  Future<void> _loadSubjects() async {
+    try {
+      final subjects = await _onboardingService.getSubjects();
+      if (mounted) {
+        setState(() {
+          _subjects = subjects;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load subjects: $e');
+    }
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
@@ -95,6 +114,8 @@ class _CareersScreenState extends State<CareersScreen> {
         'email': _emailController.text.trim(),
         'phone_number': _phoneController.text.trim(),
         'wished_role': _selectedRole,
+        'subject': _selectedSubject,
+        'message': _messageController.text.trim(),
       };
 
       if (_portfolioController.text.trim().isNotEmpty) {
@@ -102,9 +123,6 @@ class _CareersScreenState extends State<CareersScreen> {
       }
       if (_representativeWorkController.text.trim().isNotEmpty) {
         data['representative_work'] = _representativeWorkController.text.trim();
-      }
-      if (_messageController.text.trim().isNotEmpty) {
-        data['message'] = _messageController.text.trim();
       }
 
       await _apiService.dio.post(ApiConstants.careerApplications, data: data);
@@ -427,13 +445,17 @@ class _CareersScreenState extends State<CareersScreen> {
               label: 'Contact Number (WhatsApp)',
               controller: _phoneController,
               hint: '+91 00000-00000',
-              readOnly: true,
+              keyboardType: TextInputType.phone,
               isDark: isDark,
               isTablet: isTablet,
               textColor: textColor,
               secondaryTextColor: secondaryTextColor,
               fieldFillColor: fieldFillColor,
               borderColor: borderColor,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                return null;
+              },
             ),
 
             SizedBox(height: isTablet ? 20 : 16),
@@ -480,6 +502,49 @@ class _CareersScreenState extends State<CareersScreen> {
 
             SizedBox(height: isTablet ? 20 : 16),
 
+            // Subject
+            Text(
+              'Subject',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: isTablet ? 15 : 13,
+                color: textColor,
+              ),
+            ),
+            SizedBox(height: isTablet ? 8 : 6),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedSubject,
+              style: TextStyle(fontSize: isTablet ? 16 : 14, color: textColor),
+              decoration: _fieldDecoration(
+                hint: 'Select a subject',
+                isDark: isDark,
+                isTablet: isTablet,
+                secondaryTextColor: secondaryTextColor,
+                fieldFillColor: fieldFillColor,
+                borderColor: borderColor,
+              ),
+              dropdownColor: isDark ? AppColors.darkCardBackground : Colors.white,
+              isExpanded: true,
+              items: _subjects.map((subject) {
+                return DropdownMenuItem<String>(
+                  value: subject.name,
+                  child: Text(subject.name, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubject = value;
+                });
+              },
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Please select a subject';
+                return null;
+              },
+            ),
+
+            SizedBox(height: isTablet ? 20 : 16),
+
             // Portfolio Link
             _buildFormField(
               label: 'Portfolio Link (Optional)',
@@ -492,13 +557,7 @@ class _CareersScreenState extends State<CareersScreen> {
               secondaryTextColor: secondaryTextColor,
               fieldFillColor: fieldFillColor,
               borderColor: borderColor,
-              validator: (v) {
-                if (v != null && v.trim().isNotEmpty) {
-                  final urlRegex = RegExp(r'^https?:\/\/.+');
-                  if (!urlRegex.hasMatch(v.trim())) return 'Please enter a valid URL';
-                }
-                return null;
-              },
+              validator: _validateOptionalUrl,
             ),
 
             SizedBox(height: isTablet ? 20 : 16),
@@ -515,20 +574,14 @@ class _CareersScreenState extends State<CareersScreen> {
               secondaryTextColor: secondaryTextColor,
               fieldFillColor: fieldFillColor,
               borderColor: borderColor,
-              validator: (v) {
-                if (v != null && v.trim().isNotEmpty) {
-                  final urlRegex = RegExp(r'^https?:\/\/.+');
-                  if (!urlRegex.hasMatch(v.trim())) return 'Please enter a valid URL';
-                }
-                return null;
-              },
+              validator: _validateOptionalUrl,
             ),
 
             SizedBox(height: isTablet ? 20 : 16),
 
             // Additional Remarks
             _buildFormField(
-              label: 'Additional Remarks (Optional)',
+              label: 'Additional Remarks',
               controller: _messageController,
               hint: 'Share your achievements or skills',
               maxLines: 4,
@@ -538,6 +591,10 @@ class _CareersScreenState extends State<CareersScreen> {
               secondaryTextColor: secondaryTextColor,
               fieldFillColor: fieldFillColor,
               borderColor: borderColor,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Additional remarks are required';
+                return null;
+              },
             ),
 
             SizedBox(height: isTablet ? 20 : 16),
@@ -704,6 +761,17 @@ class _CareersScreenState extends State<CareersScreen> {
         ),
       ],
     );
+  }
+
+  String? _validateOptionalUrl(String? v) {
+    if (v == null || v.trim().isEmpty) return null;
+    final value = v.trim();
+    final urlRegex = RegExp(r'^https?:\/\/.+');
+    if (!urlRegex.hasMatch(value)) return 'Please enter a valid URL';
+    if (RegExp(r'localhost|127\.0\.0\.1|0\.0\.0\.0').hasMatch(value)) {
+      return 'Please enter a publicly accessible URL';
+    }
+    return null;
   }
 
   InputDecoration _fieldDecoration({

@@ -12,6 +12,7 @@ import 'package:pgme/core_ios/services/zoom_service.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
 import 'package:pgme/core_ios/utils/web_store_launcher.dart';
 import 'package:pgme/core_ios/widgets/app_dialog.dart';
+import 'package:pgme/core/widgets/live_label.dart';
 
 class SessionDetailsScreen extends StatefulWidget {
   final String sessionId;
@@ -625,7 +626,18 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
                               spacing: 12, runSpacing: 8,
                               alignment: WrapAlignment.center,
                               children: [
-                                _buildBadge(_getStatusText(), _getStatusColor(isDark)),
+                                if (_session?.status == 'live' || _session?.status == 'scheduled')
+                                  LiveLabel(
+                                    isLive: _session?.status == 'live',
+                                    fontSize: isTablet ? 13 : 10,
+                                    borderRadius: 41,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isTablet ? 16 : 12,
+                                      vertical: 6,
+                                    ),
+                                  )
+                                else
+                                  _buildBadge(_getStatusText(), _getStatusColor(isDark)),
                                 _buildBadge('${_session?.durationMinutes ?? 0} MINUTES', iconColor),
                                 if (!isFree)
                                   _buildBadge(

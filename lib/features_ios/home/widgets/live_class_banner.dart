@@ -6,6 +6,7 @@ import 'package:pgme/core_ios/models/live_session_model.dart';
 import 'package:pgme/core_ios/providers/theme_provider.dart';
 import 'package:pgme/core_ios/theme/app_theme.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
+import 'package:pgme/core/widgets/live_label.dart';
 
 class LiveClassBanner extends StatefulWidget {
   final LiveSessionModel session;
@@ -162,26 +163,10 @@ class _LiveClassBannerState extends State<LiveClassBanner> {
                         Positioned(
                           top: isTablet ? 14 : 8,
                           left: isTablet ? 14 : 8,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 14 : 8,
-                              vertical: isTablet ? 6 : 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: widget.session.status == 'live'
-                                  ? Colors.red.withValues(alpha: 0.9)
-                                  : Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                            ),
-                            child: Text(
-                              widget.session.status == 'live' ? 'LIVE NOW' : 'LIVE CLASS',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w500,
-                                fontSize: badgeFontSize,
-                                color: Colors.white,
-                              ),
-                            ),
+                          child: LiveLabel(
+                            isLive: widget.session.status == 'live',
+                            fontSize: badgeFontSize,
+                            borderRadius: isTablet ? 8 : 6,
                           ),
                         ),
                       ],

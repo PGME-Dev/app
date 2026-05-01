@@ -2,6 +2,7 @@ import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pgme/core_android/utils/responsive_helper.dart';
 
 class TrailerVideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -126,21 +127,11 @@ class _TrailerVideoPlayerScreenState extends State<TrailerVideoPlayerScreen> wit
 
   @override
   void dispose() {
-    // Restore orientation - allow landscape on tablets, portrait-only on phones
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
-    final isTablet = logicalShortestSide >= 600;
-    SystemChrome.setPreferredOrientations(isTablet
-        ? [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]
-        : [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
+    // Restore device-appropriate orientations on the way out (tablets get
+    // landscape back, phones stay portrait). Goes through the shared helper
+    // so this stays consistent with main_*.dart and the lecture player.
+    SystemChrome.setPreferredOrientations(
+        ResponsiveHelper.supportedOrientationsForDevice());
 
     WidgetsBinding.instance.removeObserver(this);
     _playerController?.pause();

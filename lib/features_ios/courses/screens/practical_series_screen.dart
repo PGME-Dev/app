@@ -11,6 +11,7 @@ import 'package:pgme/core_ios/models/live_session_model.dart';
 import 'package:pgme/core_ios/models/series_model.dart';
 import 'package:pgme/features_ios/home/providers/dashboard_provider.dart';
 import 'package:pgme/core_ios/widgets/shimmer_widgets.dart';
+import 'package:pgme/core/widgets/live_label.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
@@ -1725,26 +1726,10 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                     Positioned(
                       top: isTablet ? 14 : 8,
                       left: isTablet ? 14 : 8,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 14 : 10,
-                          vertical: isTablet ? 6 : 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isLive
-                              ? Colors.red.withValues(alpha: 0.9)
-                              : Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
-                        ),
-                        child: Text(
-                          isLive ? 'LIVE NOW' : 'LIVE CLASS',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: isTablet ? 13 : 10,
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: LiveLabel(
+                        isLive: isLive,
+                        fontSize: isTablet ? 13 : 10,
+                        borderRadius: isTablet ? 8 : 6,
                       ),
                     ),
                   ],

@@ -1,14 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/models/selectable_document.dart';
 import 'package:pgme/core/services/api_service.dart';
 import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/ebook_access_service.dart';
+import 'package:pgme/core/services/pdf_cache_service.dart';
 
 /// pdfrx-backed twin of [InlinePdfViewer]. Same constructor surface so a
 /// caller can swap the import without touching anything else, but renders
@@ -57,6 +58,16 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
   // overlay rebuilds on page change — not the cached PdfViewer.
   final ValueNotifier<int> _currentPage = ValueNotifier(1);
 
+  // Scroll-head: a prominent centered "Page X of Y" pill that pops up
+  // while the user is actively flipping through and fades out after a
+  // moment of stillness. Mirrors Syncfusion's scroll-head UX so users
+  // moving from the old viewer don't lose the orientation cue. Driven
+  // by [_scrollHeadVisible] + [_scrollHeadHideTimer]; the page value
+  // itself piggybacks on [_currentPage].
+  final ValueNotifier<bool> _scrollHeadVisible = ValueNotifier(false);
+  Timer? _scrollHeadHideTimer;
+  static const Duration _scrollHeadHideDelay = Duration(milliseconds: 900);
+
   Widget? _cachedViewer;
 
   @override
@@ -74,7 +85,20 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
     _document?.dispose();
     _document = null;
     _currentPage.dispose();
+    _scrollHeadHideTimer?.cancel();
+    _scrollHeadVisible.dispose();
     super.dispose();
+  }
+
+  /// Pops the scroll-head overlay open and resets the auto-hide timer.
+  /// Called from onPageChanged so any page transition (scroll, jump,
+  /// programmatic) re-asserts visibility.
+  void _bumpScrollHead() {
+    if (!_scrollHeadVisible.value) _scrollHeadVisible.value = true;
+    _scrollHeadHideTimer?.cancel();
+    _scrollHeadHideTimer = Timer(_scrollHeadHideDelay, () {
+      if (mounted) _scrollHeadVisible.value = false;
+    });
   }
 
   // ── Step 1: get the file on disk ──────────────────────────────────
@@ -118,22 +142,23 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
 
       if (!mounted) return;
 
-      final dir = await getTemporaryDirectory();
-      final fileName = 'pgme_inline_pdfrx_${widget.document.id}.pdf';
-      final filePath = '${dir.path}/$fileName';
-      final file = File(filePath);
-
-      if (await file.exists() && await file.length() > 0) {
+      // Shares the same cache key as the standalone pdfrx viewer so opening
+      // a doc here warms the cache for the full-screen viewer (and vice
+      // versa). Persistent (TTL + LRU) — the OS only purges under genuine
+      // storage pressure, never between launches.
+      final cacheKey = widget.document.id;
+      final cached = await PdfCacheService.getCachedFile(cacheKey);
+      if (cached != null) {
         if (!mounted) return;
         setState(() => _isLoading = false);
-        _loadDocumentFully(filePath);
+        _loadDocumentFully(cached.path);
         return;
       }
 
       _cancelToken = CancelToken();
-      await Dio().download(
+      final downloaded = await PdfCacheService.cacheFromUrl(
+        cacheKey,
         pdfUrl,
-        filePath,
         cancelToken: _cancelToken,
         onReceiveProgress: (received, total) {
           if (total > 0 && mounted) {
@@ -144,7 +169,7 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
 
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _loadDocumentFully(filePath);
+      _loadDocumentFully(downloaded.path);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;
       if (mounted) {
@@ -277,6 +302,62 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
                 },
               ),
             ),
+          // Scroll-head overlay — large centered "Page X of Y" pill that
+          // pops up while the user is scrolling and fades out after
+          // [_scrollHeadHideDelay] of stillness. Centers itself near the
+          // bottom of the viewport so it doesn't obscure the page content
+          // the user is reading. IgnorePointer keeps it from intercepting
+          // touch events meant for the PDF.
+          if (_document != null && _totalPages > 0)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 24,
+              child: IgnorePointer(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _scrollHeadVisible,
+                  builder: (context, visible, _) {
+                    return AnimatedOpacity(
+                      opacity: visible ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      child: Center(
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: _currentPage,
+                          builder: (context, page, _) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.78),
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'Page $page of $_totalPages',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -298,9 +379,16 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
         // Cap rendered-page bitmap cache for the heap-constrained tablets
         // that prompted this whole exercise.
         maxImageBytesCachedOnMemory: 50 * 1024 * 1024,
-        // Drive the top-right page indicator without rebuilding the viewer.
+        // Drive the top-right page indicator AND the centered scroll-head
+        // overlay without rebuilding the viewer. Bumping the scroll head
+        // from here means any page transition (scroll, programmatic jump,
+        // pinch-zoom-induced reflow) shows the indicator and resets its
+        // auto-hide timer.
         onPageChanged: (pageNumber) {
-          if (pageNumber != null) _currentPage.value = pageNumber;
+          if (pageNumber != null) {
+            _currentPage.value = pageNumber;
+            _bumpScrollHead();
+          }
         },
         // Pre-sized layout so scroll extent is correct from frame one.
         // (See standalone pdfrx viewer for the full rationale.)

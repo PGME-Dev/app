@@ -12,6 +12,8 @@ import 'package:pgme/core/services/download_service.dart';
 import 'package:pgme/core/services/enrolled_courses_service.dart';
 import 'package:pgme/core/services/offline_storage_service.dart';
 import 'package:pgme/core/services/video_review_service.dart';
+import 'package:pgme/core/utils/responsive_helper.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/features/courses/providers/enrolled_courses_provider.dart';
 import 'package:pgme/features/courses/widgets/star_rating_input.dart';
@@ -177,9 +179,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       // Controller ownership transferred to MiniPlayerProvider — do NOT dispose it
       _playerController = null;
     } else {
-      // Normal exit — destroy the player
+      // Normal exit — destroy the player.
+      // forceDispose overrides autoDispose:false (which is set to survive
+      // widget reparenting during split-view transitions); without it the
+      // call would no-op and leak the native ExoPlayer/AVPlayer + listeners.
       _playerController?.pause();
-      _playerController?.dispose();
+      _playerController?.dispose(forceDispose: true);
       _playerController = null;
       // Also close the mini player provider if it was referencing this controller
       try {
@@ -190,21 +195,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       } catch (_) {}
     }
 
-    // Restore orientation - allow landscape on tablets, portrait-only on phones
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    final logicalShortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
-    final isTablet = logicalShortestSide >= 600;
-    SystemChrome.setPreferredOrientations(isTablet
-        ? [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]
-        : [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
+    // Restore device-appropriate orientations on the way out (tablets get
+    // landscape back, phones stay portrait).
+    SystemChrome.setPreferredOrientations(
+        ResponsiveHelper.supportedOrientationsForDevice());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _feedbackCtrl.dispose();
     super.dispose();
@@ -504,15 +498,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         fullScreenByDefault: false,
         allowedScreenSleep: false,
         handleLifecycle: true,
+        // Keep the controller alive when the BetterPlayer widget is
+        // reparented (e.g. swapping into the split-view layout).
+        // BetterPlayer.dispose unconditionally calls controller.dispose,
+        // which would tear the underlying VideoPlayerController down
+        // mid-session and leave the new instance pointed at a disposed
+        // controller ("used after being disposed" red box).
+        // The screen's own dispose() passes forceDispose: true to actually
+        // release the controller when the user leaves the screen.
         autoDispose: false,
         deviceOrientationsOnFullScreen: const [
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ],
-        deviceOrientationsAfterFullScreen: const [
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ],
+        deviceOrientationsAfterFullScreen:
+            ResponsiveHelper.supportedOrientationsForDevice(),
         controlsConfiguration: const BetterPlayerControlsConfiguration(
           enableProgressBar: true,
           enablePlayPause: true,
@@ -964,6 +964,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
           _showFullscreenOverlay();
         } else {
           _removeFullscreenOverlay();
+          // BetterPlayer disables the wakelock when its fullscreen route
+          // pops. Re-assert here so the screen doesn't fall asleep mid-
+          // session if the user lingers on the inline player or PDF.
+          WakelockPlus.enable();
         }
       }
     });
@@ -1087,10 +1091,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   }
 
   void _closeSplitView() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    SystemChrome.setPreferredOrientations(
+        ResponsiveHelper.supportedOrientationsForDevice());
     setState(() {
       _isSplitViewActive = false;
       _activeDocument = null;
@@ -1199,12 +1201,39 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         body: SafeArea(
           child: _isSplitViewActive && _activeDocument != null
               ? _buildSplitView()
-              : Column(
-                  children: [
-                    _buildPlayerArea(),
-                    if (!_isLoading && _error == null) _buildVideoInfo(),
-                  ],
-          ),
+              : OrientationBuilder(
+                  builder: (context, orientation) {
+                    // On a tablet in landscape, place video and info side by
+                    // side so the description, rating, feedback, and
+                    // "Read Notes Alongside" stay reachable. Phones and
+                    // portrait tablets keep the original stacked layout.
+                    final useSideBySide =
+                        orientation == Orientation.landscape &&
+                            ResponsiveHelper.isTablet(context);
+                    if (!useSideBySide) {
+                      return Column(
+                        children: [
+                          _buildPlayerArea(),
+                          if (!_isLoading && _error == null)
+                            Expanded(child: _buildVideoInfo()),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: Container(
+                            color: Colors.black,
+                            child: Center(child: _buildPlayerArea()),
+                          ),
+                        ),
+                        if (!_isLoading && _error == null)
+                          Expanded(flex: 4, child: _buildVideoInfo()),
+                      ],
+                    );
+                  },
+                ),
         ),
       ),
     );
@@ -1622,11 +1651,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   }
 
   Widget _buildVideoInfo() {
-    return Expanded(
-      child: Container(
-        width: double.infinity,
-        color: Colors.black,
-        child: SingleChildScrollView(
+    // Returns a bare scrollable container (no Expanded wrapper) so callers
+    // can compose it into either a Column or a Row with their own flex.
+    return Container(
+      width: double.infinity,
+      color: Colors.black,
+      child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1710,8 +1740,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   String _formatDuration(int totalSeconds) {

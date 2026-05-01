@@ -34,7 +34,11 @@ class _ResizableSplitViewState extends State<ResizableSplitView> {
   // and tripping the Android ANR watchdog on tablets.
   late final ValueNotifier<double> _ratio;
 
-  static const _dividerThickness = 20.0;
+  // Bumped from 20 → 28 so the divider reads as a real bar (not a hairline
+  // gap) and gives users a comfortable touch target. The grip handle inside
+  // gets its own contrasting fill so it stays visible regardless of what
+  // the two children are painting at the seam (white PDF vs black video).
+  static const _dividerThickness = 28.0;
 
   @override
   void initState() {
@@ -99,25 +103,51 @@ class _ResizableSplitViewState extends State<ResizableSplitView> {
   }
 
   Widget _buildDivider(bool isVertical, double totalSize) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onVerticalDragUpdate: isVertical
-          ? (details) => _onDrag(details.delta.dy, totalSize)
-          : null,
-      onHorizontalDragUpdate: !isVertical
-          ? (details) => _onDrag(details.delta.dx, totalSize)
-          : null,
-      child: Container(
-        width: isVertical ? double.infinity : _dividerThickness,
-        height: isVertical ? _dividerThickness : double.infinity,
-        color: Colors.transparent,
-        child: Center(
-          child: Container(
-            width: isVertical ? 40 : 4,
-            height: isVertical ? 4 : 40,
-            decoration: BoxDecoration(
-              color: Colors.white38,
-              borderRadius: BorderRadius.circular(2),
+    return MouseRegion(
+      cursor: isVertical
+          ? SystemMouseCursors.resizeUpDown
+          : SystemMouseCursors.resizeLeftRight,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragUpdate: isVertical
+            ? (details) => _onDrag(details.delta.dy, totalSize)
+            : null,
+        onHorizontalDragUpdate: !isVertical
+            ? (details) => _onDrag(details.delta.dx, totalSize)
+            : null,
+        child: Container(
+          width: isVertical ? double.infinity : _dividerThickness,
+          height: isVertical ? _dividerThickness : double.infinity,
+          // Solid dark bar so the divider is visible against either child
+          // (PDF white, video black). Hairline borders top/bottom (or
+          // left/right in horizontal mode) sharpen the seam.
+          decoration: BoxDecoration(
+            color: const Color(0xFF1F1F1F),
+            border: Border(
+              top: isVertical
+                  ? const BorderSide(color: Colors.black54, width: 0.5)
+                  : BorderSide.none,
+              bottom: isVertical
+                  ? const BorderSide(color: Colors.black54, width: 0.5)
+                  : BorderSide.none,
+              left: !isVertical
+                  ? const BorderSide(color: Colors.black54, width: 0.5)
+                  : BorderSide.none,
+              right: !isVertical
+                  ? const BorderSide(color: Colors.black54, width: 0.5)
+                  : BorderSide.none,
+            ),
+          ),
+          child: Center(
+            // Pill-shaped grip handle, sized big enough to be obviously
+            // draggable even on a tablet held at arm's length.
+            child: Container(
+              width: isVertical ? 56 : 5,
+              height: isVertical ? 5 : 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
         ),
