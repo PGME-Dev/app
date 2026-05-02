@@ -3029,8 +3029,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         ],
         pagePaintCallbacks: [
           _paintAnnotations,
-          if (_textSearcher != null)
-            _textSearcher!.pageTextMatchPaintCallback,
+          // Stable closure — defers to _textSearcher at paint time. Required
+          // because _cachedPdfViewer is built once with _textSearcher == null
+          // (the searcher needs _pdfController to be ready, which only
+          // happens after the viewer mounts). Without this wrapper, the
+          // painter callback is never registered and search highlights
+          // never appear.
+          (canvas, pageRect, page) =>
+              _textSearcher?.pageTextMatchPaintCallback(canvas, pageRect, page),
         ],
         pageOverlaysBuilder: _buildPageOverlays,
         onPageChanged: (pageNumber) {
