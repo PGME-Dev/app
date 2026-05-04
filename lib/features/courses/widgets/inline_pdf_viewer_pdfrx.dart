@@ -151,7 +151,9 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
       if (cached != null) {
         if (!mounted) return;
         setState(() => _isLoading = false);
-        _loadDocumentFully(cached.path);
+        // Pass the key so a parse failure (corrupt cached file) drops the
+        // entry; the next mount will re-download cleanly.
+        _loadDocumentFully(cached.path, cacheKey: cacheKey);
         return;
       }
 
@@ -169,7 +171,7 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
 
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _loadDocumentFully(downloaded.path);
+      _loadDocumentFully(downloaded.path, cacheKey: cacheKey);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;
       if (mounted) {
@@ -190,7 +192,7 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
 
   // ── Step 2: open + fully load the document before showing viewer ─
 
-  Future<void> _loadDocumentFully(String filePath) async {
+  Future<void> _loadDocumentFully(String filePath, {String? cacheKey}) async {
     if (!mounted) return;
     try {
       final doc = await PdfDocument.openFile(
@@ -225,6 +227,11 @@ class _InlinePdfViewerPdfrxState extends State<InlinePdfViewerPdfrx> {
       }
     } catch (e) {
       debugPrint('[InlinePdfViewerPdfrx] Failed to load document: $e');
+      // Drop the cache entry on parse failure so the next mount
+      // re-downloads instead of looping on the same corrupt file.
+      if (cacheKey != null) {
+        await PdfCacheService.invalidate(cacheKey);
+      }
       if (mounted) {
         setState(() => _error = 'Failed to load PDF');
       }

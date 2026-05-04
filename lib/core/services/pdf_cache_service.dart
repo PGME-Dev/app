@@ -109,6 +109,16 @@ class PdfCacheService {
   /// or cancelled download can't be served as a valid cached PDF on the
   /// next open. Pass [cancelToken] to abort an in-flight download (e.g.
   /// when the user closes the viewer before the file finishes).
+  ///
+  /// After download, validates that the file:
+  ///  1. Exists and is non-empty (catches phantom-success cases like
+  ///     parallel-call races where another writer overwrote our `.part`).
+  ///  2. Starts with the `%PDF` magic header (catches the case where the
+  ///     server returned an HTML error page, an auth challenge, or any
+  ///     other non-PDF body — we don't want a corrupt blob poisoning the
+  ///     cache and breaking every subsequent open).
+  /// Throws [PdfCacheException] with a descriptive message on either
+  /// failure, after cleaning up both the `.part` and any stale final file.
   static Future<File> cacheFromUrl(
     String cacheKey,
     String url, {
@@ -140,12 +150,69 @@ class PdfCacheService {
       rethrow;
     }
 
+    // Post-download integrity checks. Anything fails here, drop the
+    // partial and throw before it can pollute the cache.
+    if (!await tempFile.exists()) {
+      throw const PdfCacheException(
+          'Download finished but the partial file is missing — likely a '
+          'parallel writer raced with this call.');
+    }
+    final size = await tempFile.length();
+    if (size <= 0) {
+      await _safeDelete(tempFile);
+      throw const PdfCacheException(
+          'Downloaded file is empty — server likely returned no body.');
+    }
+    if (!await _looksLikePdf(tempFile)) {
+      await _safeDelete(tempFile);
+      throw const PdfCacheException(
+          'Downloaded content is not a PDF — server probably returned an '
+          'HTML error page or auth challenge instead of the file.');
+    }
+
     final finalFile = File(finalPath);
     if (await finalFile.exists()) {
       await _safeDelete(finalFile);
     }
     await tempFile.rename(finalPath);
     return finalFile;
+  }
+
+  /// Removes the cached entry for [cacheKey] (both `.pdf` and any leftover
+  /// `.part`). Use when a downstream consumer determines the cached file
+  /// is corrupt — e.g. pdfium fails to parse it after a successful HTTP
+  /// download — so the next open re-fetches from the source.
+  static Future<void> invalidate(String cacheKey) async {
+    try {
+      final dir = await _cacheDir();
+      final safeKey = _safeKey(cacheKey);
+      await _safeDelete(File('${dir.path}/$safeKey.pdf'));
+      await _safeDelete(File('${dir.path}/$safeKey.pdf.part'));
+    } catch (e) {
+      debugPrint('[PdfCache] invalidate($cacheKey) error: $e');
+    }
+  }
+
+  /// Reads the first 4 bytes and checks for the `%PDF` magic header.
+  /// PDFs always start with this signature regardless of version (PDF 1.x
+  /// through 2.0). Cheap — only reads 4 bytes from the file head.
+  static Future<bool> _looksLikePdf(File file) async {
+    try {
+      final raf = await file.open();
+      try {
+        final header = await raf.read(4);
+        if (header.length < 4) return false;
+        // %PDF == 0x25 0x50 0x44 0x46
+        return header[0] == 0x25 &&
+            header[1] == 0x50 &&
+            header[2] == 0x44 &&
+            header[3] == 0x46;
+      } finally {
+        await raf.close();
+      }
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Drops entries older than [maxAge]. Safe to call from app startup
@@ -258,4 +325,15 @@ class _CacheEntry {
   final DateTime modified;
   final int size;
   _CacheEntry(this.file, this.modified, this.size);
+}
+
+/// Thrown by [PdfCacheService] when a download finished but the resulting
+/// file is unusable as a PDF (empty, missing, or wrong magic header).
+/// Distinct from a network/dio failure so callers can tell "the request
+/// itself failed" apart from "the body wasn't a PDF."
+class PdfCacheException implements Exception {
+  final String message;
+  const PdfCacheException(this.message);
+  @override
+  String toString() => 'PdfCacheException: $message';
 }

@@ -174,6 +174,21 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     0, 0, 0, 1, 0,
   ]);
 
+  // Identity matrix used as a no-op alternative to [_invertColorFilter] so
+  // the ColorFiltered widget can stay permanently in the tree. Toggling
+  // between two ColorFilter values keeps the widget structure stable, which
+  // means the cached PdfViewer's State is never deactivated — preserving
+  // the controller wiring, search results, and onPageChanged listeners.
+  // (Previously we conditionally wrapped/unwrapped ColorFiltered, which
+  // changed the parent type at this slot and tore down the viewer's
+  // internal state on every toggle.)
+  static const ColorFilter _identityColorFilter = ColorFilter.matrix(<double>[
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  ]);
+
   // ── Lifecycle ──────────────────────────────────────────────────────
 
   @override
@@ -270,7 +285,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       if (cached != null) {
         if (mounted) {
           setState(() => _isLoading = false);
-          _loadDocumentFully(cached.path);
+          // Pass the key so a parse failure (corrupt cached file) can
+          // invalidate the entry and the next Retry re-downloads.
+          _loadDocumentFully(cached.path, cacheKey: cacheKey);
         }
         return;
       }
@@ -287,7 +304,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       if (mounted) {
         setState(() => _isLoading = false);
-        _loadDocumentFully(downloaded.path);
+        _loadDocumentFully(downloaded.path, cacheKey: cacheKey);
       }
     } catch (e) {
       debugPrint('PDF load error: $e');
@@ -306,7 +323,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   /// progress UI instead of the viewer — preventing the half-loaded
   /// state where the user would otherwise see page 1 but couldn't
   /// scroll past whatever batch had been loaded so far.
-  Future<void> _loadDocumentFully(String filePath) async {
+  Future<void> _loadDocumentFully(String filePath, {String? cacheKey}) async {
     if (!mounted) return;
     try {
       final doc = await PdfDocument.openFile(
@@ -361,6 +378,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       });
     } catch (e) {
       debugPrint('[PDFRX] Failed to load document: $e');
+      // If this load came from a cached file (cacheKey != null), the
+      // cached file is the most likely culprit (corrupt download, partial
+      // bytes, server returned non-PDF that bypassed magic-byte check on a
+      // previous version). Drop the entry so the next Retry re-downloads
+      // from the source instead of looping on the same bad blob.
+      if (cacheKey != null) {
+        await PdfCacheService.invalidate(cacheKey);
+      }
       if (mounted) {
         setState(() {
           _error = 'Failed to load PDF';
@@ -1969,7 +1994,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             return;
           }
           Navigator.pop(ctx);
-          _pdfController.goToPage(pageNumber: n);
+          // Defer the jump until after the dialog + keyboard close
+          // animations have fully settled. If goToPage starts while the
+          // soft keyboard is still retracting, the keyboard's resize
+          // event mid-animation triggers pdfrx's resize handler, which
+          // fires its own _goToPage(guessedCurrentPage) — and the guess is
+          // taken from an in-flight frame of OUR animation. Result: the
+          // viewer scrolls correctly to N, then immediately scrolls back
+          // to whatever page was passing under the viewport when the
+          // resize hit. 350ms covers the standard keyboard close
+          // (~250-300ms) with a small safety margin.
+          Future.delayed(const Duration(milliseconds: 350), () {
+            if (mounted) _pdfController.goToPage(pageNumber: n);
+          });
         }
 
         return AlertDialog(
@@ -3058,11 +3095,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       ),
     );
 
-    if (_isPdfDarkMode) {
-      return ColorFiltered(
-          colorFilter: _invertColorFilter, child: _cachedPdfViewer!);
-    }
-    return _cachedPdfViewer!;
+    // ColorFiltered is ALWAYS present so the widget tree at this slot
+    // doesn't change shape on toggle — see the comment on
+    // [_identityColorFilter] for why that matters. Only the matrix swaps.
+    return ColorFiltered(
+      colorFilter:
+          _isPdfDarkMode ? _invertColorFilter : _identityColorFilter,
+      child: _cachedPdfViewer!,
+    );
   }
 
   // ── Toolbar ───────────────────────────────────────────────────────

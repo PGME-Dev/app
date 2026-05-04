@@ -394,7 +394,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
     final BetterPlayerDataSource dataSource;
     if (_isLocalFile) {
-      dataSource = BetterPlayerDataSource.file(_videoUrl!);
+      // Use the constructor directly (not the .file() factory) so we can
+      // explicitly disable all ASMS (HLS/DASH) machinery and pass a
+      // videoExtension hint. The .file() factory leaves useAsmsTracks /
+      // useAsmsSubtitles / useAsmsAudioTracks at their defaults (true),
+      // and a missing videoExtension forces ExoPlayer to sniff the format
+      // from the file head — both of which can leave the player in an
+      // unstable state where the controls render but seek/setSpeed don't
+      // take effect on the underlying surface.
+      dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.file,
+        _videoUrl!,
+        videoExtension: 'mp4',
+        useAsmsTracks: false,
+        useAsmsSubtitles: false,
+        useAsmsAudioTracks: false,
+      );
     } else {
       dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
@@ -478,6 +493,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   void _onPlayerEvent(BetterPlayerEvent event) {
     if (_isDisposed) return;
+
+    // Diagnostic: log every BetterPlayer event during the offline-controls
+    // bug investigation so we can see which interactions reach the player
+    // (setSpeed, seekTo, controlsVisible, exception, etc.) and which
+    // silently no-op. Remove once the root cause is fixed.
+    debugPrint(
+        '[BP-EVENT] ${event.betterPlayerEventType.name} '
+        'isLocalFile=$_isLocalFile  params=${event.parameters}');
 
     // Populate the quality menu labels lazily — by the time the controls are
     // visible, the HLS manifest has typically been parsed.
