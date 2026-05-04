@@ -3223,12 +3223,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   /// Overflow menu for the toolbar — keeps the row uncluttered by housing
-  /// affordances that don't need one-tap access: TOC drawer, the bookmarks
-  /// list (when there's at least one), and the dark-reader toggle.
+  /// affordances that don't need one-tap access: the dark-reader toggle
+  /// and the bookmarks list (when there's at least one). The TOC entry
+  /// is currently commented out (see block below); re-enable it together
+  /// with the `hasDocument` local and the `'toc'` switch case to bring
+  /// back the table-of-contents drawer affordance.
   Widget _buildOverflowMenu(bool isDark, Color textColor, bool isTablet) {
     final hasBookmarks =
         widget.documentId != null && _bookmarkedPages.isNotEmpty;
-    final hasDocument = _document != null;
+    // final hasDocument = _document != null; // re-enable with the TOC entry below
     final menuTextColor =
         isDark ? AppColors.darkTextPrimary : Colors.black87;
     return Container(
@@ -3248,9 +3251,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             borderRadius: BorderRadius.circular(12)),
         onSelected: (value) {
           switch (value) {
-            case 'toc':
-              _scaffoldKey.currentState?.openDrawer();
-              break;
+            // case 'toc': // re-enable with the TOC PopupMenuItem below
+            //   _scaffoldKey.currentState?.openDrawer();
+            //   break;
             case 'bookmarks':
               _scaffoldKey.currentState?.openEndDrawer();
               break;
@@ -3260,38 +3263,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           }
         },
         itemBuilder: (context) => [
-          if (hasDocument)
-            PopupMenuItem<String>(
-              value: 'toc',
-              child: Row(
-                children: [
-                  Icon(Icons.menu_book_outlined,
-                      size: 20, color: menuTextColor),
-                  const SizedBox(width: 12),
-                  Text('Table of contents',
-                      style: TextStyle(
-                        color: menuTextColor,
-                        fontWeight: FontWeight.w500,
-                      )),
-                ],
-              ),
-            ),
-          if (hasBookmarks)
-            PopupMenuItem<String>(
-              value: 'bookmarks',
-              child: Row(
-                children: [
-                  Icon(Icons.collections_bookmark_outlined,
-                      size: 20, color: menuTextColor),
-                  const SizedBox(width: 12),
-                  Text('All bookmarks',
-                      style: TextStyle(
-                        color: menuTextColor,
-                        fontWeight: FontWeight.w500,
-                      )),
-                ],
-              ),
-            ),
+          // Dark / light reader toggle promoted to the top slot — replaced
+          // the Table-of-contents entry that used to live here.
           PopupMenuItem<String>(
             value: 'theme',
             child: Row(
@@ -3312,6 +3285,43 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               ],
             ),
           ),
+          // ── Table of contents — DISABLED (kept for easy re-enable) ──
+          // The drawer + _loadOutline + _buildOutlineDrawer code paths are
+          // still wired up; only the menu entry that opened the drawer is
+          // commented out. Uncomment this block (and ensure `hasDocument`
+          // stays in scope above) to bring the TOC affordance back.
+          // if (hasDocument)
+          //   PopupMenuItem<String>(
+          //     value: 'toc',
+          //     child: Row(
+          //       children: [
+          //         Icon(Icons.menu_book_outlined,
+          //             size: 20, color: menuTextColor),
+          //         const SizedBox(width: 12),
+          //         Text('Table of contents',
+          //             style: TextStyle(
+          //               color: menuTextColor,
+          //               fontWeight: FontWeight.w500,
+          //             )),
+          //       ],
+          //     ),
+          //   ),
+          if (hasBookmarks)
+            PopupMenuItem<String>(
+              value: 'bookmarks',
+              child: Row(
+                children: [
+                  Icon(Icons.collections_bookmark_outlined,
+                      size: 20, color: menuTextColor),
+                  const SizedBox(width: 12),
+                  Text('All bookmarks',
+                      style: TextStyle(
+                        color: menuTextColor,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ],
+              ),
+            ),
         ],
       ),
     );

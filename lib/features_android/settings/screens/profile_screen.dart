@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1536,6 +1537,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _pickLocalPdfForTest() async {
     try {
+      // Permission gate (Android only). On Android 13+ READ_EXTERNAL_STORAGE
+      // is deprecated and Permission.storage maps to a granted no-op there,
+      // so this only really fires on Android ≤ 12 where some manufacturer
+      // skins still gate Downloads / Documents folders behind the legacy
+      // permission. iOS skips entirely — the document picker has no
+      // permission gate.
+      if (Platform.isAndroid) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted && !status.isLimited) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(status.isPermanentlyDenied
+                  ? 'Storage permission was denied. Enable it from Settings to pick a PDF.'
+                  : 'Storage permission is required to pick a PDF.'),
+              action: status.isPermanentlyDenied
+                  ? const SnackBarAction(
+                      label: 'Settings',
+                      onPressed: openAppSettings,
+                    )
+                  : null,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          return;
+        }
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['pdf'],
