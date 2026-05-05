@@ -26,8 +26,8 @@ import 'package:pgme/core/providers/mini_player_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Prevent screenshots and screen recording across the entire app
-  await NoScreenshot.instance.screenshotOff();
+  // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
+  await NoScreenshot.instance.screenshotOn();
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(

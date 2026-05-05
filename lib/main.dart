@@ -44,8 +44,8 @@ Future<void> main() async {
   // Android) and warns at 80% / 95%. Filter with: adb logcat | findstr MEM
   MemoryMonitor.instance.start();
 
-  // Prevent screenshots and screen recording across the entire app
-  await NoScreenshot.instance.screenshotOff();
+  // TODO: TEMPORARILY DISABLED — re-enable after screenshots are taken
+  await NoScreenshot.instance.screenshotOn();
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(
