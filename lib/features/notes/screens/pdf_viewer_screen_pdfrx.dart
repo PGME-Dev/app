@@ -896,14 +896,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (widget.documentId != null) {
       try {
         final boundsData = bounds.map((b) => b.toJson()).toList();
+        // Char offsets, not pixel coords. Backend rejects start >= end.
+        // Old code used bounds.first.left / bounds.last.right (pixels) —
+        // worked single-line, broke multi-line because last line wraps
+        // shorter (last.right < first.left).
+        final clippedText = selectedText.length > 2000
+            ? selectedText.substring(0, 2000)
+            : selectedText;
         final result = await _highlightService.addHighlight(
           documentId: widget.documentId!,
           pageNumber: firstPage,
-          startOffset: bounds.first.left.toInt().abs(),
-          endOffset: bounds.last.toRect().right.toInt().abs(),
-          highlightedText: selectedText.length > 2000
-              ? selectedText.substring(0, 2000)
-              : selectedText,
+          startOffset: 0,
+          endOffset: clippedText.length,
+          highlightedText: clippedText,
           color: color,
           boundsData: boundsData,
         );
@@ -999,14 +1004,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (widget.documentId != null) {
       try {
         final boundsData = bounds.map((b) => b.toJson()).toList();
+        // Char offsets, not pixel coords. See _highlightSelectedText for
+        // full rationale — multi-line wrap breaks the pixel-based version.
+        final clippedText = selectedText.length > 2000
+            ? selectedText.substring(0, 2000)
+            : selectedText;
         final result = await _highlightService.addHighlight(
           documentId: widget.documentId!,
           pageNumber: firstPage,
-          startOffset: bounds.first.left.toInt().abs(),
-          endOffset: bounds.last.toRect().right.toInt().abs(),
-          highlightedText: selectedText.length > 2000
-              ? selectedText.substring(0, 2000)
-              : selectedText,
+          startOffset: 0,
+          endOffset: clippedText.length,
+          highlightedText: clippedText,
           color: 'blue',
           annotationType: 'underline',
           boundsData: boundsData,
