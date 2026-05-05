@@ -30,6 +30,34 @@ class _AnnotationData {
   const _AnnotationData({required this.bounds, required this.color});
 }
 
+/// Mutable accumulator used by `_selectionToBounds` to collapse pdfrx's
+/// per-word fragments into one rect per visual line.
+class _LineAccumulator {
+  double top;
+  double bottom;
+  double left;
+  double right;
+  String text;
+
+  _LineAccumulator({
+    required this.top,
+    required this.bottom,
+    required this.left,
+    required this.right,
+    required this.text,
+  });
+
+  void merge(double l, double r, double t, double b, String fragText) {
+    if (l < left) left = l;
+    if (r > right) right = r;
+    // Same-line frags should share top, but pdfrx can drift by sub-pixel
+    // amounts. Take the outermost extents so the union covers everything.
+    if (t > top) top = t;
+    if (b < bottom) bottom = b;
+    text += fragText;
+  }
+}
+
 class PdfViewerScreen extends StatefulWidget {
   final String? documentId;
   final String? pdfUrl;
@@ -398,6 +426,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Future<void> _restoreProgress() async {
     if (widget.documentId == null) return;
+    // Backend `/users/progress/document/<id>` only knows about library
+    // documents. Ebooks live in a separate collection and the route 404s
+    // for them — no point hitting it. Re-enable once backend exposes
+    // /users/progress/ebook/<id> (or unifies the routes).
+    if (widget.source == 'ebook') return;
     try {
       final progress =
           await _progressService.getDocumentProgress(widget.documentId!);
@@ -422,6 +455,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Future<void> _saveProgress(int pageNumber) async {
     if (widget.documentId == null) return;
+    // See _restoreProgress — ebook IDs aren't valid for the document
+    // progress route. Skip silently instead of spamming "Resource not
+    // found" every page change.
+    if (widget.source == 'ebook') return;
     try {
       await _progressService.updateDocumentProgress(
         documentId: widget.documentId!,
@@ -841,24 +878,54 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   List<AnnotationTextBounds> _selectionToBounds(
       List<PdfTextRanges> selections) {
+    // pdfrx returns one fragment per WORD (and one per whitespace run), so a
+    // 5-line selection generates ~100 fragments. Backend validation rejects
+    // payloads with that many bounds entries (and the JSON balloons past
+    // request-size caps). We collapse fragments to one entry per VISUAL LINE
+    // by grouping on the (page, top) tuple, taking left = min(left),
+    // right = max(right), text = concatenation. The on-screen highlight is
+    // identical because each per-line rect spans the same area as the union
+    // of its word fragments.
     final result = <AnnotationTextBounds>[];
     for (final sel in selections) {
       final pageNumber = sel.pageNumber;
+      // Per-line accumulators keyed by quantized top Y. Quantized to 0.5pt
+      // because pdfrx sometimes returns top values that drift by a tiny
+      // sub-pixel epsilon between fragments on the "same" line.
+      final byLine = <int, _LineAccumulator>{};
       for (final range in sel.ranges) {
         final withFrags = range.toTextRangeWithFragments(sel.pageText);
         if (withFrags == null) continue;
-        // Get per-fragment bounding rects for multi-line selections
         for (final frag in withFrags.fragments) {
           final b = frag.bounds;
-          result.add(AnnotationTextBounds(
-            left: b.left,
-            top: b.top,
-            width: b.right - b.left,
-            height: b.top - b.bottom, // PDF coords: top > bottom
-            text: frag.text,
-            pageNumber: pageNumber,
-          ));
+          final key = (b.top * 2).round(); // 0.5pt buckets
+          final existing = byLine[key];
+          if (existing == null) {
+            byLine[key] = _LineAccumulator(
+              top: b.top,
+              bottom: b.bottom,
+              left: b.left,
+              right: b.right,
+              text: frag.text,
+            );
+          } else {
+            existing.merge(b.left, b.right, b.top, b.bottom, frag.text);
+          }
         }
+      }
+      // Stable visual order — top-to-bottom (PDF coords: top > bottom, so
+      // higher top first).
+      final lines = byLine.values.toList()
+        ..sort((a, b) => b.top.compareTo(a.top));
+      for (final acc in lines) {
+        result.add(AnnotationTextBounds(
+          left: acc.left,
+          top: acc.top,
+          width: acc.right - acc.left,
+          height: acc.top - acc.bottom, // PDF coords: top > bottom
+          text: acc.text,
+          pageNumber: pageNumber,
+        ));
       }
     }
     return result;
@@ -923,7 +990,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         });
         return highlightId;
       } catch (e) {
-        debugPrint('Failed to save highlight: $e');
+        // Diagnostic dump — pattern hunt for intermittent multi-line save
+        // failures. Logs selection geometry + backend error verbatim so we
+        // can correlate with what the user did just before the failure.
+        final pageSet = bounds.map((b) => b.pageNumber).toSet().toList()..sort();
+        final firstB = bounds.first;
+        final lastB = bounds.last;
+        debugPrint('[HL-FAIL] type=highlight color=$color  '
+            'lines=${bounds.length}  pages=$pageSet  textLen=${selectedText.length}  '
+            'first=(p${firstB.pageNumber} L=${firstB.left.toStringAsFixed(1)} '
+            'T=${firstB.top.toStringAsFixed(1)} W=${firstB.width.toStringAsFixed(1)} '
+            'H=${firstB.height.toStringAsFixed(1)})  '
+            'last=(p${lastB.pageNumber} L=${lastB.left.toStringAsFixed(1)} '
+            'T=${lastB.top.toStringAsFixed(1)} W=${lastB.width.toStringAsFixed(1)} '
+            'H=${lastB.height.toStringAsFixed(1)})  '
+            'snippet=${_snippet(selectedText)}  '
+            'err=$e');
+        debugPrint('[HL-FAIL] boundsData=${bounds.map((b) => b.toJson()).toList()}');
         _setAnnotationState(() {
           _highlights.remove(tempId);
           _annotationTexts.remove(tempId);
@@ -937,6 +1020,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       }
     }
     return tempId;
+  }
+
+  /// Truncates text for log readability — first 40 + last 20 chars.
+  String _snippet(String s) {
+    if (s.length <= 80) return s.replaceAll('\n', '\\n');
+    return '${s.substring(0, 40).replaceAll('\n', '\\n')}…'
+        '${s.substring(s.length - 20).replaceAll('\n', '\\n')}';
   }
 
   Future<void> _quickHighlightAndNote() async {
@@ -1029,7 +1119,21 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           _undoStack.add((id: highlightId, type: 'underline'));
         });
       } catch (e) {
-        debugPrint('Failed to save underline: $e');
+        // Diagnostic dump — same shape as [HL-FAIL] above. Pattern hunt.
+        final pageSet = bounds.map((b) => b.pageNumber).toSet().toList()..sort();
+        final firstB = bounds.first;
+        final lastB = bounds.last;
+        debugPrint('[HL-FAIL] type=underline  '
+            'lines=${bounds.length}  pages=$pageSet  textLen=${selectedText.length}  '
+            'first=(p${firstB.pageNumber} L=${firstB.left.toStringAsFixed(1)} '
+            'T=${firstB.top.toStringAsFixed(1)} W=${firstB.width.toStringAsFixed(1)} '
+            'H=${firstB.height.toStringAsFixed(1)})  '
+            'last=(p${lastB.pageNumber} L=${lastB.left.toStringAsFixed(1)} '
+            'T=${lastB.top.toStringAsFixed(1)} W=${lastB.width.toStringAsFixed(1)} '
+            'H=${lastB.height.toStringAsFixed(1)})  '
+            'snippet=${_snippet(selectedText)}  '
+            'err=$e');
+        debugPrint('[HL-FAIL] boundsData=${bounds.map((b) => b.toJson()).toList()}');
         _setAnnotationState(() {
           _underlines.remove(tempId);
           _annotationTexts.remove(tempId);
