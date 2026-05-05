@@ -2877,6 +2877,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: backgroundColor,
+      // Edge-swipe to open drawers is OFF. Otherwise Scaffold's
+      // HorizontalDragGestureRecognizer wins the gesture arena against
+      // pdfrx's pan recognizer for any horizontal-from-rest drag, blocking
+      // horizontal pan when the PDF is zoomed. Drawers remain openable
+      // via the overflow menu / scaffoldKey.openDrawer().
+      drawerEnableOpenDragGesture: false,
+      endDrawerEnableOpenDragGesture: false,
       // Left drawer is the PDF outline / TOC. Always available once the
       // document is loaded; the drawer itself renders one of three states:
       //   - loading (outline fetch in flight)
