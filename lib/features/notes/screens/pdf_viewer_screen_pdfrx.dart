@@ -2038,109 +2038,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   /// "Go to page" affordance.
   void _showGoToPageDialog() {
     if (_totalPages <= 0) return;
-    final controller =
-        TextEditingController(text: _currentPage.value.toString());
     final isDark =
         Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     final isTablet = ResponsiveHelper.isTablet(context);
-    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
-    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
 
     showDialog<void>(
       context: context,
-      builder: (ctx) {
-        void submit() {
-          final n = int.tryParse(controller.text.trim());
-          if (n == null || n < 1 || n > _totalPages) {
-            ScaffoldMessenger.of(ctx)
-              ..clearSnackBars()
-              ..showSnackBar(SnackBar(
-                content: Text('Enter a page number between 1 and $_totalPages'),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ));
-            return;
-          }
-          Navigator.pop(ctx);
-          // Defer the jump until after the dialog + keyboard close
-          // animations have fully settled. If goToPage starts while the
-          // soft keyboard is still retracting, the keyboard's resize
-          // event mid-animation triggers pdfrx's resize handler, which
-          // fires its own _goToPage(guessedCurrentPage) — and the guess is
-          // taken from an in-flight frame of OUR animation. Result: the
-          // viewer scrolls correctly to N, then immediately scrolls back
-          // to whatever page was passing under the viewport when the
-          // resize hit. 350ms covers the standard keyboard close
-          // (~250-300ms) with a small safety margin.
+      builder: (ctx) => _GoToPageDialog(
+        initialPage: _currentPage.value,
+        totalPages: _totalPages,
+        isDark: isDark,
+        isTablet: isTablet,
+        onSubmit: (n) {
+          // Defer jump until after dialog + keyboard close animations
+          // settle. See _GoToPageDialog for full rationale.
           Future.delayed(const Duration(milliseconds: 350), () {
             if (mounted) _pdfController.goToPage(pageNumber: n);
           });
-        }
-
-        return AlertDialog(
-          backgroundColor: bgColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text('Go to page',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontWeight: FontWeight.w700,
-                fontSize: isTablet ? 19 : 17,
-                color: textColor,
-              )),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            onSubmitted: (_) => submit(),
-            style: TextStyle(color: textColor, fontSize: isTablet ? 16 : 15),
-            decoration: InputDecoration(
-              hintText: 'Page number (1–$_totalPages)',
-              hintStyle: TextStyle(
-                color: isDark ? Colors.white38 : Colors.grey[400],
-                fontSize: isTablet ? 15 : 14,
-              ),
-              filled: true,
-              fillColor: isDark
-                  ? AppColors.darkSurface
-                  : const Color(0xFFF8F9FE),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel',
-                  style: TextStyle(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  )),
-            ),
-            ElevatedButton(
-              onPressed: submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text('Go'),
-            ),
-          ],
-        );
-      },
+        },
+      ),
     );
   }
 
@@ -3656,6 +3572,145 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Stateful go-to-page dialog. Owns its own FocusNode + TextEditingController
+/// so iOS keyboard MQ rebuilds don't disposal-poison the autofocus path.
+/// (Inline `autofocus: true` on a TextField inside an AlertDialog builder
+/// crashes iOS with "FocusNode used after being disposed" because the
+/// keyboard appearing triggers an AlertDialog rebuild that races the
+/// autofocus' own requestFocus call against the prior FocusNode's dispose.)
+class _GoToPageDialog extends StatefulWidget {
+  final int initialPage;
+  final int totalPages;
+  final bool isDark;
+  final bool isTablet;
+  final void Function(int page) onSubmit;
+
+  const _GoToPageDialog({
+    required this.initialPage,
+    required this.totalPages,
+    required this.isDark,
+    required this.isTablet,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_GoToPageDialog> createState() => _GoToPageDialogState();
+}
+
+class _GoToPageDialogState extends State<_GoToPageDialog> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialPage.toString());
+    _focusNode = FocusNode();
+    // Focus AFTER first frame so the dialog is mounted and the FocusNode
+    // is attached before requestFocus runs. Avoids the "used after being
+    // disposed" race we got with TextField's built-in autofocus.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final n = int.tryParse(_controller.text.trim());
+    if (n == null || n < 1 || n > widget.totalPages) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(
+              'Enter a page number between 1 and ${widget.totalPages}'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ));
+      return;
+    }
+    Navigator.pop(context);
+    widget.onSubmit(n);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor =
+        widget.isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor =
+        widget.isDark ? AppColors.darkTextPrimary : Colors.black;
+    return AlertDialog(
+      backgroundColor: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text('Go to page',
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontWeight: FontWeight.w700,
+            fontSize: widget.isTablet ? 19 : 17,
+            color: textColor,
+          )),
+      content: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        keyboardType: TextInputType.number,
+        onSubmitted: (_) => _submit(),
+        style: TextStyle(
+            color: textColor, fontSize: widget.isTablet ? 16 : 15),
+        decoration: InputDecoration(
+          hintText: 'Page number (1–${widget.totalPages})',
+          hintStyle: TextStyle(
+            color: widget.isDark ? Colors.white38 : Colors.grey[400],
+            fontSize: widget.isTablet ? 15 : 14,
+          ),
+          filled: true,
+          fillColor: widget.isDark
+              ? AppColors.darkSurface
+              : const Color(0xFFF8F9FE),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+                color: AppColors.primaryBlue, width: 1.5),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel',
+              style: TextStyle(
+                color: widget.isDark
+                    ? AppColors.darkTextSecondary
+                    : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              )),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryBlue,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: const Text('Go'),
+        ),
+      ],
     );
   }
 }
