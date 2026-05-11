@@ -81,6 +81,10 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.bbflight.background_downloader</string>
+	</array>
 	<key>BDPluginBackgroundDownloader</key>
 	<dict>
 		<key>Resource Timeout</key>

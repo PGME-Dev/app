@@ -61,8 +61,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  bool _orientationSet = false;
-
   @override
   void initState() {
     super.initState();
@@ -131,19 +129,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               overscroll: false,
             ),
             builder: (context, child) {
-              // Apply the device-appropriate orientation policy once. Using
-              // ResponsiveHelper.isTabletDevice() (looser than the layout
-              // breakpoint) so borderline tablets like the Lenovo Yoga Tab 11
-              // don't get portrait-locked.
-              if (!_orientationSet) {
-                _orientationSet = true;
-                if (!ResponsiveHelper.isTabletDevice()) {
-                  SystemChrome.setPreferredOrientations([
-                    DeviceOrientation.portraitUp,
-                    DeviceOrientation.portraitDown,
-                  ]);
-                }
-              }
+              // All orientations enabled. The earlier policy locked phones
+              // to portrait via setPreferredOrientations, but users want
+              // rotation to follow the OS rotation-lock setting.
               return child!;
             },
           );

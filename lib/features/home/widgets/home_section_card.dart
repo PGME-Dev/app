@@ -536,7 +536,10 @@ class HomeSectionCard extends StatelessWidget {
     final subtextColor = _cardSubtext(isDark);
     final borderColor = parseHexColor(item.borderColor);
     final radius = isTablet ? 18.0 : 12.0;
-    final cardHeight = isTablet ? 180.0 : 140.0;
+    // Bumped from 180/140 to 190/150. With tag chip + title + subtitle +
+    // 2-line description + primary button, the previous height overflowed
+    // by ~5px on phone for fully-populated package cards.
+    final cardHeight = isTablet ? 190.0 : 150.0;
 
     return GestureDetector(
       onTap: _hasPrimaryAction ? () => _handlePrimaryTap(context) : null,

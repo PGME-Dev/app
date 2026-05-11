@@ -468,7 +468,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final cardWidth = MediaQuery.of(context).size.width * 0.75;
-              final cardHeight = cardWidth * (9 / 16) + (isTablet ? 200 : 160);
+              // Phone offset bumped 160→170, tablet 200→210 to fix the
+              // ~5px bottom overflow on fully-populated What We Offer
+              // package-type cards.
+              final cardHeight = cardWidth * (9 / 16) + (isTablet ? 210 : 170);
 
               return SizedBox(
                 height: cardHeight,

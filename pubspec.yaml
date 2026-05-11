@@ -57,6 +57,16 @@ dev_dependencies:
   build_runner: ^2.4.8
   json_serializable: ^6.7.1
 
+# Vendored pdfrx with a single-line patch removing the `enabled` guard in
+# pdf_page_text_overlay.dart's dispatchSelectionEvent. Without it,
+# zoomed-in text selection is dropped because pdfrx flags every touch as
+# an InteractiveViewer interaction. See vendor/pdfrx for the patched
+# source (vendor/pdfrx/lib/src/widgets/pdf_page_text_overlay.dart line
+# ~423). Remove this override only when upstream pdfrx ships a fix.
+dependency_overrides:
+  pdfrx:
+    path: vendor/pdfrx
+
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true

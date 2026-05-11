@@ -711,9 +711,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _showContextMenuFromSelection();
       });
     } else {
+      // iOS-specific: SelectableRegion fires a hasSelection=false clear
+      // event right after the long-press completes (when the finger
+      // lifts). Removing the menu here means it disappears before the
+      // user can see or tap it. We freeze the selection bounds and text
+      // at the moment the menu appears (in _showContextMenuFromSelection
+      // -> _capturedBounds / _capturedText) so the highlight buttons
+      // still work even though _currentSelections gets cleared.
+      // Don't tear the menu down on this event; it'll be removed
+      // explicitly when the user taps a button or starts a new
+      // selection. Android sends a different event sequence and was
+      // unaffected by the upstream behavior.
       _currentSelections = null;
       _currentSelectedText = null;
-      _removeContextMenu();
     }
   }
 
@@ -727,7 +737,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _capturedText = _currentSelectedText;
 
     final screenSize = MediaQuery.of(context).size;
-    _showContextMenu(Offset(screenSize.width / 2, 120));
+    // Position below the app bar / notch. Default Material AppBar height is
+    // 56 + safe-area top (~47 on iPhone with notch) + a little breathing
+    // room. y=200 lands well clear of the bar on iPhone 13 / iPad.
+    _showContextMenu(Offset(screenSize.width / 2, 200));
   }
 
   // ── Context menu ──────────────────────────────────────────────────

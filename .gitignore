@@ -60,3 +60,25 @@ ios/MobileRTC.xcframework/ios-arm64/MobileRTC.framework/MobileRTC
 ios/MobileRTC.xcframework/ios-arm64_x86_64-simulator/MobileRTC.framework/MobileRTC
 ios/MobileRTCScreenShare.xcframework/ios-arm64/MobileRTCScreenShare.framework/MobileRTCScreenShare
 ios/MobileRTCScreenShare.xcframework/ios-arm64_x86_64-simulator/MobileRTCScreenShare.framework/MobileRTCScreenShare
+
+# macOS AppleDouble sidecars (created on non-APFS volumes, e.g. /Volumes/*).
+# Pure metadata garbage — pollutes diffs and breaks git pack on this volume.
+._*
+**/._*
+
+# Vendored pdfrx (vendor/pdfrx/) downloads PDFium native binaries into
+# darwin/pdfium/.lib/ on first build. They're 100-300 MB each, exceed
+# GitHub's 100 MB file limit, and get re-downloaded on `flutter pub get`.
+vendor/pdfrx/darwin/pdfium/.lib/
+vendor/pdfrx/.dart_tool/
+vendor/pdfrx/build/
+vendor/pdfrx/.flutter-plugins
+vendor/pdfrx/.flutter-plugins-dependencies
+vendor/pdfrx/example/
+# pdfium WASM binary is also large and platform-fetched
+vendor/pdfrx/assets/pdfium.wasm
+
+# Stray empty files accidentally committed upstream — see commit 7617f76.
+# Keep ignored so future `git add .` doesn't re-add them.
+/git
+/separate
