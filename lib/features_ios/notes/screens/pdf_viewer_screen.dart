@@ -1380,6 +1380,232 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
   }
 
+  // ── Overflow menu ──────────────────────────────────────────────────
+
+  /// Three-dot popup menu in the toolbar holding less-frequently used
+  /// toggles (keep-screen-on, lock-rotation, PDF dark mode). Each entry's
+  /// onTap toggles the underlying state and rebuilds the toolbar — the
+  /// popup itself closes automatically after a selection.
+  Widget _buildOverflowMenu(bool isDark, Color textColor, bool isTablet) {
+    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    return PopupMenuButton<String>(
+      tooltip: 'More',
+      icon: Container(
+        width: isTablet ? 44 : 36,
+        height: isTablet ? 44 : 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+        ),
+        child: Icon(
+          Icons.more_vert,
+          size: isTablet ? 22 : 18,
+          color: textColor,
+        ),
+      ),
+      color: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      onSelected: (value) {
+        switch (value) {
+          case 'keep_screen_on':
+            setState(() => _keepScreenOn = !_keepScreenOn);
+            if (_keepScreenOn) {
+              WakelockPlus.enable();
+            } else {
+              WakelockPlus.disable();
+            }
+            break;
+          case 'lock_rotation':
+            setState(() => _orientationLocked = !_orientationLocked);
+            if (_orientationLocked) {
+              final orientation = MediaQuery.of(context).orientation;
+              if (orientation == Orientation.landscape) {
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.landscapeLeft,
+                  DeviceOrientation.landscapeRight,
+                ]);
+              } else {
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.portraitUp,
+                  DeviceOrientation.portraitDown,
+                ]);
+              }
+            } else {
+              SystemChrome.setPreferredOrientations([
+                DeviceOrientation.portraitUp,
+                DeviceOrientation.portraitDown,
+                DeviceOrientation.landscapeLeft,
+                DeviceOrientation.landscapeRight,
+              ]);
+            }
+            break;
+          case 'dark_mode':
+            setState(() => _isPdfDarkMode = !_isPdfDarkMode);
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        _buildOverflowItem(
+          value: 'keep_screen_on',
+          icon: _keepScreenOn ? Icons.lightbulb : Icons.lightbulb_outline,
+          label: _keepScreenOn ? 'Screen always on' : 'Keep screen on',
+          active: _keepScreenOn,
+          textColor: textColor,
+        ),
+        _buildOverflowItem(
+          value: 'lock_rotation',
+          icon: _orientationLocked
+              ? Icons.screen_lock_rotation
+              : Icons.screen_rotation,
+          label: _orientationLocked ? 'Unlock rotation' : 'Lock rotation',
+          active: _orientationLocked,
+          textColor: textColor,
+        ),
+        _buildOverflowItem(
+          value: 'dark_mode',
+          icon: _isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
+          label: _isPdfDarkMode ? 'Light mode' : 'Dark mode',
+          active: _isPdfDarkMode,
+          textColor: textColor,
+        ),
+      ],
+    );
+  }
+
+  PopupMenuItem<String> _buildOverflowItem({
+    required String value,
+    required IconData icon,
+    required String label,
+    required bool active,
+    required Color textColor,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: active ? AppColors.primaryBlue : textColor,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: active ? AppColors.primaryBlue : textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Go to page ─────────────────────────────────────────────────────
+
+  /// Replaces Syncfusion's built-in pagination dialog (disabled above).
+  /// Triggered by the page-indicator badge in the toolbar.
+  void _showGoToPageDialog() {
+    final totalPages = _pdfController.pageCount;
+    if (totalPages <= 0) return;
+    final isDark =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
+    final controller =
+        TextEditingController(text: _currentPage.value.toString());
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        void submit() {
+          final n = int.tryParse(controller.text.trim());
+          if (n == null || n < 1 || n > totalPages) {
+            ScaffoldMessenger.of(ctx)
+              ..clearSnackBars()
+              ..showSnackBar(SnackBar(
+                content: Text('Enter a page number between 1 and $totalPages'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ));
+            return;
+          }
+          Navigator.pop(ctx);
+          _pdfController.jumpToPage(n);
+        }
+
+        return AlertDialog(
+          backgroundColor: bgColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text('Go to page',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontWeight: FontWeight.w700,
+                fontSize: isTablet ? 19 : 17,
+                color: textColor,
+              )),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            onSubmitted: (_) => submit(),
+            style: TextStyle(color: textColor, fontSize: isTablet ? 16 : 15),
+            decoration: InputDecoration(
+              hintText: 'Page number (1–$totalPages)',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white38 : Colors.grey[400],
+                fontSize: isTablet ? 15 : 14,
+              ),
+              filled: true,
+              fillColor: isDark
+                  ? AppColors.darkSurface
+                  : const Color(0xFFF8F9FE),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                    color: AppColors.primaryBlue, width: 1.5),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel',
+                  style: TextStyle(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  )),
+            ),
+            ElevatedButton(
+              onPressed: submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text('Go'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// Show a bottom sheet with all highlights/notes for this document
   // ── Standalone notes ───────────────────────────────────────────────
 
@@ -2432,6 +2658,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       key: _pdfViewerKey,
       controller: _pdfController,
       canShowTextSelectionMenu: false,
+      // Syncfusion's built-in Go-to-Page dialog interacts badly with
+      // GoRouter — its OK button pops the PDF route instead of the
+      // dialog, leaving the modal dangling on the previous screen. We
+      // ship our own page-indicator + dialog in the toolbar below.
+      // ScrollHead (the side scroll thumb showing current page) is left
+      // on for visual feedback — its tap-to-jump trigger goes nowhere
+      // because canShowPaginationDialog is off.
+      canShowPaginationDialog: false,
+      canShowScrollHead: true,
       interactionMode: PdfInteractionMode.pan,
       pageSpacing: 2,
       onTap: (PdfGestureDetails details) {
@@ -2554,6 +2789,42 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                // Page indicator badge — tap to open Go-to-Page dialog.
+                // Replaces Syncfusion's built-in scrollHead (disabled
+                // above) and dialog (also disabled, since it pops the
+                // PDF route under GoRouter).
+                if (_isPdfReady)
+                  ValueListenableBuilder<int>(
+                    valueListenable: _currentPage,
+                    builder: (context, page, _) {
+                      final total = _pdfController.pageCount;
+                      if (total <= 0) return const SizedBox.shrink();
+                      return GestureDetector(
+                        onTap: _showGoToPageDialog,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 12 : 10,
+                              vertical: isTablet ? 8 : 6),
+                          margin: EdgeInsets.only(right: isTablet ? 6 : 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(
+                                isTablet ? 12 : 10),
+                          ),
+                          child: Text(
+                            '$page / $total',
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 14 : 12,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 // Bookmark toggle button (only for auth documents)
                 if (widget.documentId != null) ...[
                   ValueListenableBuilder<int>(
@@ -2616,115 +2887,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       ),
                     ),
                 ],
-                // Keep screen on toggle
-                Tooltip(
-                  message: _keepScreenOn ? 'Screen always on' : 'Keep screen on',
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _keepScreenOn = !_keepScreenOn);
-                      if (_keepScreenOn) {
-                        WakelockPlus.enable();
-                      } else {
-                        WakelockPlus.disable();
-                      }
-                    },
-                    child: Container(
-                      width: isTablet ? 44 : 36,
-                      height: isTablet ? 44 : 36,
-                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _keepScreenOn
-                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                            : (isDark
-                                ? AppColors.darkSurface
-                                : const Color(0xFFF5F5F5)),
-                      ),
-                      child: Icon(
-                        _keepScreenOn ? Icons.lightbulb : Icons.lightbulb_outline,
-                        size: isTablet ? 22 : 18,
-                        color:
-                            _keepScreenOn ? AppColors.primaryBlue : textColor,
-                      ),
-                    ),
-                  ),
-                ),
-                // Lock orientation toggle
-                Tooltip(
-                  message: _orientationLocked ? 'Unlock rotation' : 'Lock rotation',
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _orientationLocked = !_orientationLocked);
-                      if (_orientationLocked) {
-                        final orientation = MediaQuery.of(context).orientation;
-                        if (orientation == Orientation.landscape) {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.landscapeLeft,
-                            DeviceOrientation.landscapeRight,
-                          ]);
-                        } else {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.portraitUp,
-                            DeviceOrientation.portraitDown,
-                          ]);
-                        }
-                      } else {
-                        SystemChrome.setPreferredOrientations([
-                          DeviceOrientation.portraitUp,
-                          DeviceOrientation.portraitDown,
-                          DeviceOrientation.landscapeLeft,
-                          DeviceOrientation.landscapeRight,
-                        ]);
-                      }
-                    },
-                    child: Container(
-                      width: isTablet ? 44 : 36,
-                      height: isTablet ? 44 : 36,
-                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _orientationLocked
-                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                            : (isDark
-                                ? AppColors.darkSurface
-                                : const Color(0xFFF5F5F5)),
-                      ),
-                      child: Icon(
-                        _orientationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
-                        size: isTablet ? 22 : 18,
-                        color:
-                            _orientationLocked ? AppColors.primaryBlue : textColor,
-                      ),
-                    ),
-                  ),
-                ),
-                // PDF dark mode toggle
-                Tooltip(
-                  message: _isPdfDarkMode ? 'Light mode' : 'Dark mode',
-                  child: GestureDetector(
-                    onTap: () =>
-                        setState(() => _isPdfDarkMode = !_isPdfDarkMode),
-                    child: Container(
-                      width: isTablet ? 44 : 36,
-                      height: isTablet ? 44 : 36,
-                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _isPdfDarkMode
-                            ? AppColors.primaryBlue.withValues(alpha: 0.1)
-                            : (isDark
-                                ? AppColors.darkSurface
-                                : const Color(0xFFF5F5F5)),
-                      ),
-                      child: Icon(
-                        _isPdfDarkMode ? Icons.light_mode : Icons.dark_mode,
-                        size: isTablet ? 22 : 18,
-                        color:
-                            _isPdfDarkMode ? AppColors.primaryBlue : textColor,
-                      ),
-                    ),
-                  ),
-                ),
                 // Search button
                 Tooltip(
                   message: _isSearchOpen ? 'Close search' : 'Search',
@@ -2733,6 +2895,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     child: Container(
                       width: isTablet ? 44 : 36,
                       height: isTablet ? 44 : 36,
+                      margin: EdgeInsets.only(right: isTablet ? 4 : 2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _isSearchOpen
@@ -2750,6 +2913,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     ),
                   ),
                 ),
+                // Overflow menu — keeps the toolbar uncluttered. Holds
+                // the toggles that aren't used every interaction:
+                // keep-screen-on, lock-rotation, dark-mode.
+                _buildOverflowMenu(isDark, textColor, isTablet),
               ],
             ),
             // Search bar

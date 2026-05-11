@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pgme/core/utils/video_speed_store.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core_android/models/video_model.dart';
@@ -66,7 +67,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   // Preserves the user's chosen playback speed across pause/resume.
   // better_player_plus can reset the native playback rate on pause; we cache
-  // the value set via the controls and reapply on play.
+  // the value set via the controls and reapply on play. Persisted via
+  // [VideoSpeedStore] (sync file write) so the value survives even an
+  // abrupt app kill and applies to subsequent videos.
   double _currentSpeed = 1.0;
 
   // Mutable list passed into the data source as `asmsTrackNames`. The
@@ -133,8 +136,45 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       if (miniProvider.isActive) miniProvider.close();
     } catch (_) {}
 
+    _loadSavedSpeed();
     _loadVideoData();
     _loadMyReview();
+  }
+
+  /// Listener attached to `videoPlayerController` that snaps the native
+  /// playback rate back to [_currentSpeed] whenever better_player_plus
+  /// drifts off (most commonly during pause→play, after buffering, or
+  /// after a seek). Cheap: only calls [setSpeed] when the value actually
+  /// diverges by more than 0.001.
+  void _enforceSpeed() {
+    if (_isDisposed) return;
+    if (_currentSpeed <= 0 || (_currentSpeed - 1.0).abs() <= 0.001) return;
+    final actual =
+        _playerController?.videoPlayerController?.value.speed ?? 1.0;
+    if ((actual - _currentSpeed).abs() > 0.001) {
+      _playerController?.setSpeed(_currentSpeed);
+    }
+  }
+
+  /// Restores the playback speed the user picked in a previous session.
+  /// Read before the player initializes so [_currentSpeed] is correct by
+  /// the time the play event fires and we re-apply it on the controller.
+  /// Also warms up the [VideoSpeedStore] file handle so subsequent
+  /// sync saves run in microseconds without an async platform call.
+  Future<void> _loadSavedSpeed() async {
+    try {
+      await VideoSpeedStore.ensureReady();
+      final saved = await VideoSpeedStore.read();
+      if (saved != null && saved > 0) {
+        _currentSpeed = saved;
+        // If the player has already initialized (race during async load),
+        // apply immediately. Otherwise the play event handler will pick
+        // it up from _currentSpeed.
+        _playerController?.setSpeed(saved);
+      }
+    } catch (e) {
+      debugPrint('VideoPlayer: failed to load saved speed - $e');
+    }
   }
 
   @override
@@ -164,6 +204,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     _controlsHideTimer = null;
     _removeFullscreenOverlay();
     _playerController?.removeEventsListener(_onPlayerEvent);
+    _playerController?.videoPlayerController?.removeListener(_enforceSpeed);
 
     // Always destroy the player on screen exit — no mini-player keep-alive.
     // forceDispose overrides autoDispose:false (which is set to survive
@@ -475,6 +516,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     );
 
     _playerController!.addEventsListener(_onPlayerEvent);
+    // Hard-lock the playback rate to the user's choice. better_player_plus
+    // silently resets the native rate to 1.0 around pause, buffering, seek
+    // and source swaps — the value listener catches every drift and snaps
+    // it back without waiting for a specific event type.
+    _playerController!.videoPlayerController?.addListener(_enforceSpeed);
 
     if (!_isDisposed && mounted) {
       setState(() {
@@ -557,8 +603,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
       case BetterPlayerEventType.setSpeed:
         final speed = (event.parameters?['speed'] as num?)?.toDouble();
-        if (speed != null && speed > 0) {
+        // Ignore the speed=1.0 events entirely — better_player_plus emits
+        // them during internal pause/buffer/seek resets, NOT in response
+        // to a user picking 1x from the menu. Treating them as user
+        // intent was wiping the cache (and the saved value) every time
+        // the player blinked. If a user genuinely wants 1x they can
+        // re-pick it; the next non-1.0 selection still works normally.
+        if (speed != null && speed > 0 && (speed - 1.0).abs() > 0.001) {
           _currentSpeed = speed;
+          VideoSpeedStore.saveSync(speed);
         }
         break;
 
@@ -652,6 +705,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
     final value = _playerController!.videoPlayerController!.value;
     final positionSeconds = value.position.inSeconds;
+
+    // Redundant speed save in case the setSpeed event-handler write
+    // missed (e.g. very first session before VideoSpeedStore.ensureReady
+    // resolved). Sync write, sub-millisecond on flash storage.
+    if (_currentSpeed > 0 && (_currentSpeed - 1.0).abs() > 0.001) {
+      VideoSpeedStore.saveSync(_currentSpeed);
+    }
 
     // Skip if position hasn't changed since last save
     if (!forceComplete && positionSeconds == _lastSavedPositionSeconds) return;
