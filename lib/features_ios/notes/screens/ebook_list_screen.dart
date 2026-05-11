@@ -212,6 +212,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                 'documentId': book.bookId,
                 'pdfUrl': url,
                 'title': title,
+                'source': 'ebook',
               },
             );
           }

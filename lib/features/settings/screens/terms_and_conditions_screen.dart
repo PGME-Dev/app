@@ -105,12 +105,22 @@ class TermsAndConditionsScreen extends StatelessWidget {
             'The eBook is available exclusively within the app for reading and in-app download only.\nNo PDF, external soft copy, or hard copy will be provided.\nAccess is strictly limited to the registered user for personal academic use.\nNo refund will be provided if the eBook is already included in a purchased package.\nAny technical issue must be reported within 72 hours of purchase; no claims will be entertained thereafter.',
       },
       {
-        'title': '17. Modifications',
+        'title': '17. Pricing Policy',
+        'content':
+            'The pricing of all products and services offered by PGME is an internal matter and is determined solely at the discretion of PGME. PGME reserves the full right to revise, modify, or update the pricing of any product or service at any time without prior notice.',
+      },
+      {
+        'title': '18. Discount Policy',
+        'content':
+            'All discounts, promotional offers, and coupon benefits are subject to the sole discretion of PGME. PGME reserves the right to introduce, modify, or withdraw any discount or promotional offer at any time without prior notice.',
+      },
+      {
+        'title': '19. Modifications',
         'content':
             'PGME may modify these Terms at any time. Continued use constitutes acceptance of revised Terms.',
       },
       {
-        'title': '18. Contact',
+        'title': '20. Contact',
         'content': 'Email: support@pgmemedicalteaching.com',
       },
     ];

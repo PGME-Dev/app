@@ -35,12 +35,17 @@ class PdfViewerScreen extends StatefulWidget {
 
   final String title;
 
+  /// Set to 'ebook' when launched from EbookAccessService — skips progress
+  /// save/restore (backend has no progress endpoint for ebook IDs).
+  final String? source;
+
   const PdfViewerScreen({
     super.key,
     this.documentId,
     this.pdfUrl,
     this.filePath,
     this.title = 'PDF Viewer',
+    this.source,
   }) : assert(documentId != null || pdfUrl != null || filePath != null);
 
   @override
@@ -293,6 +298,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Future<void> _restoreProgress() async {
     if (widget.documentId == null) return;
+    if (widget.source == 'ebook') return;
     try {
       final progress =
           await _progressService.getDocumentProgress(widget.documentId!);
@@ -317,6 +323,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Future<void> _saveProgress(int pageNumber) async {
     if (widget.documentId == null) return;
+    if (widget.source == 'ebook') return;
     try {
       await _progressService.updateDocumentProgress(
         documentId: widget.documentId!,
@@ -2319,6 +2326,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
+      drawerEnableOpenDragGesture: false,
+      endDrawerEnableOpenDragGesture: false,
       backgroundColor: backgroundColor,
       endDrawer: widget.documentId != null
           ? BookmarksDrawer(
