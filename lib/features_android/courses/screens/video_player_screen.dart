@@ -142,16 +142,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
   }
 
   /// Listener attached to `videoPlayerController` that snaps the native
-  /// playback rate back to [_currentSpeed] whenever better_player_plus
-  /// drifts off (most commonly during pause→play, after buffering, or
-  /// after a seek). Cheap: only calls [setSpeed] when the value actually
-  /// diverges by more than 0.001.
+  /// playback rate back to [_currentSpeed] when better_player_plus
+  /// internally resets to 1.0 (pause/buffer/seek). Only overrides when
+  /// native is EXACTLY 1.0 — any other value is a user-initiated change
+  /// that the setSpeed event handler picks up via [_onPlayerEvent], and
+  /// stomping on it here would race the user's input.
   void _enforceSpeed() {
     if (_isDisposed) return;
     if (_currentSpeed <= 0 || (_currentSpeed - 1.0).abs() <= 0.001) return;
     final actual =
         _playerController?.videoPlayerController?.value.speed ?? 1.0;
-    if ((actual - _currentSpeed).abs() > 0.001) {
+    // Only snap back if native is the suspected reset value (1.0).
+    if ((actual - 1.0).abs() < 0.001 &&
+        (actual - _currentSpeed).abs() > 0.001) {
       _playerController?.setSpeed(_currentSpeed);
     }
   }
@@ -587,11 +590,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         // (e.g., during seeks or buffering).
         _accumulateWatchTime();
         _playStartTime = DateTime.now();
-        // Reapply the user's chosen speed if the native player reset it.
-        final actualSpeed =
-            _playerController?.videoPlayerController?.value.speed ?? 1.0;
-        if ((actualSpeed - _currentSpeed).abs() > 0.001) {
-          _playerController?.setSpeed(_currentSpeed);
+        // Reapply the user's chosen speed ONLY when native came back to
+        // 1.0 (the internal reset value). Any other native speed is
+        // either correct or a fresh user choice the setSpeed event
+        // handler is about to record — stomping on it here races the
+        // user's input.
+        if (_currentSpeed > 0 && (_currentSpeed - 1.0).abs() > 0.001) {
+          final actualSpeed =
+              _playerController?.videoPlayerController?.value.speed ?? 1.0;
+          if ((actualSpeed - 1.0).abs() < 0.001) {
+            _playerController?.setSpeed(_currentSpeed);
+          }
         }
         break;
 
