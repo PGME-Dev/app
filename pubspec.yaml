@@ -30,7 +30,10 @@ dependencies:
   flutter_dotenv: ^5.1.0
   flutter_zoom_meeting_sdk:
     path: packages/flutter_zoom_meeting_sdk
-  better_player_plus: ^1.1.5
+  # Local patch: iOS must persist playback speed while paused by updating
+  # AVPlayer.defaultRate as well as the live rate.
+  better_player_plus:
+    path: vendor/better_player_plus
   geolocator: ^9.0.2
   permission_handler: ^12.0.1
   shimmer: ^3.0.0

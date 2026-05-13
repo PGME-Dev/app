@@ -1,0 +1,5 @@
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/armeabi-v7a/CMakeFiles/edit_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/armeabi-v7a/shared/CMakeFiles/pdfrx.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/armeabi-v7a/shared/CMakeFiles/edit_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/armeabi-v7a/shared/CMakeFiles/rebuild_cache.dir

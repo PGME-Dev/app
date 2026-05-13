@@ -1,0 +1,30 @@
+{
+  "buildFiles": [
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\CMakeLists.txt",
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\src\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.cxx\\Debug\\1n6wcs61\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.cxx\\Debug\\1n6wcs61\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "pdfrx::@b1f7512934231ee3f25d": {
+      "artifactName": "pdfrx",
+      "abi": "x86",
+      "output": "E:\\Android\\Projects\\PGME\\frontend\\build\\pdfrx\\intermediates\\cxx\\Debug\\1n6wcs61\\obj\\x86\\libpdfrx.so",
+      "runtimeFiles": [
+        "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.lib\\latest\\x86\\libpdfium.so"
+      ]
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "shared",
+					"jsonFile" : "directory-shared-Debug-410e7cbfb08e0b51e211.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "E:/Android/Projects/PGME/frontend/vendor/pdfrx/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "pdfrx"
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "pdfrx_library",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "pdfrx::@b1f7512934231ee3f25d",
+					"jsonFile" : "target-pdfrx-Debug-d3fd614027e7140bb37d.json",
+					"name" : "pdfrx",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/Debug/1n6wcs61/x86",
+		"source" : "E:/Android/Projects/PGME/frontend/vendor/pdfrx/android"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
