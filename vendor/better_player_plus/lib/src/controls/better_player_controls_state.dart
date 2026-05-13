@@ -139,9 +139,6 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget> extends State
       _buildSpeedRow(1.5),
       _buildSpeedRow(1.75),
       _buildSpeedRow(2),
-      _buildSpeedRow(2.5),
-      _buildSpeedRow(3),
-      _buildSpeedRow(3.5),
     ]);
   }
 
