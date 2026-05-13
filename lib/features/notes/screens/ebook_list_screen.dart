@@ -801,7 +801,7 @@ class _EbookListScreenState extends State<EbookListScreen>
                                         crossAxisCount: isTablet ? 3 : 2,
                                         crossAxisSpacing: isTablet ? 16 : 12,
                                         mainAxisSpacing: isTablet ? 16 : 12,
-                                        childAspectRatio: 16 / 9,
+                                        childAspectRatio: isTablet ? 0.58 : 0.52,
                                       ),
                                       itemCount: _ebooks.length + (_isLoadingMore ? 1 : 0),
                                       itemBuilder: (context, index) {
@@ -1384,7 +1384,12 @@ class _EbookListScreenState extends State<EbookListScreen>
 
               // Bottom action bar
               Container(
-                padding: EdgeInsets.fromLTRB(hPad, isTablet ? 16 : 12, hPad, (isTablet ? 24.0 : 20.0) + MediaQuery.of(sheetContext).viewPadding.bottom),
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  isTablet ? 16 : 12,
+                  hPad,
+                  (isTablet ? 20.0 : 16.0) + MediaQuery.of(sheetContext).padding.bottom,
+                ),
                 decoration: BoxDecoration(
                   color: sheetBgColor,
                   border: Border(top: BorderSide(color: borderColor, width: 1)),

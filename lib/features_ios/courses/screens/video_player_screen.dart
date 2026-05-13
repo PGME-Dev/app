@@ -141,19 +141,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
   /// Listener attached to `videoPlayerController` that snaps the native
   /// playback rate back to [_currentSpeed] when better_player_plus
-  /// internally resets to 1.0 (pause/buffer/seek). Only overrides when
-  /// native is EXACTLY 1.0 — any other value is a user-initiated change
-  /// that the setSpeed event handler picks up via [_onPlayerEvent], and
-  /// stomping on it here would race the user's input.
+  /// internally resets it. This enforces the user's selected speed
+  /// across pause/buffer/seek events.
   void _enforceSpeed() {
-    if (_isDisposed) return;
-    if (_currentSpeed <= 0 || (_currentSpeed - 1.0).abs() <= 0.001) return;
+    if (_isDisposed || _currentSpeed <= 0) return;
     final actual =
         _playerController?.videoPlayerController?.value.speed ?? 1.0;
-    // Only snap back if native is the suspected reset value (1.0).
-    if ((actual - 1.0).abs() < 0.001 &&
-        (actual - _currentSpeed).abs() > 0.001) {
-      debugPrint('[SpeedEnforcer] internal reset detected: native=1.0 want=$_currentSpeed → setSpeed');
+    // If native speed drifts from user's selection, snap it back.
+    if ((actual - _currentSpeed).abs() > 0.001) {
+      debugPrint('[SpeedEnforcer] drift detected: native=$actual want=$_currentSpeed → setSpeed');
       _playerController?.setSpeed(_currentSpeed);
     }
   }
@@ -566,18 +562,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         // (e.g., during seeks or buffering).
         _accumulateWatchTime();
         _playStartTime = DateTime.now();
-        // Reapply the user's chosen speed ONLY when native came back to
-        // 1.0 (the internal reset value). Any other native speed is
-        // either correct or a fresh user choice the setSpeed event
-        // handler is about to record — stomping on it here races the
-        // user's input.
-        if (_currentSpeed > 0 && (_currentSpeed - 1.0).abs() > 0.001) {
-          final actualSpeed =
-              _playerController?.videoPlayerController?.value.speed ?? 1.0;
-          debugPrint('[SpeedEnforcer] play event: native=$actualSpeed want=$_currentSpeed');
-          if ((actualSpeed - 1.0).abs() < 0.001) {
-            _playerController?.setSpeed(_currentSpeed);
-          }
+        // Always reapply the user's chosen speed on play, including 1.0.
+        // This ensures the selected speed persists across pause/resume.
+        if (_currentSpeed > 0) {
+          debugPrint('[SpeedEnforcer] play event: applying speed=$_currentSpeed');
+          _playerController?.setSpeed(_currentSpeed);
         }
         break;
 
@@ -589,10 +578,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
 
       case BetterPlayerEventType.setSpeed:
         final speed = (event.parameters?['speed'] as num?)?.toDouble();
-        // Ignore the speed=1.0 events entirely — better_player_plus emits
-        // them during internal pause/buffer/seek resets, NOT in response
-        // to a user picking 1x from the menu.
-        if (speed != null && speed > 0 && (speed - 1.0).abs() > 0.001) {
+        // Accept all valid speed values, including 1.0.
+        // User-initiated speed changes (from the controls menu) must be
+        // saved and applied, regardless of the value.
+        if (speed != null && speed > 0) {
+          debugPrint('[SpeedEvent] setSpeed=$speed → saving');
           _currentSpeed = speed;
           // VideoSpeedStore.saveSync(speed); // DIAGNOSTIC: file-flow disabled.
         }
