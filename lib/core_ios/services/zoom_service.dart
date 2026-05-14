@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_zoom_meeting_sdk/flutter_zoom_meeting_sdk.dart';
@@ -94,6 +95,24 @@ class ZoomMeetingService {
     }
   }
 
+  /// Decode the role from a Zoom SDK JWT signature.
+  /// JWT structure: header.payload.signature — payload is base64url encoded JSON.
+  /// Returns true if role == 1 (host).
+  bool _isHostRole(String signature) {
+    try {
+      final parts = signature.split('.');
+      if (parts.length != 3) return false;
+      // base64url → base64
+      String payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+      while (payload.length % 4 != 0) payload += '=';
+      final decoded = String.fromCharCodes(base64Decode(payload));
+      final roleMatch = RegExp(r'"role"\s*:\s*(\d+)').firstMatch(decoded);
+      return roleMatch != null && roleMatch.group(1) == '1';
+    } catch (_) {
+      return false; // default to participant on any decode error
+    }
+  }
+
   /// Reset the SDK state so the next call re-initializes from scratch.
   /// Use when the SDK may be in a bad state (e.g. after app backgrounding).
   Future<void> resetSDK() async {
@@ -186,12 +205,41 @@ class ZoomMeetingService {
 
       debugPrint('Zoom SDK authentication confirmed via event');
 
-      // Create meeting config
-      final meetingConfig = ZoomMeetingSdkRequest(
-        meetingNumber: zoomSignature.meetingNumber,
-        password: zoomSignature.password,
-        displayName: displayName,
-      );
+      // Decode role from JWT signature (payload is the middle segment)
+      final isHost = _isHostRole(zoomSignature.signature);
+      debugPrint('Zoom role: ${isHost ? 'HOST' : 'PARTICIPANT'}');
+
+      // Apply UI restrictions based on role — participants get locked down,
+      // hosts get full controls. All done client-side, no backend change needed.
+      final meetingConfig = isHost
+          ? ZoomMeetingSdkRequest(
+              meetingNumber: zoomSignature.meetingNumber,
+              password: zoomSignature.password,
+              displayName: displayName,
+              noInvite: true,
+              noDriveMode: true,
+              noDialIn: true,
+              noDialOut: true,
+            )
+          : ZoomMeetingSdkRequest(
+              meetingNumber: zoomSignature.meetingNumber,
+              password: zoomSignature.password,
+              displayName: displayName,
+              noShare: true,
+              noVideo: true,
+              noInvite: true,
+              noChat: true,
+              noDriveMode: true,
+              noDialIn: true,
+              noDialOut: true,
+              noDisconnectAudio: true,
+              noRecord: true,
+              noReaction: true,
+              noParticipantList: true,
+              noMore: true,
+              muteOnEntry: true,
+              videoOffOnEntry: true,
+            );
 
       // Set up status listener with timeout
       final completer = Completer<bool>();

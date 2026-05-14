@@ -134,20 +134,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
       if (miniProvider.isActive) miniProvider.close();
     } catch (_) {}
 
-    // _loadSavedSpeed(); // DIAGNOSTIC: file-flow disabled, in-memory only.
+    _loadSavedSpeed();
     _loadVideoData();
     _loadMyReview();
   }
 
   /// Listener attached to `videoPlayerController` that snaps the native
-  /// playback rate back to [_currentSpeed] when better_player_plus
-  /// internally resets it. This enforces the user's selected speed
-  /// across pause/buffer/seek events.
+  /// playback rate back to [_currentSpeed] whenever better_player_plus
+  /// drifts off (most commonly during pause→play, after buffering, or
+  /// after a seek). Cheap: only calls [setSpeed] when the value actually
+  /// diverges by more than 0.001.
   void _enforceSpeed() {
     if (_isDisposed || _currentSpeed <= 0) return;
     final actual =
         _playerController?.videoPlayerController?.value.speed ?? 1.0;
-    // If native speed drifts from user's selection, snap it back.
     if ((actual - _currentSpeed).abs() > 0.001) {
       debugPrint('[SpeedEnforcer] drift detected: native=$actual want=$_currentSpeed → setSpeed');
       _playerController?.setSpeed(_currentSpeed);
@@ -584,7 +584,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         if (speed != null && speed > 0) {
           debugPrint('[SpeedEvent] setSpeed=$speed → saving');
           _currentSpeed = speed;
-          // VideoSpeedStore.saveSync(speed); // DIAGNOSTIC: file-flow disabled.
+          VideoSpeedStore.saveSync(speed);
         }
         break;
 
@@ -679,10 +679,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     final value = _playerController!.videoPlayerController!.value;
     final positionSeconds = value.position.inSeconds;
 
-    // DIAGNOSTIC: file-flow disabled.
-    // if (_currentSpeed > 0 && (_currentSpeed - 1.0).abs() > 0.001) {
-    //   VideoSpeedStore.saveSync(_currentSpeed);
-    // }
+    // Redundant speed save in case the setSpeed event-handler write
+    // missed (e.g. very first session before VideoSpeedStore.ensureReady
+    // resolved). Sync write, sub-millisecond on flash storage.
+    if (_currentSpeed > 0 && (_currentSpeed - 1.0).abs() > 0.001) {
+      VideoSpeedStore.saveSync(_currentSpeed);
+    }
 
     // Skip if position hasn't changed since last save
     if (!forceComplete && positionSeconds == _lastSavedPositionSeconds) return;

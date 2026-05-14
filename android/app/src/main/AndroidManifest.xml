@@ -95,7 +95,9 @@
              AGP-supported way to delete a merged-manifest entry. -->
         <activity
             android:name="com.zipow.videobox.JoinByURLActivity"
-            tools:node="remove" />
+            tools:node="merge">
+            <intent-filter tools:node="removeAll"/>
+        </activity>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

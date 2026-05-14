@@ -1,0 +1,5 @@
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/RelWithDebInfo/2d2hb4w5/x86/CMakeFiles/edit_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/RelWithDebInfo/2d2hb4w5/x86/CMakeFiles/rebuild_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/RelWithDebInfo/2d2hb4w5/x86/shared/CMakeFiles/pdfrx.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/RelWithDebInfo/2d2hb4w5/x86/shared/CMakeFiles/edit_cache.dir
+E:/Android/Projects/PGME/frontend/vendor/pdfrx/android/.cxx/RelWithDebInfo/2d2hb4w5/x86/shared/CMakeFiles/rebuild_cache.dir

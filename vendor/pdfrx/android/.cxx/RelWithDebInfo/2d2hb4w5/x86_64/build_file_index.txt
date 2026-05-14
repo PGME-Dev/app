@@ -1,0 +1,2 @@
+E:\Android\Projects\PGME\frontend\vendor\pdfrx\android\CMakeLists.txt
+E:\Android\Projects\PGME\frontend\vendor\pdfrx\src\CMakeLists.txt

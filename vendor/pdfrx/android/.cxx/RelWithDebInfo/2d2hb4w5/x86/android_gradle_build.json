@@ -1,0 +1,41 @@
+{
+  "buildFiles": [
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\CMakeLists.txt",
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\src\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.cxx\\RelWithDebInfo\\2d2hb4w5\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.cxx\\RelWithDebInfo\\2d2hb4w5\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "pdfrx::@b1f7512934231ee3f25d": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "pdfrx",
+      "output": "E:\\Android\\Projects\\PGME\\frontend\\build\\pdfrx\\intermediates\\cxx\\RelWithDebInfo\\2d2hb4w5\\obj\\x86\\libpdfrx.so",
+      "runtimeFiles": [
+        "E:\\Android\\Projects\\PGME\\frontend\\vendor\\pdfrx\\android\\.lib\\latest\\x86\\libpdfium.so"
+      ]
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\Yatharth\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
