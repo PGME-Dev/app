@@ -699,13 +699,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
     }
   }
 
-  // Map a track's pixel height to a simple quality label. Bucketing means two
-  // adjacent renditions can collide on the same label — acceptable for a UI
-  // that hides bitrate detail; the underlying track is still distinct.
+  // Maps an HLS rendition's pixel height to a label. The backend encodes a
+  // fixed 3-rung ladder (480p / 720p / 1080p — see mediaconvert.service.js),
+  // so each rung gets its own distinct label.
   String _qualityLabelForHeight(int height) {
-    if (height >= 720) return 'High';
-    if (height >= 480) return 'Medium';
-    return 'Low';
+    if (height >= 1080) return 'High'; // 1080p
+    if (height >= 720) return 'Medium'; // 720p
+    return 'Low'; // 480p (and anything lower)
   }
 
   void _ensureQualityLabels() {

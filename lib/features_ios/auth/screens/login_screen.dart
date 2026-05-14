@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pgme/core_ios/widgets/app_dialog.dart';
 import 'package:pgme/features_ios/auth/providers/auth_provider.dart';
 import 'package:pgme/core_ios/utils/responsive_helper.dart';
@@ -14,8 +14,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   final FocusNode _phoneFocusNode = FocusNode();
+  String _completePhoneNumber = '';
   bool _isLoading = false;
   bool _agreedToTerms = false;
 
@@ -32,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
     _phoneFocusNode.dispose();
     super.dispose();
   }
@@ -43,8 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (_phoneController.text.length != 10) {
-      showAppDialog(context, message: 'Please enter a valid 10-digit mobile number');
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      showAppDialog(context, message: 'Please enter a valid mobile number');
       return;
     }
 
@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final provider = context.read<AuthProvider>();
-      final phoneNumber = '91${_phoneController.text}';
+      final phoneNumber = _completePhoneNumber.replaceFirst('+', '');
 
       debugPrint('Sending OTP to: $phoneNumber');
       final success = await provider.sendOTP(phoneNumber);
@@ -436,48 +436,57 @@ class _LoginScreenState extends State<LoginScreen> {
           SizedBox(height: labelInputGap),
 
           // Mobile Number Input
-          TextField(
-            controller: _phoneController,
-            focusNode: _phoneFocusNode,
-            keyboardType: TextInputType.phone,
-            maxLength: 10,
-            textInputAction: TextInputAction.done,
-            autofocus: false,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: inputFontSize,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF333333),
-            ),
-            decoration: InputDecoration(
-              hintText: 'Enter your mobile number',
-              hintStyle: TextStyle(
+          Form(
+            key: _formKey,
+            child: IntlPhoneField(
+              focusNode: _phoneFocusNode,
+              initialCountryCode: 'IN',
+              disableLengthCheck: false,
+              invalidNumberMessage: 'Invalid mobile number',
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.done,
+              autofocus: false,
+              style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: hintSize,
+                fontSize: inputFontSize,
                 fontWeight: FontWeight.w400,
-                color: const Color(0xFFAAAAAA),
+                color: const Color(0xFF333333),
               ),
-              filled: true,
-              fillColor: const Color(0xFFF6F8FE),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(inputRadius),
-                borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+              dropdownTextStyle: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: inputFontSize,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF333333),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(inputRadius),
-                borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+              flagsButtonPadding: const EdgeInsets.only(left: 8),
+              decoration: InputDecoration(
+                hintText: 'Enter your mobile number',
+                hintStyle: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: hintSize,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFFAAAAAA),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF6F8FE),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(inputRadius),
+                  borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(inputRadius),
+                  borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(inputRadius),
+                  borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+                ),
+                counterText: '',
+                contentPadding: EdgeInsets.symmetric(horizontal: inputPaddingH, vertical: inputPaddingV),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(inputRadius),
-                borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
-              ),
-              counterText: '',
-              contentPadding: EdgeInsets.symmetric(horizontal: inputPaddingH, vertical: inputPaddingV),
+              onChanged: (phone) => _completePhoneNumber = phone.completeNumber,
+              onSubmitted: (_) => _sendOTP(),
             ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
-            onSubmitted: (_) => _sendOTP(),
           ),
 
           SizedBox(height: isTablet ? 20.0 : 16.0),

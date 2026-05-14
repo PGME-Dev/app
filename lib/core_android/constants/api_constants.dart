@@ -4,12 +4,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConstants {
   // Platform-aware helper: use neutral aliases on iOS
   static bool get _useAlias => Platform.isIOS;
-  // Base URL - Use deployed backend on Render
+  // Base URL
   // static const String baseUrl = 'http://192.168.29.105:5000/api/v1';
-  // static const String baseUrl = 'https://d1po9pb0pflxq5.cloudfront.net/api/v1';
+  static const String baseUrl = 'https://d1po9pb0pflxq5.cloudfront.net/api/v1'; // PROD
   // static const String baseUrl = 'https://pgme-backend.onrender.com/api/v1';
   // static const String baseUrl = 'https://backend-tcrz.onrender.com/api/v1';
-  static const String baseUrl = 'https://d3tcp24p0qlkvg.cloudfront.net/api/v1';
+  // static const String baseUrl = 'https://d3tcp24p0qlkvg.cloudfront.net/api/v1'; // DEV
 
   // Timeout
   static const int connectTimeout = 30000; // 30 seconds

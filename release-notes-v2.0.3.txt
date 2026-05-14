@@ -1,0 +1,15 @@
+<en-US>
+New
+- International phone numbers for OTP login (default +91)
+- Career application form now captures all details
+- Live session recording indicator
+
+Improvements and fixes
+- Clearer video quality labels (High / Medium / Low)
+- Fixed video playback speed control
+- Fixed crashes: PDF viewer, split view, Zoom chat, notifications
+- Fixed PDFs not opening, freezing and outline
+- Fixed notes ordering
+- Fixed "0 Documents / 0 Lectures" count
+- Rescheduled lectures now show date and time
+</en-US>
