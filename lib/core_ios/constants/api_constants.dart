@@ -25,8 +25,8 @@ class ApiConstants {
       '/auth/device-session/$sessionId';
   static const String webLoginToken = '/auth/web-login-token';
 
-  // Web Store Base URL
-  static const String webStoreBaseUrl = 'https://store-frontend-ivory.vercel.app';
+  // Web Store Redirect (resolves base URL dynamically per platform+version)
+  static const String webStoreRedirect = '/web-store-redirect';
 
   // User Endpoints (Onboarding accessible)
   static const String profile = '/users/profile';

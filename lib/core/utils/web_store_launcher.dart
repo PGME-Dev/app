@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pgme/core/services/api_service.dart';
+import 'package:pgme/core/services/web_store_redirect_service.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/features/auth/providers/auth_provider.dart';
@@ -20,38 +21,108 @@ class WebStoreLauncher {
   static bool get awaitingExternalPurchase => _awaitingExternalPurchase;
   static void clearAwaitingPurchase() => _awaitingExternalPurchase = false;
 
-  /// Generate a web-login token and open Safari to the product page
+  /// Resolve the web-store base URL from the backend, then open Safari to the product page.
+  ///
+  /// Flow:
+  /// 1. Show loading.
+  /// 2. Ask backend for the base URL for this platform + app version.
+  /// 3. If backend returns no URL (network down, no rule match, malformed response),
+  ///    show a "try again later" message. The "Leaving the App" modal is NOT shown,
+  ///    and no fallback URL is used.
+  /// 4. Otherwise show the "Leaving the App" confirmation modal.
+  /// 5. On user confirm, fetch the web-login token and open Safari with
+  ///    `{baseUrl}/{productType}/{productId}?token=...`.
   static Future<void> openProductPage(
     BuildContext context, {
     required String productType,
     required String productId,
   }) async {
-    // Show confirmation modal before redirecting
-    final confirmed = await _showRedirectConfirmation(context);
-    if (confirmed != true) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    final baseUrl = await _withLoadingOverlay<String?>(
+      context,
+      navigator,
+      WebStoreRedirectService.fetchBaseUrl,
+    );
+
+    if (baseUrl == null) {
+      if (!context.mounted) return;
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Service temporarily unavailable. Please try again later.'),
+        ),
+      );
+      return;
+    }
 
     if (!context.mounted) return;
 
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context, rootNavigator: true);
-    bool dialogShowing = true;
+    final confirmed = await _showRedirectConfirmation(context);
+    if (confirmed != true) return;
+    if (!context.mounted) return;
 
-    // Show loading overlay
+    final redirectPath = '/$productType/$productId';
+
+    final tokenResult = await _withLoadingOverlay<String?>(
+      context,
+      navigator,
+      () async {
+        try {
+          final response = await _apiService.dio.post(
+            ApiConstants.webLoginToken,
+            data: {'redirect_path': redirectPath},
+          );
+          final token = response.data?['data']?['token'];
+          return (token is String && token.isNotEmpty) ? token : null;
+        } catch (_) {
+          return null;
+        }
+      },
+    );
+
+    if (tokenResult == null) {
+      if (!context.mounted) return;
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Service temporarily unavailable. Please try again later.'),
+        ),
+      );
+      return;
+    }
+
+    final url = Uri.parse('$baseUrl$redirectPath?token=$tokenResult');
+    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    if (launched) {
+      _awaitingExternalPurchase = true;
+    } else {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the browser. Please try again later.'),
+        ),
+      );
+    }
+  }
+
+  static Future<T> _withLoadingOverlay<T>(
+    BuildContext context,
+    NavigatorState navigator,
+    Future<T> Function() task,
+  ) async {
+    bool dialogShowing = true;
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (_) => PopScope(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, _) {
-          dialogShowing = false;
-        },
-        child: const Center(
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(
           child: CircularProgressIndicator(color: Colors.white),
         ),
       ),
     );
 
-    void dismissDialog() {
+    void dismiss() {
       if (dialogShowing) {
         dialogShowing = false;
         try {
@@ -61,43 +132,9 @@ class WebStoreLauncher {
     }
 
     try {
-      final redirectPath = '/$productType/$productId';
-
-      final response = await _apiService.dio.post(
-        ApiConstants.webLoginToken,
-        data: {'redirect_path': redirectPath},
-      );
-
-      // Always dismiss loading before opening Safari
-      dismissDialog();
-
-      final token = response.data['data']['token'] as String;
-      final url = Uri.parse(
-        '${ApiConstants.webStoreBaseUrl}$redirectPath?token=$token',
-      );
-
-      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
-
-      if (launched) {
-        _awaitingExternalPurchase = true;
-      }
-
-      if (!launched) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('Could not open the store. Please visit store.pgme.in in your browser.'),
-          ),
-        );
-      }
-    } catch (e) {
-      // Dismiss loading if still showing
-      dismissDialog();
-
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again or visit store.pgme.in'),
-        ),
-      );
+      return await task();
+    } finally {
+      dismiss();
     }
   }
 
