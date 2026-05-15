@@ -1,14 +1,11 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:pgme/core/models/selectable_document.dart';
 import 'package:pgme/core_android/constants/api_constants.dart';
 import 'package:pgme/core_android/models/user_model.dart';
 import 'package:pgme/core_android/providers/theme_provider.dart';
@@ -21,8 +18,6 @@ import 'package:pgme/core_android/widgets/shimmer_widgets.dart';
 import 'package:pgme/core_android/utils/responsive_helper.dart';
 import 'package:pgme/core_android/services/app_settings_service.dart';
 import 'package:pgme/features_android/courses/providers/download_provider.dart';
-import 'package:pgme/features_android/notes/screens/pdf_viewer_screen_pdfrx.dart';
-import 'package:pgme/features/courses/widgets/document_picker_sheet.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -986,30 +981,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   SizedBox(height: isTablet ? 16 : 12),
 
-                  // Test PDF Viewer (QA entry point — opens production
-                  // pdfrx viewer with either a saved doc or a local file).
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: hPadding),
-                    child: _buildQuickActionCard(
-                      icon: Icons.picture_as_pdf_outlined,
-                      label: 'Test PDF',
-                      subtitle: 'Open from docs or device',
-                      onTap: _showTestPdfSheet,
-                      cardColor: cardColor,
-                      iconBgColor: isDark
-                          ? const Color(0xFF4D2A1A)
-                          : const Color(0xFFFFE0B2),
-                      iconColor: isDark
-                          ? const Color(0xFFFFB74D)
-                          : const Color(0xFFE65100),
-                      textColor: textColor,
-                      secondaryTextColor: secondaryTextColor,
-                      isTablet: isTablet,
-                    ),
-                  ),
-
-                  SizedBox(height: isTablet ? 16 : 12),
-
                   // Join PGME Row
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: hPadding),
@@ -1419,183 +1390,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
       ],
     );
-  }
-
-  // ── Test PDF Viewer ────────────────────────────────────────────────
-  // Two entry points into the production pdfrx viewer for QA: pick from
-  // the user's saved documents (uses the same DocumentPickerSheet as
-  // the video split view), or pick an arbitrary PDF from device storage.
-
-  void _showTestPdfSheet() {
-    final isDark =
-        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
-    final bgColor = isDark ? AppColors.darkCardBackground : Colors.white;
-    final textColor = isDark ? AppColors.darkTextPrimary : Colors.black;
-    final subtitleColor =
-        isDark ? AppColors.darkTextSecondary : Colors.grey[600];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: bgColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 12, bottom: 16),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Icon(Icons.picture_as_pdf,
-                        color: AppColors.primaryBlue, size: 22),
-                    const SizedBox(width: 10),
-                    Text('Test PDF Viewer',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          color: textColor,
-                        )),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const Icon(Icons.folder_outlined,
-                    color: AppColors.primaryBlue),
-                title: Text('Browse my documents',
-                    style: TextStyle(
-                        color: textColor, fontWeight: FontWeight.w600)),
-                subtitle: Text('Pick from your notes & ebooks',
-                    style: TextStyle(color: subtitleColor, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openDocumentPickerForTest();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.attach_file,
-                    color: AppColors.primaryBlue),
-                title: Text('Pick a PDF from device',
-                    style: TextStyle(
-                        color: textColor, fontWeight: FontWeight.w600)),
-                subtitle: Text('Open any local .pdf file',
-                    style: TextStyle(color: subtitleColor, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _pickLocalPdfForTest();
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _openDocumentPickerForTest() {
-    final isDark =
-        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? AppColors.darkCardBackground : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DocumentPickerSheet(
-        onDocumentSelected: (SelectableDocument doc) {
-          if (!mounted) return;
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PdfViewerScreen(
-                documentId: doc.id,
-                title: doc.title,
-                source: doc.source == DocumentSource.ebook ? 'ebook' : null,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _pickLocalPdfForTest() async {
-    try {
-      // Permission gate (Android only). On Android 13+ READ_EXTERNAL_STORAGE
-      // is deprecated and Permission.storage maps to a granted no-op there,
-      // so this only really fires on Android ≤ 12 where some manufacturer
-      // skins still gate Downloads / Documents folders behind the legacy
-      // permission. iOS skips entirely — the document picker has no
-      // permission gate.
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted && !status.isLimited) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(status.isPermanentlyDenied
-                  ? 'Storage permission was denied. Enable it from Settings to pick a PDF.'
-                  : 'Storage permission is required to pick a PDF.'),
-              action: status.isPermanentlyDenied
-                  ? const SnackBarAction(
-                      label: 'Settings',
-                      onPressed: openAppSettings,
-                    )
-                  : null,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-          return;
-        }
-      }
-
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['pdf'],
-        // withData stays false — viewer reads directly from the path so we
-        // don't need to pull the bytes into memory.
-      );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.single;
-      final path = picked.path;
-      if (path == null || path.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read the selected file')),
-        );
-        return;
-      }
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => PdfViewerScreen(
-            filePath: path,
-            title: picked.name,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('File picker error: $e')),
-      );
-    }
   }
 
   Widget _buildQuickActionCard({

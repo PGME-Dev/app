@@ -8,8 +8,8 @@ import 'package:pgme/core_ios/utils/responsive_helper.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const String _version = '1.0.0';
-  static const String _buildNumber = '1';
+  static const String _version = '2.0.3';
+  static const String _buildNumber = '10';
 
   @override
   Widget build(BuildContext context) {
