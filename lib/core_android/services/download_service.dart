@@ -114,20 +114,56 @@ class DownloadService {
     final dir = await _getDownloadsDir();
     final filePath = '${dir.path}/$fileName';
 
+    debugPrint(
+        '[PDF-DBG] DownloadService.downloadFile START fileName=$fileName '
+        'target=$filePath urlHost=${_safeUrlHost(url)} '
+        'urlLen=${url.length} urlPrefix=${_safeUrlPrefix(url)}');
+
     // Use a separate Dio instance without base URL for direct downloads
     final downloadDio = Dio();
     downloadDio.options.receiveTimeout = const Duration(minutes: 30);
 
-    await downloadDio.download(
-      url,
-      filePath,
-      cancelToken: cancelToken,
-      onReceiveProgress: (received, total) {
-        if (total > 0) {
-          onProgress(received / total);
-        }
-      },
-    );
+    Response response;
+    try {
+      response = await downloadDio.download(
+        url,
+        filePath,
+        cancelToken: cancelToken,
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            onProgress(received / total);
+          }
+        },
+      );
+    } catch (e, st) {
+      debugPrint(
+          '[PDF-DBG] DownloadService.downloadFile FAILED fileName=$fileName '
+          'err=$e');
+      debugPrint('[PDF-DBG] stack: $st');
+      rethrow;
+    }
+
+    // Post-download forensics — match the validation PdfCacheService does
+    // for streamed PDFs so we can SEE if the downloaded blob is a real PDF.
+    try {
+      final file = File(filePath);
+      final exists = await file.exists();
+      final size = exists ? await file.length() : -1;
+      final magic = exists ? await _readMagicBytes(file) : '<no-file>';
+      final isPdf = magic.startsWith('%PDF');
+      final headInfo = isPdf
+          ? ''
+          : ' headSnippet=${await _readHeadSnippet(file)}';
+      final contentType = response.headers.value('content-type') ?? 'n/a';
+      debugPrint(
+          '[PDF-DBG] DownloadService.downloadFile DONE fileName=$fileName '
+          'exists=$exists size=$size magic="$magic" isPdf=$isPdf '
+          'statusCode=${response.statusCode} contentType=$contentType'
+          '$headInfo');
+    } catch (e) {
+      debugPrint(
+          '[PDF-DBG] DownloadService.downloadFile post-check error: $e');
+    }
 
     return filePath;
   }
@@ -143,10 +179,101 @@ class DownloadService {
   Future<String?> getDownloadedPath(String fileName) async {
     final dir = await _getDownloadsDir();
     final file = File('${dir.path}/$fileName');
-    if (await file.exists()) {
+    final exists = await file.exists();
+    if (exists) {
+      try {
+        final size = await file.length();
+        final magic = await _readMagicBytes(file);
+        debugPrint(
+            '[PDF-DBG] DownloadService.getDownloadedPath HIT fileName=$fileName '
+            'path=${file.path} size=$size magic="$magic" isPdf=${magic.startsWith('%PDF')}');
+      } catch (e) {
+        debugPrint(
+            '[PDF-DBG] DownloadService.getDownloadedPath stat error: $e');
+      }
       return file.path;
     }
+    debugPrint(
+        '[PDF-DBG] DownloadService.getDownloadedPath MISS fileName=$fileName '
+        'path=${file.path}');
     return null;
+  }
+
+  /// Reads first 8 bytes of [file] and returns as printable ASCII. Used by
+  /// debug logging to spot non-PDF payloads (HTML/JSON error bodies) that
+  /// got written to disk because we don't currently validate the download
+  /// content-type.
+  static Future<String> _readMagicBytes(File file) async {
+    try {
+      final raf = await file.open();
+      try {
+        final bytes = await raf.read(8);
+        final buf = StringBuffer();
+        for (final b in bytes) {
+          if (b >= 0x20 && b < 0x7F) {
+            buf.writeCharCode(b);
+          } else {
+            buf.write('\\x${b.toRadixString(16).padLeft(2, '0')}');
+          }
+        }
+        return buf.toString();
+      } finally {
+        await raf.close();
+      }
+    } catch (e) {
+      return '<read-err:$e>';
+    }
+  }
+
+  /// Reads up to first 200 bytes of [file] as a printable preview. Only
+  /// called when the magic header doesn't look like a PDF — gives us a
+  /// chance to recognize an HTML error page or JSON auth payload.
+  static Future<String> _readHeadSnippet(File file) async {
+    try {
+      final raf = await file.open();
+      try {
+        final bytes = await raf.read(200);
+        final buf = StringBuffer();
+        for (final b in bytes) {
+          if (b == 0x0A) {
+            buf.write('\\n');
+          } else if (b == 0x0D) {
+            buf.write('\\r');
+          } else if (b >= 0x20 && b < 0x7F) {
+            buf.writeCharCode(b);
+          } else {
+            buf.write('.');
+          }
+        }
+        return buf.toString();
+      } finally {
+        await raf.close();
+      }
+    } catch (e) {
+      return '<read-err:$e>';
+    }
+  }
+
+  /// Strips query string + path so we can log the source host without
+  /// leaking signed-URL credentials into the device log buffer.
+  static String _safeUrlHost(String url) {
+    try {
+      return Uri.parse(url).host;
+    } catch (_) {
+      return '<unparseable>';
+    }
+  }
+
+  /// First 80 chars of the URL minus query string — enough to tell which
+  /// endpoint generated the link without dumping the signature.
+  static String _safeUrlPrefix(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final base = '${uri.scheme}://${uri.host}${uri.path}';
+      return base.length > 80 ? '${base.substring(0, 80)}…' : base;
+    } catch (_) {
+      return url.length > 80 ? '${url.substring(0, 80)}…' : url;
+    }
   }
 
   /// Delete a downloaded file

@@ -258,8 +258,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   // ── PDF loading (identical to Syncfusion version) ─────────────────
 
   Future<void> _loadPdf() async {
+    debugPrint(
+        '[PDF-DBG] pdfrx._loadPdf ENTRY documentId=${widget.documentId} '
+        'pdfUrl=${widget.pdfUrl != null ? '(${widget.pdfUrl!.length} chars)' : 'null'} '
+        'filePath=${widget.filePath} source=${widget.source}');
     try {
       if (widget.filePath != null) {
+        debugPrint(
+            '[PDF-DBG] pdfrx._loadPdf branch=DIRECT_FILE_PATH path=${widget.filePath}');
         if (mounted) {
           setState(() => _isLoading = false);
           _loadDocumentFully(widget.filePath!);
@@ -276,24 +282,37 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         if (downloadedPath != null) {
           final file = File(downloadedPath);
           final fileSize = await file.length();
+          debugPrint(
+              '[PDF-DBG] pdfrx._loadPdf branch=DOWNLOADED_FILE '
+              'path=$downloadedPath size=$fileSize');
           if (fileSize > 0 && mounted) {
             setState(() => _isLoading = false);
             _loadDocumentFully(downloadedPath);
             return;
           }
+          debugPrint(
+              '[PDF-DBG] pdfrx._loadPdf downloaded file present but empty — '
+              'falling through to URL resolution');
+        } else {
+          debugPrint(
+              '[PDF-DBG] pdfrx._loadPdf no downloaded copy for documentId='
+              '${widget.documentId} — using stream path');
         }
       }
 
       String pdfUrl;
       if (widget.pdfUrl != null) {
         pdfUrl = widget.pdfUrl!;
+        debugPrint('[PDF-DBG] pdfrx._loadPdf url=FROM_WIDGET');
       } else if (widget.source == 'ebook') {
         // Ebooks live behind a different access-controlled endpoint.
         // EbookAccessService handles the entitlement check + signed URL.
+        debugPrint('[PDF-DBG] pdfrx._loadPdf url=RESOLVING via EbookAccessService');
         final data =
             await EbookAccessService().getEbookViewUrl(widget.documentId!);
         pdfUrl = data['url'] as String;
       } else {
+        debugPrint('[PDF-DBG] pdfrx._loadPdf url=RESOLVING via documentViewUrl');
         final apiService = ApiService();
         final response = await apiService.dio.get(
           ApiConstants.documentViewUrl(widget.documentId!),
@@ -309,6 +328,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       final cacheKey = widget.documentId ?? 'url_${pdfUrl.hashCode}';
       final cached = await PdfCacheService.getCachedFile(cacheKey);
       if (cached != null) {
+        final cachedSize = await cached.length();
+        debugPrint(
+            '[PDF-DBG] pdfrx._loadPdf branch=PDF_CACHE_HIT '
+            'cacheKey=$cacheKey path=${cached.path} size=$cachedSize');
         if (mounted) {
           setState(() => _isLoading = false);
           // Pass the key so a parse failure (corrupt cached file) can
@@ -318,6 +341,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         return;
       }
 
+      debugPrint(
+          '[PDF-DBG] pdfrx._loadPdf branch=NETWORK_FETCH cacheKey=$cacheKey '
+          'urlLen=${pdfUrl.length}');
       final downloaded = await PdfCacheService.cacheFromUrl(
         cacheKey,
         pdfUrl,
@@ -327,13 +353,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           }
         },
       );
+      final dlSize = await downloaded.length();
+      debugPrint(
+          '[PDF-DBG] pdfrx._loadPdf NETWORK_FETCH complete '
+          'path=${downloaded.path} size=$dlSize');
 
       if (mounted) {
         setState(() => _isLoading = false);
         _loadDocumentFully(downloaded.path, cacheKey: cacheKey);
       }
-    } catch (e) {
-      debugPrint('PDF load error: $e');
+    } catch (e, st) {
+      debugPrint('[PDF-DBG] pdfrx._loadPdf EXCEPTION err=$e');
+      debugPrint('[PDF-DBG] stack: $st');
       if (mounted) {
         setState(() {
           _error = 'Failed to load PDF';
@@ -351,6 +382,59 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   /// scroll past whatever batch had been loaded so far.
   Future<void> _loadDocumentFully(String filePath, {String? cacheKey}) async {
     if (!mounted) return;
+    // Pre-open forensics — capture the file's actual on-disk state so a
+    // pdfium openFile failure can be correlated with size + magic header
+    // instead of just an opaque error code.
+    try {
+      final f = File(filePath);
+      final exists = await f.exists();
+      final size = exists ? await f.length() : -1;
+      String magic = '<no-file>';
+      String headSnippet = '';
+      if (exists && size > 0) {
+        final raf = await f.open();
+        try {
+          final bytes = await raf.read(8);
+          final buf = StringBuffer();
+          for (final b in bytes) {
+            if (b >= 0x20 && b < 0x7F) {
+              buf.writeCharCode(b);
+            } else {
+              buf.write('\\x${b.toRadixString(16).padLeft(2, '0')}');
+            }
+          }
+          magic = buf.toString();
+          if (!magic.startsWith('%PDF')) {
+            // Longer preview when the head isn't PDF — helps spot HTML
+            // error pages, JSON auth challenges, or partial-content blobs.
+            await raf.setPosition(0);
+            final head = await raf.read(200);
+            final hb = StringBuffer();
+            for (final b in head) {
+              if (b == 0x0A) {
+                hb.write('\\n');
+              } else if (b == 0x0D) {
+                hb.write('\\r');
+              } else if (b >= 0x20 && b < 0x7F) {
+                hb.writeCharCode(b);
+              } else {
+                hb.write('.');
+              }
+            }
+            headSnippet = ' headSnippet=$hb';
+          }
+        } finally {
+          await raf.close();
+        }
+      }
+      debugPrint(
+          '[PDF-DBG] pdfrx._loadDocumentFully PRE-OPEN path=$filePath '
+          'exists=$exists size=$size magic="$magic" '
+          'isPdf=${magic.startsWith('%PDF')} cacheKey=$cacheKey$headSnippet');
+    } catch (e) {
+      debugPrint(
+          '[PDF-DBG] pdfrx._loadDocumentFully pre-open check error: $e');
+    }
     try {
       final doc = await PdfDocument.openFile(
         filePath,
@@ -405,8 +489,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _loadOutline();
         _restoreProgress();
       });
-    } catch (e) {
-      debugPrint('[PDFRX] Failed to load document: $e');
+    } catch (e, st) {
+      debugPrint(
+          '[PDF-DBG] pdfrx._loadDocumentFully OPEN_FAILED '
+          'path=$filePath cacheKey=$cacheKey err=$e');
+      debugPrint('[PDF-DBG] stack: $st');
       // If this load came from a cached file (cacheKey != null), the
       // cached file is the most likely culprit (corrupt download, partial
       // bytes, server returned non-PDF that bypassed magic-byte check on a

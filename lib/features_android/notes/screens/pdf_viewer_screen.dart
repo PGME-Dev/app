@@ -195,9 +195,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Future<void> _loadPdf() async {
+    debugPrint(
+        '[PDF-DBG] sync._loadPdf ENTRY documentId=${widget.documentId} '
+        'pdfUrl=${widget.pdfUrl != null ? '(${widget.pdfUrl!.length} chars)' : 'null'} '
+        'filePath=${widget.filePath}');
     try {
       // If a local file path is provided, use it directly (e.g. invoice PDF)
       if (widget.filePath != null) {
+        debugPrint(
+            '[PDF-DBG] sync._loadPdf branch=DIRECT_FILE_PATH path=${widget.filePath}');
+        await _logFileForensics(widget.filePath!, 'sync.DIRECT_FILE_PATH');
         if (mounted) {
           setState(() {
             _localPath = widget.filePath;
@@ -218,13 +225,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           // Verify file is valid (non-empty)
           final file = File(downloadedPath);
           final fileSize = await file.length();
+          debugPrint(
+              '[PDF-DBG] sync._loadPdf branch=DOWNLOADED_FILE '
+              'path=$downloadedPath size=$fileSize');
           if (fileSize > 0 && mounted) {
+            await _logFileForensics(downloadedPath, 'sync.DOWNLOADED_FILE');
             setState(() {
               _localPath = downloadedPath;
               _isLoading = false;
             });
             return;
           }
+          debugPrint(
+              '[PDF-DBG] sync._loadPdf downloaded file present but empty');
+        } else {
+          debugPrint(
+              '[PDF-DBG] sync._loadPdf no downloaded copy for documentId='
+              '${widget.documentId}');
         }
       }
 
@@ -232,7 +249,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
       if (widget.pdfUrl != null) {
         pdfUrl = widget.pdfUrl!;
+        debugPrint('[PDF-DBG] sync._loadPdf url=FROM_WIDGET');
       } else {
+        debugPrint('[PDF-DBG] sync._loadPdf url=RESOLVING via documentViewUrl');
         final apiService = ApiService();
         final response = await apiService.dio.get(
           ApiConstants.documentViewUrl(widget.documentId!),
@@ -250,6 +269,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       // Check if already cached
       final file = File(filePath);
       if (await file.exists()) {
+        final cachedSize = await file.length();
+        debugPrint(
+            '[PDF-DBG] sync._loadPdf branch=TEMP_CACHE_HIT '
+            'path=$filePath size=$cachedSize');
+        await _logFileForensics(filePath, 'sync.TEMP_CACHE_HIT');
         if (mounted) {
           setState(() {
             _localPath = filePath;
@@ -259,6 +283,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         return;
       }
 
+      debugPrint(
+          '[PDF-DBG] sync._loadPdf branch=TEMP_DOWNLOAD target=$filePath '
+          'urlLen=${pdfUrl.length}');
       // Download with progress
       await Dio().download(
         pdfUrl,
@@ -271,6 +298,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           }
         },
       );
+      await _logFileForensics(filePath, 'sync.TEMP_DOWNLOAD complete');
 
       if (mounted) {
         setState(() {
@@ -278,14 +306,68 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      debugPrint('PDF load error: $e');
+    } catch (e, st) {
+      debugPrint('[PDF-DBG] sync._loadPdf EXCEPTION err=$e');
+      debugPrint('[PDF-DBG] stack: $st');
       if (mounted) {
         setState(() {
           _error = 'Failed to load PDF';
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// Read first bytes of [path] and log size + magic header. Used by the
+  /// loader to surface why SfPdfViewer might fail to open a file that was
+  /// just handed to it — the viewer only exposes an opaque
+  /// onDocumentLoadFailed callback without raw bytes context.
+  Future<void> _logFileForensics(String path, String stage) async {
+    try {
+      final f = File(path);
+      final exists = await f.exists();
+      final size = exists ? await f.length() : -1;
+      String magic = '<no-file>';
+      String headSnippet = '';
+      if (exists && size > 0) {
+        final raf = await f.open();
+        try {
+          final bytes = await raf.read(8);
+          final buf = StringBuffer();
+          for (final b in bytes) {
+            if (b >= 0x20 && b < 0x7F) {
+              buf.writeCharCode(b);
+            } else {
+              buf.write('\\x${b.toRadixString(16).padLeft(2, '0')}');
+            }
+          }
+          magic = buf.toString();
+          if (!magic.startsWith('%PDF')) {
+            await raf.setPosition(0);
+            final head = await raf.read(200);
+            final hb = StringBuffer();
+            for (final b in head) {
+              if (b == 0x0A) {
+                hb.write('\\n');
+              } else if (b == 0x0D) {
+                hb.write('\\r');
+              } else if (b >= 0x20 && b < 0x7F) {
+                hb.writeCharCode(b);
+              } else {
+                hb.write('.');
+              }
+            }
+            headSnippet = ' headSnippet=$hb';
+          }
+        } finally {
+          await raf.close();
+        }
+      }
+      debugPrint(
+          '[PDF-DBG] $stage path=$path exists=$exists size=$size '
+          'magic="$magic" isPdf=${magic.startsWith('%PDF')}$headSnippet');
+    } catch (e) {
+      debugPrint('[PDF-DBG] $stage forensics error: $e');
     }
   }
 
@@ -2664,6 +2746,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _removeContextMenu();
       },
       onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+        debugPrint(
+            '[PDF-DBG] sync.SfPdfViewer onDocumentLoaded pages=${details.document.pages.count} '
+            'path=$_localPath');
         if (!_isPdfReady) {
           setState(() {
             _isPdfReady = true;
@@ -2672,6 +2757,22 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _loadHighlights();
         _loadBookmarks();
         _restoreProgress();
+      },
+      onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+        // SfPdfViewer has its own failure path that bypasses _loadPdf's
+        // catch (the file was handed off successfully, but pdfium rejected
+        // it). Surface it explicitly so we can see WHICH file failed and
+        // why — Syncfusion's error/description tells us if the file is
+        // corrupted, password-protected, or unsupported version.
+        debugPrint(
+            '[PDF-DBG] sync.SfPdfViewer onDocumentLoadFailed path=$_localPath '
+            'error="${details.error}" description="${details.description}"');
+        _logFileForensics(_localPath ?? '<null>', 'sync.LOAD_FAILED_CALLBACK');
+        if (mounted) {
+          setState(() {
+            _error = 'Failed to load PDF';
+          });
+        }
       },
       onPageChanged: (PdfPageChangedDetails details) {
         _currentPage.value = details.newPageNumber;

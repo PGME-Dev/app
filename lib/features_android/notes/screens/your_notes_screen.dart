@@ -156,7 +156,15 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
   /// Download a document (library item or ebook)
   Future<void> _downloadDocument(LibraryItemModel item) async {
     final docId = item.documentId;
-    if (_downloadingDocs.containsKey(docId) || _downloadedDocIds.contains(docId)) return;
+    debugPrint(
+        '[PDF-DBG] your_notes._downloadDocument START docId=$docId '
+        'title="${item.title}" isEbook=${_isEbookItem(item)} '
+        'libraryId=${item.libraryId}');
+    if (_downloadingDocs.containsKey(docId) || _downloadedDocIds.contains(docId)) {
+      debugPrint(
+          '[PDF-DBG] your_notes._downloadDocument SKIP (already downloading/downloaded)');
+      return;
+    }
 
     setState(() {
       _downloadingDocs[docId] = 0.0;
@@ -167,16 +175,21 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
       String fileName;
 
       if (_isEbookItem(item)) {
+        debugPrint('[PDF-DBG] your_notes._downloadDocument resolving via EbookAccessService');
         final data = await _ebookAccessService.getEbookViewUrl(docId);
         url = data['url'] as String;
         fileName = 'ebook_$docId.pdf';
       } else {
+        debugPrint('[PDF-DBG] your_notes._downloadDocument resolving via documentViewUrl');
         final response = await ApiService().dio.get(
           ApiConstants.documentViewUrl(docId),
         );
         url = response.data['data']['url'] as String;
         fileName = 'doc_$docId.pdf';
       }
+      debugPrint(
+          '[PDF-DBG] your_notes._downloadDocument resolved fileName=$fileName '
+          'urlLen=${url.length}');
 
       await _downloadService.downloadFile(
         url: url,
@@ -195,9 +208,15 @@ class _YourNotesScreenState extends State<YourNotesScreen> {
           _downloadingDocs.remove(docId);
           _downloadedDocIds.add(docId);
         });
+        debugPrint(
+            '[PDF-DBG] your_notes._downloadDocument SUCCESS docId=$docId '
+            'fileName=$fileName');
         showAppDialog(context, message: 'Document downloaded successfully', type: AppDialogType.info);
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint(
+          '[PDF-DBG] your_notes._downloadDocument FAILED docId=$docId err=$e');
+      debugPrint('[PDF-DBG] stack: $st');
       if (mounted) {
         setState(() {
           _downloadingDocs.remove(docId);
