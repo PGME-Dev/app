@@ -832,6 +832,7 @@ class DashboardService {
     String packageId, {
     Map<String, dynamic>? billingAddress,
     int? tierIndex,
+    String? couponCode,
   }) async {
     return await _gatewayService.initSession(
       endpoint: ApiConstants.activeInitAccessSession,
@@ -839,6 +840,7 @@ class DashboardService {
         'package_id': packageId,
         if (billingAddress != null) 'billing_address': billingAddress,
         if (tierIndex != null) 'tier_index': tierIndex,
+        if (couponCode != null) 'coupon_code': couponCode,
       },
     );
   }
@@ -888,6 +890,7 @@ class DashboardService {
     String packageId,
     int targetTierIndex, {
     Map<String, dynamic>? billingAddress,
+    String? couponCode,
   }) async {
     try {
       final response = await _apiService.dio.post(
@@ -896,6 +899,7 @@ class DashboardService {
           'package_id': packageId,
           'target_tier_index': targetTierIndex,
           if (billingAddress != null) 'billing_address': billingAddress,
+          if (couponCode != null) 'coupon_code': couponCode,
         },
       );
 

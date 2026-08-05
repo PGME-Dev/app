@@ -223,10 +223,13 @@ class _EbookListScreenState extends State<EbookListScreen>
     final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
+      couponPurchaseType: 'ebook',
+      couponProductId: book.bookId,
     );
 
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
+    final couponCode = addressResult['coupon_code'] as String?;
 
     setState(() => _isPurchasing = true);
 
@@ -235,6 +238,7 @@ class _EbookListScreenState extends State<EbookListScreen>
       final paymentSession = await _ebookOrderService.initSession(
         book.bookId,
         billingAddress: billingAddress.toJson(),
+        couponCode: couponCode,
       );
 
       if (!mounted) return;

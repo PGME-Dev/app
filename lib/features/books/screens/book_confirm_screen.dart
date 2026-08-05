@@ -98,17 +98,20 @@ class _BookConfirmScreenState extends State<BookConfirmScreen>
 
     if (!mounted) return;
 
+    final provider = Provider.of<BookProvider>(context, listen: false);
+
     final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
       showShippingOption: true,
+      couponPurchaseType: 'book',
+      couponItems: provider.getCartAsOrderItems(),
     );
 
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
     final shippingAddressStructured = addressResult['shipping'];
-
-    final provider = Provider.of<BookProvider>(context, listen: false);
+    final couponCode = addressResult['coupon_code'] as String?;
 
     setState(() => _isLoading = true);
 
@@ -120,6 +123,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen>
         shippingAddress: _addressController.text.trim(),
         billingAddress: billingAddress.toJson(),
         shippingAddressStructured: shippingAddressStructured?.toJson(),
+        couponCode: couponCode,
       );
 
       if (!mounted) return;

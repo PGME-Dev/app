@@ -237,10 +237,15 @@ class SessionAccessService {
   Future<GatewaySession> initSession(
     String sessionId, {
     Map<String, dynamic>? billingAddress,
+    String? couponCode,
   }) async {
+    final data = <String, dynamic>{
+      if (billingAddress != null) 'billing_address': billingAddress,
+      if (couponCode != null) 'coupon_code': couponCode,
+    };
     return await _gatewayService.initSession(
       endpoint: ApiConstants.activeSessionInitAccess(sessionId),
-      data: billingAddress != null ? {'billing_address': billingAddress} : null,
+      data: data.isEmpty ? null : data,
     );
   }
 

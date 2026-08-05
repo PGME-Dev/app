@@ -12,6 +12,7 @@ class EbookAccessService {
   Future<GatewaySession> initSession(
     String bookId, {
     Map<String, dynamic>? billingAddress,
+    String? couponCode,
   }) async {
     try {
       debugPrint('=== EbookAccessService: Creating gateway session for book $bookId ===');
@@ -21,6 +22,7 @@ class EbookAccessService {
         data: {
           'book_id': bookId,
           if (billingAddress != null) 'billing_address': billingAddress,
+          if (couponCode != null) 'coupon_code': couponCode,
         },
       );
 

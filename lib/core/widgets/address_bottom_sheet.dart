@@ -9,18 +9,26 @@ import 'package:pgme/core/services/pincode_service.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
+import 'package:pgme/core/widgets/coupon_field.dart';
 
 /// Shows an address bottom sheet and returns an [Address] or null if dismissed.
 ///
 /// [initialAddress] - Pre-fill with user's saved address.
 /// [showShippingOption] - If true, shows "Use as shipping address" checkbox (for book orders).
-/// Returns a map with 'billing' and optionally 'shipping' Address objects.
-Future<Map<String, Address>?> showAddressSheet(
+/// Returns a map with 'billing' and optionally 'shipping' Address objects, plus
+/// 'coupon_code' (String) when a coupon was applied.
+///
+/// Pass [couponPurchaseType] (+ product context) to show a coupon field.
+Future<Map<String, dynamic>?> showAddressSheet(
   BuildContext context, {
   Address? initialAddress,
   bool showShippingOption = false,
+  String? couponPurchaseType, // 'package' | 'session' | 'ebook' | 'book'
+  String? couponProductId,
+  int? couponTierIndex,
+  List<Map<String, dynamic>>? couponItems,
 }) {
-  return showModalBottomSheet<Map<String, Address>>(
+  return showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
@@ -28,6 +36,10 @@ Future<Map<String, Address>?> showAddressSheet(
     builder: (ctx) => _AddressSheet(
       initialAddress: initialAddress,
       showShippingOption: showShippingOption,
+      couponPurchaseType: couponPurchaseType,
+      couponProductId: couponProductId,
+      couponTierIndex: couponTierIndex,
+      couponItems: couponItems,
     ),
   );
 }
@@ -35,10 +47,18 @@ Future<Map<String, Address>?> showAddressSheet(
 class _AddressSheet extends StatefulWidget {
   final Address? initialAddress;
   final bool showShippingOption;
+  final String? couponPurchaseType;
+  final String? couponProductId;
+  final int? couponTierIndex;
+  final List<Map<String, dynamic>>? couponItems;
 
   const _AddressSheet({
     this.initialAddress,
     this.showShippingOption = false,
+    this.couponPurchaseType,
+    this.couponProductId,
+    this.couponTierIndex,
+    this.couponItems,
   });
 
   @override
@@ -71,6 +91,7 @@ class _AddressSheetState extends State<_AddressSheet> {
   bool _isLoadingShipPincode = false;
   bool _sameAsShipping = true;
   bool _useSavedAddress = false;
+  String? _couponCode;
 
   bool get _hasSavedAddress =>
       widget.initialAddress != null && widget.initialAddress!.isValid;
@@ -234,7 +255,8 @@ class _AddressSheetState extends State<_AddressSheet> {
       pincode: _pincodeController.text.trim(),
     );
 
-    final result = <String, Address>{'billing': billing};
+    final result = <String, dynamic>{'billing': billing};
+    if (_couponCode != null) result['coupon_code'] = _couponCode;
 
     if (widget.showShippingOption) {
       if (_sameAsShipping) {
@@ -640,6 +662,18 @@ class _AddressSheetState extends State<_AddressSheet> {
                       ],
 
                       SizedBox(height: spacing * 1.5),
+
+                      // Coupon field (only when a coupon context is provided)
+                      if (widget.couponPurchaseType != null) ...[
+                        CouponField(
+                          purchaseType: widget.couponPurchaseType!,
+                          productId: widget.couponProductId,
+                          tierIndex: widget.couponTierIndex,
+                          items: widget.couponItems,
+                          onChanged: (code, _) => _couponCode = code,
+                        ),
+                        SizedBox(height: spacing * 1.5),
+                      ],
 
                       // Confirm button
                       SizedBox(

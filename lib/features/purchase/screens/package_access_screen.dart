@@ -713,23 +713,28 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
 
     if (!mounted) return;
 
+    final hasTiers = _package!.hasTiers && _package!.tiers != null && _package!.tiers!.isNotEmpty;
     final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
+      couponPurchaseType: 'package',
+      couponProductId: _package!.packageId,
+      couponTierIndex: hasTiers ? _selectedTierIndex : null,
     );
 
     if (addressResult == null || !mounted) return;
-    final billingAddress = addressResult['billing']!;
+    final billingAddress = addressResult['billing'] as Address;
+    final couponCode = addressResult['coupon_code'] as String?;
 
     setState(() => _isProcessing = true);
 
     try {
       // Step 1: Create Zoho payment session
-      final hasTiers = _package!.hasTiers && _package!.tiers != null && _package!.tiers!.isNotEmpty;
       final paymentSession = await _dashboardService.createPackagePaymentSession(
         _package!.packageId,
         billingAddress: billingAddress.toJson(),
         tierIndex: hasTiers ? _selectedTierIndex : null,
+        couponCode: couponCode,
       );
 
       if (!mounted) return;

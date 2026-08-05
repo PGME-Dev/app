@@ -153,9 +153,13 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
     final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
+      couponPurchaseType: 'package',
+      couponProductId: widget.package.packageId,
+      couponTierIndex: _selectedTierIndex,
     );
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
+    final couponCode = addressResult['coupon_code'] as String?;
 
     setState(() => _isProcessing = true);
 
@@ -164,6 +168,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
         widget.package.packageId,
         _selectedTierIndex!,
         billingAddress: billingAddress.toJson(),
+        couponCode: couponCode,
       );
 
       if (!mounted) return;

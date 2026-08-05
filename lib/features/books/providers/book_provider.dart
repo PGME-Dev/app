@@ -286,6 +286,7 @@ class BookProvider extends ChangeNotifier {
     required String shippingAddress,
     Map<String, dynamic>? billingAddress,
     Map<String, dynamic>? shippingAddressStructured,
+    String? couponCode,
   }) async {
     final items = getCartAsOrderItems();
     return await _bookRequestService.initSession(
@@ -295,6 +296,7 @@ class BookProvider extends ChangeNotifier {
       shippingAddress: shippingAddress,
       billingAddress: billingAddress,
       shippingAddressStructured: shippingAddressStructured,
+      couponCode: couponCode,
     );
   }
 

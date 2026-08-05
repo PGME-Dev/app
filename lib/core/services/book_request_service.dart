@@ -224,6 +224,7 @@ class BookRequestService {
     required String shippingAddress,
     Map<String, dynamic>? billingAddress,
     Map<String, dynamic>? shippingAddressStructured,
+    String? couponCode,
   }) async {
     return await _gatewayService.initSession(
       endpoint: ApiConstants.activeInitBookRequest,
@@ -234,6 +235,7 @@ class BookRequestService {
         'shipping_address': shippingAddress,
         if (billingAddress != null) 'billing_address': billingAddress,
         if (shippingAddressStructured != null) 'shipping_address_structured': shippingAddressStructured,
+        if (couponCode != null) 'coupon_code': couponCode,
       },
     );
   }

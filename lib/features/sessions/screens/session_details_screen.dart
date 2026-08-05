@@ -248,10 +248,13 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
     final addressResult = await showAddressSheet(
       context,
       initialAddress: savedAddress,
+      couponPurchaseType: 'session',
+      couponProductId: widget.sessionId,
     );
 
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
+    final couponCode = addressResult['coupon_code'] as String?;
 
     setState(() => _isPurchasing = true);
 
@@ -259,6 +262,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
       final paymentSession = await _purchaseService.initSession(
         widget.sessionId,
         billingAddress: billingAddress.toJson(),
+        couponCode: couponCode,
       );
 
       if (!mounted) return;
