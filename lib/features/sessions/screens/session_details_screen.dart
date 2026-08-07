@@ -255,6 +255,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
     final couponCode = addressResult['coupon_code'] as String?;
+    final termsAccepted = addressResult['terms_accepted'] as bool?;
 
     setState(() => _isPurchasing = true);
 
@@ -263,6 +264,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen>
         widget.sessionId,
         billingAddress: billingAddress.toJson(),
         couponCode: couponCode,
+        termsAccepted: termsAccepted,
       );
 
       if (!mounted) return;

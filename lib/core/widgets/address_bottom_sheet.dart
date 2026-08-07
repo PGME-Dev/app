@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/constants/indian_states.dart';
 import 'package:pgme/core/models/address_model.dart';
@@ -91,6 +93,7 @@ class _AddressSheetState extends State<_AddressSheet> {
   bool _isLoadingShipPincode = false;
   bool _sameAsShipping = true;
   bool _useSavedAddress = false;
+  bool _termsAccepted = false;
   String? _couponCode;
 
   bool get _hasSavedAddress =>
@@ -246,6 +249,11 @@ class _AddressSheetState extends State<_AddressSheet> {
       return;
     }
 
+    if (!_termsAccepted) {
+      showAppDialog(context, message: 'Please accept the Terms & Conditions to continue', type: AppDialogType.info);
+      return;
+    }
+
     final billing = Address(
       street: _streetController.text.trim(),
       street2: _street2Controller.text.trim(),
@@ -255,7 +263,7 @@ class _AddressSheetState extends State<_AddressSheet> {
       pincode: _pincodeController.text.trim(),
     );
 
-    final result = <String, dynamic>{'billing': billing};
+    final result = <String, dynamic>{'billing': billing, 'terms_accepted': _termsAccepted};
     if (_couponCode != null) result['coupon_code'] = _couponCode;
 
     if (widget.showShippingOption) {
@@ -674,6 +682,50 @@ class _AddressSheetState extends State<_AddressSheet> {
                         ),
                         SizedBox(height: spacing * 1.5),
                       ],
+
+                      // Terms & Conditions acceptance
+                      GestureDetector(
+                        onTap: () => setState(() => _termsAccepted = !_termsAccepted),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _termsAccepted,
+                                onChanged: (v) => setState(() => _termsAccepted = v ?? false),
+                                activeColor: accentColor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: fieldFontSize,
+                                      color: secondaryTextColor,
+                                    ),
+                                    children: [
+                                      const TextSpan(text: 'I agree to the '),
+                                      TextSpan(
+                                        text: 'Terms & Conditions',
+                                        style: TextStyle(color: accentColor, fontWeight: FontWeight.w600),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () => context.push('/terms-and-conditions'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: spacing),
 
                       // Confirm button
                       SizedBox(

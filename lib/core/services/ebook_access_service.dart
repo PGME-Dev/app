@@ -13,6 +13,7 @@ class EbookAccessService {
     String bookId, {
     Map<String, dynamic>? billingAddress,
     String? couponCode,
+    bool? termsAccepted,
   }) async {
     try {
       debugPrint('=== EbookAccessService: Creating gateway session for book $bookId ===');
@@ -23,6 +24,7 @@ class EbookAccessService {
           'book_id': bookId,
           if (billingAddress != null) 'billing_address': billingAddress,
           if (couponCode != null) 'coupon_code': couponCode,
+          if (termsAccepted != null) 'terms_accepted': termsAccepted,
         },
       );
 

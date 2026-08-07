@@ -112,6 +112,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen>
     final billingAddress = addressResult['billing']!;
     final shippingAddressStructured = addressResult['shipping'];
     final couponCode = addressResult['coupon_code'] as String?;
+    final termsAccepted = addressResult['terms_accepted'] as bool?;
 
     setState(() => _isLoading = true);
 
@@ -124,6 +125,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen>
         billingAddress: billingAddress.toJson(),
         shippingAddressStructured: shippingAddressStructured?.toJson(),
         couponCode: couponCode,
+        termsAccepted: termsAccepted,
       );
 
       if (!mounted) return;

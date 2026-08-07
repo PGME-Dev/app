@@ -725,6 +725,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing'] as Address;
     final couponCode = addressResult['coupon_code'] as String?;
+    final termsAccepted = addressResult['terms_accepted'] as bool?;
 
     setState(() => _isProcessing = true);
 
@@ -735,6 +736,7 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
         billingAddress: billingAddress.toJson(),
         tierIndex: hasTiers ? _selectedTierIndex : null,
         couponCode: couponCode,
+        termsAccepted: termsAccepted,
       );
 
       if (!mounted) return;

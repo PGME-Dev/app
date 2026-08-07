@@ -160,6 +160,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
     final couponCode = addressResult['coupon_code'] as String?;
+    final termsAccepted = addressResult['terms_accepted'] as bool?;
 
     setState(() => _isProcessing = true);
 
@@ -169,6 +170,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
         _selectedTierIndex!,
         billingAddress: billingAddress.toJson(),
         couponCode: couponCode,
+        termsAccepted: termsAccepted,
       );
 
       if (!mounted) return;

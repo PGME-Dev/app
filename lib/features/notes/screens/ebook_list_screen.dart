@@ -230,6 +230,7 @@ class _EbookListScreenState extends State<EbookListScreen>
     if (addressResult == null || !mounted) return;
     final billingAddress = addressResult['billing']!;
     final couponCode = addressResult['coupon_code'] as String?;
+    final termsAccepted = addressResult['terms_accepted'] as bool?;
 
     setState(() => _isPurchasing = true);
 
@@ -239,6 +240,7 @@ class _EbookListScreenState extends State<EbookListScreen>
         book.bookId,
         billingAddress: billingAddress.toJson(),
         couponCode: couponCode,
+        termsAccepted: termsAccepted,
       );
 
       if (!mounted) return;
