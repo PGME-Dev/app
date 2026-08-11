@@ -24,6 +24,17 @@ import 'package:pgme/features/courses/providers/download_provider.dart';
 import 'package:pgme/core/providers/mini_player_provider.dart';
 import 'package:pgme/core/services/memory_monitor.dart';
 
+/// Lets a build permit screenshots and screen recording.
+///
+/// Off unless a build explicitly passes
+/// `--dart-define=ALLOW_SCREEN_CAPTURE=true`, so the protection can only ever
+/// be lifted deliberately — a plain `flutter build` always produces a locked
+/// binary. Intended for demo and QA builds; a build made with this must not be
+/// handed to students, since it removes the only barrier to recording paid
+/// lecture content.
+const bool kAllowScreenCapture =
+    bool.fromEnvironment('ALLOW_SCREEN_CAPTURE');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -45,7 +56,15 @@ Future<void> main() async {
   MemoryMonitor.instance.start();
 
   // Block screenshots and screen recording app-wide.
-  await NoScreenshot.instance.screenshotOff();
+  //
+  // MainActivity also sets FLAG_SECURE in onCreate, so the native window is
+  // locked before the first frame regardless. screenshotOn() clears that flag,
+  // which is why lifting the restriction only needs this one branch.
+  if (kAllowScreenCapture) {
+    await NoScreenshot.instance.screenshotOn();
+  } else {
+    await NoScreenshot.instance.screenshotOff();
+  }
 
   // Set system UI overlay style immediately
   SystemChrome.setSystemUIOverlayStyle(

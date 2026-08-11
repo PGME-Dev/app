@@ -98,7 +98,23 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
+}
+
+// Screen-capture protection is on unless a build explicitly opts out with
+// PGME_ALLOW_SCREEN_CAPTURE=true in the environment. Driven by an env var
+// rather than a source edit so producing a demo build never means commenting
+// out FLAG_SECURE and remembering to put it back — the default is always
+// protected, whatever state the working tree is in.
+val allowScreenCapture: Boolean = System.getenv("PGME_ALLOW_SCREEN_CAPTURE") == "true"
+
+android.defaultConfig {
+    buildConfigField("boolean", "ALLOW_SCREEN_CAPTURE", allowScreenCapture.toString())
+}
+
+if (allowScreenCapture) {
+    logger.warn("*** PGME: building with screenshots and screen recording ENABLED — do not distribute to students ***")
 }
 
 flutter {

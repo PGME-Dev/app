@@ -18,10 +18,20 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Block screenshots and screen recording for this activity.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
+        //
+        // Applied here rather than only from Dart because onCreate runs on
+        // every activity recreation (rotation, config change), whereas Dart
+        // main() runs once per process — without this the window would be
+        // unprotected for the first frames after a recreation.
+        //
+        // BuildConfig.ALLOW_SCREEN_CAPTURE is false unless the build set
+        // PGME_ALLOW_SCREEN_CAPTURE=true; see app/build.gradle.kts.
+        if (!BuildConfig.ALLOW_SCREEN_CAPTURE) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
