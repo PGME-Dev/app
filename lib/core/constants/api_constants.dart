@@ -79,6 +79,34 @@ class ApiConstants {
   static const String sessionPurchases = '/session-purchases';
   static String sessionPurchaseStatus(String sessionId) =>
       '/session-purchases/$sessionId/status';
+
+  // Workshop Endpoints (multi-day programmes).
+  // Each day is a LiveSession under the hood, so joining a day reuses
+  // sessionJoin/sessionZoomSignature with the day's session_id.
+  static const String workshops = '/workshops';
+  static String workshopDetails(String workshopId) => '/workshops/$workshopId';
+  static String workshopCapacity(String workshopId) =>
+      '/workshops/$workshopId/capacity';
+  static String workshopRecordings(String workshopId) =>
+      '/workshops/$workshopId/recordings';
+  static String workshopAccessStatus(String workshopId) =>
+      '/workshops/$workshopId/access-status';
+  static String workshopEnrollmentStatus(String workshopId) =>
+      '/workshops/$workshopId/enrollment-status';
+  static String workshopEnroll(String workshopId) =>
+      '/workshops/$workshopId/enroll';
+  static String workshopCertificate(String workshopId) =>
+      '/workshops/$workshopId/certificate';
+  static const String userWorkshopEnrollments = '/users/me/workshop-enrollments';
+  // Payment — mirrors the session aliases so iOS keeps neutral naming.
+  static String workshopCreateOrder(String workshopId) =>
+      '/workshops/$workshopId/create-order';
+  static String workshopVerifyPayment(String workshopId) =>
+      '/workshops/$workshopId/verify-payment';
+  static String activeWorkshopInitAccess(String workshopId) =>
+      _useAlias ? '/workshops/$workshopId/init-session' : workshopCreateOrder(workshopId);
+  static String activeWorkshopConfirmAccess(String workshopId) =>
+      _useAlias ? '/workshops/$workshopId/confirm-access' : workshopVerifyPayment(workshopId);
   static const String subjectSelections = '/users/subject-selections';
   static const String packages = '/packages';
   static const String packageTypes = '/package-types';

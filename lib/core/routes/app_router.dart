@@ -26,6 +26,8 @@ import 'package:pgme/features/purchase/screens/success_screen.dart';
 import 'package:pgme/features/purchase/screens/all_packages_screen.dart';
 import 'package:pgme/features/sessions/screens/session_details_screen.dart';
 import 'package:pgme/features/sessions/screens/series_sessions_screen.dart';
+import 'package:pgme/features/workshops/screens/workshops_list_screen.dart';
+import 'package:pgme/features/workshops/screens/workshop_details_screen.dart';
 import 'package:pgme/features/notes/screens/browse_physical_books_screen.dart';
 import 'package:pgme/features/notes/screens/ebook_list_screen.dart';
 import 'package:pgme/features/books/screens/book_cart_screen.dart';
@@ -882,6 +884,47 @@ class AppRouter {
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: SessionDetailsScreen(sessionId: sessionId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+
+          // Workshops (multi-day programmes)
+          GoRoute(
+            path: '/workshops',
+            name: 'workshops',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const WorkshopsListScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                );
+              },
+            ),
+          ),
+
+          // Workshop Details
+          GoRoute(
+            path: '/workshop/:id',
+            name: 'workshop-details',
+            pageBuilder: (context, state) {
+              final workshopId = state.pathParameters['id']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: WorkshopDetailsScreen(workshopId: workshopId),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return SlideTransition(
                     position: Tween<Offset>(
