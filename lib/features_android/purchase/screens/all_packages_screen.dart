@@ -66,10 +66,10 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
         forceRefresh: true,
       );
 
-      // Filter to only show Theory and Practical packages
+      // Filter to only show Theory, Practical and Combo packages
       final filteredPackages = allPackages.where((pkg) {
         final type = pkg.type?.toLowerCase();
-        return type == 'theory' || type == 'practical';
+        return type == 'theory' || type == 'practical' || type == 'combo';
       }).toList();
 
       if (mounted) {

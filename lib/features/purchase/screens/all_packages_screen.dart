@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/models/package_model.dart';
+import 'package:pgme/core/utils/package_type_slug.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
@@ -66,11 +68,34 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
         forceRefresh: true,
       );
 
-      // Filter to only show Theory and Practical packages
-      final filteredPackages = allPackages.where((pkg) {
-        final type = pkg.type?.toLowerCase();
-        return type == 'theory' || type == 'practical';
-      }).toList();
+      // Filter to only show Theory, Practical and Combo packages.
+      // Matched on the stable slug, not the display name — the type is named
+      // "Combos" in production, and comparing the name meant every combo
+      // package was silently dropped here.
+      const visibleTypes = {
+        PackageTypeSlug.theory,
+        PackageTypeSlug.practical,
+        PackageTypeSlug.combo,
+      };
+      final filteredPackages = allPackages
+          .where((pkg) => visibleTypes.contains(pkg.typeSlug))
+          .toList();
+
+      // A silent drop here is what hid every combo package for months, with no
+      // error to go on. Say what was dropped and why, so the next mismatch is
+      // one log line instead of a bug report.
+      if (kDebugMode) {
+        final dropped = allPackages
+            .where((pkg) => !visibleTypes.contains(pkg.typeSlug))
+            .map((pkg) => '${pkg.name} (type="${pkg.type}" slug="${pkg.typeSlug}")');
+        debugPrint(
+          '[AllPackages] showing ${filteredPackages.length}/${allPackages.length}: '
+          '${filteredPackages.map((p) => '${p.name} [${p.typeSlug}]').join(', ')}',
+        );
+        if (dropped.isNotEmpty) {
+          debugPrint('[AllPackages] dropped ${dropped.length}: ${dropped.join(', ')}');
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -111,11 +136,18 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
     return ((originalPrice - price) * 100 / originalPrice).round();
   }
 
-  List<Color> _getGradientColors(String? type, bool isDark) {
-    if (type == 'Practical') {
+  List<Color> _getGradientColors(String? typeSlug, bool isDark) {
+    if (typeSlug == PackageTypeSlug.practical) {
       return isDark
           ? [const Color(0xFF3D2A6B), const Color(0xFF6B4EAF)]
           : [const Color(0xFF6B4EAF), const Color(0xFF9D7FD9)];
+    }
+    if (typeSlug == PackageTypeSlug.combo) {
+      // Spans the theory blue and the practical violet, since a combo is both.
+      // Kept inside the blue/violet family rather than introducing a new hue.
+      return isDark
+          ? [const Color(0xFF14275E), const Color(0xFF4A3A8F)]
+          : [const Color(0xFF1847A2), const Color(0xFF7B5FC4)];
     }
     // Theory or default
     return isDark
@@ -123,9 +155,12 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
         : [const Color(0xFF1847A2), const Color(0xFF5B9BD5)];
   }
 
-  IconData _getPackageIcon(String? type) {
-    if (type == 'Practical') {
+  IconData _getPackageIcon(String? typeSlug) {
+    if (typeSlug == PackageTypeSlug.practical) {
       return Icons.science_outlined;
+    }
+    if (typeSlug == PackageTypeSlug.combo) {
+      return Icons.workspaces_outline;
     }
     return Icons.menu_book_outlined;
   }
@@ -160,10 +195,15 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
       context.pop();
       // Navigate to appropriate series screen based on package type
       // Don't pass packageId so it shows the landing page with options
-      if (package.type == 'Theory') {
+      if (package.isTheory) {
         context.push('/revision-series?subscribed=true');
-      } else if (package.type == 'Practical') {
+      } else if (package.isPractical) {
         context.push('/practical-series?subscribed=true');
+      } else if (package.isCombo) {
+        // A combo grants both halves as separate purchases server-side, so
+        // either series screen is valid. Theory is the usual entry point —
+        // previously this fell through to /home, a dead end.
+        context.push('/revision-series?subscribed=true');
       } else {
         context.go('/home');
       }
@@ -450,7 +490,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
     final selectedBorderColor = isDark ? const Color(0xFF00BEFA) : const Color(0xFF1847A2);
     final featureTextColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF333333);
     final dividerColor = isDark ? AppColors.darkDivider : const Color(0xFFEEEEEE);
-    final gradientColors = _getGradientColors(package.type, isDark);
+    final gradientColors = _getGradientColors(package.typeSlug, isDark);
     final hasTiers = package.hasTiers && package.tiers != null && package.tiers!.isNotEmpty;
     final displayPrice = hasTiers
         ? package.startingPrice ?? package.tiers!.first.effectivePrice
@@ -507,7 +547,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                     ),
                     child: Center(
                       child: Icon(
-                        _getPackageIcon(package.type),
+                        _getPackageIcon(package.typeSlug),
                         size: isTablet ? 32 : 26,
                         color: Colors.white,
                       ),
@@ -675,7 +715,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
                       ),
                     ))
                   else
-                    ..._getDefaultFeatures(package.type).map((feature) => Padding(
+                    ..._getDefaultFeatures(package.typeSlug).map((feature) => Padding(
                       padding: EdgeInsets.only(bottom: isTablet ? 13 : 10),
                       child: Row(
                         children: [
@@ -838,13 +878,24 @@ class _AllPackagesScreenState extends State<AllPackagesScreen>
     );
   }
 
-  List<String> _getDefaultFeatures(String? type) {
-    if (type == 'Practical') {
+  List<String> _getDefaultFeatures(String? typeSlug) {
+    if (typeSlug == PackageTypeSlug.practical) {
       return [
         'Practical Demonstrations',
         'Live Sessions',
         'Lab Techniques',
         'Expert Support',
+      ];
+    }
+    if (typeSlug == PackageTypeSlug.combo) {
+      // Only used when the admin left `features` blank; a combo bundles both
+      // catalogues, so the fallback copy should say so rather than reusing the
+      // theory-only list.
+      return [
+        'Everything in Theory',
+        'Everything in Practical',
+        'Live Doubt Sessions',
+        'Best Value Bundle',
       ];
     }
     return [

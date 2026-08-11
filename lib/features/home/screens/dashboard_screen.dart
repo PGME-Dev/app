@@ -34,6 +34,183 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return firstName.isNotEmpty ? firstName : 'User';
   }
 
+  /// Workshops entry — same full-width gradient tile as the e-books card, in
+  /// the brand blue so the two read as siblings rather than competing CTAs.
+  Widget _buildWorkshopsSection(bool isDark, Color textColor, bool isTablet) {
+    final cardHeight = ResponsiveHelper.orderBookCardHeight(context);
+    final hPad = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: GestureDetector(
+        onTap: () => context.push('/workshops'),
+        child: Container(
+          width: double.infinity,
+          height: cardHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
+            // The design-system gradient, so this reads as the same family as
+            // the rest of the app rather than a one-off blue.
+            gradient: isDark
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF10294F), Color(0xFF0A1B33)],
+                  )
+                : AppColors.blueGradient,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 24 : 16,
+              vertical: isTablet ? 20 : 14,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: isTablet ? 58 : 44,
+                  height: isTablet ? 58 : 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                  ),
+                  child: Icon(
+                    Icons.calendar_month_rounded,
+                    size: isTablet ? 32 : 26,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: isTablet ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Workshops',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: isTablet ? 22 : 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 4 : 2),
+                      Text(
+                        'Multi-day live programmes',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: isTablet ? 15 : 12,
+                          color: Colors.white.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: isTablet ? 20 : 16,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Browse-all entry point for the package catalogue.
+  ///
+  /// The Theory and Practical tiles above only cover the two types the
+  /// dashboard knows how to render, so any other type an admin creates —
+  /// Combos in particular — had no route to it: `/all-packages` was reachable
+  /// only from a dialog buried behind those tiles. This surfaces it directly.
+  ///
+  /// Deliberately tonal rather than another filled gradient: stacked directly
+  /// above the Workshops tile, a second gradient would read as a competing
+  /// CTA instead of a browse affordance.
+  Widget _buildAllPackagesSection(bool isDark, Color textColor, bool isTablet) {
+    final hPad = isTablet ? ResponsiveHelper.horizontalPadding(context) : 16.0;
+    final accent = isDark ? AppColors.secondaryBlue : AppColors.primaryBlue;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: GestureDetector(
+        onTap: () => context.push('/all-packages'),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCardBackground : AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(isTablet ? 24 : 14),
+            border: Border.all(
+              color: accent.withValues(alpha: isDark ? 0.35 : 0.18),
+              width: isTablet ? 1.5 : 1,
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 24 : 16,
+              vertical: isTablet ? 20 : 14,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: isTablet ? 58 : 44,
+                  height: isTablet ? 58 : 44,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: isDark ? 0.22 : 0.10),
+                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                  ),
+                  child: Icon(
+                    Icons.grid_view_rounded,
+                    size: isTablet ? 32 : 26,
+                    color: accent,
+                  ),
+                ),
+                SizedBox(width: isTablet ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'All Packages',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: isTablet ? 22 : 16,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 4 : 2),
+                      Text(
+                        'Theory, Practical & Combos',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: isTablet ? 15 : 12,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: isTablet ? 20 : 16,
+                  color: accent,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Build Books Section — two side-by-side cards
   Widget _buildBooksSection(bool isDark, Color textColor, bool isTablet) {
     final cardHeight = ResponsiveHelper.orderBookCardHeight(context);
@@ -424,6 +601,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (dashboardProvider.hasActivePurchase == true &&
                           dashboardProvider.packages.isNotEmpty)
                         SizedBox(height: isTablet ? 36 : 24),
+
+                      // Full package catalogue — shown to everyone, since the
+                      // Theory/Practical tiles above are gated on a purchase
+                      // and never list Combos.
+                      _buildAllPackagesSection(isDark, textColor, isTablet),
+
+                      SizedBox(height: isTablet ? 36 : 24),
+
+                      // Workshops (multi-day live programmes)
+                      _buildWorkshopsSection(isDark, textColor, isTablet),
+
+                      SizedBox(height: isTablet ? 36 : 24),
 
                       // Books Section (E-Books + Physical Copies)
                       _buildBooksSection(isDark, textColor, isTablet),

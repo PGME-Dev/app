@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:pgme/core/utils/package_type_slug.dart';
 
 part 'package_model.g.dart';
 
@@ -82,8 +83,19 @@ class PackageModel {
 
   final String name;
 
+  /// Display name of the package type, e.g. "Theory", "Practical", "Combos".
+  ///
+  /// This is free text an admin can rename at any time — never compare against
+  /// it. Use [typeSlug] (or `PackageTypeSlug.matches`) instead.
   @JsonKey(name: 'package_type')
-  final String? type; // "Theory", "Practical"
+  final String? type;
+
+  /// Stable identifier for the package type: 'theory', 'practical', 'combo'.
+  ///
+  /// Server-derived, so renaming the type in the admin panel can't change it.
+  /// Falls back to a locally derived slug when an older backend omits it.
+  @JsonKey(name: 'package_type_slug')
+  final String? packageTypeSlug;
 
   final String? description;
 
@@ -159,6 +171,7 @@ class PackageModel {
     required this.packageId,
     required this.name,
     this.type,
+    this.packageTypeSlug,
     this.description,
     required this.price,
     this.originalPrice,
@@ -190,6 +203,15 @@ class PackageModel {
 
   Map<String, dynamic> toJson() => _$PackageModelToJson(this);
 
+  /// Stable package-type slug, falling back to one derived from the display
+  /// name when the backend predates `package_type_slug`.
+  String? get typeSlug =>
+      PackageTypeSlug.resolve(slug: packageTypeSlug, name: type);
+
+  bool get isTheory => typeSlug == PackageTypeSlug.theory;
+  bool get isPractical => typeSlug == PackageTypeSlug.practical;
+  bool get isCombo => typeSlug == PackageTypeSlug.combo;
+
   /// Whether this package has rich HTML content
   bool get hasRichDescription =>
       richDescription != null && richDescription!.isNotEmpty;
@@ -207,6 +229,7 @@ class PackageModel {
     String? packageId,
     String? name,
     String? type,
+    String? packageTypeSlug,
     String? description,
     int? price,
     int? originalPrice,
@@ -236,6 +259,7 @@ class PackageModel {
       packageId: packageId ?? this.packageId,
       name: name ?? this.name,
       type: type ?? this.type,
+      packageTypeSlug: packageTypeSlug ?? this.packageTypeSlug,
       description: description ?? this.description,
       price: price ?? this.price,
       originalPrice: originalPrice ?? this.originalPrice,
