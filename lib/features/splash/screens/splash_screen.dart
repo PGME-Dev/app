@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -53,7 +55,22 @@ class _SplashScreenState extends State<SplashScreen> {
         print('Firebase already initialized (native): $e');
       }
 
-      await PushNotificationService().initialize();
+      // Push setup is NOT required to enter the app. Never `await` it on the
+      // splash path: on devices with disabled/outdated/restricted Google Play
+      // Services the underlying FCM calls (requestPermission, getInitialMessage,
+      // getToken) can hang forever, leaving the app stuck on the splash with no
+      // exception thrown (so the catch-below /login fallback never fires).
+      // Fire-and-forget with a hard timeout so launch is always bounded.
+      unawaited(
+        PushNotificationService()
+            .initialize()
+            .timeout(
+              const Duration(seconds: 8),
+              onTimeout: () =>
+                  debugPrint('Push init timed out — continuing to app'),
+            )
+            .catchError((e) => debugPrint('Push init failed: $e')),
+      );
 
       if (!mounted) return;
 
@@ -71,11 +88,14 @@ class _SplashScreenState extends State<SplashScreen> {
       final authProvider = context.read<AuthProvider>();
       final storageService = StorageService();
 
-      // Run minimum splash duration and auth check concurrently
+      // Run minimum splash duration and auth check concurrently. The timeout is
+      // a hard safety net: the splash must ALWAYS exit, even if some awaited
+      // call hangs without throwing. On timeout this throws and falls through to
+      // the catch below, which routes to /login.
       await Future.wait([
         Future.delayed(const Duration(milliseconds: 1500)), // Minimum splash time
         authProvider.checkAuthStatus(),
-      ]);
+      ]).timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
 

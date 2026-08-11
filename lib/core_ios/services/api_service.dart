@@ -59,6 +59,16 @@ class ApiService {
         onError: (error, handler) async {
           // Handle 401 Unauthorized (token expired or session terminated)
           if (error.response?.statusCode == 401) {
+            // A 401 from the refresh endpoint itself must NEVER trigger another
+            // refresh — doing so re-hits this endpoint, gets another 401, and
+            // recurses forever, freezing the app on the splash screen. Treat it
+            // as a terminal session invalidation and propagate.
+            if (error.requestOptions.path.contains(ApiConstants.refreshToken)) {
+              SessionManager().markSessionInvalidated();
+              await _storageService.clearAll();
+              return handler.next(error);
+            }
+
             // Check if this is a SESSION_TERMINATED error (logged out from another device)
             final errorCode = _getErrorCodeFromResponse(error.response?.data);
 
@@ -125,14 +135,25 @@ class ApiService {
         return false;
       }
 
-      final response = await _dio.post(
-        ApiConstants.refreshToken,
-        data: {'refresh_token': refreshToken},
-        options: Options(
+      // Use a bare Dio with NO interceptors so a 401 on the refresh call can
+      // never re-enter onError and recurse into another refresh attempt.
+      final refreshDio = Dio(
+        BaseOptions(
+          baseUrl: ApiConstants.baseUrl,
+          connectTimeout:
+              const Duration(milliseconds: ApiConstants.connectTimeout),
+          receiveTimeout:
+              const Duration(milliseconds: ApiConstants.receiveTimeout),
           headers: {
-            'Authorization': null, // Don't use access token for refresh
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
         ),
+      );
+
+      final response = await refreshDio.post(
+        ApiConstants.refreshToken,
+        data: {'refresh_token': refreshToken},
       );
 
       final responseData = _parseResponseData(response.data);

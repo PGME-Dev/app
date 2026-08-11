@@ -88,12 +88,15 @@ class _SplashScreenState extends State<SplashScreen> {
       final authProvider = context.read<AuthProvider>();
       final storageService = StorageService();
 
-      // Run minimum splash duration and auth check concurrently
+      // Run minimum splash duration and auth check concurrently. The timeout is
+      // a hard safety net: the splash must ALWAYS exit, even if some awaited
+      // call hangs without throwing. On timeout this throws and falls through to
+      // the catch below, which routes to /login.
       debugPrint('SPLASH: Starting auth check...');
       await Future.wait([
         Future.delayed(const Duration(milliseconds: 1500)), // Minimum splash time
         authProvider.checkAuthStatus(),
-      ]);
+      ]).timeout(const Duration(seconds: 15));
       debugPrint('SPLASH: Auth check complete');
 
       if (!mounted) return;

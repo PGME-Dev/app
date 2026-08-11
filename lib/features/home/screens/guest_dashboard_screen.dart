@@ -402,9 +402,9 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     Color textColor,
     bool isTablet,
   ) {
-    // Filter to only show Theory and Practical package types
+    // Filter to only show Theory, Practical and Combo package types
     final filteredTypes = provider.packageTypes
-        .where((t) => t.name == 'Theory' || t.name == 'Practical')
+        .where((t) => t.name == 'Theory' || t.name == 'Practical' || t.name == 'Combo')
         .toList();
 
     return Column(

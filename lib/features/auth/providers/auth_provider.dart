@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 import 'package:pgme/core/constants/api_constants.dart';
@@ -69,8 +71,22 @@ class AuthProvider with ChangeNotifier {
         // Get current session ID from storage
         _currentSessionId = await _storageService.getSessionId();
 
-        // Re-register FCM token on every app startup (critical for notifications)
-        await PushNotificationService().registerToken();
+        // Re-register FCM token on every app startup (critical for
+        // notifications). Fire-and-forget with a timeout — never `await` this on
+        // the startup path: FCM token fetch can hang on devices with unhealthy
+        // Google Play Services and would otherwise block the splash.
+        unawaited(
+          PushNotificationService()
+              .registerToken()
+              .timeout(
+                const Duration(seconds: 8),
+                onTimeout: () =>
+                    debugPrint('FCM token registration timed out — continuing'),
+              )
+              .catchError(
+                (e) => debugPrint('FCM token registration failed: $e'),
+              ),
+        );
 
         // Check for multiple active sessions
         try {
