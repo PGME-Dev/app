@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgme/core/services/coupon_service.dart';
+import 'package:pgme/core/theme/app_theme.dart';
 
 /// Reusable coupon input for checkout screens. Previews the discount via the
 /// backend; the coupon is applied authoritatively at create-order. Reports the
@@ -11,6 +12,9 @@ class CouponField extends StatefulWidget {
   final List<Map<String, dynamic>>? items;
   final void Function(String? code, num discount) onChanged;
 
+  /// Overridable for tests; production always uses the real [CouponService].
+  final CouponApi? service;
+
   const CouponField({
     super.key,
     required this.purchaseType,
@@ -18,6 +22,7 @@ class CouponField extends StatefulWidget {
     this.tierIndex,
     this.items,
     required this.onChanged,
+    this.service,
   });
 
   @override
@@ -26,14 +31,36 @@ class CouponField extends StatefulWidget {
 
 class _CouponFieldState extends State<CouponField> {
   final _controller = TextEditingController();
-  final _service = CouponService();
+  late final CouponApi _service = widget.service ?? CouponService();
   bool _loading = false;
   String? _error;
   CouponPreview? _applied;
+  List<VisibleCoupon> _visible = const [];
 
-  Future<void> _apply() async {
-    final code = _controller.text.trim().toUpperCase();
+  @override
+  void initState() {
+    super.initState();
+    _loadVisibleCoupons();
+  }
+
+  /// Offers of the coupons the admin has made public for this product. Without
+  /// these the field is only usable by someone who already knows a code, which
+  /// is how the app differed from the web store.
+  Future<void> _loadVisibleCoupons() async {
+    final coupons = await _service.listVisibleCoupons(
+      purchaseType: widget.purchaseType,
+      productId: widget.productId,
+      tierIndex: widget.tierIndex,
+      items: widget.items,
+    );
+    if (!mounted) return;
+    setState(() => _visible = coupons);
+  }
+
+  Future<void> _apply([String? explicitCode]) async {
+    final code = (explicitCode ?? _controller.text).trim().toUpperCase();
     if (code.isEmpty) return;
+    if (explicitCode != null) _controller.text = code;
     setState(() {
       _loading = true;
       _error = null;
@@ -75,6 +102,98 @@ class _CouponFieldState extends State<CouponField> {
     super.dispose();
   }
 
+  /// A single offered coupon, styled as a dashed ticket to match the web
+  /// store's suggestion chips.
+  Widget _buildSuggestion(VisibleCoupon coupon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.secondaryBlue : AppColors.primaryBlue;
+    final subtleText = isDark ? AppColors.darkTextTertiary : AppColors.textTertiary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: isDark ? 0.12 : 0.05),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: accent.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.local_offer_outlined, size: 18, color: accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          coupon.code,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                            color: accent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        coupon.shortLabel,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (coupon.description != null && coupon.description!.isNotEmpty)
+                    Text(
+                      coupon.description!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11,
+                        color: subtleText,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: _loading ? null : () => _apply(coupon.code),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: accent,
+                side: BorderSide(color: accent),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text(
+                'Apply',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -82,18 +201,18 @@ class _CouponFieldState extends State<CouponField> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.08),
+          color: AppColors.success.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 18),
+            const Icon(Icons.check_circle, color: AppColors.success, size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 '${_applied!.code}   −₹${_applied!.couponDiscount.toStringAsFixed(0)}',
-                style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
+                style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.success),
               ),
             ),
             TextButton(
@@ -108,6 +227,10 @@ class _CouponFieldState extends State<CouponField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_visible.isNotEmpty) ...[
+          ..._visible.map(_buildSuggestion),
+          const SizedBox(height: 4),
+        ],
         Row(
           children: [
             Expanded(

@@ -1,7 +1,5 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:pgme/core/constants/indian_states.dart';
 import 'package:pgme/core/models/address_model.dart';
@@ -12,6 +10,7 @@ import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 import 'package:pgme/core/widgets/coupon_field.dart';
+import 'package:pgme/core/widgets/terms_gate_sheet.dart';
 
 /// Shows an address bottom sheet and returns an [Address] or null if dismissed.
 ///
@@ -239,6 +238,15 @@ class _AddressSheetState extends State<_AddressSheet> {
     } finally {
       if (mounted) setState(() => _isLoadingLocation = false);
     }
+  }
+
+  /// Opens the forced-read terms sheet; acceptance is only ever set from its
+  /// result, so there is no path to `_termsAccepted = true` without the
+  /// document having been scrolled through.
+  Future<void> _openTermsGate() async {
+    final agreed = await TermsGateSheet.show(context);
+    if (!mounted || !agreed) return;
+    setState(() => _termsAccepted = true);
   }
 
   void _onConfirm() {
@@ -683,65 +691,116 @@ class _AddressSheetState extends State<_AddressSheet> {
                         SizedBox(height: spacing * 1.5),
                       ],
 
-                      // Terms & Conditions acceptance
-                      GestureDetector(
-                        onTap: () => setState(() => _termsAccepted = !_termsAccepted),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: Checkbox(
-                                value: _termsAccepted,
-                                onChanged: (v) => setState(() => _termsAccepted = v ?? false),
-                                activeColor: accentColor,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: RichText(
-                                  text: TextSpan(
+                      // Terms & Conditions gate — acceptance only comes from
+                      // reading the forced-read sheet through to the end, never
+                      // a bare checkbox. Mirrors the web store, where a tick
+                      // without ever opening the document was likewise not
+                      // possible.
+                      Container(
+                        padding: EdgeInsets.all(spacing * 0.9),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _termsAccepted
+                                ? AppColors.success.withValues(alpha: 0.4)
+                                : borderColor,
+                          ),
+                          color: _termsAccepted
+                              ? AppColors.success.withValues(alpha: 0.06)
+                              : Colors.transparent,
+                        ),
+                        child: _termsAccepted
+                            ? Row(
+                                children: [
+                                  const Icon(Icons.check_circle_rounded,
+                                      size: 18, color: AppColors.success),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "You've agreed to the Terms & Conditions",
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: fieldFontSize,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: _openTermsGate,
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'View',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: fieldFontSize - 1,
+                                        color: secondaryTextColor,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Please read and accept our Terms & Conditions to continue',
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: fieldFontSize,
                                       color: secondaryTextColor,
                                     ),
-                                    children: [
-                                      const TextSpan(text: 'I agree to the '),
-                                      TextSpan(
-                                        text: 'Terms & Conditions',
-                                        style: TextStyle(color: accentColor, fontWeight: FontWeight.w600),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () => context.push('/terms-and-conditions'),
-                                      ),
-                                    ],
                                   ),
-                                ),
+                                  SizedBox(height: spacing * 0.7),
+                                  OutlinedButton(
+                                    onPressed: _openTermsGate,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: accentColor,
+                                      side: BorderSide(color: accentColor),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Read & Agree',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: fieldFontSize,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                       ),
                       SizedBox(height: spacing),
 
-                      // Confirm button
+                      // Confirm button. Disabled until the terms are accepted,
+                      // as on the web store — the old behaviour let the user
+                      // press it and only then told them, via a dialog, that
+                      // they had to accept.
                       SizedBox(
                         width: double.infinity,
                         height: isTablet ? 56 : 48,
                         child: ElevatedButton(
-                          onPressed: _onConfirm,
+                          onPressed: _termsAccepted ? _onConfirm : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: accentColor,
                             foregroundColor: Colors.white,
+                            disabledBackgroundColor: accentColor.withValues(alpha: 0.35),
+                            disabledForegroundColor: Colors.white.withValues(alpha: 0.8),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(fieldRadius),
                             ),
                           ),
                           child: Text(
-                            'Confirm Address',
+                            _termsAccepted ? 'Confirm Address' : 'Accept Terms to Continue',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.w600,
