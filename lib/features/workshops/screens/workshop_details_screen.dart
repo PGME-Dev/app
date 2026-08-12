@@ -705,8 +705,15 @@ class _WorkshopDetailsScreenState extends State<WorkshopDetailsScreen>
                                   color: iconColor.withValues(alpha: isDark ? 0.22 : 0.10),
                                   borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
                                 ),
+                                // Deliberately the filled variant, not
+                                // picture_as_pdf_outlined: Flutter tree-shakes
+                                // the icon font, so an icon not already in the
+                                // shipped release changes
+                                // MaterialIcons-Regular.otf and makes the whole
+                                // change unpatchable over the air. This one is
+                                // already bundled.
                                 child: Icon(
-                                  Icons.picture_as_pdf_outlined,
+                                  Icons.picture_as_pdf,
                                   size: isTablet ? 28 : 22,
                                   color: iconColor,
                                 ),
