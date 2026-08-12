@@ -520,8 +520,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindi
         useAsmsSubtitles: true,
         useAsmsAudioTracks: false,
         asmsTrackNames: _qualityLabels,
+        // ExoPlayer asserts minBufferMs >= both playback thresholds and
+        // throws from the DefaultLoadControl builder otherwise, which aborts
+        // player construction — the UI then sits on the buffering spinner
+        // forever with no error surfaced. minBufferMs was 2000 while
+        // bufferForPlaybackAfterRebufferMs was 3000, so every network
+        // playback failed; local files skip this config and still worked,
+        // which is what made it look like a streaming problem.
+        //
+        // 15s of minimum buffer also rebuffers far less on mobile data than
+        // the old 2s did, while bufferForPlaybackMs keeps first-frame latency
+        // at 1.5s.
         bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 2000,
+          minBufferMs: 15000,
           maxBufferMs: 30000,
           bufferForPlaybackMs: 1500,
           bufferForPlaybackAfterRebufferMs: 3000,
