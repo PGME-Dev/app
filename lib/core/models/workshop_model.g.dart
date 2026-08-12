@@ -100,6 +100,8 @@ WorkshopModel _$WorkshopModelFromJson(Map<String, dynamic> json) =>
               .toList() ??
           [],
       thumbnailUrl: json['thumbnail_url'] as String?,
+      brochureUrl: json['brochure_url'] as String?,
+      brochureFilename: json['brochure_filename'] as String?,
       startDate: json['start_date'] as String,
       endDate: json['end_date'] as String,
       dayCount: (json['day_count'] as num).toInt(),
@@ -156,6 +158,8 @@ Map<String, dynamic> _$WorkshopModelToJson(WorkshopModel instance) =>
       'faculty_names': instance.facultyNames,
       'faculty_photo_urls': instance.facultyPhotoUrls,
       'thumbnail_url': instance.thumbnailUrl,
+      'brochure_url': instance.brochureUrl,
+      'brochure_filename': instance.brochureFilename,
       'start_date': instance.startDate,
       'end_date': instance.endDate,
       'day_count': instance.dayCount,

@@ -745,6 +745,89 @@ class _WorkshopDetailsScreenState extends State<WorkshopDetailsScreen>
                   const SizedBox(height: 24),
                 ],
 
+                // Brochure — public marketing PDF, shown whether or not the
+                // user has enrolled. Opens in the in-app viewer rather than a
+                // browser, so it stays inside the app.
+                if (w.brochureUrl != null && w.brochureUrl!.isNotEmpty) ...[
+                  _sectionTitle('Brochure', hPadding, isTablet, textColor),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: GestureDetector(
+                      onTap: () => context.pushNamed(
+                        'pdf-viewer',
+                        queryParameters: {
+                          'pdfUrl': w.brochureUrl!,
+                          'title': w.brochureFilename ?? 'Brochure',
+                        },
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: cardBgColor,
+                          borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(isTablet ? 28 : 20),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: isTablet ? 52 : 42,
+                                height: isTablet ? 52 : 42,
+                                decoration: BoxDecoration(
+                                  color: iconColor.withValues(alpha: isDark ? 0.22 : 0.10),
+                                  borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                                ),
+                                child: Icon(
+                                  Icons.picture_as_pdf_outlined,
+                                  size: isTablet ? 28 : 22,
+                                  color: iconColor,
+                                ),
+                              ),
+                              SizedBox(width: isTablet ? 18 : 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      w.brochureFilename ?? 'Workshop brochure',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 17 : 14,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    SizedBox(height: isTablet ? 4 : 2),
+                                    Text(
+                                      'PDF · tap to read',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: isTablet ? 14 : 12,
+                                        color: secondaryTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: isTablet ? 20 : 16,
+                                color: iconColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
                 // Faculty
                 if (w.faculty.isNotEmpty) ...[
                   _sectionTitle('Faculty', hPadding, isTablet, textColor),

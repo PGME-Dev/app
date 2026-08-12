@@ -157,6 +157,16 @@ class WorkshopModel {
   @JsonKey(name: 'thumbnail_url')
   final String? thumbnailUrl;
 
+  /// Optional brochure PDF — marketing material, separate from the thumbnail
+  /// image above. Public: readable before enrolling.
+  @JsonKey(name: 'brochure_url')
+  final String? brochureUrl;
+
+  /// Original upload name, so the UI can show a real filename rather than the
+  /// S3 key.
+  @JsonKey(name: 'brochure_filename')
+  final String? brochureFilename;
+
   @JsonKey(name: 'start_date')
   final String startDate;
 
@@ -254,6 +264,8 @@ class WorkshopModel {
     this.facultyNames = const [],
     this.facultyPhotoUrls = const [],
     this.thumbnailUrl,
+    this.brochureUrl,
+    this.brochureFilename,
     required this.startDate,
     required this.endDate,
     required this.dayCount,
