@@ -672,79 +672,6 @@ class _WorkshopDetailsScreenState extends State<WorkshopDetailsScreen>
                   const SizedBox(height: 24),
                 ],
 
-                // Agenda
-                _sectionTitle('Day-by-day Agenda', hPadding, isTablet, textColor),
-                const SizedBox(height: 12),
-                ...w.days.map((day) => Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: hPadding, vertical: 4),
-                      child: _buildDayCard(day, isDark, textColor,
-                          secondaryTextColor, cardBgColor, iconColor, buttonColor),
-                    )),
-                const SizedBox(height: 24),
-
-                // Attendance
-                if (w.isEnrolled && w.activeDays.isNotEmpty) ...[
-                  _sectionTitle('Your Attendance', hPadding, isTablet, textColor),
-                  const SizedBox(height: 12),
-                  _buildAttendanceCard(hPadding, isTablet, isDark, textColor,
-                      secondaryTextColor, surfaceColor, iconColor),
-                  const SizedBox(height: 24),
-                ],
-
-                // Certificate
-                if (w.certificateEnabled && w.isEnrolled) ...[
-                  _sectionTitle('Certificate', hPadding, isTablet, textColor),
-                  const SizedBox(height: 12),
-                  _buildCertificateCard(hPadding, isTablet, isDark, textColor,
-                      secondaryTextColor, surfaceColor, buttonColor),
-                  const SizedBox(height: 24),
-                ],
-
-                // Recordings
-                if (_recordings.isNotEmpty) ...[
-                  _sectionTitle('Recordings', hPadding, isTablet, textColor),
-                  const SizedBox(height: 12),
-                  ..._recordings.map((rec) => Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: hPadding, vertical: 4),
-                        child: _buildRecordingCard(rec, textColor,
-                            secondaryTextColor, cardBgColor, iconColor),
-                      )),
-                  const SizedBox(height: 24),
-                ],
-
-                // About
-                if (w.description != null && w.description!.isNotEmpty) ...[
-                  _sectionTitle(
-                      'About This Workshop', hPadding, isTablet, textColor),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: hPadding),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: cardBgColor,
-                        borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(isTablet ? 28 : 20),
-                        child: Text(
-                          w.description!,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                            fontSize: isTablet ? 17 : 14,
-                            height: 1.5,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-
                 // Brochure — public marketing PDF, shown whether or not the
                 // user has enrolled. Opens in the in-app viewer rather than a
                 // browser, so it stays inside the app.
@@ -820,6 +747,79 @@ class _WorkshopDetailsScreenState extends State<WorkshopDetailsScreen>
                                 color: iconColor,
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Agenda
+                _sectionTitle('Day-by-day Agenda', hPadding, isTablet, textColor),
+                const SizedBox(height: 12),
+                ...w.days.map((day) => Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: hPadding, vertical: 4),
+                      child: _buildDayCard(day, isDark, textColor,
+                          secondaryTextColor, cardBgColor, iconColor, buttonColor),
+                    )),
+                const SizedBox(height: 24),
+
+                // Attendance
+                if (w.isEnrolled && w.activeDays.isNotEmpty) ...[
+                  _sectionTitle('Your Attendance', hPadding, isTablet, textColor),
+                  const SizedBox(height: 12),
+                  _buildAttendanceCard(hPadding, isTablet, isDark, textColor,
+                      secondaryTextColor, surfaceColor, iconColor),
+                  const SizedBox(height: 24),
+                ],
+
+                // Certificate
+                if (w.certificateEnabled && w.isEnrolled) ...[
+                  _sectionTitle('Certificate', hPadding, isTablet, textColor),
+                  const SizedBox(height: 12),
+                  _buildCertificateCard(hPadding, isTablet, isDark, textColor,
+                      secondaryTextColor, surfaceColor, buttonColor),
+                  const SizedBox(height: 24),
+                ],
+
+                // Recordings
+                if (_recordings.isNotEmpty) ...[
+                  _sectionTitle('Recordings', hPadding, isTablet, textColor),
+                  const SizedBox(height: 12),
+                  ..._recordings.map((rec) => Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: hPadding, vertical: 4),
+                        child: _buildRecordingCard(rec, textColor,
+                            secondaryTextColor, cardBgColor, iconColor),
+                      )),
+                  const SizedBox(height: 24),
+                ],
+
+                // About
+                if (w.description != null && w.description!.isNotEmpty) ...[
+                  _sectionTitle(
+                      'About This Workshop', hPadding, isTablet, textColor),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPadding),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(isTablet ? 30 : 24),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(isTablet ? 28 : 20),
+                        child: Text(
+                          w.description!,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            fontSize: isTablet ? 17 : 14,
+                            height: 1.5,
+                            color: textColor,
                           ),
                         ),
                       ),
