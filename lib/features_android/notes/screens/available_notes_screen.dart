@@ -7,6 +7,8 @@ import 'package:pgme/core_android/providers/theme_provider.dart';
 import 'package:pgme/core_android/theme/app_theme.dart';
 import 'package:pgme/core_android/services/dashboard_service.dart';
 import 'package:pgme/core_android/utils/web_store_launcher.dart';
+import 'package:pgme/features_android/purchase/widgets/combo_offer_card.dart';
+import 'package:pgme/features_android/purchase/widgets/combo_upgrade_sheet.dart';
 import 'package:pgme/core_android/models/series_document_model.dart';
 import 'package:pgme/core_android/models/series_model.dart';
 import 'package:pgme/core_android/models/package_model.dart';
@@ -122,6 +124,18 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
         context.push('/all-packages');
       }
     }
+  }
+
+  /// The package a credited combo offer should be priced against.
+  String? get _comboPackageId => _package?.packageId ?? _series?.packageId;
+
+  /// Open the credited combo checkout chosen from the purchase popup.
+  void _takeComboOffer(Map<String, dynamic> offer) {
+    final comboId = (offer['combo'] as Map<String, dynamic>?)?['package_id']?.toString();
+    if (comboId == null) return;
+    showComboUpgradeSheet(context, comboPackageId: comboId, quote: offer).then((done) {
+      if (done == true && mounted) _loadData();
+    });
   }
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
@@ -345,6 +359,17 @@ class _AvailableNotesScreenState extends State<AvailableNotesScreen> {
                       ),
                     ),
                   SizedBox(height: isTablet ? 20 : 16),
+                  if (_comboPackageId != null)
+                    ComboOfferSection(
+                      packageId: _comboPackageId!,
+                      isPurchased: _package?.isPurchased ?? false,
+                      isDark: isDark,
+                      isTablet: isTablet,
+                      onTake: (offer) {
+                        Navigator.of(dialogContext).pop(false);
+                        _takeComboOffer(offer);
+                      },
+                    ),
                   // Enroll Now button
                   SizedBox(
                     width: double.infinity,

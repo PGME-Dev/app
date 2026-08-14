@@ -218,6 +218,19 @@ class ApiConstants {
   static String get activeTierInit => _useAlias ? '/content-access/tier-init' : createUpgradeOrder;
   static String get activeTierConfirm => _useAlias ? '/content-access/tier-confirm' : verifyUpgradePayment;
 
+  // Combo Upgrade Endpoints — "complete your set": the customer owns part of a
+  // combo and pays the difference, credited for the unused days they hold.
+  // The combo order is confirmed through the ordinary package verify endpoint.
+  static String comboOffer(String packageId) => '/packages/$packageId/combo-offer';
+  static const String calculateComboUpgrade = '/payments/combo-upgrade/calculate';
+  static const String createComboUpgradeOrder = '/payments/combo-upgrade/create-order';
+  static String activeComboOffer(String packageId) =>
+      _useAlias ? '/packages/$packageId/bundle-offer' : comboOffer(packageId);
+  static String get activeComboPreview =>
+      _useAlias ? '/content-access/bundle-preview' : calculateComboUpgrade;
+  static String get activeComboInit =>
+      _useAlias ? '/content-access/bundle-init' : createComboUpgradeOrder;
+
   // Gateway Configuration
   static const String gatewayScriptUrl =
       'https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js';
