@@ -48,7 +48,7 @@ class TermsContent {
     {
       'title': '4. Subscription & Payment',
       'content':
-          'Access to paid content requires subscription.\n\nBy purchasing a subscription:\n\n• You agree to pay the listed fee\n• All prices are inclusive of applicable GST unless stated otherwise\n• Payments are non-refundable as per Refund Policy\n• Subscriptions are non-transferable and non-resalable\n\nIf applicable, subscription renewals will occur automatically unless cancelled before renewal date.',
+          'Access to paid content requires subscription.\n\nBy purchasing a subscription:\n\n• You agree to pay the listed fee\n• All prices are exclusive of applicable GST unless stated otherwise\n• Payments are non-refundable as per Refund Policy\n• Subscriptions are non-transferable and non-resalable\n\nIf applicable, subscription renewals will occur automatically unless cancelled before renewal date.',
     },
     {
       'title': '5. Intellectual Property',

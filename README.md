@@ -199,6 +199,12 @@ Download Inter font from: https://fonts.google.com/specimen/Inter
 flutter build apk --release
 ```
 
+Android ships `lib/main.dart` (`core/` + `features/`). `lib/main_android.dart`
+is a thin alias for it, so `-t lib/main_android.dart` builds the identical app —
+the two used to boot different trees, and picking the wrong one silently
+shipped a build missing Workshops and the All Packages card. `lib/main_ios.dart`
+is genuinely separate: iOS runs reader-mode with no purchase or payment flow.
+
 **Android App Bundle**
 ```bash
 flutter build appbundle --release

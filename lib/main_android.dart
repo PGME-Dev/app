@@ -1,142 +1,22 @@
-import 'dart:async';
+/// Android entry point — deliberately a thin alias for [lib/main.dart].
+///
+/// This file used to boot a parallel `core_android/` + `features_android/`
+/// tree. The two trees drifted, so which app you got depended on the build
+/// command: `flutter build apk` (which defaults to lib/main.dart) shipped
+/// Workshops and the All Packages card, while
+/// `flutter build apk -t lib/main_android.dart` silently shipped a build
+/// missing both, and missing lib/main.dart's screen-capture lock and memory
+/// monitor.
+///
+/// Rather than keep two copies honest by hand, this target now runs the same
+/// app. Both commands produce an identical APK, so a feature added once can
+/// never be missing from "the other build".
+///
+/// The `features_android/` tree is no longer reachable from any entry point;
+/// treat `core/` + `features/` as the app. (`main_ios.dart` is genuinely
+/// separate — iOS runs reader-mode with no purchase or payment surfaces.)
+library;
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:no_screenshot/no_screenshot.dart';
-import 'package:pgme/core_android/theme/app_theme.dart';
-import 'package:pgme/core_android/routes/app_router.dart';
-import 'package:pgme/core_android/providers/theme_provider.dart';
-import 'package:pgme/core_android/services/push_notification_service.dart';
-import 'package:pgme/core/services/pdf_cache_service.dart';
-import 'package:pgme/core_android/utils/responsive_helper.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pgme/features_android/auth/providers/auth_provider.dart';
-import 'package:pgme/features_android/onboarding/providers/onboarding_provider.dart';
-import 'package:pgme/features_android/home/providers/dashboard_provider.dart';
-import 'package:pgme/features_android/books/providers/book_provider.dart';
-import 'package:pgme/features_android/settings/providers/access_record_provider.dart';
-import 'package:pgme/features_android/notifications/providers/notification_provider.dart';
-import 'package:pgme/features_android/courses/providers/enrolled_courses_provider.dart';
-import 'package:pgme/features_android/courses/providers/download_provider.dart';
-import 'package:pgme/core/providers/mini_player_provider.dart';
+import 'package:pgme/main.dart' as app;
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Block screenshots and screen recording app-wide.
-  await NoScreenshot.instance.screenshotOff();
-
-  // Set system UI overlay style immediately
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-
-  // Allow all orientations initially, then lock based on device type after first frame
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-
-  // Run the app immediately — heavy initialization (Firebase, dotenv, etc.)
-  // happens inside the splash screen so it shows right away
-  runApp(const MyApp());
-}
-
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    // Keep the screen awake while the app is in use. Per-screen consumers
-    // (BetterPlayer fullscreen) may briefly toggle this off; the video
-    // player re-asserts via WakelockPlus.enable() on hideFullscreen.
-    WakelockPlus.enable();
-    // Drop expired PDF cache entries and enforce the size cap. Lazy
-    // fire-and-forget — failures are swallowed inside the service.
-    unawaited(PdfCacheService.cleanupExpired());
-    unawaited(PdfCacheService.pruneToSizeLimit());
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    // Best-effort release on app teardown. If the process is being killed
-    // this is moot, but ensures we don't leak the wakelock if Flutter
-    // unmounts MyApp without the OS shutting the activity down.
-    WakelockPlus.disable();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Only hold the wakelock while we're actually visible. Holding it in
-    // the background drains battery and can trip Android's foreground
-    // service watchdog.
-    if (state == AppLifecycleState.resumed) {
-      WakelockPlus.enable();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached) {
-      WakelockPlus.disable();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => OnboardingProvider()),
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => BookProvider()),
-        ChangeNotifierProvider(create: (_) => AccessRecordProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
-        ChangeNotifierProvider(create: (_) => EnrolledCoursesProvider()),
-        ChangeNotifierProvider(create: (_) => DownloadProvider()),
-        ChangeNotifierProvider(create: (_) => MiniPlayerProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'PGME',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            routerConfig: AppRouter.router,
-            scrollBehavior: const MaterialScrollBehavior().copyWith(
-              physics: const ClampingScrollPhysics(),
-              overscroll: false,
-            ),
-            builder: (context, child) {
-              // All orientations enabled. The earlier policy locked phones
-              // to portrait via setPreferredOrientations, but users want
-              // rotation to follow the OS rotation-lock setting.
-              return child!;
-            },
-          );
-        },
-      ),
-    );
-  }
-}
+Future<void> main() => app.main();

@@ -6,6 +6,8 @@ import 'package:pgme/core/providers/theme_provider.dart';
 import 'package:pgme/core/theme/app_theme.dart';
 import 'package:pgme/core/services/dashboard_service.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
+import 'package:pgme/features/purchase/widgets/combo_offer_card.dart';
+import 'package:pgme/features/purchase/widgets/combo_upgrade_sheet.dart';
 import 'package:pgme/core/models/package_model.dart';
 import 'package:pgme/core/models/live_session_model.dart';
 import 'package:pgme/core/models/series_model.dart';
@@ -1855,6 +1857,15 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
 
   // ── Enrollment Dialog ────────────────────────────────────────────────────
 
+  /// Open the credited combo checkout chosen from the purchase popup.
+  void _takeComboOffer(Map<String, dynamic> offer) {
+    final comboId = (offer['combo'] as Map<String, dynamic>?)?['package_id']?.toString();
+    if (comboId == null) return;
+    showComboUpgradeSheet(context, comboPackageId: comboId, quote: offer).then((done) {
+      if (done == true && mounted) _loadData();
+    });
+  }
+
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final pkg = _selectedPackage!;
@@ -1979,6 +1990,17 @@ class _PracticalSeriesScreenState extends State<PracticalSeriesScreen>
                         ],
                       ),
                       SizedBox(height: isTablet ? 20 : 16),
+                        ComboOfferSection(
+                          packageId: _selectedPackage!.packageId,
+                          isCombo: _selectedPackage!.type?.toLowerCase() == 'combo',
+                          isPurchased: _selectedPackage!.isPurchased,
+                          isDark: isDark,
+                          isTablet: isTablet,
+                          onTake: (offer) {
+                            Navigator.of(dialogContext).pop(false);
+                            _takeComboOffer(offer);
+                          },
+                        ),
                       SizedBox(
                         width: double.infinity,
                         height: btnHeight,

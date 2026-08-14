@@ -920,6 +920,74 @@ class DashboardService {
     }
   }
 
+  /// Best credited combo offer for the package being viewed, or null when the
+  /// customer owns nothing it is bundled with. Never throws: the offer is a
+  /// bonus on top of the ordinary purchase, so a failure must not block it.
+  Future<Map<String, dynamic>?> getComboOffer(String packageId) async {
+    try {
+      final response = await _apiService.dio.get(
+        ApiConstants.activeComboOffer(packageId),
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data']?['offer'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('DashboardService: combo offer unavailable for $packageId: $e');
+      return null;
+    }
+  }
+
+  /// Price a combo upgrade directly — used when the customer opens the combo
+  /// itself rather than arriving from the offer on another package.
+  Future<Map<String, dynamic>> calculateComboUpgrade(String comboPackageId) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.activeComboPreview,
+        data: {'package_id': comboPackageId},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(response.data['message'] ?? 'Failed to price this combo');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
+  /// Create a combo upgrade order (or an instant free upgrade when the credit
+  /// covers the whole combo).
+  Future<Map<String, dynamic>> createComboUpgradeOrder(
+    String comboPackageId, {
+    Map<String, dynamic>? billingAddress,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.activeComboInit,
+        data: {
+          'package_id': comboPackageId,
+          if (billingAddress != null) 'billing_address': billingAddress,
+        },
+      );
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(response.data['message'] ?? 'Failed to create combo order');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception(_apiService.getErrorMessage(e));
+    }
+  }
+
   /// Verify upgrade payment
   Future<GatewayVerificationResponse> verifyUpgradePayment({
     required String paymentSessionId,

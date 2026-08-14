@@ -14,6 +14,8 @@ import 'package:pgme/core/services/user_service.dart';
 import 'package:pgme/features/home/providers/dashboard_provider.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
+import 'package:pgme/features/purchase/widgets/combo_offer_card.dart';
+import 'package:pgme/features/purchase/widgets/combo_upgrade_sheet.dart';
 import 'package:pgme/features/purchase/widgets/tier_change_sheet.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
@@ -175,6 +177,15 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
     if (shouldEnroll == true && mounted) {
       _processPayment();
     }
+  }
+
+  /// Close the purchase popup and open the credited combo checkout.
+  void _takeComboOffer(Map<String, dynamic> offer) {
+    final comboId = (offer['combo'] as Map<String, dynamic>?)?['package_id']?.toString();
+    if (comboId == null) return;
+    showComboUpgradeSheet(context, comboPackageId: comboId, quote: offer).then((done) {
+      if (done == true && mounted) _loadPackageData();
+    });
   }
 
   Widget _buildEnrollmentDialog(BuildContext dialogContext, bool isDark) {
@@ -574,6 +585,19 @@ class _PackageAccessScreenState extends State<PackageAccessScreen>
                       },
                     ),
                     SizedBox(height: isTablet ? 28 : 16),
+                    // Credited combo offer — the better deal leads, since this
+                    // is the moment the customer is choosing what to buy.
+                    ComboOfferSection(
+                      packageId: package.packageId,
+                      isCombo: package.type?.toLowerCase() == 'combo',
+                      isPurchased: package.isPurchased,
+                      isDark: isDark,
+                      isTablet: isTablet,
+                      onTake: (offer) {
+                        Navigator.of(dialogContext).pop(false);
+                        _takeComboOffer(offer);
+                      },
+                    ),
                     // Enroll Now button
                     SizedBox(
                       width: double.infinity,
