@@ -46,7 +46,7 @@ dependencies:
   firebase_messaging: ^15.2.4
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
-  font_awesome_flutter: ^10.6.0
+  font_awesome_flutter: ^11.0.0
   flutter_local_notifications: ^19.4.1
   no_screenshot: ^0.10.0
   flutter_widget_from_html_core: ^0.17.0
