@@ -1457,7 +1457,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildCommunityIcon({
-    required IconData icon,
+    // font_awesome_flutter 11 moved FontAwesomeIcons.* from IconData to its
+    // own FaIconData type, which is also what FaIcon now takes.
+    required FaIconData icon,
     required Color color,
     required String url,
     required bool isTablet,
