@@ -192,25 +192,29 @@ class ComboOfferCard extends StatelessWidget {
           ),
 
           SizedBox(height: isTablet ? 14 : 10),
-          SizedBox(
-            width: double.infinity,
-            height: isTablet ? 48 : 40,
-            child: ElevatedButton(
-              onPressed: onTake,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
-                ),
-                elevation: 0,
+          // GestureDetector + padding rather than a fixed-height
+          // ElevatedButton: Material clips the label when the height is tight,
+          // which cut "Get the Combo" in half. Same fix as the ebook buy
+          // dialog — padding sizes the button, so the text can never clip.
+          GestureDetector(
+            onTap: onTake,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 11),
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
               ),
-              child: Text(
-                offer['is_free_upgrade'] == true ? 'Get the Combo — Free' : 'Get the Combo',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: isTablet ? 17 : 14,
-                  color: Colors.white,
+              child: Center(
+                child: Text(
+                  offer['is_free_upgrade'] == true ? 'Get the Combo — Free' : 'Get the Combo',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: isTablet ? 17 : 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
