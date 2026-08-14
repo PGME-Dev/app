@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:pgme/core/utils/web_store_launcher.dart';
+import 'package:pgme/features/purchase/widgets/upgrade_options_sheet.dart';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -1166,6 +1168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     final packageName = package['package_name'] ?? 'Package';
     final packageType = package['type'] ?? '';
+    final packageId = package['package_id']?.toString();
     final expiresAt = package['expires_at'];
     final daysRemaining = package['days_remaining'] ?? 0;
 
@@ -1222,6 +1225,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.white,
                       ),
                       overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              // Same upgrade entry point as My Orders. A chip rather than a
+              // button: this card is a fixed height, so anything taller
+              // overflows it.
+              if (packageId != null)
+                GestureDetector(
+                  onTap: () {
+                    if (WebStoreLauncher.shouldUseWebStore) {
+                      WebStoreLauncher.openProductPage(
+                        context,
+                        productType: 'packages',
+                        productId: packageId,
+                      );
+                    } else {
+                      showUpgradeOptionsSheet(
+                        context,
+                        packageId: packageId,
+                        currentTierIndex: package['tier_index'] as int?,
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 10 : 7,
+                      vertical: isTablet ? 4 : 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.upgrade, size: isTablet ? 13 : 11, color: Colors.white),
+                        SizedBox(width: isTablet ? 4 : 3),
+                        Text(
+                          Platform.isIOS ? 'Change' : 'Upgrade',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: isTablet ? 10 : 8,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

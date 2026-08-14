@@ -11,6 +11,7 @@ import 'package:pgme/core/services/access_record_service.dart';
 import 'package:pgme/core/widgets/shimmer_widgets.dart';
 import 'package:pgme/core/utils/responsive_helper.dart';
 import 'package:pgme/core/utils/web_store_launcher.dart';
+import 'package:pgme/features/purchase/widgets/upgrade_options_sheet.dart';
 import 'package:pgme/features/notes/screens/pdf_viewer_screen.dart';
 import 'package:pgme/core/widgets/app_dialog.dart';
 
@@ -596,13 +597,19 @@ class _MyRecordsScreenState extends State<MyRecordsScreen>
                     ),
                   ),
                 ),
-                if (pkg.tierName != null)
-                  GestureDetector(
+                GestureDetector(
                     onTap: () {
                       if (WebStoreLauncher.shouldUseWebStore) {
                         WebStoreLauncher.openProductPage(context, productType: 'packages', productId: pkg.packageId);
                       } else {
-                        context.push('/package-access?packageId=${pkg.packageId}');
+                        // Answers "what can I upgrade to?" directly — longer
+                        // tier or the credited combo — instead of dropping the
+                        // customer on the purchase screen to work it out.
+                        showUpgradeOptionsSheet(
+                          context,
+                          packageId: pkg.packageId,
+                          currentTierIndex: pkg.tierIndex,
+                        );
                       }
                     },
                     child: Container(
