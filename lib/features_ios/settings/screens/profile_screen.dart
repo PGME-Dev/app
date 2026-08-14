@@ -1438,7 +1438,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildCommunityIcon({
-    required IconData icon,
+    required FaIconData icon,
     required Color color,
     required String url,
     required bool isTablet,
