@@ -21,6 +21,9 @@ class TermsGateSheet extends StatefulWidget {
   static Future<bool> show(BuildContext context) async {
     final agreed = await showModalBottomSheet<bool>(
       context: context,
+    // Present above the ShellRoute scaffold, otherwise the floating
+    // bottom nav bar draws on top of the sheet and hides its actions.
+    useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       // The document is long and the gate is the point — don't let a stray

@@ -30,6 +30,9 @@ Future<bool?> showUpgradeOptionsSheet(
 }) {
   return showModalBottomSheet<bool>(
     context: context,
+    // Present above the ShellRoute scaffold, otherwise the floating
+    // bottom nav bar draws on top of the sheet and hides its actions.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => _UpgradeOptionsSheet(
@@ -230,7 +233,13 @@ class _UpgradeOptionsSheetState extends State<_UpgradeOptionsSheet> {
                     ],
                   ],
 
-                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom + (isTablet ? 16 : 8)),
+                  // viewInsets covers the keyboard; padding.bottom clears the system
+                  // gesture bar, which the sheet now draws behind.
+                  SizedBox(
+                    height: MediaQuery.of(context).viewInsets.bottom +
+                        MediaQuery.of(context).padding.bottom +
+                        (isTablet ? 16 : 8),
+                  ),
                 ],
               ),
             ),

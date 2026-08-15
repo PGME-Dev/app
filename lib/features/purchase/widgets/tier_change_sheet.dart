@@ -28,6 +28,9 @@ Future<bool?> showTierChangeSheet(
 }) {
   return showModalBottomSheet<bool>(
     context: context,
+    // Present above the ShellRoute scaffold, otherwise the floating
+    // bottom nav bar draws on top of the sheet and hides its actions.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => _UpgradeSheet(
