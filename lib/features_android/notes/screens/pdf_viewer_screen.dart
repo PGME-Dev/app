@@ -163,6 +163,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _loadPdf();
   }
 
+  // Cached in didChangeDependencies so dispose() never touches MediaQuery.
+  bool _restorePortraitOnDispose = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _restorePortraitOnDispose = MediaQuery.sizeOf(context).shortestSide < 600;
+  }
+
   @override
   void dispose() {
     _contextMenuOverlay?.remove();
@@ -180,9 +189,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       );
     }
     if (_keepScreenOn) WakelockPlus.disable();
-    // Restore portrait-only for non-tablet devices
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    if (shortestSide < 600) {
+    // Restore portrait-only for non-tablet devices. Uses the value cached in
+    // didChangeDependencies: MediaQuery.of(context) is not allowed in dispose()
+    // (the element is already deactivated) and used to throw here, skipping
+    // the orientation reset.
+    if (_restorePortraitOnDispose) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,

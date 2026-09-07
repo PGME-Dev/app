@@ -1,7 +1,7 @@
 name: pgme
 description: Post Graduate Medical Education - A complete medical education platform
 publish_to: 'none'
-version: 2.0.6+14
+version: 2.0.6+16
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -80,6 +80,12 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/logo1.png"
 
 flutter:
+  # iOS: integrate plugins via CocoaPods, not Swift Package Manager. With SwiftPM,
+  # pdfrx (vendor/pdfrx) is linked statically and its Dart loader cannot find the
+  # pdfium symbols (no pdfrx.framework), so every PDF fails with "Failed to load
+  # PDF" on iOS. CocoaPods builds pdfrx as a dynamic framework, which works.
+  config:
+    enable-swift-package-manager: false
   uses-material-design: true
 
   assets:
