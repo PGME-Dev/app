@@ -1,12 +1,12 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core_android/constants/api_constants.dart';
 import 'package:pgme/core_android/models/user_model.dart';
 import 'package:pgme/core_android/services/api_service.dart';
+import 'package:pgme/core_android/services/storage_service.dart';
 
 class UserService {
   final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
 
   /// Get user profile
   Future<UserModel> getProfile() async {
@@ -134,20 +134,13 @@ class UserService {
     }
   }
 
-  /// Get device ID (same logic as auth_service)
+  /// Get device ID — must match ApiService/AuthService (StorageService.getOrCreateDeviceId).
+  /// This used to independently recompute Build.ID (androidInfo.id), which changes on every
+  /// Android OS/security update: the FCM-token endpoint uses device_id to find-or-update the
+  /// caller's DeviceSession row, so sending a different, stale id here than the one used for
+  /// auth reactivated old sessions on every app startup, causing spurious
+  /// "multiple devices detected" warnings.
   Future<String> _getDeviceId() async {
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        return androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        return iosInfo.identifierForVendor ?? 'unknown';
-      }
-    } catch (e) {
-      // Fallback
-    }
-    return 'unknown';
+    return _storageService.getOrCreateDeviceId();
   }
 }

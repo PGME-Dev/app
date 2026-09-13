@@ -73,10 +73,15 @@ class OTPInputState extends State<OTPInput> {
 
         if (otp != null && otp.length >= widget.length) {
           final code = otp.substring(0, widget.length);
+          // Setting the controller's text already triggers Pinput's own
+          // onChanged/onCompleted (it listens to this same controller).
+          // Also calling widget.onChanged/onCompleted here fired the OTP
+          // verification twice for one code — the second call hit MSG91
+          // with an already-consumed OTP and surfaced a spurious
+          // "otp already verifed" error even though the first call had
+          // already logged the user in.
           _controller.text = code;
           _controller.selection = TextSelection.collapsed(offset: code.length);
-          widget.onChanged?.call(code);
-          widget.onCompleted(code);
         }
       }
     } catch (e) {

@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core_ios/constants/api_constants.dart';
 import 'package:pgme/core_ios/models/user_model.dart';
 import 'package:pgme/core_ios/services/api_service.dart';
+import 'package:pgme/core_ios/services/storage_service.dart';
 
 class UserService {
   final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
 
   /// Get user profile
   Future<UserModel> getProfile() async {
@@ -133,15 +134,12 @@ class UserService {
     }
   }
 
-  /// Get device ID (same logic as auth_service)
+  /// Get device ID — must match ApiService/AuthService (StorageService.getOrCreateDeviceId).
+  /// This used to independently recompute identifierForVendor, which can be null in edge
+  /// cases and fall back to the shared literal 'unknown': the FCM-token endpoint uses
+  /// device_id to find-or-update the caller's DeviceSession row, so sending a different id
+  /// here than the one used for auth could reactivate/collide with a stale session.
   Future<String> _getDeviceId() async {
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      final iosInfo = await deviceInfo.iosInfo;
-      return iosInfo.identifierForVendor ?? 'unknown';
-    } catch (e) {
-      // Fallback
-    }
-    return 'unknown';
+    return _storageService.getOrCreateDeviceId();
   }
 }

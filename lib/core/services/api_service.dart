@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pgme/core/constants/api_constants.dart';
 import 'package:pgme/core/services/storage_service.dart';
 import 'package:pgme/core/services/session_manager.dart';
@@ -128,7 +126,19 @@ class ApiService {
     );
   }
 
-  Future<bool> _refreshToken() async {
+  Future<bool>? _refreshInFlight;
+
+  // Multiple requests can 401 at the same moment (e.g. several dashboard
+  // calls firing together). Without de-duplication each one independently
+  // calls /refresh and overwrites the other's freshly-saved tokens. Share
+  // one in-flight refresh across all of them instead.
+  Future<bool> _refreshToken() {
+    return _refreshInFlight ??= _performTokenRefresh().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<bool> _performTokenRefresh() async {
     try {
       final refreshToken = await _storageService.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
@@ -256,21 +266,10 @@ class ApiService {
       return _cachedDeviceId!;
     }
 
-    final deviceInfo = DeviceInfoPlugin();
-    String deviceId = 'unknown';
-
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        deviceId = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        deviceId = iosInfo.identifierForVendor ?? 'unknown';
-      }
-    } catch (e) {
-      // Use default if device info fetch fails
-    }
-
+    // Must match what AuthService sends at login (StorageService.getOrCreateDeviceId) —
+    // previously this used OS-provided IDs (Build.ID on Android, which changes on every
+    // OS/security update) which caused spurious "session terminated" logouts.
+    final deviceId = await _storageService.getOrCreateDeviceId();
     _cachedDeviceId = deviceId;
     return deviceId;
   }

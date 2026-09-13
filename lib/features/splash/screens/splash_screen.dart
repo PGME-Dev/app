@@ -39,6 +39,25 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkAuthAndNavigate();
   }
 
+  @override
+  void dispose() {
+    // SystemChrome.setSystemUIOverlayStyle is global and sticky — it does not
+    // revert on its own when this screen is removed. Without this, the light
+    // (white) icons set above for the dark splash background stayed in effect
+    // on every screen after the splash, making status bar icons invisible on
+    // every white-background page for the rest of the session.
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
+    super.dispose();
+  }
+
   Future<void> _checkAuthAndNavigate() async {
     debugPrint('=== Splash Navigation ===');
 

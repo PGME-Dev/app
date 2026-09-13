@@ -260,4 +260,5 @@ class ApiConstants {
   static const String userIdKey = 'user_id';
   static const String onboardingCompletedKey = 'onboarding_completed';
   static const String introSeenKey = 'intro_seen';
+  static const String deviceIdKey = 'device_unique_id';
 }

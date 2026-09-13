@@ -159,25 +159,28 @@ class AuthService {
   /// Get device information for session tracking
   Future<Map<String, String>> _getDeviceInfo() async {
     final deviceInfo = DeviceInfoPlugin();
-    String deviceId = 'unknown';
     String deviceName = 'Unknown Device';
     String deviceType = 'Unknown';
 
     try {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
-        deviceId = androidInfo.id;
         deviceName = '${androidInfo.brand} ${androidInfo.model}';
         deviceType = 'Android';
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
-        deviceId = iosInfo.identifierForVendor ?? 'unknown';
         deviceName = '${iosInfo.name} ${iosInfo.model}';
         deviceType = 'iOS';
       }
     } catch (e) {
       // Use defaults if device info fetch fails
     }
+
+    // Must match ApiService._getDeviceId — both go through the same stable,
+    // persisted identifier (StorageService.getOrCreateDeviceId) instead of
+    // computing OS device info independently, which could drift/mismatch
+    // (Build.ID changes on Android OS updates; identifierForVendor can be null).
+    final deviceId = await _storageService.getOrCreateDeviceId();
 
     return {
       'device_id': deviceId,

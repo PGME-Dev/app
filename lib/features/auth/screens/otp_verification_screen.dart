@@ -27,6 +27,11 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       return;
     }
 
+    // Guard against double-submission — e.g. SMS auto-read and Pinput's own
+    // onCompleted both firing for the same code. _isLoading otherwise only
+    // disables the button, not other callers of this method.
+    if (_isLoading) return;
+
     setState(() => _isLoading = true);
 
     try {

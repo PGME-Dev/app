@@ -158,18 +158,22 @@ class AuthService {
   /// Get device information for session tracking
   Future<Map<String, String>> _getDeviceInfo() async {
     final deviceInfo = DeviceInfoPlugin();
-    String deviceId = 'unknown';
     String deviceName = 'Unknown Device';
     String deviceType = 'Unknown';
 
     try {
       final iosInfo = await deviceInfo.iosInfo;
-      deviceId = iosInfo.identifierForVendor ?? 'unknown';
       deviceName = '${iosInfo.name} ${iosInfo.model}';
       deviceType = 'iOS';
     } catch (e) {
       // Use defaults if device info fetch fails
     }
+
+    // Must match ApiService._getDeviceId — both go through the same stable,
+    // persisted identifier (StorageService.getOrCreateDeviceId) instead of
+    // identifierForVendor directly, which can be null in edge cases and fall
+    // back to the shared literal 'unknown', colliding different installs.
+    final deviceId = await _storageService.getOrCreateDeviceId();
 
     return {
       'device_id': deviceId,
