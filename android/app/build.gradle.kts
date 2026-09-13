@@ -121,6 +121,43 @@ flutter {
     source = "../.."
 }
 
+// Automated Play Store upload (./gradlew publishBundle) via Gradle Play
+// Publisher. Only wired up once a service account key is actually present —
+// most builds (local dev, CI without publish credentials) never need this,
+// and the plugin errors out eagerly if configured against a missing file.
+//
+// One-time setup (do this in Google Play Console + Google Cloud Console,
+// not here):
+//   1. Play Console -> Setup -> API access -> link/create a Cloud project.
+//   2. "Create new service account" -> in Cloud Console, add a JSON key for
+//      it and download it.
+//   3. Back in Play Console -> API access -> grant that service account
+//      access to this app (Release apps to testing tracks, at minimum).
+//   4. Save the downloaded JSON as android/play-service-account.json
+//      (already gitignored) or point PLAY_STORE_SERVICE_ACCOUNT_JSON at it.
+//
+// Then: flutter build appbundle (or shorebird release android) followed by
+// `./gradlew publishBundle --track internal` from android/.
+val playServiceAccountFile = rootProject.file(
+    System.getenv("PLAY_STORE_SERVICE_ACCOUNT_JSON") ?: "play-service-account.json"
+)
+
+if (playServiceAccountFile.exists()) {
+    apply(plugin = "com.github.triplet.play")
+    configure<com.github.triplet.gradle.play.PlayPublisherExtension> {
+        serviceAccountCredentials.set(playServiceAccountFile)
+        track.set(System.getenv("PLAY_STORE_TRACK") ?: "internal")
+        defaultToAppBundles.set(true)
+    }
+} else {
+    logger.warn(
+        "Play Publisher not configured — no service account file at " +
+            "${playServiceAccountFile.path}. Set PLAY_STORE_SERVICE_ACCOUNT_JSON " +
+            "or place the key at android/play-service-account.json to enable " +
+            "`./gradlew publishBundle`."
+    )
+}
+
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

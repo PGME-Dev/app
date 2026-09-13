@@ -51,6 +51,11 @@ app.*.map.json
 /android/app/release
 FRONTEND_INTEGRATION_GUIDE.md
 
+# Play Store signing/upload secrets — never commit these
+android/key.properties
+android/upload-keystore.jks
+android/play-service-account.json
+
 packages
 .claude/settings.local.json
 packages.zip
