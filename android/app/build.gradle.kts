@@ -148,6 +148,9 @@ if (playServiceAccountFile.exists()) {
         serviceAccountCredentials.set(playServiceAccountFile)
         track.set(System.getenv("PLAY_STORE_TRACK") ?: "internal")
         defaultToAppBundles.set(true)
+        enabled.set(true)
+        commit.set(true)
+        resolutionStrategy.set(com.github.triplet.gradle.play.ResolutionStrategy.IGNORE)
     }
 } else {
     logger.warn(
