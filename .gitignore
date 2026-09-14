@@ -80,6 +80,15 @@ vendor/pdfrx/build/
 vendor/pdfrx/.flutter-plugins
 vendor/pdfrx/.flutter-plugins-dependencies
 vendor/pdfrx/example/
+
+# Android's pdfrx .lib/latest was a real symlink committed with a
+# contributor's own absolute machine path baked in — checking it out on any
+# other machine (different drive letter/username) breaks the CMake link. And
+# .cxx/ is CMake's own configure cache, which embeds absolute paths from
+# whoever last configured it — never portable across machines either way.
+vendor/pdfrx/android/.lib/
+vendor/pdfrx/android/.cxx/
+vendor/pdfrx/android/build/
 # pdfium WASM binary is also large and platform-fetched
 vendor/pdfrx/assets/pdfium.wasm
 
